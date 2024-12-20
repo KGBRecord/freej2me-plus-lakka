@@ -17,11 +17,15 @@
 package javax.microedition.m3g;
 
 import java.util.Hashtable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import java.awt.Color;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
+import java.awt.Paint;
+import java.awt.Polygon;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 
@@ -448,9 +452,8 @@ public class Graphics3D
 		else if (this.target instanceof PlatformGraphics)
 		{
 			PlatformGraphics pgrp = (PlatformGraphics) this.target;
-			BufferedImage img = pgrp.getCanvas();
 			Graphics2D grp = pgrp.getGraphics2D();
-			WritableRaster ras = img.getRaster();
+			WritableRaster ras = pgrp.getCanvas().getRaster();
 
 			Color colorOrig = grp.getColor();
 			Color colorFill = new Color(0, 150, 240, 255);
@@ -462,17 +465,104 @@ public class Graphics3D
 
 				if (tex == null || texVertRaw == null)
 				{
-					int[] coXr = new int[] {
+					int[] coXr = new int[] 
+					{
 						Math.round(tri.xA()),
 						Math.round(tri.xB()),
 						Math.round(tri.xC())
 					};
-					int[] coYr = new int[] {
+					int[] coYr = new int[] 
+					{
 						Math.round(tri.yA()),
 						Math.round(tri.yB()),
 						Math.round(tri.yC())
 					};
-					grp.setColor(colorFill);
+					if(vertices.getColors() == null) { grp.setColor(new Color(vertices.getDefaultColor()));}
+					else 
+					{
+						GradientPaint gradient;
+
+						byte[] color_vertices = new byte[12]; 
+
+						Color color1 = new Color(0xFFFFFF);
+						Color color2 = new Color(0xFFFFFF);
+						Color color3 = new Color(0xFFFFFF);
+
+						col.get(0, 3, color_vertices);
+					
+						if(col.getComponentCount() == 3)  // If 3 components, RGB
+						{
+							color1 = new Color
+							(
+								Byte.toUnsignedInt(color_vertices[0]), 
+								Byte.toUnsignedInt(color_vertices[1]), 
+								Byte.toUnsignedInt(color_vertices[2])
+							);
+							color2 = new Color
+							(
+								Byte.toUnsignedInt(color_vertices[3]), 
+								Byte.toUnsignedInt(color_vertices[4]), 
+								Byte.toUnsignedInt(color_vertices[5])
+							);
+							color3 = new Color
+							(
+								Byte.toUnsignedInt(color_vertices[6]), 
+								Byte.toUnsignedInt(color_vertices[7]), 
+								Byte.toUnsignedInt(color_vertices[8])
+							);
+						}
+						else // Else we'll assume RGBA, 4 components
+						{
+							color1 = new Color
+							(
+								Byte.toUnsignedInt(color_vertices[0]), 
+								Byte.toUnsignedInt(color_vertices[1]), 
+								Byte.toUnsignedInt(color_vertices[2]), 
+								Byte.toUnsignedInt(color_vertices[3])
+							);
+							color2 = new Color
+							(
+								Byte.toUnsignedInt(color_vertices[4]), 
+								Byte.toUnsignedInt(color_vertices[5]), 
+								Byte.toUnsignedInt(color_vertices[6]), 
+								Byte.toUnsignedInt(color_vertices[7])
+							);
+							color3 = new Color
+							(
+								Byte.toUnsignedInt(color_vertices[8]), 
+								Byte.toUnsignedInt(color_vertices[9]), 
+								Byte.toUnsignedInt(color_vertices[10]), 
+								Byte.toUnsignedInt(color_vertices[11])
+							);
+						}
+
+						/* 
+						 * TODO: Not accurate, as all 3 vertices of a triangle can have different colors that have to be interpolated,
+						 * this method might not be doing it the correct way.
+						 */
+						Paint originalPaint = grp.getPaint();
+
+						// Draw first gradient from color1 to color2
+						gradient = new GradientPaint(
+							coXr[0], coYr[0], color1,
+							coXr[1], coYr[1], color2
+						);
+						grp.setPaint(gradient);
+						grp.fillPolygon(coXr, coYr, 3);
+
+						// Draw second gradient from color2 to color3
+						gradient = new GradientPaint(
+							coXr[1], coYr[1], color2,
+							coXr[2], coYr[2], color3
+						);
+						grp.setPaint(gradient);
+						grp.fillPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, new int[]{coYr[1], coYr[2], coYr[0]}, 3 );
+
+						grp.setPaint(originalPaint);
+
+						continue; // continue because now we shouldn't hit the fillPolygon call below
+					}
+					
 					grp.fillPolygon(coXr, coYr, 3);
 					//grp.setColor(colorDraw);
 					//grp.drawPolygon(coXr, coYr, 3);
