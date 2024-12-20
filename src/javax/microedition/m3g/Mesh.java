@@ -21,8 +21,8 @@ import java.util.Vector;
 public class Mesh extends Node
 {
 
-	private Vector appearances = new Vector();
-	private Vector indexbuffer = new Vector();
+	private Vector<Appearance> appearances = new Vector<Appearance>();
+	private Vector<IndexBuffer> indexbuffer = new Vector<IndexBuffer>();
 	private VertexBuffer vertexbuffer;
 
 

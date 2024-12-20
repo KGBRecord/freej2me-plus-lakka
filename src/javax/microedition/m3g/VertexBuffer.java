@@ -33,7 +33,7 @@ public class VertexBuffer extends Object3D
 	private int defaultColor;
 	private VertexArray positions;
 	private VertexArray normals;
-	private VertexArray colors;
+	private VertexArray colors = null;
 	private VertexArray[] texCoords;
 
 	private float positionScale;

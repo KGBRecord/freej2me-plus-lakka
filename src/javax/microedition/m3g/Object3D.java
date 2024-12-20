@@ -24,7 +24,7 @@ public abstract class Object3D
 
 	private int userID;
 	Object userObject;
-	Vector animTracks = new Vector();
+	Vector<AnimationTrack> animTracks = new Vector<AnimationTrack>();
 
 
 	public void addAnimationTrack(AnimationTrack animationTrack) 

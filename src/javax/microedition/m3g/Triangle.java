@@ -44,10 +44,13 @@ class Triangle
 		// sC, tC, rC, qC;
 		// 0   1   2   3
 
-	Triangle(float[] vertices, float[] texcoords)
+	int[] bufIndex;
+
+	Triangle(float[] vertices, float[] texcoords, int[] indices)
 	{
 		this.v = vertices;
 		this.t = texcoords;
+		this.bufIndex = indices;
 	}
 
 	static Triangle[] fromVertAndTris(float[] vert, float[] texc, int[] tris)
@@ -55,20 +58,23 @@ class Triangle
 		Triangle[] result = new Triangle[tris.length / 3];
 
 		for (int tri_id = 0; tri_id < tris.length / 3; tri_id++)
-			result[tri_id] = new Triangle(new float[] {
-				vert[4 * tris[3 * tri_id + 0] + 0],
-				vert[4 * tris[3 * tri_id + 0] + 1],
-				vert[4 * tris[3 * tri_id + 0] + 2],
-				vert[4 * tris[3 * tri_id + 0] + 3],
-				vert[4 * tris[3 * tri_id + 1] + 0],
-				vert[4 * tris[3 * tri_id + 1] + 1],
-				vert[4 * tris[3 * tri_id + 1] + 2],
-				vert[4 * tris[3 * tri_id + 1] + 3],
-				vert[4 * tris[3 * tri_id + 2] + 0],
-				vert[4 * tris[3 * tri_id + 2] + 1],
-				vert[4 * tris[3 * tri_id + 2] + 2],
-				vert[4 * tris[3 * tri_id + 2] + 3]
-			}, texc == null ? new float[12] : new float[] {
+			result[tri_id] = new Triangle(new float[] //Vertex positions
+			{
+				vert[4 * tris[3 * tri_id + 0] + 0], // xA
+				vert[4 * tris[3 * tri_id + 0] + 1], // yA
+				vert[4 * tris[3 * tri_id + 0] + 2], // zA
+				vert[4 * tris[3 * tri_id + 0] + 3], // wA
+				vert[4 * tris[3 * tri_id + 1] + 0], // xB
+				vert[4 * tris[3 * tri_id + 1] + 1], // yB
+				vert[4 * tris[3 * tri_id + 1] + 2], // zB
+				vert[4 * tris[3 * tri_id + 1] + 3], // wB
+				vert[4 * tris[3 * tri_id + 2] + 0], // xC
+				vert[4 * tris[3 * tri_id + 2] + 1], // yC
+				vert[4 * tris[3 * tri_id + 2] + 2], // zC
+				vert[4 * tris[3 * tri_id + 2] + 3]  // wC
+			}, 
+			texc == null ? new float[12] : new float[] // Tex Coordinates
+			{
 				texc[4 * tris[3 * tri_id + 0] + 0],
 				texc[4 * tris[3 * tri_id + 0] + 1],
 				texc[4 * tris[3 * tri_id + 0] + 2],
@@ -81,6 +87,12 @@ class Triangle
 				texc[4 * tris[3 * tri_id + 2] + 1],
 				texc[4 * tris[3 * tri_id + 2] + 2],
 				texc[4 * tris[3 * tri_id + 2] + 3]
+			},
+			new int[] // IndexBuffer Indices
+			{
+				tris[3* tri_id + 0],
+				tris[3* tri_id + 1],
+				tris[3* tri_id + 2]
 			});
 
 		return result;
@@ -237,7 +249,7 @@ class Triangle
 				t1[4*2 + 1] = n2[1][1];
 				t1[4*2 + 2] = n2[1][2];
 				t1[4*2 + 3] = n2[1][3];
-				return new Triangle[] { new Triangle(v1, t1) };
+				return new Triangle[] { new Triangle(v1, t1, bufIndex) }; // TODO: Might be incorrect in how bufIndex is passed
 			case 2:
 				n1 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(0)],
 										tex[vin.get(0)], tex[vout.get(0)]);
@@ -295,8 +307,8 @@ class Triangle
 				t2[4*2 + 2] = n2[1][2];
 				t2[4*2 + 3] = n2[1][3];
 				return new Triangle[] {
-					new Triangle(v1, t1),
-					new Triangle(v2, t2)
+					new Triangle(v1, t1, bufIndex), // TODO: Might be incorrect in how bufIndex is passed
+					new Triangle(v2, t2, bufIndex)
 				};
 			case 3:
 				return new Triangle[] { this };

@@ -96,7 +96,7 @@ public class Image2D extends Object3D
 		if(palette.length < 256 * this.bpp() && ((palette.length % this.bpp()) != 0)) 
 			{ throw new IllegalArgumentException("Illegal palette length received."); }
 
-		Mobile.log(Mobile.LOG_WARNING, Image2D.class.getPackage().getName() + "." + Image2D.class.getSimpleName() + ": " +  "M3G Paletted Image Format: " + formatNames[format-96] + " indices len: " + image.length + " palette len:" + palette.length);
+		Mobile.log(Mobile.LOG_DEBUG, Image2D.class.getPackage().getName() + "." + Image2D.class.getSimpleName() + ": " +  "M3G Paletted Image Format: " + formatNames[format-96] + " indices len: " + image.length + " palette len:" + palette.length);
 
 		this.mutable = false;
 		this.width = w;
@@ -137,7 +137,7 @@ public class Image2D extends Object3D
 		int bppSrc = img.getNumBands();
 		int[] buf = new int[bppSrc];
 
-		Mobile.log(Mobile.LOG_WARNING, Image2D.class.getPackage().getName() + "." + Image2D.class.getSimpleName() + ": " +  "M3G Image Format:" + formatNames[format-96]);
+		Mobile.log(Mobile.LOG_DEBUG, Image2D.class.getPackage().getName() + "." + Image2D.class.getSimpleName() + ": " +  "M3G Image Format:" + formatNames[format-96]);
 
 		this.mutable = false;
 		this.width = img.getWidth();

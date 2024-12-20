@@ -20,7 +20,6 @@ import java.util.Hashtable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
@@ -333,7 +332,7 @@ public class Graphics3D
 		/* Receiving a null transform indicates that the identity matrix must be used. */
 		if (transform == null) { transform = new Transform(); }
 
-		System.out.println("Graphics3D.render NT");
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render NT");
 		// TODO implement Graphics3D.render(Node, Transform)
 	}
 
@@ -445,7 +444,7 @@ public class Graphics3D
 
 		if (this.target instanceof Image2D)
 		{
-			System.out.println("Render Target is instance of Image2D!");
+			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Render Target is instance of Image2D!");
 			Image2D i2d = (Image2D) this.target;
 			// TODO support rendering to Image2D
 		}
@@ -456,83 +455,86 @@ public class Graphics3D
 			WritableRaster ras = pgrp.getCanvas().getRaster();
 
 			Color colorOrig = grp.getColor();
-			Color colorFill = new Color(0, 150, 240, 255);
-			Color colorDraw = new Color(255, 255, 255, 128);
+			// Unused, as we are now getting vertex colors from the Triangle data
+			//Color colorFill = new Color(0, 150, 240, 255);
+			// Color colorDraw = new Color(255, 255, 255, 128);
 
 			for (int tri_id = 0; tri_id < trisScreen.length; tri_id++)
 			{
-				Triangle tri = trisScreen[tri_id];
-
-				if (tex == null || texVertRaw == null)
+				if (tex == null || texVertRaw == null) // If there's no texture coords or a texture image, we should try rendering with vertex colors.
 				{
 					int[] coXr = new int[] 
 					{
-						Math.round(tri.xA()),
-						Math.round(tri.xB()),
-						Math.round(tri.xC())
+						Math.round(trisScreen[tri_id].xA()),
+						Math.round(trisScreen[tri_id].xB()),
+						Math.round(trisScreen[tri_id].xC())
 					};
 					int[] coYr = new int[] 
 					{
-						Math.round(tri.yA()),
-						Math.round(tri.yB()),
-						Math.round(tri.yC())
+						Math.round(trisScreen[tri_id].yA()),
+						Math.round(trisScreen[tri_id].yB()),
+						Math.round(trisScreen[tri_id].yC())
 					};
-					if(vertices.getColors() == null) { grp.setColor(new Color(vertices.getDefaultColor()));}
-					else 
+					if(vertices.getColors() == null) { grp.setColor(new Color(vertices.getDefaultColor()));} // If there's no vertex colors, we have to render with the VertexBuffer's default color.
+					else // If we have vertex colors, good. Read them to color up the triangles properly.
 					{
 						GradientPaint gradient;
 
-						byte[] color_vertices = new byte[12]; 
+						byte[] color_vertex1 = new byte[4]; 
+						byte[] color_vertex2 = new byte[4]; 
+						byte[] color_vertex3 = new byte[4]; 
 
 						Color color1 = new Color(0xFFFFFF);
 						Color color2 = new Color(0xFFFFFF);
 						Color color3 = new Color(0xFFFFFF);
 
-						col.get(0, 3, color_vertices);
+						col.get(trisScreen[tri_id].bufIndex[0], 1, color_vertex1);
+						col.get(trisScreen[tri_id].bufIndex[1], 1, color_vertex2);
+						col.get(trisScreen[tri_id].bufIndex[2], 1, color_vertex3);
 					
 						if(col.getComponentCount() == 3)  // If 3 components, RGB
 						{
 							color1 = new Color
 							(
-								Byte.toUnsignedInt(color_vertices[0]), 
-								Byte.toUnsignedInt(color_vertices[1]), 
-								Byte.toUnsignedInt(color_vertices[2])
+								Byte.toUnsignedInt(color_vertex1[0]), 
+								Byte.toUnsignedInt(color_vertex1[1]), 
+								Byte.toUnsignedInt(color_vertex1[2])
 							);
 							color2 = new Color
 							(
-								Byte.toUnsignedInt(color_vertices[3]), 
-								Byte.toUnsignedInt(color_vertices[4]), 
-								Byte.toUnsignedInt(color_vertices[5])
+								Byte.toUnsignedInt(color_vertex2[0]), 
+								Byte.toUnsignedInt(color_vertex2[1]), 
+								Byte.toUnsignedInt(color_vertex2[2])
 							);
 							color3 = new Color
 							(
-								Byte.toUnsignedInt(color_vertices[6]), 
-								Byte.toUnsignedInt(color_vertices[7]), 
-								Byte.toUnsignedInt(color_vertices[8])
+								Byte.toUnsignedInt(color_vertex3[0]), 
+								Byte.toUnsignedInt(color_vertex3[1]), 
+								Byte.toUnsignedInt(color_vertex3[2])
 							);
 						}
 						else // Else we'll assume RGBA, 4 components
 						{
 							color1 = new Color
 							(
-								Byte.toUnsignedInt(color_vertices[0]), 
-								Byte.toUnsignedInt(color_vertices[1]), 
-								Byte.toUnsignedInt(color_vertices[2]), 
-								Byte.toUnsignedInt(color_vertices[3])
+								Byte.toUnsignedInt(color_vertex1[0]), 
+								Byte.toUnsignedInt(color_vertex1[1]), 
+								Byte.toUnsignedInt(color_vertex1[2]), 
+								Byte.toUnsignedInt(color_vertex1[3])
 							);
 							color2 = new Color
 							(
-								Byte.toUnsignedInt(color_vertices[4]), 
-								Byte.toUnsignedInt(color_vertices[5]), 
-								Byte.toUnsignedInt(color_vertices[6]), 
-								Byte.toUnsignedInt(color_vertices[7])
+								Byte.toUnsignedInt(color_vertex2[0]), 
+								Byte.toUnsignedInt(color_vertex2[1]), 
+								Byte.toUnsignedInt(color_vertex2[2]), 
+								Byte.toUnsignedInt(color_vertex2[3])
 							);
 							color3 = new Color
 							(
-								Byte.toUnsignedInt(color_vertices[8]), 
-								Byte.toUnsignedInt(color_vertices[9]), 
-								Byte.toUnsignedInt(color_vertices[10]), 
-								Byte.toUnsignedInt(color_vertices[11])
+								Byte.toUnsignedInt(color_vertex3[0]), 
+								Byte.toUnsignedInt(color_vertex3[1]), 
+								Byte.toUnsignedInt(color_vertex3[2]), 
+								Byte.toUnsignedInt(color_vertex3[3])
 							);
 						}
 
@@ -573,17 +575,18 @@ public class Graphics3D
 				Integer[] ordX = new Integer[] { 0, 1, 2 };
 				Integer[] ordY = new Integer[] { 0, 1, 2 };
 
+				final int curID = tri_id;
 				Arrays.sort(ordX, (Integer a, Integer b) ->
-					((int) Math.signum(tri.v[4*a + 0] - tri.v[4*b + 0])));
+					((int) Math.signum(trisScreen[curID].v[4*a + 0] - trisScreen[curID].v[4*b + 0])));
 
 				Arrays.sort(ordY, (Integer a, Integer b) ->
-					((int) Math.signum(tri.v[4*a + 1] - tri.v[4*b + 1])));
+					((int) Math.signum(trisScreen[curID].v[4*a + 1] - trisScreen[curID].v[4*b + 1])));
 
-				float[] coX = new float[] { tri.xA(), tri.xB(), tri.xC() };
-				float[] coY = new float[] { tri.yA(), tri.yB(), tri.yC() };
-				float[] coZ = new float[] { tri.zA(), tri.zB(), tri.zC() };
-				float[] coS = new float[] { tri.sA(), tri.sB(), tri.sC() };
-				float[] coT = new float[] { tri.tA(), tri.tB(), tri.tC() };
+				float[] coX = new float[] { trisScreen[tri_id].xA(), trisScreen[tri_id].xB(), trisScreen[tri_id].xC() };
+				float[] coY = new float[] { trisScreen[tri_id].yA(), trisScreen[tri_id].yB(), trisScreen[tri_id].yC() };
+				float[] coZ = new float[] { trisScreen[tri_id].zA(), trisScreen[tri_id].zB(), trisScreen[tri_id].zC() };
+				float[] coS = new float[] { trisScreen[tri_id].sA(), trisScreen[tri_id].sB(), trisScreen[tri_id].sC() };
+				float[] coT = new float[] { trisScreen[tri_id].tA(), trisScreen[tri_id].tB(), trisScreen[tri_id].tC() };
 
 				// beginning of texture unit loop
 				// for (int tex_id = 0; tex_id < NUM_TEXTURE_UNITS; tex_id++)
@@ -747,7 +750,7 @@ public class Graphics3D
 		 * Note: this will be thrown by Transform.invert() if appropriate
 		 */
 
-		System.out.println("Graphics3D.render W");
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render W");
 		// TODO implement Graphics3D.render(World)
 	}
 

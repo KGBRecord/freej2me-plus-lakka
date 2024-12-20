@@ -38,71 +38,41 @@ public class Appearance extends Object3D
 	}
 
 
-	public CompositingMode getCompositingMode()
-	{
-		return this.compositingMode;
-	}
+	public CompositingMode getCompositingMode() { return this.compositingMode; }
 
-	public Fog getFog()
-	{
-		return this.fog;
-	}
+	public Fog getFog() { return this.fog; }
 
-	public int getLayer()
-	{
-		return this.layer;
-	}
+	public int getLayer() { return this.layer; }
 
-	public Material getMaterial()
-	{
-		return this.material;
-	}
+	public Material getMaterial() { return this.material; }
 
-	public PolygonMode getPolygonMode()
-	{
-		return this.polygonMode;
-	}
+	public PolygonMode getPolygonMode() { return this.polygonMode; }
 
 	public Texture2D getTexture(int index)
 	{
-		if (index < 0 || Graphics3D.NUM_TEXTURE_UNITS - 1 < index)
-			throw new java.lang.IndexOutOfBoundsException("Tried to get texture from invalid index");
+		if (index < 0 || Graphics3D.NUM_TEXTURE_UNITS - 1 < index) { throw new java.lang.IndexOutOfBoundsException("Tried to get texture from invalid index"); }
 
 		return this.texture[index];
 	}
 
-	public void setCompositingMode(CompositingMode compositingMode)
-	{
-		this.compositingMode = compositingMode;
-	}
+	public void setCompositingMode(CompositingMode compositingMode) { this.compositingMode = compositingMode; }
 
-	public void setFog(Fog fog)
-	{
-		this.fog = fog;
-	}
+	public void setFog(Fog fog) { this.fog = fog; }
 
 	public void setLayer(int layer)
 	{
-		if (layer < -63 || 63 < layer)
-			throw new java.lang.IndexOutOfBoundsException("Cannot set invalid layer");
+		if (layer < -63 || 63 < layer) { throw new java.lang.IndexOutOfBoundsException("Cannot set invalid layer"); }
 
 		this.layer = layer;
 	}
 
-	public void setMaterial(Material material)
-	{
-		this.material = material;
-	}
+	public void setMaterial(Material material) { this.material = material; }
 
-	public void setPolygonMode(PolygonMode polygonMode)
-	{
-		this.polygonMode = polygonMode;
-	}
+	public void setPolygonMode(PolygonMode polygonMode) { this.polygonMode = polygonMode; }
 
 	public void setTexture(int index, Texture2D texture)
 	{
-		if (index < 0 || Graphics3D.NUM_TEXTURE_UNITS - 1 < index)
-			throw new java.lang.IndexOutOfBoundsException("Tried to set texture on an invalid index");
+		if (index < 0 || Graphics3D.NUM_TEXTURE_UNITS - 1 < index) { throw new java.lang.IndexOutOfBoundsException("Tried to set texture on an invalid index"); }
 
 		this.texture[index] = texture;
 	}

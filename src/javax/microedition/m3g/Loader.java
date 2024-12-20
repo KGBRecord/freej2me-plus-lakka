@@ -25,11 +25,13 @@ import java.io.PushbackInputStream;
 
 import org.recompile.mobile.Mobile;
 
+import java.util.Vector;
 import java.util.zip.Checksum;
 import java.util.zip.Inflater;
 
 import javax.microedition.lcdui.Image;
 
+@SuppressWarnings("unchecked")
 public class Loader
 {
 
@@ -37,14 +39,17 @@ public class Loader
 		0x0A, 0x1A, 0x0A};
 
 	private static DataInputStream dis;
-	private static java.util.Vector objs;
+	private static Vector objs = new Vector<>();
 
-	public static Object3D[] load(byte[] data, int offset) {
+	public static Object3D[] load(byte[] data, int offset) 
+	{
 		DataInputStream old = dis;
 		dis = new DataInputStream(new ByteArrayInputStream(data));
 
-		try {
-			while (dis.available() > 0) {
+		try 
+		{
+			while (dis.available() > 0) 
+			{
 				int objectType = readByte();
 				int length = readInt();
 
@@ -53,7 +58,8 @@ public class Loader
 
 				dis.mark(Integer.MAX_VALUE);
 
-				if (objectType == 0) {
+				if (objectType == 0) 
+				{
 					int versionHigh = readByte();
 					int versionLow = readByte();
 					boolean hasExternalReferences = readBoolean();
@@ -62,11 +68,15 @@ public class Loader
 					String authoringField = readString();
 
 					objs.addElement(new Group()); // dummy
-				} else if (objectType == 255) {
+				} 
+				else if (objectType == 255) 
+				{
 					// TODO: load external resource
 					System.out.println("Loader: Loading external resources not implemented.");
 					String uri = readString();
-				} else if (objectType == 1) {
+				} 
+				else if (objectType == 1) 
+				{
 					AnimationController cont = new AnimationController();
 					loadObject3D(cont);
 					float speed = readFloat();
@@ -80,7 +90,9 @@ public class Loader
 					cont.setSpeed(speed, referenceWorldTime);
 					cont.setWeight(weight);
 					objs.addElement(cont);
-				} else if (objectType == 2) {
+				} 
+				else if (objectType == 2) 
+				{
 					loadObject3D(new Group());
 					KeyframeSequence ks = (KeyframeSequence) getObject(readInt());
 					AnimationController cont = (AnimationController) getObject(readInt());
@@ -90,7 +102,9 @@ public class Loader
 					dis.reset();
 					loadObject3D(track);
 					objs.addElement(track);
-				} else if (objectType == 3) {
+				} 
+				else if (objectType == 3) 
+				{
 					Appearance appearance = new Appearance();
 					loadObject3D(appearance);
 					appearance.setLayer(readByte());
@@ -102,7 +116,9 @@ public class Loader
 					for (int i = 0; i < numTextures; ++i)
 						appearance.setTexture(i, (Texture2D) getObject(readInt()));
 					objs.addElement(appearance);
-				} else if (objectType == 4) {
+				} 
+				else if (objectType == 4) 
+				{
 					Background background = new Background();
 					loadObject3D(background);
 					background.setColor(readRGBA());
@@ -118,16 +134,21 @@ public class Loader
 					background.setDepthClearEnable(readBoolean());
 					background.setColorClearEnable(readBoolean());
 					objs.addElement(background); // dummy
-				} else if (objectType == 5) {
+				} 
+				else if (objectType == 5) 
+				{
 					Camera camera = new Camera();
 					loadNode(camera);
 
 					int projectionType = readByte();
-					if (projectionType == Camera.GENERIC) {
+					if (projectionType == Camera.GENERIC) 
+					{
 						Transform t = new Transform();
 						t.set(readMatrix());
 						camera.setGeneric(t);
-					} else {
+					} 
+					else 
+					{
 						float fovy = readFloat();
 						float aspect = readFloat();
 						float near = readFloat();
@@ -138,7 +159,9 @@ public class Loader
 							camera.setPerspective(fovy, aspect, near, far);
 					}
 					objs.addElement(camera);
-				} else if (objectType == 6) {
+				} 
+				else if (objectType == 6) 
+				{
 					CompositingMode compositingMode = new CompositingMode();
 					loadObject3D(compositingMode);
 					compositingMode.setDepthTestEnable(readBoolean());

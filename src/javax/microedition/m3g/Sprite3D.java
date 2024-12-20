@@ -21,7 +21,7 @@ import java.util.Hashtable;
 public class Sprite3D extends Node
 {
 
-	private static Hashtable textures = new Hashtable();
+	private static Hashtable<Image2D, Texture2D> textures = new Hashtable<Image2D, Texture2D>();
 
 	private Image2D image;
 	private Appearance appearance;
