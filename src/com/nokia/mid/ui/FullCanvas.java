@@ -35,19 +35,14 @@ public abstract class FullCanvas extends javax.microedition.lcdui.Canvas
 
 	protected FullCanvas()
 	{
+		super();
 		//Mobile.log(FullCanvas.class.getPackage().getName() + "." + FullCanvas.class.getSimpleName() + ": " + "Nokia FullCanvas");
+		setFullScreenMode(true);
 	}
 
-/*
-	public void addCommand(Command cmd)
-	{
-		Mobile.log(FullCanvas.class.getPackage().getName() + "." + FullCanvas.class.getSimpleName() + ": " + "Nokia FullCanvas addCommand");
-	}
+	/* According to the Nokia UI docs, commands shouldn't be supported here, and all these should do is throw IllegalStateExceptions  */
+	public void addCommand(Command cmd) { throw new IllegalStateException(); }
 
-	public void setCommandListener(CommandListener l)
-	{
-		Mobile.log(FullCanvas.class.getPackage().getName() + "." + FullCanvas.class.getSimpleName() + ": " + "Nokia FullCanvas setCommandListener");
-	}
+	public void setCommandListener(CommandListener l) { throw new IllegalStateException(); }	
 
-*/
 }
