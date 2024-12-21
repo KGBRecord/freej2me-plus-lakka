@@ -33,7 +33,7 @@ public class Image
 	public int width;
 	public int height;
 
-
+	// TODO: This will create mutable images for both MIDP (shouldn't) and Nokia DirectGraphics (should)
 	public static Image createImage(byte[] imageData, int imageOffset, int imageLength) throws IllegalArgumentException
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image from image data ");
@@ -41,19 +41,6 @@ public class Image
 		if (imageOffset + imageLength > imageData.length) {throw new ArrayIndexOutOfBoundsException();}
 
 		return new PlatformImage(imageData, imageOffset, imageLength);
-	}
-
-	// The only difference here is that DirectUtils creates a mutable image, not an immutable one.
-	public static Image createNokiaImage(byte[] imageData, int imageOffset, int imageLength) throws IllegalArgumentException
-	{
-		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create DirectUtils Image from image data ");
-		if (imageData == null) {throw new NullPointerException();}
-		if (imageOffset + imageLength > imageData.length) {throw new ArrayIndexOutOfBoundsException();}
-
-		PlatformImage img = new PlatformImage(imageData, imageOffset, imageLength);
-		img.setMutable(true);
-
-		return img;
 	}
 
 	public static Image createImage(Image source)
@@ -64,16 +51,13 @@ public class Image
 		if (!source.isMutable()) { return source; }
 
 		// Else, create an immutable copy of the received image.
-		PlatformImage newSource = new PlatformImage(source);
-		newSource.setMutable(false);
-		
 		return new PlatformImage(source);
 	}
 
 	public static Image createImage(Image img, int x, int y, int width, int height, int transform)
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image from sub-image " + " img_w:" + Integer.toString(img.getWidth()) + " img_h:" + Integer.toString(img.getHeight()) + " x:" + Integer.toString(x) + " y:" + Integer.toString(y) + " width:" + Integer.toString(width) + " height:" + Integer.toString(height));
-		if (img == null) {throw new NullPointerException();}
+		if (img == null) { throw new NullPointerException(); }
 		if (x+width > img.getWidth() || y+height > img.getHeight()) {throw new IllegalArgumentException();}
 		if (width <= 0 || height <= 0) {throw new IllegalArgumentException();}
 
@@ -94,9 +78,15 @@ public class Image
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image w,h " + width + ", " + height);
 		if (width <= 0 || height <= 0) {throw new IllegalArgumentException();}
 
-		PlatformImage img = new PlatformImage(width, height);
-		img.setMutable(true);
-		return img;
+		return new PlatformImage(width, height);
+	}
+
+	public static Image createImage(int width, int height, int ARGBcolor)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image w,h,color " + width + ", " + height  + ", " + ARGBcolor);
+		if (width <= 0 || height <= 0) {throw new IllegalArgumentException();}
+
+		return new PlatformImage(width, height, ARGBcolor);
 	}
 
 	public static Image createImage(String name) throws IOException

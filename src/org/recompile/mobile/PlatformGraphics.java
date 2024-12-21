@@ -595,7 +595,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		{
 			for (int col = 0; col < width; col++) 
 			{
-				int index = offset + row * scanlength + col;
+				int index = offset + (col) + (row * scanlength);
 				data[row * width + col] = pixelToColor(pixels[index], format);
 				if (!transparency) { data[row * width + col] &= 0x00FFFFFF; } // Clear the alpha channel
 			}
@@ -671,7 +671,6 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	
 		// Temporary canvas data array to read raw pixel data from.
 		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
-
 		// Just like DrawPixels(byte), we only handle BYTE_1_GRAY_VERTICAL and BYTE_1_GRAY yet
 		switch (format) 
 		{
@@ -721,81 +720,118 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 	public void getPixels(short[] pixels, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
-		int i = offset;
 		for(int row=0; row<height; row++)
 		{
 			for (int col=0; col<width; col++)
 			{
-				pixels[i] = colorToShortPixel(canvas.getRGB(col+x, row+y), format);
-				i++;
+				int pixelIndex = offset + (col) + (row * scanlength);
+				pixels[pixelIndex] = colorToShortPixel(canvas.getRGB(col+x, row+y), format);
 			}
 		}
 	}
 
-	private int pixelToColor(short c, int format)
+	private int pixelToColor(short c, int format) 
 	{
 		int a = 0xFF;
 		int r = 0;
 		int g = 0;
 		int b = 0;
-		switch(format)
+	
+		switch (format) 
 		{
 			case DirectGraphics.TYPE_USHORT_1555_ARGB:
-				a = ((c>>15) & 0x01)*0xFF;
-				r = (c>>10) & 0x1F; g = (c>>5) & 0x1F; b = c & 0x1F;
-				r = (r<<3)|(r>>2); g = (g<<3)|(g>>2); b = (b<<3)|(b>>2);
+				a = ((c >> 15) & 0x01) * 0xFF; // just 1 bit for alpha
+				r = (c >> 10) & 0x1F; 
+				g = (c >> 5) & 0x1F; 
+				b = c & 0x1F;
+				r = (r << 3) | (r >> 2);
+				g = (g << 3) | (g >> 2);
+				b = (b << 3) | (b >> 2);
 				break;
 			case DirectGraphics.TYPE_USHORT_444_RGB:
-				r = (c>>8) & 0xF; g = (c>>4) & 0xF; b = c & 0xF;
-				r = (r<<4)|r; g = (g<<4)|g; b = (b<<4)|b;
+				r = (c >> 8) & 0xF; 
+				g = (c >> 4) & 0xF; 
+				b = c & 0xF;
+				r = (r << 4) | r;
+				g = (g << 4) | g;
+				b = (b << 4) | b;
 				break;
 			case DirectGraphics.TYPE_USHORT_4444_ARGB:
-				a = (c>>12) & 0xF; r = (c>>8) & 0xF; g = (c>>4) & 0xF; b = c & 0xF;
-				a = (a<<4)|a; r = (r<<4)|r; g = (g<<4)|g; b = (b<<4)|b;
+				a = (c >> 12) & 0xF; 
+				r = (c >> 8) & 0xF; 
+				g = (c >> 4) & 0xF; 
+				b = c & 0xF;
+				a = (a << 4) | a;
+				r = (r << 4) | r;
+				g = (g << 4) | g;
+				b = (b << 4) | b;
 				break;
 			case DirectGraphics.TYPE_USHORT_555_RGB:
-				r = (c>>10) & 0x1F; g = (c>>5) & 0x1F; b = c & 0x1F;
-				r = (r<<3)|(r>>2); g = (g<<3)|(g>>2); b = (b<<3)|(b>>2);
+				r = (c >> 10) & 0x1F; 
+				g = (c >> 5) & 0x1F; 
+				b = c & 0x1F;
+				r = (r << 3) | (r >> 2);
+				g = (g << 3) | (g >> 2);
+				b = (b << 3) | (b >> 2);
 				break;
 			case DirectGraphics.TYPE_USHORT_565_RGB:
-				r = (c>>11) & 0x1F; g = (c>>5) & 0x3F; b = c & 0x1F;
-				r = (r<<3)|(r>>2); g = (g<<2)|(g>>4); b = (b<<3)|(b>>2);
+				r = (c >> 11) & 0x1F; 
+				g = (c >> 5) & 0x3F; 
+				b = c & 0x1F;
+				r = (r << 3) | (r >> 2);
+				g = (g << 2) | (g >> 4);
+				b = (b << 3) | (b >> 2);
 				break;
+			default:
+				throw new IllegalArgumentException("Unsupported format: " + format);
 		}
-		return (a<<24) | (r<<16) | (g<<8) | b;
+	
+		return (a << 24) | (r << 16) | (g << 8) | b;
 	}
 
-	private short colorToShortPixel(int c, int format)
+	private short colorToShortPixel(int c, int format) 
 	{
-		int a = 0;
-		int r = 0;
-		int g = 0;
-		int b = 0;
+		int a, r, g, b;
 		int out = 0;
-		switch(format)
+	
+		switch (format) 
 		{
 			case DirectGraphics.TYPE_USHORT_1555_ARGB:
-				a=c>>>31; r=((c>>19)&0x1F); g=((c>>11)&0x1F); b=((c>>3)&0x1F);
-				out=(a<<15)|(r<<10)|(g<<5)|b;
+				a = (c >>> 31) & 0x1;
+				r = (c >> 19) & 0x1F;
+				g = (c >> 11) & 0x1F;
+				b = (c >> 3) & 0x1F;
+				out = (a << 15) | (r << 10) | (g << 5) | b;
 				break;
 			case DirectGraphics.TYPE_USHORT_444_RGB:
-				r=((c>>20)&0xF); g=((c>>12)&0xF); b=((c>>4)&0xF);
-				out=(r<<8)|(g<<4)|b;
+				r = (c >> 20) & 0xF;
+				g = (c >> 12) & 0xF;
+				b = (c >> 4) & 0xF;
+				out = (r << 8) | (g << 4) | b;
 				break;
 			case DirectGraphics.TYPE_USHORT_4444_ARGB:
-				a=((c>>>28)&0xF); r=((c>>20)&0xF); g=((c>>12)&0xF); b=((c>>4)&0xF);
-				out=(a<<12)|(r<<8)|(g<<4)|b;
+				a = (c >>> 28) & 0xF;
+				r = (c >> 20) & 0xF;
+				g = (c >> 12) & 0xF;
+				b = (c >> 4) & 0xF;
+				out = (a << 12) | (r << 8) | (g << 4) | b;
 				break;
 			case DirectGraphics.TYPE_USHORT_555_RGB:
-				r=((c>>19)&0x1F); g=((c>>11)&0x1F); b=((c>>3)&0x1F);
-				out=(r<<10)|(g<<5)|b;
+				r = (c >> 19) & 0x1F;
+				g = (c >> 11) & 0x1F;
+				b = (c >> 3) & 0x1F;
+				out = (r << 10) | (g << 5) | b;
 				break;
 			case DirectGraphics.TYPE_USHORT_565_RGB:
-				r=((c>>19)&0x1F); g=((c>>10)&0x3F); b=((c>>3)&0x1F);
-				out=(r<<11)|(g<<5)|b;
+				r = (c >> 19) & 0x1F;
+				g = (c >> 10) & 0x3F;
+				b = (c >> 3) & 0x1F;
+				out = (r << 11) | (g << 5) | b;
 				break;
+			default:
+				throw new IllegalArgumentException("Unsupported format: " + format);
 		}
-		return (short)out;
+		return (short) out;
 	}
 
 	private static final BufferedImage manipulateImage(final BufferedImage image, final int manipulation)

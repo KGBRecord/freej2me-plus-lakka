@@ -76,6 +76,26 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		gc.fillRect(0, 0, width, height);
 		gc.setColor(0x000000);
 
+		isMutable = true;
+
+		platformImage = this;
+	}
+
+	public PlatformImage(int Width, int Height, int ARGBcolor)
+	{
+		canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
+		// Create blank Image
+		width = Width;
+		height = Height;
+		
+		createGraphics();
+
+		gc.setARGBColor(ARGBcolor);
+		gc.fillRect(0, 0, width, height);
+		gc.setColor(0x000000);
+
+		isMutable = true;
+
 		platformImage = this;
 	}
 
@@ -163,6 +183,8 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 
 		gc.drawImage2(temp, 0, 0);
 
+		isMutable = true;
+
 		platformImage = this;
 	}
 
@@ -192,6 +214,8 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 
 		gc.drawRGB(rgb, 0, width, 0, 0, width, height, true);
 
+		isMutable = true;
+
 		platformImage = this;
 	}
 
@@ -213,12 +237,14 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 			System.arraycopy(sourceData, sourceRow, subData, subRow, Math.min(Width, image.platformImage.canvas.getWidth() - x));
 		}
 	
-		canvas = transformImage(sub, transform);;
+		canvas = transformImage(sub, transform);
 	
 		createGraphics();
 	
 		width = (int) canvas.getWidth();
 		height = (int) canvas.getHeight();
+
+		this.isMutable = true;
 	
 		platformImage = this;
 	}
@@ -275,8 +301,6 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 	}
 
 	public boolean isMutable() { return isMutable; }
-
-	public void setMutable(boolean mutable) { isMutable = mutable; }
 
 	public static final BufferedImage transformImage(final BufferedImage image, final int transform)
 	{

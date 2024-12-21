@@ -26,22 +26,17 @@ public class DirectUtils
 
 	public static Image createImage(byte[] imageData, int imageOffset, int imageLength)
 	{
-		return Image.createNokiaImage(imageData, imageOffset, imageLength);
+		return Image.createImage(imageData, imageOffset, imageLength);
 	}
 
 	public static Image createImage(int width, int height, int ARGBcolor)
 	{
-		Image image = Image.createImage(width, height); // This one already creates a mutable image
-		PlatformGraphics gc = (PlatformGraphics)image.getGraphics();
-		gc.clearRect(0, 0, width, height);
-		gc.setAlphaRGB(ARGBcolor);
-		gc.fillRect(0,0, width, height);
-		return image;
+		return Image.createImage(width, height, ARGBcolor);
 	}
 
-	public static DirectGraphics getDirectGraphics(javax.microedition.lcdui.Graphics g)
+	public static DirectGraphics getDirectGraphics(Graphics g)
 	{
-		return (PlatformGraphics)g;
+		return (PlatformGraphics) g;
 	}
 
 }
