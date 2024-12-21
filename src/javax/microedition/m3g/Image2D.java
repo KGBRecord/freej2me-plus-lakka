@@ -57,12 +57,10 @@ public class Image2D extends Object3D
 		if (format != ALPHA && format != LUMINANCE && format != LUMINANCE_ALPHA && format != RGB && format != RGBA)
 			{ throw new IllegalArgumentException("Invalid image format received."); } 
 
-		/* Also per JSR-184, throw IllegalArgumentException if image is not a valid instance of our PlatformImage class. */
-		/*if (!(image instanceof PlatformImage)) 
-			{ throw new IllegalArgumentException("The image object received is not appropriate to this implementation."); }*/
-
 		/* Also per JSR-184, throw IllegalArgumentException if w or h <= 0*/
 		if (w <=0 || h <= 0) { throw new IllegalArgumentException("Image has invalid width and/or height."); }
+
+		Mobile.log(Mobile.LOG_DEBUG, Image2D.class.getPackage().getName() + "." + Image2D.class.getSimpleName() + ": " +  "M3G Byte Image Format: " + formatNames[format-96]);
 		
 		this.mutable = false;
 		this.width = w;
@@ -79,10 +77,6 @@ public class Image2D extends Object3D
 		/* Also per JSR-184, throw IllegalArgumentException if format is not one of the constants. */
 		if (format != ALPHA && format != LUMINANCE && format != LUMINANCE_ALPHA && format != RGB && format != RGBA)
 			{ throw new IllegalArgumentException("Invalid image format received."); } 
-
-		/* Also per JSR-184, throw IllegalArgumentException if image is not a valid instance of our PlatformImage class. */
-		/*if (!(image instanceof PlatformImage)) 
-			{ throw new IllegalArgumentException("The image object received is not appropriate to this implementation."); }*/
 
 		/* Also per JSR-184, throw IllegalArgumentException if w or h <= 0*/
 		if (w <=0 || h <= 0) { throw new IllegalArgumentException("Image has invalid width and/or height."); }
@@ -203,45 +197,43 @@ public class Image2D extends Object3D
 		return result;
 	}
 
-	int[] getPixelArr(int x, int y)
+	int getConvertedPixel(int x, int y) 
 	{
 		x = ((x % this.width) + this.width) % this.width;
 		y = ((y % this.height) + this.height) % this.height;
-		
 		int offset = this.bpp() * (this.width * y + x);
-		int[] result = new int[] { 0, 0, 0, 0 };
-
-		// Set up the resulting image's values (as it's always RGBA when rendered)
-		if(format == RGB) { result[3] = 255; }
-		else if(format == LUMINANCE) { result[3] = 255; }
-		else if(format == ALPHA) 
-		{ 
-			result[0] = 255; 
-			result[1] = 255; 
-			result[2] = 255; 
-		}
-		// LUMINANCE_ALPHA doesn's have any hard-set values
-
-
-		if(format == ALPHA) { result[3] = this.image[offset]; }
-		else if (format == LUMINANCE)
+		int result = 0;
+	
+		switch (this.format) 
 		{
-			result[0] = this.image[offset]; 
-			result[1] = this.image[offset]; 
-			result[2] = this.image[offset]; 
+			case ALPHA: // TODO: Untested
+				result = (this.image[offset] & 0xFF) << 24 | (0xFF << 16) | (0xFF << 8) | 0xFF; // Alpha only, to ARGB
+				break;
+			case LUMINANCE: // TODO: Untested
+				int luminance = this.image[offset] & 0xFF; // Grayscale value
+				result = (0xFF << 24) | (luminance << 16) | (luminance << 8) | luminance; // Cast to ARGB
+				break;
+			case LUMINANCE_ALPHA:
+				int lum = this.image[offset] & 0xFF; // Luminance
+				int alpha = this.image[offset + 1] & 0xFF; // Alpha
+				result = (alpha << 24) | (lum << 16) | (lum << 8) | lum; // Cast to ARGB
+				break;
+			case RGB:
+				result |= 0xFF << 24; // Full alpha
+				result |= (this.image[offset] & 0xFF) << 16; // Red
+				result |= (this.image[offset + 1] & 0xFF) << 8; // Green
+				result |= (this.image[offset + 2] & 0xFF); // Blue
+				break;
+			case RGBA:
+				result |= (this.image[offset + 3] & 0xFF) << 24; // Alpha
+				result |= (this.image[offset] & 0xFF) << 16; // Red
+				result |= (this.image[offset + 1] & 0xFF) << 8; // Green
+				result |= (this.image[offset + 2] & 0xFF); // Blue
+				break;
+			default:
+				throw new IllegalArgumentException("Unsupported format: " + this.format);
 		}
-		else if(format == LUMINANCE_ALPHA) 
-		{
-			result[0] = this.image[offset];
-			result[1] = this.image[offset];
-			result[2] = this.image[offset];
-			result[3] = this.image[offset+1]; 
-		}
-		else // RGB or RGBA
-		{
-			for (int ch = 0; ch < this.bpp(); ch++) { result[ch] = this.image[offset + ch]; }
-		}
-		
+	
 		return result;
 	}
 

@@ -26,6 +26,7 @@ import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Polygon;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.awt.image.WritableRaster;
 
 import org.recompile.mobile.Mobile;
@@ -452,7 +453,7 @@ public class Graphics3D
 		{
 			PlatformGraphics pgrp = (PlatformGraphics) this.target;
 			Graphics2D grp = pgrp.getGraphics2D();
-			WritableRaster ras = pgrp.getCanvas().getRaster();
+			int[] rasterData = ((DataBufferInt) pgrp.getCanvas().getRaster().getDataBuffer()).getData();
 
 			Color colorOrig = grp.getColor();
 			// Unused, as we are now getting vertex colors from the Triangle data
@@ -659,7 +660,7 @@ public class Graphics3D
 
 							s = sL + drawX * (sR - sL);
 							t = tL + drawX * (tR - tL);
-							ras.setPixel(x, y, teximg.getPixelArr(Math.round(s), Math.round(t)));
+							rasterData[y * pgrp.getCanvas().getWidth() + x] = teximg.getConvertedPixel(Math.round(s), Math.round(t));
 						} catch (Exception ex) {
 							ex.printStackTrace();
 						}
@@ -692,7 +693,8 @@ public class Graphics3D
 
 							s = sL + drawX * (sR - sL);
 							t = tL + drawX * (tR - tL);
-							ras.setPixel(x, y, teximg.getPixelArr(Math.round(s), Math.round(t)));
+
+							rasterData[y * pgrp.getCanvas().getWidth() + x] = teximg.getConvertedPixel(Math.round(s), Math.round(t));
 						} catch (Exception ex) {
 							ex.printStackTrace();
 						}
