@@ -471,7 +471,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public void setARGBColor(int argbColor)
 	{
 		colorAlpha = (argbColor>>>24) & 0xFF;
-		setColor(argbColor);
+		setAlphaRGB(argbColor);
 	}
 
 	public void drawImage(javax.microedition.lcdui.Image img, int x, int y, int anchor, int manipulation)
