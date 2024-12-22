@@ -66,7 +66,6 @@ public class Graphics3D
 	private int vieww;
 	private int viewh;
 
-	// Depth buffer (not used currently)
 	private boolean depthEnabled;
 	private float[] depthBuffer;
 	private float near;
@@ -631,10 +630,12 @@ public class Graphics3D
 								drawX = Math.max(0f, Math.min(drawX, 1f));
 								float z = zL + drawX * (zR - zL);
 								
-								// Only update depth buffer if the new z value is closer
-								if (this.depthBuffer[this.vieww * y + x] < z) {
-									continue; // Skip if this pixel is not visible
+								// Only depth test if the compositingMode has the feature enabled. If compositingMode is not set, check if this target has depthBuffer enabled
+								if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthTestEnabled() == true)) && isDepthBufferEnabled()) 
+								{
+									if (this.depthBuffer[this.vieww * y + x] < z) { continue; } // Skip if this pixel is not visible
 								}
+								
 
 								float s = sL + drawX * (sR - sL);
 								float t = tL + drawX * (tR - tL);
@@ -656,18 +657,22 @@ public class Graphics3D
 								int backgroundPixel = rasterData[y * pgrp.getCanvas().getWidth() + x];
 								int blendedPixel;
 
-								if (appearance.getCompositingMode() != null && (appearance.getCompositingMode().getBlending() != CompositingMode.REPLACE) ) // Blend the background with the texture using compositing mode's blend
+								if (appearance.getCompositingMode() != null) // Blend the background with the texture using compositing mode's blend
 								{
 									blendedPixel = blendPixels(backgroundPixel, texPixel, alpha, appearance.getCompositingMode().getBlending());
 								} 
-								else // If compositingMode is in REPLACE mode, just use the texture's blend mode for blending
+								else // If compositingMode is absent, just use the texture's blend mode for blending
 								{
 									blendedPixel = blendPixels(backgroundPixel, texPixel, alpha, tex.getBlending());
 								}
 								rasterData[y * pgrp.getCanvas().getWidth() + x] = blendedPixel;
 
-								// Update depth buffer
-								this.depthBuffer[this.vieww * y + x] = z;
+								// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
+								if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthWriteEnabled())) && isDepthBufferEnabled()) 
+								{ 
+									this.depthBuffer[this.vieww * y + x] = z; 
+								}
+
 							} catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); }
 						}
 					}
@@ -802,11 +807,22 @@ public class Graphics3D
 
 		int outR, outG, outB, outA;
 
+		int fgAlpha, fgColor;
+
 		float alphaNorm;
 
 		switch (blendMode)
 		{
 			// CompositingMode.REPLACE isn't handled in here, as the result will just be one of the Texture2D modes.
+			case CompositingMode.REPLACE:
+				// If the foreground has transparency, we have to blend with the background
+				 fgAlpha = (foreground >> 24) & 0xFF; // Extract alpha from the foreground
+				 fgColor = foreground & 0x00FFFFFF;    // Extract color from the foreground
+
+				// Replace the background color with the foreground color
+				// Use the foreground alpha directly
+				return (fgAlpha << 24) | fgColor; // Combine alpha and color
+
 			case CompositingMode.ALPHA_ADD:
 				alphaNorm = alpha / 255f;
 				outR = (int) (fgR * alphaNorm);
@@ -846,9 +862,9 @@ public class Graphics3D
 
 			// Texture blend modes
 			case Texture2D.FUNC_REPLACE:
-				// If the foreground has transparency, we have to blend with the background. TODO: UNTESTED
-				int fgAlpha = (foreground >> 24) & 0xFF; // Extract alpha from the foreground
-				int fgColor = foreground & 0x00FFFFFF;    // Extract color from the foreground
+				// If the foreground has transparency, we have to blend with the background.
+				 fgAlpha = (foreground >> 24) & 0xFF; // Extract alpha from the foreground
+				 fgColor = foreground & 0x00FFFFFF;    // Extract color from the foreground
 
 				// Replace the background color with the foreground color
 				// Use the foreground alpha directly
