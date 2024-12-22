@@ -18,6 +18,8 @@ package javax.microedition.m3g;
 
 import java.util.Hashtable;
 
+import javax.microedition.m3g.Transform;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.awt.Color;
@@ -25,7 +27,6 @@ import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Polygon;
-import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 
 import org.recompile.mobile.Mobile;
@@ -36,7 +37,7 @@ public class Graphics3D
 
 	public static final int ANTIALIAS = 2;
 	public static final int DITHER = 4;
-	public static final int OVERWRITE = 16;
+	public static final int OVERWRITE = 16; // This might be unused here, as SW rasterization gives us direct control over pixels
 	public static final int TRUE_COLOR = 8;
 
 
@@ -630,15 +631,44 @@ public class Graphics3D
 								drawX = Math.max(0f, Math.min(drawX, 1f));
 								float z = zL + drawX * (zR - zL);
 								
-								if (this.depthBuffer[this.vieww * y + x] < z) { continue; } // skip drawing, as it won't be visible
-								else { this.depthBuffer[this.vieww * y + x] = z; }
+								// Only update depth buffer if the new z value is closer
+								if (this.depthBuffer[this.vieww * y + x] < z) {
+									continue; // Skip if this pixel is not visible
+								}
 
 								float s = sL + drawX * (sR - sL);
 								float t = tL + drawX * (tR - tL);
-								rasterData[y * pgrp.getCanvas().getWidth() + x] = teximg.getConvertedPixel(Math.round(s), Math.round(t));
-							} catch (Exception ex) {
-								ex.printStackTrace();
-							}
+								int texPixel = teximg.getConvertedPixel(Math.round(s), Math.round(t));
+
+								// Extract the alpha channel from the texture pixel
+								int alpha = (texPixel >> 24) & 0xFF; // Assuming ARGB format
+
+								if(appearance.getCompositingMode() != null) // Some games don't set up a compositingMode, so check it before using its threshold
+								{
+									if (alpha < (int) (appearance.getCompositingMode().getAlphaThreshold() * 255)) { continue; } // Skip transparent pixels below the alpha threshold
+								}
+								else 
+								{
+									if (alpha == 0) { continue; }
+								}
+
+								// Blend the pixel with the background
+								int backgroundPixel = rasterData[y * pgrp.getCanvas().getWidth() + x];
+								int blendedPixel;
+
+								if (appearance.getCompositingMode() != null && (appearance.getCompositingMode().getBlending() != CompositingMode.REPLACE) ) // Blend the background with the texture using compositing mode's blend
+								{
+									blendedPixel = blendPixels(backgroundPixel, texPixel, alpha, appearance.getCompositingMode().getBlending());
+								} 
+								else // If compositingMode is in REPLACE mode, just use the texture's blend mode for blending
+								{
+									blendedPixel = blendPixels(backgroundPixel, texPixel, alpha, tex.getBlending());
+								}
+								rasterData[y * pgrp.getCanvas().getWidth() + x] = blendedPixel;
+
+								// Update depth buffer
+								this.depthBuffer[this.vieww * y + x] = z;
+							} catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); }
 						}
 					}
 				}
@@ -755,4 +785,106 @@ public class Graphics3D
 		this.viewh = height;
 	}
 
+
+	/* Helper Methods */
+
+	// This one is used for alpha pixel blending, supports both CompositingMode and Texture2D Blending modes
+	private int blendPixels(int background, int foreground, int alpha, int blendMode) 
+	{
+		int bgA = (background >> 24) & 0xFF;
+		int bgR = (background >> 16) & 0xFF;
+		int bgG = (background >> 8) & 0xFF;
+		int bgB = background & 0xFF;
+
+		int fgR = (foreground >> 16) & 0xFF;
+		int fgG = (foreground >> 8) & 0xFF;
+		int fgB = foreground & 0xFF;
+
+		int outR, outG, outB, outA;
+
+		float alphaNorm;
+
+		switch (blendMode)
+		{
+			// CompositingMode.REPLACE isn't handled in here, as the result will just be one of the Texture2D modes.
+			case CompositingMode.ALPHA_ADD:
+				alphaNorm = alpha / 255f;
+				outR = (int) (fgR * alphaNorm);
+				outG = (int) (fgG * alphaNorm);
+				outB = (int) (fgB * alphaNorm);
+
+				// Add to the background color
+				outR = Math.min(255, outR + bgR);
+				outG = Math.min(255, outG + bgG);
+				outB = Math.min(255, outB + bgB);
+				outA = bgA + (int)(alpha * (1 - (bgA / 255f)));
+				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
+
+			case CompositingMode.ALPHA:
+				alphaNorm = alpha / 255f;
+				outR = (int) (((fgR * alphaNorm) + (bgR * (1 - alphaNorm))));
+				outG = (int) (((fgG * alphaNorm) + (bgG * (1 - alphaNorm))));
+				outB = (int) ((((fgB * alphaNorm) + (bgB * (1 - alphaNorm)))));
+				outA = (int) ((bgA * (1 - alphaNorm) + alpha)); 
+				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
+
+			case CompositingMode.MODULATE:
+				// Multiply the source color by the destination color TODO: UNTESTED
+				outR = (int) ((fgR * bgR) / 255);
+				outG = (int) ((fgG * bgG) / 255);
+				outB = (int) ((fgB * bgB) / 255);
+				outA = (foreground >> 24) & 0xFF; // Keep alpha from the foreground
+				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
+
+			case CompositingMode.MODULATE_X2:
+				// Multiply the source color by the destination color and double the source color TODO: UNTESTED
+				outR = (int) (((2 * fgR) * bgR) / 255);
+				outG = (int) (((2 * fgG) * bgG) / 255);
+				outB = (int) (((2 * fgB) * bgB) / 255);
+				outA = (foreground >> 24) & 0xFF; // Keep alpha from the foreground
+				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
+
+			// Texture blend modes
+			case Texture2D.FUNC_REPLACE:
+				// If the foreground has transparency, we have to blend with the background. TODO: UNTESTED
+				int fgAlpha = (foreground >> 24) & 0xFF; // Extract alpha from the foreground
+				int fgColor = foreground & 0x00FFFFFF;    // Extract color from the foreground
+
+				// Replace the background color with the foreground color
+				// Use the foreground alpha directly
+				return (fgAlpha << 24) | fgColor; // Combine alpha and color
+
+
+			case Texture2D.FUNC_MODULATE:
+				// Multiply color components TODO: UNTESTED
+				return ((fgR * bgR / 255) << 16) | ((fgG * bgG / 255) << 8) | (fgB * bgB / 255);
+
+			case Texture2D.FUNC_DECAL:
+				// TODO: Implement according to the Decal blending mode
+				break;
+
+			case Texture2D.FUNC_BLEND:
+				alphaNorm = alpha / 255f;
+				outR = (int) ((fgR * alphaNorm) + (bgR * (1 - alphaNorm)));
+				outG = (int) ((fgG * alphaNorm) + (bgG * (1 - alphaNorm)));
+				outB = (int) ((fgB * alphaNorm) + (bgB * (1 - alphaNorm)));
+				outA = (int) ((alpha * alphaNorm) + (bgA * (1 - alphaNorm)));
+				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
+
+			case Texture2D.FUNC_ADD:
+				// Extract color components from background and foreground. TODO: UNTESTED
+	
+				// Add the colors and clamp to [0, 255]
+				outR = Math.min(Math.max((bgR + fgR), 0), 255);
+				outG = Math.min(Math.max((bgG + fgG), 0), 255);
+				outB = Math.min(Math.max((bgB + fgB), 0), 255);
+	
+				// Return the resulting color with full opacity
+				return (255 << 24) | (outR << 16) | (outG << 8) | outB;
+
+			default:
+				return background; // Fallback
+		}
+		return background; // Default return
+	}
 }

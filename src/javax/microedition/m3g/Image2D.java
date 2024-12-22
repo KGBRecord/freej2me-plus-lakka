@@ -107,11 +107,9 @@ public class Image2D extends Object3D
 				 * are unsigned (as there will be 256 entries in the palette), while java treats its native types
 				 * as signed. So we are required to do that bitwise AND operation to make them unsigned when reading
 				*/
-				this.image[i * bpp() + k] = palette[(image[i] & 0xFF) * bpp() + k];
+				this.image[i * bpp() + k] = (byte) (palette[(image[i] & 0xFF) * bpp() + k] & 0xFF);
 			}
 		}
-		//this.image = image;
-		//this.palette = palette;
 	}
 
 	public Image2D(int format, Object image)
@@ -140,7 +138,8 @@ public class Image2D extends Object3D
 		int bpp = this.bpp();
 		this.image = new byte[this.width * this.height * bpp];
 
-		for (int row = 0; row < this.height; row++)
+		for (int row = 0; row < this.height; row++) 
+		{
 			for (int col = 0; col < this.width; col++)
 			{
 				img.getPixel(col, row, buf);
@@ -150,6 +149,7 @@ public class Image2D extends Object3D
 						(byte) buf[ch % bppSrc];
 				}
 			}
+		}
 	}
 
 
