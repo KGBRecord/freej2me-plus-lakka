@@ -32,6 +32,7 @@ public class RecordStore
 	public static final int AUTHMODE_ANY = 1;
 	public static final int AUTHMODE_PRIVATE = 0;
 
+	private static Vector<RecordStore> openRecordStores = new Vector<RecordStore>();
 
 	private String name;
 
@@ -287,7 +288,10 @@ public class RecordStore
 	{ 
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Record Store is not open at this time"); }
 
+		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Close Record");
 		if (--recordsOpened > 0) { return; }
+
+		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> No more stores opened for " + name + ", cleaning up.");
 
 		if (listeners != null) { listeners.removeAllElements(); }
 
@@ -308,10 +312,12 @@ public class RecordStore
 		}
 	}
 
-	public static void deleteRecordStore(String recordStoreName)
+	public static void deleteRecordStore(String recordStoreName) throws RecordStoreException
 	{
+		if(recordStoreIsOpen) { throw new RecordStoreException("Cannot delete an open record store"); }
 		try
 		{
+			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Deleting RecordStore "+recordStoreName);
 			File fstore = new File(Mobile.getPlatform().dataPath + "./rms/"+Mobile.getPlatform().loader.suitename+"/"+recordStoreName);
 			fstore.delete();
 		}
@@ -355,31 +361,25 @@ public class RecordStore
 	public byte[] getRecord(int recordId) throws InvalidRecordIDException, RecordStoreException
 	{
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the record of a closed Record Store"); }
-		if(recordId > records.size()-1) { throw new InvalidRecordIDException("setRecord: Invalid Record ID: "+recordId); }
 		
+		if(recordId == 0) { recordId++; } // Records should always start at ID 1
+
+		if(recordId > records.size()-1) { throw new InvalidRecordIDException("getRecord: Invalid Record ID: "+recordId); }
+
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> getRecord("+recordId+")");
 
-		try
-		{
-			byte[] t = records.get(recordId);
-			return t.length < 1 ? null : t.clone();
-		}
-		catch (Exception e)
-		{
-			Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "(getRecord) Record Store Exception: "+recordId);
-			throw new RecordStoreException();
-		}
+		byte[] t = records.get(recordId);
+		if(t == null || t.length < 1) { throw new InvalidRecordIDException("getRecord: Invalid Record ID (empty): "+recordId); }
+		return t.clone();
 	}
 
 	public int getRecord(int recordId, byte[] buffer, int offset) throws InvalidRecordIDException, RecordStoreException
 	{
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the record of a closed Record Store"); }
-		if(recordId > records.size()-1) { throw new InvalidRecordIDException("setRecord: Invalid Record ID: "+recordId); }
+		if(recordId > records.size()-1) { throw new InvalidRecordIDException("getRecord: Invalid Record ID: "+recordId); }
 
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> getRecord(id, buffer, offset)");
 		byte[] temp = getRecord(recordId);
-
-		if(temp == null) { return 0; }
 
 		int len = temp.length;
 
@@ -393,7 +393,7 @@ public class RecordStore
 	public int getRecordSize(int recordId) throws InvalidRecordIDException, RecordStoreException
 	{
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the record's size on a closed Record Store"); }
-		if(recordId > records.size()-1) { throw new InvalidRecordIDException("setRecord: Invalid Record ID: "+recordId); }
+		if(recordId > records.size()-1) { throw new InvalidRecordIDException("getRecord: Invalid Record ID: "+recordId); }
 
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Get Record Size");
 		
@@ -503,16 +503,12 @@ public class RecordStore
 	{
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot set record on a closed Record Store"); }
 
-		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Set Record "+recordId+" in "+name);
+		if(recordId == 0) { recordId++; } // Records should always start at ID 1
+
 		if(recordId > records.size()-1) { throw new InvalidRecordIDException("setRecord: Invalid Record ID: "+recordId); }
-		
-		if (recordId == records.size()-1) 
-		{
-			Mobile.log(Mobile.LOG_INFO, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> "+recordId+" in "+name + " has no data yet, creating it now as a workaround.");
-			addRecord(newData, offset, numBytes);
-			return;
-		}
-		
+
+		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Set Record "+recordId+" in "+name);
+
 		try
 		{
 			byte[] rec = new byte[]{};
@@ -541,7 +537,7 @@ public class RecordStore
 
 	public void setRecord(int recordId, byte[] newData, int offset, int numBytes, int tag) throws RecordStoreException, InvalidRecordIDException
 	{
-		Mobile.log(Mobile.LOG_INFO, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Set Record with tag not implemented yet, setting record without tag instead");
+		Mobile.log(Mobile.LOG_WARNING, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Set Record with tag not implemented yet, setting record without tag instead");
 		setRecord(recordId, newData, offset, numBytes);
 	}
 
