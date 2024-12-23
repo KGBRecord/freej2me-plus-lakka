@@ -113,11 +113,13 @@ public class Sound
 					if(player == null || !isPrevPlayerTone)  // check for null because release() can be called after all.
 					{
 						if(Mobile.dumpAudioStreams) { Manager.dumpAudioStream(new ByteArrayInputStream(data), "audio/x-tone-seq"); } // Dump original OTA as well
+						if(player != null) { player.close(); }
 						player = Manager.createPlayer(new ByteArrayInputStream(convertToMidi(data)), "audio/x-tone-seq"); 
 						isPrevPlayerTone = true; 
 					}
 					else
 					{
+						player.stop();
 						player.deallocate();
 						((ToneControl) player.getControl("ToneControl")).setSequence(convertToMidi(data));
 					}
@@ -134,7 +136,6 @@ public class Sound
 				else { Mobile.log(Mobile.LOG_WARNING, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + " couldn't find what format this is. Passing as FORMAT_WAV."); format = "audio/wav";}
 
 				player = Manager.createPlayer(new ByteArrayInputStream(data), format);
-				player.realize();
 				player.prefetch();
 				isPrevPlayerTone = false;
 			}
