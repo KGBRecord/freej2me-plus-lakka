@@ -16,8 +16,6 @@
 */
 package javax.microedition.lcdui;
 
-import java.awt.Rectangle;
-
 import org.recompile.mobile.PlatformGraphics;
 
 public class Graphics
@@ -36,7 +34,10 @@ public class Graphics
 	protected int translateX = 0;
 	protected int translateY = 0;
 
-	protected Rectangle clip;
+	protected int clipX = 0;
+	protected int clipY = 0;
+	protected int clipWidth = 0;
+	protected int clipHeight = 0;
 
 	protected int color = 0xFFFFFF;
 	protected Font font = Font.getDefaultFont();
@@ -79,7 +80,7 @@ public class Graphics
 
 	public int getColor() { return color; }
 
-	public int getDisplayColor(int color) { return color; }
+	public int getDisplayColor(int trycolor) { return trycolor; }
 
 	public Font getFont() { return font; }
 
@@ -104,28 +105,45 @@ public class Graphics
 
 	public void setClip(int x, int y, int width, int height) { }
 
-	public int getClipHeight() { return clip.height; }
+	public int getClipHeight() { return clipHeight; }
 
-	public int getClipWidth() { return clip.width; }
+	public int getClipWidth() { return clipWidth; }
 
-	public int getClipX() { return clip.x; }
+	public int getClipX() { return clipX; }
 
-	public int getClipY() { return clip.y; }
+	public int getClipY() { return clipY; }
 
-	public void translate(int x, int y) { }
+	public void translate(int x, int y)
+	{
+		translateX += x;
+		translateY += y;
+	}
 
-	public int getTranslateX() { return translateX; }
+	public int getTranslateX()
+	{
+		return translateX;
+	}
 
-	public int getTranslateY() { return translateY; }
+	public int getTranslateY()
+	{
+		return translateY;
+	}
 
-	public void setColor(int RGB) { }
+	public void setColor(int RGB) { color = RGB; }
 
-	public void setColor(int red, int green, int blue) { }
+	public void setColor(int red, int green, int blue) { color = (red<<16) + (green<<8) + blue; }
 
 	public void setFont(Font newfont) { font = newfont; }
 
-	public void setGrayScale(int value) { }
+	public void setGrayScale(int value)
+	{
+		value = value & 0xFF;
+		setColor((value<<16) + (value<<8) + value);
+	}
 
-	public void setStrokeStyle(int style) { }
+	public void setStrokeStyle(int style)
+	{
+		strokeStyle = style;
+	}
 
 }
