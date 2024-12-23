@@ -34,6 +34,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 {
 	protected BufferedImage canvas;
 	protected Graphics2D gc;
+	protected int[] canvasData;
 
 	protected Color awtColor;
 
@@ -72,6 +73,9 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		canvas = image.getCanvas();
 		gc = canvas.createGraphics();
 
+		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
+
+
 		platformGraphics = this;
 
 		clipX = 0;
@@ -103,25 +107,52 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		gc.clearRect(x, y, width, height);
 	}
 
-	public void copyArea(int subx, int suby, int subw, int subh, int x, int y, int anchor)
+	public void copyArea(int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) 
 	{
-		if (subw <= 0 || subh <= 0) { return; }
-
-		x = AnchorX(x, subw, anchor);
-		y = AnchorY(y, subh, anchor);
-
-		BufferedImage sub = new BufferedImage(subw, subh, BufferedImage.TYPE_INT_ARGB);
-
-		// Copy the pixels from the source area to the new image. getSubImage() makes both images contain the same data reference
-		for (int i = 0; i < subw; i++) 
+		if (width <= 0 || height <= 0) { return; }
+	
+		x_dest = AnchorX(x_dest, width, anchor);
+		y_dest = AnchorY(y_dest, height, anchor);
+	
+		int tx = getTranslateX();
+		int ty = getTranslateY();
+	
+		// Check if the source area is within bounds before doing any draw operations
+		if (x_src + tx < 0 || y_src + ty < 0 || 
+			x_src + tx + width > canvas.getWidth() || 
+			y_src + ty + height > canvas.getHeight()) {
+			throw new IllegalArgumentException("Source area exceeds the bounds of the graphics object.");
+		}
+	
+		/* 
+		 * A neat trick here is that we don't need to check for types, as the copied
+		 * subregion will always have the same data type as the original canvas it
+		 * was copied from, be it INT_RGB, INT_ARGB, etc.
+		 */
+		// Create a data buffer to hold the copied pixel area
+		final int[] subPixels = new int[width * height];
+	
+		for (int j = 0; j < height; j++) 
 		{
-			for (int j = 0; j < subh; j++) 
+			for (int i = 0; i < width; i++) 
 			{
-				sub.setRGB(i, j, canvas.getRGB(subx + i, suby + j));
+				subPixels[j * width + i] = canvasData[(y_src + ty + j) * canvas.getWidth() + (x_src + tx + i)];
 			}
 		}
-
-		gc.drawImage(sub, x, y, null);
+	
+		for (int j = 0; j < height; j++) 
+		{
+			for (int i = 0; i < width; i++) 
+			{
+				// The image data CAN go out of the destination bounds, we just can't draw it whenever it does.
+				if (x_dest + i >= 0 && y_dest + j >= 0 && 
+					x_dest + i < canvas.getWidth() && 
+					y_dest + j < canvas.getHeight()) 
+				{
+					canvasData[(y_dest + j) * canvas.getWidth() + (x_dest + i)] = subPixels[j * width + i];
+				}
+			}
+		}
 	}
 
 	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
@@ -193,11 +224,11 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		try
 		{
 			BufferedImage sub = image.platformImage.getCanvas().getSubimage(x, y, width, height);
+			final int[] pixels = ((DataBufferInt) sub.getRaster().getDataBuffer()).getData();
 
 			// Apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
 			if(Mobile.renderLCDMask)
 			{
-				final int[] pixels = ((DataBufferInt) sub.getRaster().getDataBuffer()).getData();
 				for(int i = 0; i < pixels.length; i++) { pixels[i] = pixels[i] & Mobile.lcdMaskColors[Mobile.maskIndex]; }
 			}
 
@@ -206,13 +237,13 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			{
 				// Create an overlay image for the fun lights
 				BufferedImage overlayImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+				int[] overlayData = ((DataBufferInt)overlayImage.getRaster().getDataBuffer()).getData();
+				drawFunLights(overlayData, width, height);
 
-				drawFunLights(overlayImage, width, height);
-
-				gc.drawImage(sub, x, y, null);
+				System.arraycopy(pixels, 0, canvasData, y * canvas.getWidth() + x, pixels.length);
 				gc.drawImage(overlayImage, x, y, null);
-			} 
-			else { gc.drawImage(sub, x, y, null); }
+			}
+			else { System.arraycopy(pixels, 0, canvasData, y * canvas.getWidth() + x, pixels.length); }
 		}
 		catch (Exception e)
 		{
@@ -679,8 +710,6 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		}
 		if (Math.abs(scanlength) < width) { throw new IllegalArgumentException("scanlength must be >= width");}
 	
-		// Temporary canvas data array to read raw pixel data from.
-		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		// Just like DrawPixels(byte), we only handle BYTE_1_GRAY_VERTICAL and BYTE_1_GRAY yet
 		switch (format) 
 		{
@@ -885,10 +914,8 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			Motorola FunLights
 		****************************
 	*/
-	public void drawFunLights(BufferedImage overlayImage, int width, int height) 
-	{
-		int[] pixelData = ((DataBufferInt)overlayImage.getRaster().getDataBuffer()).getData();
-		
+	public void drawFunLights(int[] pixelData, int width, int height) 
+	{		
 		// Set pixels for the fun lights directly
 		for (int y = 0; y < height; y++) 
 		{
@@ -914,12 +941,11 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		}
 	
 		// Now apply a Gaussian blur using direct pixel manipulation
-		applyGaussianBlur(overlayImage, width, height);
+		applyGaussianBlur(pixelData, width, height);
 	}
 	
-	private void applyGaussianBlur(BufferedImage image, int width, int height) 
+	private void applyGaussianBlur(int[] pixels, int width, int height) 
 	{
-		final int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
 		final int[] result = new int[pixels.length];
 	
 		int kernelSize = 7;
