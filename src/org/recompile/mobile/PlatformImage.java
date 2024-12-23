@@ -197,12 +197,7 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		if(width < 1) { width = 1; }
 		if(height < 1) { height = 1; }
 
-		/*
-		 * We can also apply the alpha speedhack here too, assuming the game isn't trying to read
-		 * from a non-alpha image (RGB) as ARGB anyway. 
-		 */
-		if(!processAlpha && Mobile.noAlphaOnBlankImages) { canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB); }
-		else { canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB); }
+		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		
 		createGraphics();
 
