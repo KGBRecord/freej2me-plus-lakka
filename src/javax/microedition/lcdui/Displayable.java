@@ -289,9 +289,9 @@ public abstract class Displayable
 		}
 		else if (key == Canvas.KEY_NUM5 || key == Canvas.FIRE || key == Canvas.KEY_SOFT_LEFT) 
 		{
-			listCommands = false;
 			doLeftCommand();
 			currentCommand = 0;
+			listCommands = false;
 		}
 		else if (key == Canvas.KEY_SOFT_RIGHT) 
 		{
