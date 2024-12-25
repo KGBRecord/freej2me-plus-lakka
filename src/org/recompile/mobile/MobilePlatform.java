@@ -71,6 +71,8 @@ public class MobilePlatform
 	private long elapsedTime = 0;
 	private long sleepTime = 0;
 
+	private long lastEventTime = System.nanoTime();
+
 	// Whether the user has toggled the ShowFPS option
 	private final int OVERLAY_WIDTH = 80;
 	private final int OVERLAY_HEIGHT = 20;
@@ -80,54 +82,55 @@ public class MobilePlatform
     private int fps = 0;
 
 	public static boolean isLibretro = false;
-	public static boolean isSDL = false;
 
 	public MIDletLoader loader;
-	private EventQueue eventQueue;
 	public static Displayable displayable;
-
-	public Runnable painter;
 
 	public String dataPath = "";
 
 	public volatile int keyState = 0;
+
+	// MobilePlatform will handle the inputs as well
+	public static boolean[] pressedKeys = new boolean[128];
+	private static boolean[] previouslyPressed = new boolean[128];
+
+	public static int[] pointerPressed = new int[3];
+	public static int[] pointerReleased = new int[3];
+	public static int[] pointerDragged = new int[3];
+
+	public Runnable painter;
 
 	public MobilePlatform(int width, int height)
 	{
 		resizeLCD(width, height);
 
 		Mobile.setGraphics3D(new Graphics3D());
-		
-		eventQueue = new EventQueue(this);
 
 		painter = new Runnable()
 		{
 			public void run()
 			{
-				// Placeholder //
+					// Placeholder //
 			}
 		};
 
-		// SDL is the only one that needs this, since its runnable ties input and render logic for TAS support
-		if(isSDL)
+		/*
+		 * If a jar only updates the screen after receiving an input (FreeJ2ME only sends inputs after the jar 
+		 * requests a screen update) force input updates to happen here so that the app doesn't get stuck.
+		 */
+		final ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
+
+		service.scheduleAtFixedRate(() -> 
 		{
-			final ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-
-			service.scheduleAtFixedRate(() -> 
+			// If 100ms have passed and a new painter run did not happen, force it to happen
+			if(lastRenderTime - System.nanoTime() < -100_000_000)
 			{
-				// If 100ms have passed and a new painter run did not happen, force it to happen
-				if(lastRenderTime - System.nanoTime() < -100_000_000)
-				{
-					painter.run();
-				}
-			}, 100_000_000, 100_000_000, TimeUnit.NANOSECONDS); // run 20 times per second
-		}
-		
+				processInputs();
+				lastRenderTime = System.nanoTime();
+			}
+		}, 50_000_000, 50_000_000, TimeUnit.NANOSECONDS); // run every 50ms
+
 	}
-
-	public void startEventQueue() { eventQueue.start(); }
-
-	public void dropQueuedEvents() { eventQueue.dropEvents(); }
 
 	public void resizeLCD(int width, int height)
 	{
@@ -159,63 +162,32 @@ public class MobilePlatform
 
 	public void keyPressed(int keycode)
 	{
-		eventQueue.submit(new PlatformEvent(PlatformEvent.KEY_PRESSED, keycode));
-	}
-
-	public void keyReleased(int keycode)
-	{
-		eventQueue.submit(new PlatformEvent(PlatformEvent.KEY_RELEASED, keycode));
-	}
-
-	public void keyRepeated(int keycode)
-	{
-		eventQueue.submit(new PlatformEvent(PlatformEvent.KEY_REPEATED, keycode));
-	}
-
-	public void pointerDragged(int x, int y)
-	{
-		eventQueue.submit(new PlatformEvent(PlatformEvent.POINTER_DRAGGED, x, y));
-	}
-
-	public void pointerPressed(int x, int y)
-	{
-		eventQueue.submit(new PlatformEvent(PlatformEvent.POINTER_PRESSED, x, y));
-	}
-
-	public void pointerReleased(int x, int y)
-	{
-		eventQueue.submit(new PlatformEvent(PlatformEvent.POINTER_RELEASED, x, y));
-	}
-
-
-	public void doKeyPressed(int keycode)
-	{
 		updateKeyState(Mobile.getGameAction(keycode), 1);
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyPressed(keycode); }
 	}
 
-	public void doKeyReleased(int keycode)
+	public void keyReleased(int keycode)
 	{
 		updateKeyState(Mobile.getGameAction(keycode), 0);
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyReleased(keycode); }
 	}
 
-	public void doKeyRepeated(int keycode)
+	public void keyRepeated(int keycode)
 	{
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyRepeated(keycode); }
 	}
 
-	public void doPointerDragged(int x, int y)
+	public void pointerDragged(int x, int y)
 	{
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerDragged(x, y); }
 	}
 
-	public void doPointerPressed(int x, int y)
+	public void pointerPressed(int x, int y)
 	{
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerPressed(x, y); }
 	}
 
-	public void doPointerReleased(int x, int y)
+	public void pointerReleased(int x, int y)
 	{
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerReleased(x, y); }
 	}
@@ -327,100 +299,68 @@ public class MobilePlatform
 
 	public final void flushGraphics(Image img, int x, int y, int width, int height)
 	{
-		limitFps();
 		gc.flushGraphics(img, x, y, width, height);
 		
 		if(!showFPS.equals("Off")) { showFPS();}
-		painter.run();
+		processInputs();
 
-		//System.gc();
+		limitFps();
 	}
 
-
-	static class PlatformEvent
+	public final void processInputs() 
 	{
-		static final int KEY_PRESSED = 1;
-		static final int KEY_REPEATED = 2; 
-		static final int KEY_RELEASED = 3;
-		static final int POINTER_PRESSED = 4;
-		static final int POINTER_DRAGGED = 5;
-		static final int POINTER_RELEASED = 6;
-
-		int type;
-		int code;
-		int code2;
-
-		PlatformEvent(int type, int code)
+		if(pointerPressed[0] == 1) 
 		{
-			this.type = type;
-			this.code = code;
+			pointerPressed(pointerPressed[1], pointerPressed[2]);
+			pointerPressed[0] = 0;
 		}
 
-		PlatformEvent(int type, int x, int y)
+		if(pointerReleased[0] == 1) 
 		{
-			this.type = type;
-			this.code = x;
-			this.code2 = y;
-		}
-	}
-
-	/**
-	 * This class exists so we don't block main AWT EventQueue.
-	 */
-	private static class EventQueue implements Runnable	
-	{
-		BlockingQueue<PlatformEvent> queue = new LinkedBlockingQueue<>();
-		MobilePlatform platform;
-		private volatile Thread thread;
-
-		public EventQueue(MobilePlatform platform) { this.platform = platform; }
-
-		public void start()	{
-			if (thread == null) 
-			{
-				thread = new Thread(this, "MobilePlatformEventQueue");
-				thread.start();
-			}
+			pointerReleased(pointerReleased[1], pointerReleased[2]);
+			pointerReleased[0] = 0;
+			pointerDragged[0] = 0;
 		}
 
-		public void run() {
-			while (!Thread.currentThread().isInterrupted()) 
+		if(pointerDragged[0] == 1) 
+		{
+			pointerDragged(pointerDragged[1], pointerDragged[2]);
+		}
+
+		for(int i = 0; i < pressedKeys.length; i++) 
+		{
+			/* 
+			 * We'll poll new inputs 1000 times per second, any inputs done in a smaller interval
+			 * wil be ignored. This is actually a workaround for games that don't work well with a
+			 * JVM spanning multiple cores (e.g. Some versions of Ratatouille) which can result in
+			 * the input thread being locked sending many commands during transitions, commands 
+			 * that the game will then have to process in its own time, making it seem like it's not
+			 * responding to inputs.
+			 */
+			if(lastEventTime - System.nanoTime() < -10_000_000) 
 			{
-				try 
+				if(pressedKeys[i] == true && previouslyPressed[i] == true) 
 				{
-					PlatformEvent event = queue.take();
-					handleEvent(event);
+					lastEventTime = System.nanoTime(); 
+					keyRepeated(Mobile.getMobileKey(i));
 				}
-				catch (InterruptedException e) 
+				else if(pressedKeys[i] == true && previouslyPressed[i] == false) 
 				{
-					Thread.currentThread().interrupt();
-					break;
-				} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "exception in event handler: "+e.getMessage()); }
-			}
-
-			thread = null;
-		}
-
-		public void submit(PlatformEvent event) { queue.offer(event); }
-
-		public void dropEvents() 
-		{
-			while (true) 
-			{
-				if (queue.poll() == null) { break; }
+					lastEventTime = System.nanoTime(); 
+					keyPressed(Mobile.getMobileKey(i));
+					previouslyPressed[i] = true;
+					
+				}
+				else if (pressedKeys[i] == false && previouslyPressed[i] == true)
+				{
+					lastEventTime = System.nanoTime(); 
+					keyReleased(Mobile.getMobileKey(i));
+					previouslyPressed[i] = false;
+				}
 			}
 		}
 
-		private void handleEvent(PlatformEvent event) 
-		{
-			if (event.type == PlatformEvent.KEY_PRESSED) {platform.doKeyPressed(event.code); }
-			else if (event.type == PlatformEvent.KEY_REPEATED) { platform.doKeyRepeated(event.code); }
-			else if (event.type == PlatformEvent.KEY_RELEASED) { platform.doKeyReleased(event.code); }
-			else if (event.type == PlatformEvent.POINTER_PRESSED) { platform.doPointerPressed(event.code, event.code2); }
-			else if (event.type == PlatformEvent.POINTER_DRAGGED) { platform.doPointerDragged(event.code, event.code2); }
-			else if (event.type == PlatformEvent.POINTER_RELEASED) { platform.doPointerReleased(event.code, event.code2); }
-		}
-
+		painter.run(); // Update the frontend's painter first to then process inputs
 	}
 
 	private void limitFps() 

@@ -131,8 +131,6 @@ public class Libretro
 
 		lio.start();
 		
-		Mobile.getPlatform().startEventQueue();
-
 		System.out.println("+READY");
 		System.out.flush();
 	}
@@ -147,11 +145,6 @@ public class Libretro
 			keytimer = new Timer();
 			keytask = new LibretroTimerTask();
 			keytimer.schedule(keytask, 0, 1);
-		}
-
-		public void stop()
-		{
-			keytimer.cancel();
 		}
 
 		private class LibretroTimerTask extends TimerTask
@@ -190,18 +183,22 @@ public class Libretro
 								//break;
 
 								case 2:	// joypad key up
-									mobikey = getMobileKeyJoy(code);
 									if (mobikey != 0)
 									{
-										keyUp(mobikey);
+										int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
+
+										MobilePlatform.pressedKeys[mobikey] = false;
+										pressedKeys[mobikeyN] = false;
 									}
 								break;
 
 								case 3: // joypad key down
-									mobikey = getMobileKeyJoy(code);
 									if (mobikey != 0)
 									{
-										keyDown(mobikey);
+										int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
+										
+										MobilePlatform.pressedKeys[mobikey] = true;
+										pressedKeys[mobikeyN] = true;
 									}
 								break;
 
@@ -443,28 +440,4 @@ public class Libretro
 		}
 	}
 
-	private void keyDown(int key)
-	{
-		int mobikeyN = (key + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
-
-		if (pressedKeys[mobikeyN] == false)
-		{
-			Mobile.getPlatform().keyPressed(key);
-		}
-		else
-		{
-			Mobile.getPlatform().keyRepeated(key);
-		}
-		pressedKeys[mobikeyN] = true;
-	}
-
-	private void keyUp(int key)
-	{
-		int mobikeyN = (key + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
-
-		Mobile.getPlatform().keyReleased(key);
-		pressedKeys[mobikeyN] = false;
-	}
-
-	private int getMobileKeyJoy(int keycode) { return Mobile.getMobileKey(keycode, true); }
 }

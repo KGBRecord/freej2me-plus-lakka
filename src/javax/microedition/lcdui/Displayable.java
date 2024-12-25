@@ -277,31 +277,34 @@ public abstract class Displayable
 
 	protected void keyPressedCommands(int key)
 	{
-		if(key == Canvas.KEY_NUM2 || key == Canvas.UP) 
+		if(!isValidating) 
 		{
-			currentCommand--;
-			if(currentCommand<0) { currentCommand = commands.size()-1; }
-		}
-		else if(key == Canvas.KEY_NUM8 || key == Canvas.DOWN) 
-		{
-			currentCommand++;
-			if(currentCommand>=commands.size()) { currentCommand = 0; }
-		}
-		else if (key == Canvas.KEY_NUM5 || key == Canvas.FIRE || key == Canvas.KEY_SOFT_LEFT) 
-		{
-			doLeftCommand();
-			currentCommand = 0;
-			listCommands = false;
-		}
-		else if (key == Canvas.KEY_SOFT_RIGHT) 
-		{
-			listCommands = false;
-			doRightCommand();
-			currentCommand = 0;
-		}
-		else { return; }
+			if(key == Canvas.KEY_NUM2 || key == Canvas.UP) 
+			{
+				currentCommand--;
+				if(currentCommand<0) { currentCommand = commands.size()-1; }
+			}
+			else if(key == Canvas.KEY_NUM8 || key == Canvas.DOWN) 
+			{
+				currentCommand++;
+				if(currentCommand>=commands.size()) { currentCommand = 0; }
+			}
+			else if (key == Canvas.KEY_NUM5 || key == Canvas.FIRE || key == Canvas.KEY_SOFT_LEFT) 
+			{
+				doLeftCommand();
+				currentCommand = 0;
+				listCommands = false;
+			}
+			else if (key == Canvas.KEY_SOFT_RIGHT) 
+			{
+				listCommands = false;
+				doRightCommand();
+				currentCommand = 0;
+			}
+			else { return; }
 
-		_invalidate(); 
+			_invalidate(); 
+		}
 	}
 
 	protected void doCommand(int index)
@@ -348,22 +351,19 @@ public abstract class Displayable
 	{
 		// zb3: TODO: consider queuing this
 		// the code below ensures this function is not reentrant
-		synchronized (Display.LCDUILock)
+		if (getDisplay().getCurrent() != this) { return; }
+
+		if (isValidating) 
 		{
-			if (getDisplay().getCurrent() != this) { return; }
+			Mobile.log(Mobile.LOG_ERROR, Displayable.class.getPackage().getName() + "." + Displayable.class.getSimpleName() + ": " + "Recursive invalidation attempt detected.");
+			Thread.dumpStack();
+		} 
+		else 
+		{
+			isValidating = true;
 
-			if (isValidating) 
-			{
-				Mobile.log(Mobile.LOG_ERROR, Displayable.class.getPackage().getName() + "." + Displayable.class.getSimpleName() + ": " + "Recursive invalidation attempt detected.");
-				Thread.dumpStack();
-			} 
-			else 
-			{
-				isValidating = true;
-
-				try { render(); } 
-				finally { isValidating = false; }
-			}
+			try { render(); } 
+			finally { isValidating = false; }
 		}
 	}
 }

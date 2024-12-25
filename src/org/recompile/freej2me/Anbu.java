@@ -84,15 +84,23 @@ public class Anbu
 	private boolean isFullscreen = false;
 	private boolean SDLInitialized = false;
 
-	private boolean useNokiaControls = false;
-	private boolean useSiemensControls = false;
-	private boolean useMotorolaControls = false;
+
+	// On keyboard, SDL follows AWT's convention
+	int inputKeycodes[] = new int[] { 
+		SDLK_Q, SDLK_W, 
+		SDLK_UP, SDLK_LEFT, SDLK_RETURN, SDLK_RIGHT, SDLK_DOWN, 
+		SDLK_KP_7, SDLK_KP_8, SDLK_KP_9, 
+		SDLK_KP_4, SDLK_KP_5, SDLK_KP_6, 
+		SDLK_KP_1, SDLK_KP_2, SDLK_KP_3, 
+		SDLK_E, SDLK_KP_0, SDLK_R
+	};
+
+	private static final int[] joypadKeycodes = {0x00, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0xFA, 0xFB, 0xFC, 0xFD};
+
 
 	SDL_Joystick joy = null;
 
 	private boolean[] pressedKeys = new boolean[128];
-
-	private Runnable painter;
 
 	public Anbu(String args[])
 	{
@@ -114,36 +122,12 @@ public class Anbu
 		}
 		if(args.length>=4) { scaleFactor = Integer.parseInt(args[3]); }
 
-		Mobile.getPlatform().isSDL = true;
 		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight));
 
 		/* TODO: Anbu/SDL has no way of enabling any settings outside of cmd args yet, a UI and code overhaul might be in order */
 
 		Mobile.config = new Config();
 		Mobile.config.onChange = new Runnable() { public void run() { settingsChanged(); } };
-
-		painter = new Runnable()
-		{
-			public void run()
-			{
-				try
-				{
-					/* Check if vibration commands have to be handled */
-					if(Mobile.vibrationDuration != 0) 
-					{
-						int vib = SDL_JoystickRumble(joy, (short) (Mobile.vibrationStrength & 0xFFFF), (short) (Mobile.vibrationStrength & 0xFFFF), Mobile.vibrationDuration);
-						Mobile.vibrationDuration = 0;
-					}
-					
-					sdl.paint();
-				}
-				catch (Exception e) { }
-			}
-		};
-
-		Mobile.getPlatform().setPainter(painter);
-
-		Mobile.getPlatform().startEventQueue();
 
 		if(file != null && Mobile.getPlatform().load(file))
 		{
@@ -169,6 +153,27 @@ public class Anbu
 
 			// Run jar
 			Mobile.getPlatform().runJar();
+
+
+			// Set painter once jar has been loaded
+			Mobile.getPlatform().setPainter(new Runnable()
+			{
+				public void run()
+				{
+					try
+					{
+						/* Check if vibration commands have to be handled */
+						if(Mobile.vibrationDuration != 0) 
+						{
+							int vib = SDL_JoystickRumble(joy, (short) (Mobile.vibrationStrength & 0xFFFF), (short) (Mobile.vibrationStrength & 0xFFFF), Mobile.vibrationDuration);
+							Mobile.vibrationDuration = 0;
+						}
+						
+						sdl.paint();
+					}
+					catch (Exception e) { }
+				}
+			});
 		}
 		else
 		{
@@ -240,14 +245,6 @@ public class Anbu
 		public void paint()
 		{
 			/* 
-			 * Normally, input reading should not be tied to the render logic, because that would softlock jars that only
-			 * send new render data after an input is registered (Ex: JBenchmark 2 and some other jars that use Form UI).
-			 * But for determinism in libTAS, inputs must be pulled synchronously with rendering, because libTAS processes
-			 * inputs (and a lot of other things) during frame boundaries, which is when the program calls its render function.
-			 */
-			processEvents();
-
-			/* 
 			 * Let's make resolution changes and adjust any relevant objects here, as it's right on the render path 
 			 * and it makes sure that the objects will be set correctly before being rendered.
 			 */
@@ -264,6 +261,14 @@ public class Anbu
 			SDL_UpdateTexture(texture, null, pixels, lcdWidth * 4);
 			SDL_RenderCopy(renderer, texture, null, null);
 			SDL_RenderPresent(renderer);
+
+			/* 
+			 * Normally, input reading should not be tied to the render logic, because that would softlock jars that only
+			 * send new render data after an input is registered (Ex: JBenchmark 2 and some other jars that use Form UI).
+			 * But for determinism in libTAS, inputs must be pulled synchronously with rendering, because libTAS processes
+			 * inputs (and a lot of other things) during frame boundaries, which is when the program calls its render function.
+			 */
+			processEvents();
 		}
 
 		public void processEvents()
@@ -346,6 +351,8 @@ public class Anbu
 					}
 					// printf("JoyKey:%d. Down:%s | cast:%s\n", key, event.type == SDL_JOYBUTTONDOWN ? "true" : "false",  keynames[findInputMappedFunction(key, JOYPAD_COMMAND)]);
 				}
+
+				// TODO: Analog and trigger inputs.
 
 				else if(event.type == SDL_JOYHATMOTION) 
 				{
@@ -456,7 +463,9 @@ public class Anbu
 					mouseX = event.button.x;
 					mouseY = event.button.y;
 					
-					Mobile.getPlatform().pointerPressed(event.button.x, event.button.y);
+					MobilePlatform.pointerPressed[0] = 1;
+					MobilePlatform.pointerPressed[1] = mouseX;
+					MobilePlatform.pointerPressed[2] = mouseY;
 
 					//printf("\npress coords-> X: %d | Y: %d", correctedMouseX, correctedMouseY);
 				}
@@ -464,12 +473,16 @@ public class Anbu
 				{
 					// Capture mouse button release to send to anbu.java
 					// calculateCorrectedMousePos(&event);
+					mouseX = event.button.x;
+					mouseY = event.button.y;
 				
 					if(mousePressed) 
 					{ 
 						mousePressed = false;
 						mouseDragged = false;
-						Mobile.getPlatform().pointerReleased(event.button.x, event.button.y);
+						MobilePlatform.pointerReleased[0] = 1;
+						MobilePlatform.pointerReleased[1] = mouseX;
+						MobilePlatform.pointerReleased[2] = mouseY;
 					}
 				}
 				else if(event.type == SDL_MOUSEMOTION) 
@@ -483,7 +496,9 @@ public class Anbu
 						// calculateCorrectedMousePos(&event);
 				
 						//printf("\ndrag coords-> X: %d | Y: %d", correctedMouseX, correctedMouseY);
-						Mobile.getPlatform().pointerDragged(mouseX, mouseY);
+						MobilePlatform.pointerDragged[0] = 1;
+						MobilePlatform.pointerDragged[1] = mouseX;
+						MobilePlatform.pointerDragged[2] = mouseY;
 					}
 				}
 			}
@@ -491,157 +506,41 @@ public class Anbu
 
 		private void keyDown(int key)
 		{
-			if (key == 0)
+			if (key == Integer.MIN_VALUE)
 			{
 				return;
 			}
-			
-			int mobikeyN = (key + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
-			if (pressedKeys[mobikeyN] == false)
-			{
-				Mobile.getPlatform().keyPressed(key);
-			}
-			else
-			{
-				Mobile.getPlatform().keyRepeated(key);
-			}
-			pressedKeys[mobikeyN] = true;
+			MobilePlatform.pressedKeys[key] = true;
 		}
 
 		private void keyUp(int key)
 		{
-			if (key == 0)
+			if (key == Integer.MIN_VALUE)
 			{
 				return;
 			}
 
-			int mobikeyN = (key + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
-			if (pressedKeys[mobikeyN] == true)
-			{
-				Mobile.getPlatform().keyReleased(key);					
-			}
-			pressedKeys[mobikeyN] = false;
+			MobilePlatform.pressedKeys[key] = false;
 		}
 
 		private int getMobileKey(int keycode)
-		{		
-			if(keycode == SDLK_KP_1) return Mobile.KEY_NUM7; // B
-			if(keycode == SDLK_KP_3) return Mobile.KEY_NUM9; // X
-			if(keycode == SDLK_X) return Mobile.KEY_POUND; // Y
-			if(keycode == SDLK_Z) return Mobile.KEY_STAR; // ???
-
-			
-			if(keycode == SDLK_C) return Mobile.KEY_NUM0; // Home
-			
-
-			if(keycode == SDLK_A) return Mobile.GAME_A; // Left Analog press
-			if(keycode == SDLK_S) return Mobile.GAME_B; // Right Analog press
-
-			if(keycode == SDLK_KP_7) return Mobile.KEY_NUM1; // L
-			if(keycode == SDLK_KP_9) return Mobile.KEY_NUM3; // R
-
-			// These keys are overridden by the "useXControls" variables
-			if(useNokiaControls) 
+		{
+			for(int i = 0; i < inputKeycodes.length; i++) 
 			{
-				if(keycode == SDLK_KP_5) { return Mobile.NOKIA_SOFT3; } // A
-				if(keycode == SDLK_RETURN) { return Mobile.NOKIA_SOFT1; } // -/Select
-				if(keycode == SDLK_BACKSPACE) { return Mobile.NOKIA_SOFT2; } // +/Start
-				if(keycode == SDLK_UP) { return Mobile.NOKIA_UP; }	// D-Pad Up
-				if(keycode == SDLK_DOWN) { return Mobile.NOKIA_DOWN; }  // D-Pad Down
-				if(keycode == SDLK_LEFT) { return Mobile.NOKIA_LEFT; }  // D-Pad Left
-				if(keycode == SDLK_RIGHT) { return Mobile.NOKIA_RIGHT; } // D-Pad Right
+				if(keycode == inputKeycodes[i]) { return Mobile.convertAWTKeycode(i);}
 			}
-			else if(useSiemensControls) 
-			{
-				if(keycode == SDLK_KP_5) { return Mobile.SIEMENS_FIRE; }
-				if(keycode == SDLK_RETURN) { return Mobile.SIEMENS_SOFT1; }
-				if(keycode == SDLK_BACKSPACE) { return Mobile.SIEMENS_SOFT2; }
-				if(keycode == SDLK_UP) { return Mobile.SIEMENS_UP; }
-				if(keycode == SDLK_DOWN) { return Mobile.SIEMENS_DOWN; }
-				if(keycode == SDLK_LEFT) { return Mobile.SIEMENS_LEFT; }
-				if(keycode == SDLK_RIGHT) { return Mobile.SIEMENS_RIGHT; }
-			}
-			else if(useMotorolaControls) 
-			{
-				if(keycode == SDLK_KP_5) { return Mobile.MOTOROLA_FIRE; }
-				if(keycode == SDLK_RETURN) { return Mobile.MOTOROLA_SOFT1; }
-				if(keycode == SDLK_BACKSPACE) { return Mobile.MOTOROLA_SOFT2; }
-				if(keycode == SDLK_UP) { return Mobile.MOTOROLA_UP; }
-				if(keycode == SDLK_DOWN) { return Mobile.MOTOROLA_DOWN; }
-				if(keycode == SDLK_LEFT) { return Mobile.MOTOROLA_LEFT; }
-				if(keycode == SDLK_RIGHT) { return Mobile.MOTOROLA_RIGHT; }
-			}
-			else // Standard keycodes
-			{
-				if(keycode == SDLK_KP_5) { return Mobile.KEY_NUM5; }
-				if(keycode == SDLK_RETURN) { return Mobile.NOKIA_SOFT1; }
-				if(keycode == SDLK_BACKSPACE) { return Mobile.NOKIA_SOFT2; }
-				if(keycode == SDLK_UP) { return Mobile.KEY_NUM2; }
-				if(keycode == SDLK_DOWN) { return Mobile.KEY_NUM8; }
-				if(keycode == SDLK_LEFT) { return Mobile.KEY_NUM4; }
-				if(keycode == SDLK_RIGHT) { return Mobile.KEY_NUM6; }
-			}	
-
-			return 0;
+			return Integer.MIN_VALUE;
 		}
 
 		private int getMobileKeyFromButton(int button)
 		{
-			if(button == 0x00) { return Mobile.KEY_NUM5; } // A - See below			
-			if(button == 0x01) return Mobile.KEY_NUM7; // B
-			if(button == 0x02) return Mobile.KEY_NUM9; // X
-			if(button == 0x03) return Mobile.KEY_POUND; // Y
-			if(button == 0x05) return Mobile.KEY_NUM0; // Home
-			if(button == 0x07) return Mobile.GAME_A; // Left Analog press
-			if(button == 0x08) return Mobile.GAME_B; // Right Analog press
-			if(button == 0x09) return Mobile.KEY_NUM1; // L
-			if(button == 0x0A) return Mobile.KEY_NUM3; // R
+			System.out.println("button:" + button);
+			for(int i = 0; i < joypadKeycodes.length; i++) 
+			{
+				if(button == joypadKeycodes[i]) { return Mobile.convertSDLKeycode(i);}
+			}
 
-			if(button == 0x0F) return Mobile.GAME_C; // Screenshot, shouldn't really be used here
-
-			// These keys are overridden by the "useXControls" variables
-			if(useNokiaControls) 
-			{
-				if(button == 0x00) { return Mobile.NOKIA_SOFT3; } // A
-				if(button == 0x04) { return Mobile.NOKIA_SOFT1; } // -/Select
-				if(button == 0x06) { return Mobile.NOKIA_SOFT2; } // +/Start
-				if(button == 0x0B) { return Mobile.NOKIA_UP; }	// D-Pad Up
-				if(button == 0x0C) { return Mobile.NOKIA_DOWN; }  // D-Pad Down
-				if(button == 0x0D) { return Mobile.NOKIA_LEFT; }  // D-Pad Left
-				if(button == 0x0E) { return Mobile.NOKIA_RIGHT; } // D-Pad Right
-			}
-			else if(useSiemensControls) 
-			{
-				if(button == 0x00) { return Mobile.SIEMENS_FIRE; }
-				if(button == 0x04) { return Mobile.SIEMENS_SOFT1; }
-				if(button == 0x06) { return Mobile.SIEMENS_SOFT2; }
-				if(button == 0x0B) { return Mobile.SIEMENS_UP; }
-				if(button == 0x0C) { return Mobile.SIEMENS_DOWN; }
-				if(button == 0x0D) { return Mobile.SIEMENS_LEFT; }
-				if(button == 0x0E) { return Mobile.SIEMENS_RIGHT; }
-			}
-			else if(useMotorolaControls) 
-			{
-				if(button == 0x00) { return Mobile.MOTOROLA_FIRE; }
-				if(button == 0x04) { return Mobile.MOTOROLA_SOFT1; }
-				if(button == 0x06) { return Mobile.MOTOROLA_SOFT2; }
-				if(button == 0x0B) { return Mobile.MOTOROLA_UP; }
-				if(button == 0x0C) { return Mobile.MOTOROLA_DOWN; }
-				if(button == 0x0D) { return Mobile.MOTOROLA_LEFT; }
-				if(button == 0x0E) { return Mobile.MOTOROLA_RIGHT; }
-			}
-			else // Standard keycodes
-			{
-				if(button == 0x00) { return Mobile.KEY_NUM5; }
-				if(button == 0x04) { return Mobile.NOKIA_SOFT1; }
-				if(button == 0x06) { return Mobile.NOKIA_SOFT2; }
-				if(button == 0x0B) { return Mobile.KEY_NUM2; }
-				if(button == 0x0C) { return Mobile.KEY_NUM8; }
-				if(button == 0x0D) { return Mobile.KEY_NUM4; }
-				if(button == 0x0E) { return Mobile.KEY_NUM6; }
-			}
-			
-			return 0;
+			return Integer.MIN_VALUE;
 		}
 		
 		private void addJoystick(int id)

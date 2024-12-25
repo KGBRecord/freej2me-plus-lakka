@@ -108,27 +108,6 @@ public final class AWTGUI
 		new Button("R"),
 	};
 
-	/* Constant fields for key mapping indices (matches the array above) */
-	static final byte SOFT_LEFT_KEY = 0;
-	static final byte SOFT_RIGHT_KEY = 1;
-	static final byte UP_ARROW_KEY = 2;
-	static final byte LEFT_ARROW_KEY = 3;
-	static final byte OK_KEY = 4;
-	static final byte RIGHT_ARROW_KEY = 5;
-	static final byte DOWN_ARROW_KEY = 6;
-	static final byte NUMPAD1_KEY = 7;
-	static final byte NUMPAD2_KEY = 8;
-	static final byte NUMPAD3_KEY = 9;
-	static final byte NUMPAD4_KEY = 10;
-	static final byte NUMPAD5_KEY = 11;
-	static final byte NUMPAD6_KEY = 12;
-	static final byte NUMPAD7_KEY = 13;
-	static final byte NUMPAD8_KEY = 14;
-	static final byte NUMPAD9_KEY = 15;
-	static final byte NUMPAD_ASTERISK_KEY = 16;
-	static final byte NUMPAD0_KEY = 17;
-	static final byte NUMPAD_POUND_KEY = 18;
-
 	/* Array of inputs in order to support input remapping */
 	int inputKeycodes[] = new int[] { 
 		KeyEvent.VK_Q, KeyEvent.VK_W, 

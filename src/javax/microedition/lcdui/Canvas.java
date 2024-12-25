@@ -54,10 +54,6 @@ public abstract class Canvas extends Displayable
 	private boolean fullscreen = false;
 	private boolean isPainting = false;
 
-	// Those are only used to discern actual soft key command bar inputs below
-	private boolean leftSoftPressed = false;
-	private boolean rightSoftPressed = false;
-
 	protected Canvas()
 	{
 		Mobile.log(Mobile.LOG_INFO, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Create Canvas:"+width+", "+height);
@@ -71,14 +67,14 @@ public abstract class Canvas extends Displayable
 
 		// We should send those soft keys to handle commands if not fullscreen. As it means the command bar is visible
 		if(castKey == KEY_SOFT_LEFT && !fullscreen) 
-		{ 
-			if(!leftSoftPressed) { keyPressedCommands(castKey); } // Make sure keyReleases aren't registered here
-			leftSoftPressed = !leftSoftPressed; 
+		{
+			// This pressedKeys array position is commonized on all frontends, it always means the soft left key
+			if(MobilePlatform.pressedKeys[9]) { keyPressedCommands(castKey); } // Make sure keyReleases aren't registered here
 		}
 		else if(castKey == KEY_SOFT_RIGHT && !fullscreen) 
 		{
-			if(!rightSoftPressed) { keyPressedCommands(castKey); } 
-			rightSoftPressed = !rightSoftPressed; 
+			// Same here, this array position always means the right soft key
+			if(MobilePlatform.pressedKeys[8]) { keyPressedCommands(castKey); } 
 		}
 
 		return castKey;
@@ -88,26 +84,26 @@ public abstract class Canvas extends Displayable
 	{
 		switch(gameAction) // Look on Mobile.java for what these magic numbers mean ("J2ME Canvas standard keycodes")
 		{
-			case Mobile.KEY_NUM2:   return Mobile.getMobileKey(14, true);
-			case Mobile.KEY_NUM8:   return Mobile.getMobileKey(17, true);
-			case Mobile.KEY_NUM4:   return Mobile.getMobileKey(15, true);
-			case Mobile.KEY_NUM6:   return Mobile.getMobileKey(16, true);
-			case Mobile.KEY_NUM5:   return Mobile.getMobileKey(18, true);
-			case Mobile.GAME_UP:    return Mobile.getMobileKey(0, true);
-			case Mobile.GAME_DOWN:  return Mobile.getMobileKey(1, true);
-			case Mobile.GAME_LEFT:  return Mobile.getMobileKey(2, true);
-			case Mobile.GAME_RIGHT: return Mobile.getMobileKey(3, true);
-			case Mobile.GAME_FIRE:  return Mobile.getMobileKey(7, true);
+			case Mobile.KEY_NUM2:   return Mobile.getMobileKey(14);
+			case Mobile.KEY_NUM8:   return Mobile.getMobileKey(17);
+			case Mobile.KEY_NUM4:   return Mobile.getMobileKey(15);
+			case Mobile.KEY_NUM6:   return Mobile.getMobileKey(16);
+			case Mobile.KEY_NUM5:   return Mobile.getMobileKey(18);
+			case Mobile.GAME_UP:    return Mobile.getMobileKey(0);
+			case Mobile.GAME_DOWN:  return Mobile.getMobileKey(1);
+			case Mobile.GAME_LEFT:  return Mobile.getMobileKey(2);
+			case Mobile.GAME_RIGHT: return Mobile.getMobileKey(3);
+			case Mobile.GAME_FIRE:  return Mobile.getMobileKey(7);
 	
 			// GAME_A through D don't show up in documentation at all.
-			case Mobile.GAME_A: case Mobile.KEY_NUM1: return Mobile.getMobileKey(10, true);
-			case Mobile.GAME_B: case Mobile.KEY_NUM3: return Mobile.getMobileKey(11, true);
-			case Mobile.GAME_C: case Mobile.KEY_NUM7: return Mobile.getMobileKey(5, true);
-			case Mobile.GAME_D: case Mobile.KEY_NUM9: return Mobile.getMobileKey(4, true);
+			case Mobile.GAME_A: case Mobile.KEY_NUM1: return Mobile.getMobileKey(10);
+			case Mobile.GAME_B: case Mobile.KEY_NUM3: return Mobile.getMobileKey(11);
+			case Mobile.GAME_C: case Mobile.KEY_NUM7: return Mobile.getMobileKey(5);
+			case Mobile.GAME_D: case Mobile.KEY_NUM9: return Mobile.getMobileKey(4);
 
-			case Mobile.KEY_NUM0:  return Mobile.getMobileKey(6, true);
-			case Mobile.KEY_STAR:  return Mobile.getMobileKey(12, true);
-			case Mobile.KEY_POUND: return Mobile.getMobileKey(13, true);
+			case Mobile.KEY_NUM0:  return Mobile.getMobileKey(6);
+			case Mobile.KEY_STAR:  return Mobile.getMobileKey(12);
+			case Mobile.KEY_POUND: return Mobile.getMobileKey(13);
 		}
 		return 0;
 	}
@@ -170,44 +166,40 @@ public abstract class Canvas extends Displayable
 
 	public void repaint(int x, int y, int width, int height)
 	{
-		Display.LCDUILock.lock();
 		try 
 		{
-			try 
+			if (getDisplay().getCurrent() != this || listCommands) { return; }
+			
+			// TODO: This might be an issue
+			if (isPainting) 
 			{
-				if (getDisplay().getCurrent() != this || listCommands) { return; }
-				
-				// TODO: This might be an issue
-				if (isPainting) 
-				{
-					// we need this to avoid stackoverflow
-					// but it seems the underlying problem is that when paint calls
-					// repaint, we shouldn't even land here...
-					Mobile.getDisplay().callSerially(() -> { repaint(x, y, width, height); });
-					return;
-				}
-
-				graphics.reset();
-				isPainting = true;
-
-				try { paint(graphics); }
-				catch (Exception e) 
-				{
-					Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Exception hit in paint(graphics)" + e.getMessage());
-				}
-				finally { isPainting = false; }
-				
-				// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-				if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
-
-				Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+				// we need this to avoid stackoverflow
+				// but it seems the underlying problem is that when paint calls
+				// repaint, we shouldn't even land here...
+				Mobile.getDisplay().callSerially(() -> { repaint(x, y, width, height); });
+				return;
 			}
+
+			graphics.reset();
+			isPainting = true;
+
+			try { paint(graphics); }
 			catch (Exception e) 
 			{
-				Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint()" + e.getMessage());
-				e.printStackTrace();
+				Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Exception hit in paint(graphics)" + e.getMessage());
 			}
-		} finally { Display.LCDUILock.unlock(); }
+			finally { isPainting = false; }
+			
+			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
+
+			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+		}
+		catch (Exception e) 
+		{
+			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint()" + e.getMessage());
+			e.printStackTrace();
+		}
 	}
 
 	public void serviceRepaints()

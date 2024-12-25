@@ -23,22 +23,14 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.lcdui.Image;
 
 import java.util.Vector;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.recompile.mobile.Mobile;
 
 public class Display
 {
-	// when fps is limited, this needs to be a fair lock
-	// otherwise key events might not get dispatched at proper time
-	public static final ReentrantLock LCDUILock = new ReentrantLock(true);
-
-	// this can only be used from a dedicated thread which MAY NOT hold lcduilock
-	public static final Object calloutLock = new Object();
-
 	public static final int LIST_ELEMENT = 1;
 	public static final int CHOICE_GROUP_ELEMENT = 2;
 	public static final int ALERT = 3;
@@ -77,10 +69,9 @@ public class Display
 
 	public void callSerially(Runnable r)
 	{
-		LCDUILock.lock();
-		try { serialCalls.add(r); } 
-		finally { LCDUILock.unlock(); }
+		serialCalls.add(r);
 	}
+
 	private class SerialCallTimerTask extends TimerTask
 	{
 		public void run()
@@ -89,16 +80,8 @@ public class Display
 			{
 				try
 				{
-					synchronized (calloutLock)
-					{
-						LCDUILock.lock();
-						try 
-						{
-							Runnable call = serialCalls.get(0);
-							serialCalls.removeElementAt(0);
-							call.run();
-						} finally { LCDUILock.unlock(); }
-					}
+					serialCalls.get(0).run();
+					serialCalls.removeElement(0);
 				}
 				catch (Exception e) { }
 			}
@@ -170,7 +153,6 @@ public class Display
 	{
 		if (next == null) { return; }
 
-		LCDUILock.lock();
 		try 
 		{		
 			if(current == next || isSettingCurrent) { return; }
@@ -196,11 +178,7 @@ public class Display
 				e.printStackTrace();
 			}
 		} 
-		finally 
-		{ 
-			LCDUILock.unlock();
-			Mobile.displayUpdated = true;
-		}
+		finally { Mobile.displayUpdated = true; }
 	}
 
 	public void setCurrent(Alert alert, Displayable next)

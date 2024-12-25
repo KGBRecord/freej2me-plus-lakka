@@ -112,26 +112,6 @@ public class FreeJ2ME
 			scaleFactor = Integer.parseInt(args[3]);
 		}
 
-		Mobile.getPlatform().setPainter(new Runnable()
-		{
-			public void run()
-			{
-				/* Set menuBar option states based on loaded config */
-				if(awtGUI.hasJustLoaded()) { awtGUI.updateOptions(); }
-
-				/* Only update mem dialog's stats if it is visible */
-				if(awtGUI.awtDialogs[2].isVisible()) { awtGUI.updateMemStatDialog(); }
-
-				/* Whenever AWT GUI notifies that its menu options were changed, update settings */
-				if(awtGUI.hasChanged()) { settingsChanged(); awtGUI.clearChanged(); }
-
-				lcd.repaint();
-			}
-		});
-
-		
-		Mobile.getPlatform().startEventQueue();		
-
 		/* Inputs should only be registered if a jar has been loaded, otherwise AWT will throw NullPointerException */
 		lcd.addKeyListener(new KeyListener()
 		{
@@ -141,7 +121,6 @@ public class FreeJ2ME
 				{
 					int keycode = e.getKeyCode();
 					int mobikey = getMobileKey(keycode);
-					int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
 					
 					switch(keycode) // Handle emulator control keys
 					{
@@ -166,20 +145,12 @@ public class FreeJ2ME
 						break;
 					}
 					
-					if (mobikey == 0) //Ignore events from keys not mapped to a phone keypad key
+					if (mobikey == Integer.MIN_VALUE) // Ignore events from keys not mapped to a phone keypad key (AWTGUI does use 0, so this can't mirror libretro)
 					{
 						return; 
 					}
 					
-					if (pressedKeys[mobikeyN] == false)
-					{
-						Mobile.getPlatform().keyPressed(mobikey);
-					}
-					else
-					{
-						Mobile.getPlatform().keyRepeated(mobikey);
-					}
-					pressedKeys[mobikeyN] = true;
+					MobilePlatform.pressedKeys[mobikey] = true;
 				}
 			}
 
@@ -188,16 +159,13 @@ public class FreeJ2ME
 				if(awtGUI.hasLoadedFile()) 
 				{
 					int mobikey = getMobileKey(e.getKeyCode());
-					int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
 					
-					if (mobikey == 0) //Ignore events from keys not mapped to a phone keypad key
+					if (mobikey == Integer.MIN_VALUE) // Ignore events from keys not mapped to a phone keypad key (AWTGUI does use 0, so this can't mirror libretro)
 					{
 						return; 
 					}
 					
-					pressedKeys[mobikeyN] = false;
-					
-					Mobile.getPlatform().keyReleased(mobikey);
+					MobilePlatform.pressedKeys[mobikey] = false;
 				}
 			}
 
@@ -222,7 +190,9 @@ public class FreeJ2ME
 						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					}
 
-					Mobile.getPlatform().pointerPressed(x, y);
+					MobilePlatform.pointerPressed[0] = 1;
+					MobilePlatform.pointerPressed[1] = x;
+					MobilePlatform.pointerPressed[2] = y;
 				}
 			}
 
@@ -239,7 +209,9 @@ public class FreeJ2ME
 						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					}
 
-					Mobile.getPlatform().pointerReleased(x, y);
+					MobilePlatform.pointerReleased[0] = 1;
+					MobilePlatform.pointerReleased[1] = x;
+					MobilePlatform.pointerReleased[2] = y;
 				}
 			}
 
@@ -264,7 +236,9 @@ public class FreeJ2ME
 						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					}
 					
-					Mobile.getPlatform().pointerDragged(x, y); 
+					MobilePlatform.pointerDragged[0] = 1;
+					MobilePlatform.pointerDragged[1] = x;
+					MobilePlatform.pointerDragged[2] = y;
 				}
 			}
 		});
@@ -307,11 +281,30 @@ public class FreeJ2ME
 			settingsChanged();
 
 			Mobile.getPlatform().runJar();
+
+			// Set painter once jar has been loaded
+			Mobile.getPlatform().setPainter(new Runnable()
+			{
+				public void run()
+				{
+					/* Set menuBar option states based on loaded config */
+					if(awtGUI.hasJustLoaded()) { awtGUI.updateOptions(); }
+
+					/* Only update mem dialog's stats if it is visible */
+					if(awtGUI.awtDialogs[2].isVisible()) { awtGUI.updateMemStatDialog(); }
+
+					/* Whenever AWT GUI notifies that its menu options were changed, update settings */
+					if(awtGUI.hasChanged()) { settingsChanged(); awtGUI.clearChanged(); }
+
+					lcd.repaint();
+				}
+			});
 		}
 		else
 		{
 			Mobile.log(Mobile.LOG_ERROR, FreeJ2ME.class.getPackage().getName() + "." + FreeJ2ME.class.getSimpleName() + ": " + "Couldn't load jar...");
 		}
+
 	}
 
 	private static String getFormattedLocation(String loc)
@@ -358,9 +351,9 @@ public class FreeJ2ME
 	{
 		for(int i = 0; i < awtGUI.inputKeycodes.length; i++) 
 		{
-			if(keycode == awtGUI.inputKeycodes[i]) { return Mobile.getMobileKey(i, false);}
+			if(keycode == awtGUI.inputKeycodes[i]) { return Mobile.convertAWTKeycode(i);}
 		}
-		return 0;
+		return Integer.MIN_VALUE;
 	}
 
 	private void resize()
