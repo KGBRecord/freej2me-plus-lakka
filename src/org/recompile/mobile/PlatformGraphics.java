@@ -265,20 +265,10 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 		try
 		{
-			if(transform == 0)
-			{
-				BufferedImage sub = image.platformImage.getCanvas().getSubimage(subx, suby, subw, subh);
-				x = AnchorX(x, subw, anchor);
-				y = AnchorY(y, subh, anchor);
-				gc.drawImage(sub, x, y, null);
-			}
-			else
-			{
-				PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
-				x = AnchorX(x, sub.width, anchor);
-				y = AnchorY(y, sub.height, anchor);
-				gc.drawImage(sub.getCanvas(), x, y, null);
-			}
+			PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
+			x = AnchorX(x, sub.width, anchor);
+			y = AnchorY(y, sub.height, anchor);
+			gc.drawImage(sub.getCanvas(), x, y, null);
 		}
 		catch (Exception e)
 		{
@@ -291,51 +281,52 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		if (width <= 0 || height <= 0) { return; }
 		if (rgbData == null) { throw new NullPointerException(); }
 		if (offset < 0 || offset >= rgbData.length) { throw new ArrayIndexOutOfBoundsException(); }
-
-		if (scanlength > 0)
+	
+		if (scanlength > 0) 
 		{
 			if (offset + scanlength * (height - 1) + width > rgbData.length) 
 			{
 				throw new ArrayIndexOutOfBoundsException();
 			}
-		} 
-		else 
+		} else 
 		{
 			if (offset + width > rgbData.length || offset + scanlength * (height - 1) < 0) 
 			{
 				throw new ArrayIndexOutOfBoundsException();
 			}
 		}
-
+	
+		x += getTranslateX();
+		y += getTranslateY();
+	
 		int canvasWidth = canvas.getWidth();
 		int canvasHeight = canvas.getHeight();
-
-		// Adjust the image's bounds based on the clip region
+	
 		if (y + height > clipY + clipHeight) { height = (clipY + clipHeight) - y; }
 		if (x + width > clipX + clipWidth) { width = (clipX + clipWidth) - x; }
-
-		// Ensure adjusted width and height are still positive or else we have nothing to draw to the screen
+	
+		// Ensure adjusted width and height are still positive
 		if (width <= 0 || height <= 0) { return; }
-
+	
 		// Directly manipulate the canvasData
 		for (int i = 0; i < height; i++) 
 		{
-			int s = offset + (i * scanlength); // Source index in rgbData
-			int d = (y + i) * canvasWidth + x; // Destination index in canvasData
-
-			for (int j = 0; j < width; j++) 
-			{
+			int rowOffset = offset + (i * scanlength); // Calculate the starting index for the current row
+	
+			for (int j = 0; j < width; j++) {
+				int pixelIndex = rowOffset + j; // Source index in rgbData
+				int destIndex = (y + i) * canvasWidth + (x + j);
+	
 				// Skip if the pixel isn't in the canvas bounds
 				if (x + j < 0 || x + j >= canvasWidth) { continue; }
-
-				// Also skip if the drawing position is outside the clip region
 				if (y + i < clipY || y + i >= clipY + clipHeight || x + j < clipX || x + j >= clipX + clipWidth) { continue; }
+				if (destIndex < 0 || destIndex >= canvasData.length) { continue; }
+				if (pixelIndex < 0 || pixelIndex >= rgbData.length) { continue; }
 
-				int pixel = rgbData[s++];
+				int pixel = rgbData[pixelIndex];
 				if (!processAlpha) 
 				{
-					pixel = (pixel & 0x00FFFFFF) | 0xFF000000; // Set alpha to 255 as the pixel will be treated fully opaque
-					canvasData[d + j] = pixel;
+					canvasData[destIndex] = ((pixel & 0x00FFFFFF) | 0xFF000000); // Set alpha to 255
 				} 
 				else 
 				{
@@ -343,18 +334,17 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 					int srcAlpha = (pixel >> 24) & 0xFF; // Source alpha
 					if (srcAlpha != 0) 
 					{
-						int existingPixel = canvasData[d + j]; // Current pixel in the canvas
-
-						// Blend with the existing pixel
+						int existingPixel = canvasData[destIndex]; // Current pixel in the canvas
 						int destAlpha = (existingPixel >> 24) & 0xFF; // Destination alpha
-
+	
 						// Calculate new color values using alpha blending
-						int newRed = ((pixel >> 16) & 0xFF) * srcAlpha / 255 + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha) / 255;
-						int newGreen = ((pixel >> 8) & 0xFF) * srcAlpha / 255 + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha) / 255;
-						int newBlue = (pixel & 0xFF) * srcAlpha / 255 + (existingPixel & 0xFF) * (255 - srcAlpha) / 255;
-
+						int newAlpha = Math.min(255, srcAlpha + destAlpha);
+						int newRed = ((pixel >> 16) & 0xFF) * srcAlpha / 255 + ((existingPixel >> 16) & 0xFF) * destAlpha * (255 - srcAlpha) / (255 * 255);
+						int newGreen = ((pixel >> 8) & 0xFF) * srcAlpha / 255 + ((existingPixel >> 8) & 0xFF) * destAlpha * (255 - srcAlpha) / (255 * 255);
+						int newBlue = (pixel & 0xFF) * srcAlpha / 255 + (existingPixel & 0xFF) * destAlpha * (255 - srcAlpha) / (255 * 255);
+	
 						// Store the new pixel back in canvasData
-						canvasData[d + j] = (255 << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
+						canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 					}
 				}
 			}
