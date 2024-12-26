@@ -232,18 +232,34 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 				for(int i = 0; i < pixels.length; i++) { pixels[i] = pixels[i] & Mobile.lcdMaskColors[Mobile.maskIndex]; }
 			}
 
+			// Render the resulting image
+			// Ensure adjusted width and height are still positive
+			if (width <= 0 || height <= 0) { return; }
+		
+			for (int j = 0; j < height; j++) 
+			{
+				for (int i = 0; i < width; i++) 
+				{
+					int destIndex = j * canvas.getWidth() + i;
+					int srcIndex = j * width + i;
+					// The image data CAN go out of the destination bounds, we just can't draw it whenever it does.
+					if (x + i < 0 || x + i >= canvas.getWidth()) { continue; }
+					if (y + j < 0 || y + j >= canvas.getHeight()) { continue; }
+					if (destIndex < 0 || destIndex >= canvasData.length) { continue; }
+					if (srcIndex < 0 || srcIndex >= pixels.length) { continue; }
+
+					canvasData[destIndex] = pixels[srcIndex];
+				}
+			}
+
 			// This one is rather costly, as it has to draw overlays on the corners of the screen with gaussian filtering applied.
+			// TODO: Also has flickering, this shouldn't happen.
 			if(Mobile.funLightsEnabled)
 			{
-				// Create an overlay image for the fun lights
-				BufferedImage overlayImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-				int[] overlayData = ((DataBufferInt)overlayImage.getRaster().getDataBuffer()).getData();
+				int[] overlayData = new int[width * height];
 				drawFunLights(overlayData, width, height);
-
-				System.arraycopy(pixels, 0, canvasData, y * canvas.getWidth() + x, pixels.length);
-				gc.drawImage(overlayImage, x, y, null);
+				System.arraycopy(overlayData, 0, canvasData, y * canvas.getWidth() + x, overlayData.length);
 			}
-			else { System.arraycopy(pixels, 0, canvasData, y * canvas.getWidth() + x, pixels.length); }
 		}
 		catch (Exception e)
 		{
