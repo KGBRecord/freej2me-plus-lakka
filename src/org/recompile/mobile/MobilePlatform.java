@@ -331,33 +331,31 @@ public class MobilePlatform
 		{
 			/* 
 			 * We'll poll new inputs 1000 times per second, any inputs done in a smaller interval
-			 * wil be ignored. This is actually a workaround for games that don't work well with a
+			 * will be ignored. This is actually a workaround for games that don't work well with a
 			 * JVM spanning multiple cores (e.g. Some versions of Ratatouille) which can result in
 			 * the input thread being locked sending many commands during transitions, commands 
 			 * that the game will then have to process in its own time, making it seem like it's not
 			 * responding to inputs.
 			 */
-			if(lastEventTime - System.nanoTime() < -10_000_000) 
+			if(lastEventTime - System.nanoTime() < -1_000_000) 
 			{
-				if(pressedKeys[i] == true && previouslyPressed[i] == true) 
-				{
-					lastEventTime = System.nanoTime(); 
-					keyRepeated(Mobile.getMobileKey(i));
-				}
-				else if(pressedKeys[i] == true && previouslyPressed[i] == false) 
+				if(pressedKeys[i] == true && previouslyPressed[i] == false) 
 				{
 					lastEventTime = System.nanoTime(); 
 					keyPressed(Mobile.getMobileKey(i));
 					previouslyPressed[i] = true;
-					
+				}
+				else if(pressedKeys[i] == true && previouslyPressed[i] == true) 
+				{
+					keyRepeated(Mobile.getMobileKey(i));
 				}
 				else if (pressedKeys[i] == false && previouslyPressed[i] == true)
 				{
-					lastEventTime = System.nanoTime(); 
 					keyReleased(Mobile.getMobileKey(i));
 					previouslyPressed[i] = false;
 				}
 			}
+			
 		}
 
 		painter.run(); // Update the frontend's painter first to then process inputs
