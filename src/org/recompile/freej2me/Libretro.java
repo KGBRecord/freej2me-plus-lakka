@@ -35,8 +35,6 @@ public class Libretro
 
 	private boolean soundEnabled = true;
 
-	private boolean[] pressedKeys = new boolean[128];
-
 	private byte[] frameBuffer = new byte[800*800*3];
 	private final byte[] frameHeader = new byte[]{(byte)0xFE, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -66,7 +64,7 @@ public class Libretro
 		/* 
 		 * Notify the MIDlet class that this version of FreeJ2ME is for Libretro, which disables 
 		 * the ability to close the jar when a J2ME app requests an exit as this can cause segmentation
-		 * faults on frontends and also close the unexpectedly.
+		 * faults on libretro frontends and also close the unexpectedly.
 		*/
 		Mobile.getPlatform().isLibretro = true;
 
@@ -153,7 +151,6 @@ public class Libretro
 			private int[] din = new int[5];
 			private int count = 0;
 			private int code;
-			private int mobikey;
 			private StringBuilder path;
 			private URL url;
 
@@ -183,61 +180,61 @@ public class Libretro
 								//break;
 
 								case 2:	// joypad key up
-									if (mobikey != 0)
-									{
-										int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
-
-										MobilePlatform.pressedKeys[mobikey] = false;
-										pressedKeys[mobikeyN] = false;
-									}
+									MobilePlatform.pressedKeys[code] = false;
 								break;
 
-								case 3: // joypad key down
-									if (mobikey != 0)
-									{
-										int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
-										
-										MobilePlatform.pressedKeys[mobikey] = true;
-										pressedKeys[mobikeyN] = true;
-									}
+								case 3: // joypad key down					
+									MobilePlatform.pressedKeys[code] = true;
 								break;
 
 								case 4: // mouse up
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
+									
+									MobilePlatform.pointerReleased[0] = 1;
 									if(!Mobile.rotateDisplay)
 									{
-										Mobile.getPlatform().pointerReleased(mousex, mousey);
+										MobilePlatform.pointerReleased[1] = mousex;
+										MobilePlatform.pointerReleased[2] = mousey;
 									}
 									else
 									{
-										Mobile.getPlatform().pointerReleased(lcdWidth-mousey, mousex);
+										MobilePlatform.pointerReleased[1] = lcdWidth-mousey;
+										MobilePlatform.pointerReleased[2] = mousex;
 									}
 								break;
 
 								case 5: // mouse down
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
+
+									MobilePlatform.pointerPressed[0] = 1;
 									if(!Mobile.rotateDisplay)
 									{
-										Mobile.getPlatform().pointerPressed(mousex, mousey);
+										MobilePlatform.pointerPressed[1] = mousex;
+										MobilePlatform.pointerPressed[2] = mousey;
 									}
 									else
 									{
-										Mobile.getPlatform().pointerPressed(lcdWidth-mousey, mousex);
+										MobilePlatform.pointerPressed[1] = lcdWidth-mousey;
+										MobilePlatform.pointerPressed[2] = mousex;
 									}
 								break;
 
 								case 6: // mouse drag
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
+
+									MobilePlatform.pointerDragged[0] = 1;
 									if(!Mobile.rotateDisplay)
 									{
-										Mobile.getPlatform().pointerDragged(mousex, mousey);
+										MobilePlatform.pointerDragged[1] = mousex;
+										MobilePlatform.pointerDragged[2] = mousey;
 									}
 									else
 									{
-										Mobile.getPlatform().pointerDragged(lcdWidth-mousey, mousex);
+										MobilePlatform.pointerDragged[1] = lcdWidth-mousey;
+										MobilePlatform.pointerDragged[2] = mousex;
 									}
 								break;
 
@@ -415,7 +412,6 @@ public class Libretro
 									}
 								break;
 							}
-							Mobile.log(Mobile.LOG_DEBUG, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + " ("+code+") <- Key");
 							//System.out.flush();
 						}
 					}
