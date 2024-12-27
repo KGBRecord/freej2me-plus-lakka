@@ -45,7 +45,7 @@ public class Graphics3D
 	public static final boolean SUPPORT_TRUE_COLOR = false;
 	public static final boolean SUPPORT_DITHERING = false;
 	public static final boolean SUPPORT_MIPMAPPING = false;
-	public static final boolean SUPPORT_PERSPECTIVE_CORRECTION = false;
+	public static final boolean SUPPORT_PERSPECTIVE_CORRECTION = true;
 	public static final boolean SUPPORT_LOCAL_CAMERA_LIGHTING = false;
 	public static final int MAX_LIGHTS = 8;
 	public static final int MAX_VIEWPORT_WIDTH = 1024;
@@ -186,7 +186,6 @@ public class Graphics3D
 		int y = viewy;
 		int w = vieww;
 		int h = viewh;
-		/* Force clearing both color and depth for now. TODO: Get those requests from background object. */
 		boolean clearColor = true;
 		boolean clearDepth = true;
 
@@ -200,6 +199,7 @@ public class Graphics3D
 			clearColor = background.isColorClearEnabled();
 			clearDepth = background.isDepthClearEnabled();
 		}
+		else { color = 0x00000000; }
 
 		/* 
 		 * If the background object is null: 
@@ -211,6 +211,7 @@ public class Graphics3D
 		{
 			if (this.target instanceof Image2D)
 			{
+				Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Clear to Image2D not Implemented");
 				Image2D i2d = (Image2D) this.target;
 
 				// CHECK is the bg image used only if clearColor is true?
@@ -224,8 +225,23 @@ public class Graphics3D
 			else if (this.target instanceof PlatformGraphics)
 			{
 				PlatformGraphics grp = (PlatformGraphics) this.target;
-				grp.setColor(color);
-				grp.fillRect(x, y, w, h);
+				grp.getGraphics2D().setColor(new Color(color));
+				grp.getGraphics2D().fillRect(x, y, w, h);
+
+				// Draw the background's image
+				if(background.getImage() != null) 
+				{
+					Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Clear with Background Image Untested");
+					int[] rasterData = ((DataBufferInt) grp.getCanvas().getRaster().getDataBuffer()).getData();
+					for(; y < h; y++) 
+					{
+						for(; x < w; x++) 
+						{
+							rasterData[y * grp.getCanvas().getWidth() + x] = background.getImage().getConvertedPixel(x, y);
+						}
+					}
+					
+				}
 			}
 		}
 
@@ -353,11 +369,20 @@ public class Graphics3D
 		//    defined in VertexBuffer or IndexBuffer
 		//    throw new java.lang.IllegalStateException();
 
+		// TODO: Those two are unused at the moment
+		int cullingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getCulling() : PolygonMode.CULL_BACK;
+		int shadingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getShading() : PolygonMode.SHADE_SMOOTH;
+		
+		int windingOrder = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getWinding() : PolygonMode.WINDING_CCW;
+		boolean perspectiveCorrectionEnabled = appearance.getPolygonMode() != null ? appearance.getPolygonMode().isPerspectiveCorrectionEnabled() : false;
+
 		float[] scaleBias = new float[4];
 
 		Transform tr = new Transform();
 		Transform textr = new Transform();
+		Transform texcomptr = new Transform();
 
+		VertexArray vertColors = vertices.getColors();
 		VertexArray vertPos = vertices.getPositions(scaleBias);
 		int vertCount = vertPos.getVertexCount();
 
@@ -368,12 +393,11 @@ public class Graphics3D
 		tr.preScale(scaleBias[0], scaleBias[0], scaleBias[0]);
 		tr.preTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
 
-		VertexArray vertColors = vertices.getColors();
 		Texture2D tex = appearance.getTexture(0);
 		Image2D teximg = tex == null ? null : tex.getImage();
 		VertexArray texCoords = vertices.getTexCoords(0, scaleBias); // get Texture coordinates
 
-		Transform texcomptr = new Transform();
+		
 		if (tex != null) { tex.getCompositeTransform(texcomptr); }
 
 		// Scale and translate texture coordinates (same scaleBias)
@@ -412,9 +436,49 @@ public class Graphics3D
 		Triangle[] trisScreen = Arrays.stream(trisClip)
 				.flatMap(t -> t.clip())
 				.toArray(Triangle[]::new);
-		// At this point the triangles in `trisScreen` are actually
+
+		// If perspective correction is enabled, do it for texture coordinates
+		if(perspectiveCorrectionEnabled)
+		{
+			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Perspective Correction Enabled! UNTESTED");
+			for (Triangle t : trisScreen) 
+			{
+				// Get the w components for each triangle vertex
+				float wA = t.wA();
+				float wB = t.wB();
+				float wC = t.wC();
+		
+				// Calculate perspective-correct texture coordinates
+				float[] texCoordA = {
+					t.sA() / wA,
+					t.tA() / wA,
+					0, // rA
+					1  // qA
+				};
+				float[] texCoordB = {
+					t.sB() / wB,
+					t.tB() / wB,
+					0, // rB
+					1  // qB
+				};
+				float[] texCoordC = {
+					t.sC() / wC,
+					t.tC() / wC,
+					0, // rC
+					1  // qC
+				};
+		
+				// Set the corrected texture coordinates back into the triangle
+				t.setTexCoords(texCoordA, texCoordB, texCoordC);
+			}
+		}
+			
+		
+				// At this point the triangles in `trisScreen` are actually
 		// in Normalized Device Coordinates, but they will be tranformed
 		// to Screen space in-place, hence the name.
+
+
 
 
 		// Reset transform
@@ -534,12 +598,18 @@ public class Graphics3D
 				}
 
 				// Prepare ordering based on vertex positions
-				Integer[] ordX = {0, 1, 2};
-				Integer[] ordY = {0, 1, 2};
+				Integer[] ord = {0, 1, 2};
+
+				// Handle winding order
+				if (windingOrder == PolygonMode.WINDING_CW) 
+				{
+					Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Polygon Winding is Clockwise! Untested, might render incorrectly");
+					ord = new Integer[]{0, 2, 1}; // Adjust order for Clockwise Winding 
+				}
 
 				final int curID = tri_id;
-				Arrays.sort(ordX, (a, b) -> Float.compare(trisScreen[curID].v[4 * a + 0], trisScreen[curID].v[4 * b + 0]));
-				Arrays.sort(ordY, (a, b) -> Float.compare(trisScreen[curID].v[4 * a + 1], trisScreen[curID].v[4 * b + 1]));
+				Arrays.sort(ord, (a, b) -> Float.compare(trisScreen[curID].v[4 * a + 0], trisScreen[curID].v[4 * b + 0]));
+				Arrays.sort(ord, (a, b) -> Float.compare(trisScreen[curID].v[4 * a + 1], trisScreen[curID].v[4 * b + 1]));
 
 				// Collect vertex attributes
 				float[] coX = {trisScreen[tri_id].xA(), trisScreen[tri_id].xB(), trisScreen[tri_id].xC()};
@@ -549,11 +619,11 @@ public class Graphics3D
 				float[] coT = {trisScreen[tri_id].tA(), trisScreen[tri_id].tB(), trisScreen[tri_id].tC()};
 
 				// Extract ordered vertex attributes
-				float[] xOrdered = {coX[ordY[0]], coX[ordY[1]], coX[ordY[2]]};
-				float[] yOrdered = {coY[ordY[0]], coY[ordY[1]], coY[ordY[2]]};
-				float[] zOrdered = {coZ[ordY[0]], coZ[ordY[1]], coZ[ordY[2]]};
-				float[] sOrdered = {coS[ordY[0]], coS[ordY[1]], coS[ordY[2]]};
-				float[] tOrdered = {coT[ordY[0]], coT[ordY[1]], coT[ordY[2]]};
+				float[] xOrdered = {coX[ord[0]], coX[ord[1]], coX[ord[2]]};
+				float[] yOrdered = {coY[ord[0]], coY[ord[1]], coY[ord[2]]};
+				float[] zOrdered = {coZ[ord[0]], coZ[ord[1]], coZ[ord[2]]};
+				float[] sOrdered = {coS[ord[0]], coS[ord[1]], coS[ord[2]]};
+				float[] tOrdered = {coT[ord[0]], coT[ord[1]], coT[ord[2]]};
 
 				// Define top, middle, and bottom vertices
 				float xTop = xOrdered[0], xMidL = xOrdered[1], xBot = xOrdered[2];
@@ -570,7 +640,8 @@ public class Graphics3D
 				float tMidR = tTop + rHorizon * (tBot - tTop);
 
 				// Swap midpoints if necessary
-				if (xMidL > xMidR) {
+				if (xMidL > xMidR) 
+				{
 					float temp;
 
 					// Swap values between left and right midpoints

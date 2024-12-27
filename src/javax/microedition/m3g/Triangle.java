@@ -316,6 +316,19 @@ class Triangle
 		throw new java.lang.IllegalStateException();
 	}
 
+	void setTexCoords(float[] texCoordA, float[] texCoordB, float[] texCoordC) 
+	{
+        if (texCoordA.length != 4 || texCoordB.length != 4 || texCoordC.length != 4) 
+		{
+            throw new IllegalArgumentException("Each texture coordinate must have 4 elements (s, t, r, q).");
+        }
+        
+        // Set the new texture coordinates
+        System.arraycopy(texCoordA, 0, this.t, 0, 4); // sA, tA, rA, qA
+        System.arraycopy(texCoordB, 0, this.t, 4, 4); // sB, tB, rB, qB
+        System.arraycopy(texCoordC, 0, this.t, 8, 4); // sC, tC, rC, qC
+    }
+
 	private static float[] add(float[] a, float[] b)
 	{
 		if (a.length != b.length)
