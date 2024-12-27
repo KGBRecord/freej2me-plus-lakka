@@ -122,13 +122,13 @@ public class MobilePlatform
 
 		service.scheduleAtFixedRate(() -> 
 		{
-			// If 100ms have passed and a new painter run did not happen, force it to happen
-			if(lastRenderTime - System.nanoTime() < -100_000_000)
+			// If 16ms have passed and a new painter run did not happen, force it to happen
+			if(lastRenderTime - System.nanoTime() < -16_666_666)
 			{
 				processInputs();
 				lastRenderTime = System.nanoTime();
 			}
-		}, 50_000_000, 50_000_000, TimeUnit.NANOSECONDS); // run every 50ms
+		}, 16_666_666, 16_666_666, TimeUnit.NANOSECONDS);
 
 	}
 
@@ -302,6 +302,7 @@ public class MobilePlatform
 		gc.flushGraphics(img, x, y, width, height);
 		
 		if(!showFPS.equals("Off")) { showFPS();}
+		painter.run(); // Update the frontend's painter first to then process inputs
 		processInputs();
 
 		limitFps();
@@ -357,8 +358,6 @@ public class MobilePlatform
 			}
 			
 		}
-
-		painter.run(); // Update the frontend's painter first to then process inputs
 	}
 
 	private void limitFps() 
