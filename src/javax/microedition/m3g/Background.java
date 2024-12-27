@@ -34,7 +34,7 @@ public class Background extends Object3D
 	private int cropx;
 	private int cropy;
 
-	private Image2D image;
+	private Image2D image = null;
 	private boolean depthclear = true;
 	private boolean colorclear = true;
 	private Texture2D texture = null;
@@ -79,7 +79,7 @@ public class Background extends Object3D
 
 	public void setColor(int ARGB) { color = ARGB; }
 
-	public void setColorClearEnable(boolean enable) {  colorclear = enable; }
+	public void setColorClearEnable(boolean enable) { colorclear = enable; }
 
 	public void setCrop(int cropX, int cropY, int width, int height)
 	{
@@ -92,21 +92,20 @@ public class Background extends Object3D
 	public void setDepthClearEnable(boolean enable) { depthclear = enable; }
 
 	public void setImage(Image2D img) 
-	{ 
-		if ((image != null) && (image.getFormat() != Image2D.RGB) && (image.getFormat() != Image2D.RGBA)) 
+	{
+		if(img == null) { this.image = null; return; }
+		if ((img.getFormat() != Image2D.RGB) && (img.getFormat() != Image2D.RGBA)) 
 		{
 			throw new IllegalArgumentException("Image format must be RGB or RGBA");
 		}
-		this.image = image;
+		this.image = img;
 
-		if (image != null) 
-		{
-			texture = new Texture2D(image);
-			texture.setFiltering(Texture2D.FILTER_LINEAR, Texture2D.FILTER_LINEAR);
-			texture.setWrapping(Texture2D.WRAP_CLAMP, Texture2D.WRAP_CLAMP);
-			texture.setBlending(Texture2D.FUNC_REPLACE);
-		} 
-		else { texture = null; }
+		if(img == null) { return; } // If image is null, we'll clear with the bg color only
+
+		texture = new Texture2D(img);
+		texture.setFiltering(Texture2D.FILTER_LINEAR, Texture2D.FILTER_LINEAR);
+		texture.setWrapping(Texture2D.WRAP_CLAMP, Texture2D.WRAP_CLAMP);
+		texture.setBlending(Texture2D.FUNC_REPLACE);
 	}
 
 	public void setImageMode(int modeX, int modeY) 
