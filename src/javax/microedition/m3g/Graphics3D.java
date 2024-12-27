@@ -376,6 +376,10 @@ public class Graphics3D
 		int windingOrder = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getWinding() : PolygonMode.WINDING_CCW;
 		boolean perspectiveCorrectionEnabled = appearance.getPolygonMode() != null ? appearance.getPolygonMode().isPerspectiveCorrectionEnabled() : false;
 
+		// Set up fog properties
+		Fog fog = appearance.getFog();
+		float fogFactor[] = { 0.0f, 0.0f, 0.0f };
+
 		float[] scaleBias = new float[4];
 
 		Transform tr = new Transform();
@@ -472,13 +476,9 @@ public class Graphics3D
 				t.setTexCoords(texCoordA, texCoordB, texCoordC);
 			}
 		}
-			
-		
-				// At this point the triangles in `trisScreen` are actually
+		// At this point the triangles in `trisScreen` are actually
 		// in Normalized Device Coordinates, but they will be tranformed
 		// to Screen space in-place, hence the name.
-
-
 
 
 		// Reset transform
@@ -541,7 +541,7 @@ public class Graphics3D
 					
 						if(vertColors.getComponentCount() == 3)  // If 3 components, RGB
 						{
-							for (int i = 0; i < 3; i++) 
+							for (int i = 0; i < 3; i++) // Run for each vertex of the triangle
 							{
 								vertColors.get(trisScreen[tri_id].bufIndex[i], 1, color_vertex[i]);
 								colors[i] = new Color (
@@ -552,7 +552,7 @@ public class Graphics3D
 						}
 						else // Else we'll assume RGBA, 4 components
 						{
-							for (int i = 0; i < 4; i++) 
+							for (int i = 0; i < 3; i++) 
 							{
 								vertColors.get(trisScreen[tri_id].bufIndex[i], 1, color_vertex[i]);
 								colors[i] = new Color (
@@ -560,6 +560,31 @@ public class Graphics3D
 								Byte.toUnsignedInt(color_vertex[i][1]), 
 								Byte.toUnsignedInt(color_vertex[i][2]), 
 								Byte.toUnsignedInt(color_vertex[i][3]));
+							}
+						}
+
+						// Blend fog value with the vertex color, if applicable
+						if(fog != null) 
+						{
+							if (fog.getMode() == Fog.LINEAR) 
+							{
+								fogFactor[0] = Math.max(0, Math.min(1, (fog.getFarDistance() - trisScreen[tri_id].zA()) / (fog.getFarDistance() - fog.getNearDistance())));
+								fogFactor[1] = Math.max(0, Math.min(1, (fog.getFarDistance() - trisScreen[tri_id].zB()) / (fog.getFarDistance() - fog.getNearDistance())));
+								fogFactor[2] = Math.max(0, Math.min(1, (fog.getFarDistance() - trisScreen[tri_id].zC()) / (fog.getFarDistance() - fog.getNearDistance())));
+							} 
+							else 
+							{
+								fogFactor[0] = (float) Math.exp(-fog.getDensity() * trisScreen[tri_id].zA());
+								fogFactor[0] = Math.max(0, Math.min(1, fogFactor[0])); // Clamp to the [0, 1] interval
+								fogFactor[1] = (float) Math.exp(-fog.getDensity() * trisScreen[tri_id].zB());
+								fogFactor[1] = Math.max(0, Math.min(1, fogFactor[1]));
+								fogFactor[2] = (float) Math.exp(-fog.getDensity() * trisScreen[tri_id].zC());
+								fogFactor[2] = Math.max(0, Math.min(1, fogFactor[2]));
+							}
+
+							for(int i = 0; i < colors.length; i++) 
+							{
+								colors[i] = new Color(blendFog(colors[i].getRGB(), fog.getColor(), fogFactor[i]));
 							}
 						}
 
@@ -592,7 +617,7 @@ public class Graphics3D
 					
 					grp.fillPolygon(coXr, coYr, 3);
 					//grp.setColor(colorDraw);
-					//grp.drawPolygon(coXr, coYr, 3);
+					//grp.drawPolygon(coXr, coYr, 3); // TODO: Maybe use this for debugging, like a Wireframe mode?
 
 					continue;
 				}
@@ -726,16 +751,34 @@ public class Graphics3D
 
 								// Blend the pixel with the background
 								int backgroundPixel = rasterData[y * pgrp.getCanvas().getWidth() + x];
-								int blendedPixel;
+								int blendedPixel = texPixel;
 
+								// To blend the fog value here, we have to take the current pixel's z value into consideration
+								if(fog != null) 
+								{
+									if (fog.getMode() == Fog.LINEAR) 
+									{
+										fogFactor[0] = Math.max(0, Math.min(1, (fog.getFarDistance() - z) / (fog.getFarDistance() - fog.getNearDistance())));
+									} 
+									else 
+									{
+										fogFactor[0] = (float) Math.abs(Math.exp(-fog.getDensity() * z));
+										fogFactor[0] = Math.max(0, Math.min(1, fogFactor[0])); // Clamp to the [0, 1] interval
+									}
+
+									blendedPixel = blendFog(blendedPixel, fog.getColor(), fogFactor[0]);
+								}
+
+								// Handle compositing mode AFTER the fog calculation, otherwise alpha values won't be correct
 								if (appearance.getCompositingMode() != null) // Blend the background with the texture using compositing mode's blend
 								{
-									blendedPixel = blendPixels(backgroundPixel, texPixel, alpha, appearance.getCompositingMode().getBlending());
+									blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, appearance.getCompositingMode().getBlending());
 								} 
 								else // If compositingMode is absent, just use the texture's blend mode for blending
 								{
-									blendedPixel = blendPixels(backgroundPixel, texPixel, alpha, tex.getBlending());
+									blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, tex.getBlending());
 								}
+
 								rasterData[y * pgrp.getCanvas().getWidth() + x] = blendedPixel;
 
 								// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
@@ -973,5 +1016,29 @@ public class Graphics3D
 				return background; // Fallback
 		}
 		return background; // Default return
+	}
+
+	private int blendFog(int pixelColor, int fogColor, float fogFactor) 
+	{
+		int r = ((pixelColor >> 16) & 0xFF);
+		int g = ((pixelColor >> 8) & 0xFF);
+		int b = (pixelColor & 0xFF);
+	
+		int fogR = ((fogColor >> 16) & 0xFF);
+		int fogG = ((fogColor >> 8) & 0xFF);
+		int fogB = (fogColor & 0xFF);
+	
+		/*
+		 * M3G specifies that, the smaller the fogFactor value, the more we
+		 * should blend the fog color into the received color... which means
+		 * that the fog's contribution to the resulting color should be
+		 * 1 - fogFactor;
+		 */
+		int blendedR = (int) (r * fogFactor + fogR * (1 - fogFactor));
+		int blendedG = (int) (g * fogFactor + fogG * (1 - fogFactor));
+		int blendedB = (int) (b * fogFactor + fogB * (1 - fogFactor));
+	
+		// Fog only has RGB channels, so it's always fully opaque
+		return (255 << 24) | (blendedR << 16) | (blendedG << 8) | blendedB;
 	}
 }

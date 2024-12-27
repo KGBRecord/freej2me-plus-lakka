@@ -26,7 +26,7 @@ public class Fog extends Object3D
 	private float near = 0.0f;
 	private float far = 1.0f;
 	private int mode = LINEAR;
-	private int color = 0;
+	private int color = 0x00000000;
 	private float density = 1.0f;
 
 
@@ -45,10 +45,22 @@ public class Fog extends Object3D
 
 	public void setColor(int RGB) { color = RGB; }
 
-	public void setDensity(float value) { density = value; }
+	public void setDensity(float value) 
+	{
+		if(density < 0) { throw new IllegalArgumentException("Invalid density value"); }
+		density = value; 
+	}
 
-	public void setLinear(float Near, float Far) { near=Near; far=Far; }
+	public void setLinear(float Near, float Far) 
+	{ 
+		near = Math.min(Math.max(Near, 0.0f), 1.0f); 
+		far = Math.min(Math.max(Far, 0.0f), 1.0f); 
+	}
 
-	public void setMode(int value) { mode = value; }
+	public void setMode(int value) 
+	{ 
+		if(mode != LINEAR && mode != EXPONENTIAL) { throw new IllegalArgumentException("Fog only supports LINEAR and EXPONENTIAL types"); }
+		mode = value; 
+	}
 
 }
