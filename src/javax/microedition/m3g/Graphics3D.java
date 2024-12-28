@@ -726,6 +726,10 @@ public class Graphics3D
 						// Draw the pixels for the current y-coordinate
 						for (int x = Math.round(xL); x < Math.round(xR); x++) 
 						{
+							// Check the current pixel's x and y values against the viewport bounds and skip drawing if it's out of bounds
+							if(x+viewx < 0 || x+viewx > vieww+viewx || x+viewx > pgrp.getCanvas().getWidth())  { continue; }
+							if(y+viewy < 0 || y+viewy > viewh+viewh || y+viewy > pgrp.getCanvas().getHeight()) { continue; }
+
 							try 
 							{
 								float drawX = (x - xL) / (xR - xL);
@@ -735,10 +739,10 @@ public class Graphics3D
 								// Only depth test if the compositingMode has the feature enabled. If compositingMode is not set, check if this target has depthBuffer enabled
 								if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthTestEnabled() == true)) && isDepthBufferEnabled()) 
 								{
+									// Depth testing and depth buffer updates don't need to match against the pixel's translated viewport coordinates, if they are translated
 									if (this.depthBuffer[this.vieww * y + x] < z) { continue; } // Skip if this pixel is not visible
 								}
 								
-
 								float s = sL + drawX * (sR - sL);
 								float t = tL + drawX * (tR - tL);
 								int texPixel = teximg.getConvertedPixel(Math.round(s), Math.round(t));
@@ -756,7 +760,7 @@ public class Graphics3D
 								}
 
 								// Blend the pixel with the background
-								int backgroundPixel = rasterData[y * pgrp.getCanvas().getWidth() + x];
+								int backgroundPixel = rasterData[(y+viewy) * pgrp.getCanvas().getWidth() + (x+viewx)];
 								int blendedPixel = texPixel;
 
 								// To blend the fog value here, we have to take the current pixel's z value into consideration
@@ -785,7 +789,7 @@ public class Graphics3D
 									blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, tex.getBlending());
 								}
 
-								rasterData[y * pgrp.getCanvas().getWidth() + x] = blendedPixel;
+								rasterData[(y+viewy) * pgrp.getCanvas().getWidth() + (x+viewx)] = blendedPixel;
 
 								// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
 								if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthWriteEnabled())) && isDepthBufferEnabled()) 
