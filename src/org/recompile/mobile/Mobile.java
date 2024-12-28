@@ -24,7 +24,6 @@ import java.io.InputStream;
 
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Canvas;
-import javax.microedition.m3g.Graphics3D;
 import javax.microedition.media.Manager;
 import javax.microedition.midlet.MIDlet;
 
@@ -43,8 +42,6 @@ public class Mobile
 	private static MobilePlatform platform;
 
 	private static Display display;
-
-	private static Graphics3D graphics3d;
 
 	// Mobile should contain flags to any and all "speedhacks" present in FreeJ2ME
 	public static boolean noAlphaOnBlankImages = true;
@@ -250,10 +247,6 @@ public class Mobile
 	public static Display getDisplay() { return display; }
 
 	public static void setDisplay(Display d) { display = d; }
-
-	public static Graphics3D getGraphics3D() { return graphics3d; }
-
-	public static void setGraphics3D(Graphics3D g) { graphics3d = g; }
 
 	public static InputStream getResourceAsStream(Class c, String resource)
 	{

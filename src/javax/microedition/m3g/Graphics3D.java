@@ -60,6 +60,8 @@ public class Graphics3D
 	// Render target
 	private Object target;
 
+	private static Graphics3D instance = null;
+
 	// Viewport
 	private int viewx;
 	private int viewy;
@@ -260,7 +262,11 @@ public class Graphics3D
 
 	public int getHints() { return hints; }
 
-	public static Graphics3D getInstance() { return Mobile.getGraphics3D(); }
+	public static Graphics3D getInstance() 
+	{ 
+		if( instance == null) { instance = new Graphics3D(); } 
+		return instance; 
+	}
 
 	public Light getLight(int index, Transform transform)
 	{
