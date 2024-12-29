@@ -18,6 +18,7 @@ package javax.microedition.m3g;
 
 import java.util.Hashtable;
 
+import javax.microedition.m3g.Camera.Plane;
 import javax.microedition.m3g.Transform;
 
 import java.util.ArrayList;
@@ -375,12 +376,16 @@ public class Graphics3D
 		//    defined in VertexBuffer or IndexBuffer
 		//    throw new java.lang.IllegalStateException();
 
-		// TODO: Those two are unused at the moment
-		int cullingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getCulling() : PolygonMode.CULL_BACK;
+		// TODO: Shading mode is not implemented
 		int shadingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getShading() : PolygonMode.SHADE_SMOOTH;
 		
+		int cullingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getCulling() : PolygonMode.CULL_BACK;
 		int windingOrder = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getWinding() : PolygonMode.WINDING_CCW;
 		boolean perspectiveCorrectionEnabled = appearance.getPolygonMode() != null ? appearance.getPolygonMode().isPerspectiveCorrectionEnabled() : false;
+
+		// Camera view direction used for culling checks
+		float[] viewDirection = new float[] { 0, 0, -1 };
+		viewDirection = normalize(viewDirection);
 
 		// Set up fog properties
 		Fog fog = appearance.getFog();
@@ -521,6 +526,41 @@ public class Graphics3D
 
 			for (int tri_id = 0; tri_id < trisScreen.length; tri_id++)
 			{
+				float[] vA = { trisScreen[tri_id].xA(), trisScreen[tri_id].yA(), trisScreen[tri_id].zA() };
+				float[] vB = { trisScreen[tri_id].xB(), trisScreen[tri_id].yB(), trisScreen[tri_id].zB() };
+				float[] vC = { trisScreen[tri_id].xC(), trisScreen[tri_id].yC(), trisScreen[tri_id].zC() };
+
+				// Check if the triangle is outside the frustum
+				boolean isOutside = true;
+				for (Plane plane : currCam.getViewFrustum()) 
+				{
+					if (plane.isInFrontOfPlane(vA) || plane.isInFrontOfPlane(vB) || plane.isInFrontOfPlane(vC)) 
+					{
+						isOutside = false;
+						break; // At least one vertex is inside the frustum
+					}
+				}
+
+				if (isOutside) { continue; } // Triangle is completely outside the frustum, skip rendering
+
+				// Calculate the edges
+				float[] edge1 = new float[] { vB[0] - vA[0], vB[1] - vA[1], vB[2] - vA[2] };
+				float[] edge2 = new float[] { vC[0] - vA[0], vC[1] - vA[1], vC[2] - vA[2] };
+
+				// Calculate the normal using cross product
+				float[] normal = crossProduct(edge1, edge2);
+				normal = normalize(normal); // Normalize the normal vector
+
+				boolean isBackFacing = dotProduct(normal, viewDirection) <= 0;
+				
+				if(!trisScreen[tri_id].isClipped()) // TODO: HACK, Do not cull triangles that were clipped. (for some reason, clipped triangles have wrong normals, facing away from the screen when the original wasn't, etc)
+				{
+					// Cull the triangle based on its culling mode, and which way it's facing
+					if (cullingMode == PolygonMode.CULL_BACK && isBackFacing) { continue; }
+					else if (cullingMode == PolygonMode.CULL_FRONT && !isBackFacing) { continue; }
+				}
+				
+
 				if (tex == null || texCoords == null) // If there's no texture coords or a texture image, we should try rendering with vertex colors.
 				{
 					int[] coXr = new int[] 
@@ -1050,5 +1090,26 @@ public class Graphics3D
 	
 		// Fog only has RGB channels, so it's always fully opaque
 		return (255 << 24) | (blendedR << 16) | (blendedG << 8) | blendedB;
+	}
+
+	// These are used for culling calculations
+	private float[] crossProduct(float[] a, float[] b) 
+	{
+		return new float[] {
+			a[1] * b[2] - a[2] * b[1],
+			a[2] * b[0] - a[0] * b[2],
+			a[0] * b[1] - a[1] * b[0]
+		};
+	}
+	
+	private float dotProduct(float[] a, float[] b) 
+	{
+		return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+	}
+	
+	private float[] normalize(float[] v) 
+	{
+		float length = (float) Math.sqrt(dotProduct(v, v));
+		return new float[] { v[0] / length, v[1] / length, v[2] / length };
 	}
 }

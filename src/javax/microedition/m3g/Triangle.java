@@ -46,6 +46,8 @@ class Triangle
 
 	int[] bufIndex;
 
+	boolean isClipped = false;
+
 	Triangle(float[] vertices, float[] texcoords, int[] indices)
 	{
 		this.v = vertices;
@@ -192,126 +194,81 @@ class Triangle
 		pn = div(pn, (float) Math.sqrt(dot(pn, pn)));
 		ArrayList<Integer> vin = new ArrayList<Integer>();
 		ArrayList<Integer> vout = new ArrayList<Integer>();
-		float[][] vert = new float[][] {
-			Arrays.copyOfRange(this.v, 4*0, 4*0+4),
-			Arrays.copyOfRange(this.v, 4*1, 4*1+4),
-			Arrays.copyOfRange(this.v, 4*2, 4*2+4)
+		float[][] vert = 
+		{
+			Arrays.copyOfRange(this.v, 0, 4),
+			Arrays.copyOfRange(this.v, 4, 8),
+			Arrays.copyOfRange(this.v, 8, 12)
 		};
-		float[][] tex = new float[][] {
-			Arrays.copyOfRange(this.t, 4*0, 4*0+4),
-			Arrays.copyOfRange(this.t, 4*1, 4*1+4),
-			Arrays.copyOfRange(this.t, 4*2, 4*2+4)
+		float[][] tex = 
+		{
+			Arrays.copyOfRange(this.t, 0, 4),
+			Arrays.copyOfRange(this.t, 4, 8),
+			Arrays.copyOfRange(this.t, 8, 12)
 		};
 
-		for (int i = 0; i < 3; i++)
-			if (dot(pn, vert[i]) - dot(pn, p) >= 0)
-				vin.add(i);
-			else
-				vout.add(i);
-
-		float[] v1, v2, t1, t2;
-		float[][] n1, n2;
-		v1 = new float[12];
-		v2 = new float[12];
-		t1 = new float[12];
-		t2 = new float[12];
+		for (int i = 0; i < 3; i++) 
+		{
+			if (dot(pn, vert[i]) - dot(pn, p) >= 0) { vin.add(i); }
+			else { vout.add(i); }
+		}
+			
 		switch (vin.size())
 		{
-			case 0:
+			case 0: // Entire triangle is outside the plane so return an empty one
 				return new Triangle[0];
-			case 1:
-				n1 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(0)],
-										tex[vin.get(0)], tex[vout.get(0)]);
-				n2 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(1)],
-										tex[vin.get(0)], tex[vout.get(1)]);
-				v1[4*0 + 0] = vert[vin.get(0)][0];
-				v1[4*0 + 1] = vert[vin.get(0)][1];
-				v1[4*0 + 2] = vert[vin.get(0)][2];
-				v1[4*0 + 3] = vert[vin.get(0)][3];
-				v1[4*1 + 0] = n1[0][0];
-				v1[4*1 + 1] = n1[0][1];
-				v1[4*1 + 2] = n1[0][2];
-				v1[4*1 + 3] = n1[0][3];
-				v1[4*2 + 0] = n2[0][0];
-				v1[4*2 + 1] = n2[0][1];
-				v1[4*2 + 2] = n2[0][2];
-				v1[4*2 + 3] = n2[0][3];
-
-				t1[4*0 + 0] = tex[vin.get(0)][0];
-				t1[4*0 + 1] = tex[vin.get(0)][1];
-				t1[4*0 + 2] = tex[vin.get(0)][2];
-				t1[4*0 + 3] = tex[vin.get(0)][3];
-				t1[4*1 + 0] = n1[1][0];
-				t1[4*1 + 1] = n1[1][1];
-				t1[4*1 + 2] = n1[1][2];
-				t1[4*1 + 3] = n1[1][3];
-				t1[4*2 + 0] = n2[1][0];
-				t1[4*2 + 1] = n2[1][1];
-				t1[4*2 + 2] = n2[1][2];
-				t1[4*2 + 3] = n2[1][3];
-				return new Triangle[] { new Triangle(v1, t1, bufIndex) }; // TODO: Might be incorrect in how bufIndex is passed
+			case 1: 
+			{
+				// Calculate intersections and create new triangles
+				Triangle[] newTriangles = new Triangle[1];
+				float[][] n1 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(0)], tex[vin.get(0)], tex[vout.get(0)]);
+				float[][] n2 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(1)], tex[vin.get(0)], tex[vout.get(1)]);
+				float[] v1 = { vert[vin.get(0)][0], vert[vin.get(0)][1], vert[vin.get(0)][2], vert[vin.get(0)][3],
+							   n1[0][0], n1[0][1], n1[0][2], n1[0][3],
+							   n2[0][0], n2[0][1], n2[0][2], n2[0][3] };
+	
+				float[] t1 = { tex[vin.get(0)][0], tex[vin.get(0)][1], tex[vin.get(0)][2], tex[vin.get(0)][3],
+							   n1[1][0], n1[1][1], n1[1][2], n1[1][3],
+							   n2[1][0], n2[1][1], n2[1][2], n2[1][3] };
+	
+				// New index for the clipped triangle
+				int[] newIndex = { 0, 1, 2 }; // Adjust based on your needs
+				newTriangles[0] = new Triangle(v1, t1, newIndex);
+				newTriangles[0].setClipped();
+				return newTriangles;
+			}
 			case 2:
-				n1 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(0)],
-										tex[vin.get(0)], tex[vout.get(0)]);
-				n2 = intersect(p, pn, vert[vin.get(1)], vert[vout.get(0)],
-										tex[vin.get(1)], tex[vout.get(0)]);
-				v1[4*0 + 0] = vert[vin.get(0)][0];
-				v1[4*0 + 1] = vert[vin.get(0)][1];
-				v1[4*0 + 2] = vert[vin.get(0)][2];
-				v1[4*0 + 3] = vert[vin.get(0)][3];
-				v1[4*1 + 0] = vert[vin.get(1)][0];
-				v1[4*1 + 1] = vert[vin.get(1)][1];
-				v1[4*1 + 2] = vert[vin.get(1)][2];
-				v1[4*1 + 3] = vert[vin.get(1)][3];
-				v1[4*2 + 0] = n1[0][0];
-				v1[4*2 + 1] = n1[0][1];
-				v1[4*2 + 2] = n1[0][2];
-				v1[4*2 + 3] = n1[0][3];
-
-				t1[4*0 + 0] = tex[vin.get(0)][0];
-				t1[4*0 + 1] = tex[vin.get(0)][1];
-				t1[4*0 + 2] = tex[vin.get(0)][2];
-				t1[4*0 + 3] = tex[vin.get(0)][3];
-				t1[4*1 + 0] = tex[vin.get(1)][0];
-				t1[4*1 + 1] = tex[vin.get(1)][1];
-				t1[4*1 + 2] = tex[vin.get(1)][2];
-				t1[4*1 + 3] = tex[vin.get(1)][3];
-				t1[4*2 + 0] = n1[1][0];
-				t1[4*2 + 1] = n1[1][1];
-				t1[4*2 + 2] = n1[1][2];
-				t1[4*2 + 3] = n1[1][3];
-
-				v2[4*0 + 0] = vert[vin.get(1)][0];
-				v2[4*0 + 1] = vert[vin.get(1)][1];
-				v2[4*0 + 2] = vert[vin.get(1)][2];
-				v2[4*0 + 3] = vert[vin.get(1)][3];
-				v2[4*1 + 0] = n1[0][0];
-				v2[4*1 + 1] = n1[0][1];
-				v2[4*1 + 2] = n1[0][2];
-				v2[4*1 + 3] = n1[0][3];
-				v2[4*2 + 0] = n2[0][0];
-				v2[4*2 + 1] = n2[0][1];
-				v2[4*2 + 2] = n2[0][2];
-				v2[4*2 + 3] = n2[0][3];
-
-				t2[4*0 + 0] = tex[vin.get(1)][0];
-				t2[4*0 + 1] = tex[vin.get(1)][1];
-				t2[4*0 + 2] = tex[vin.get(1)][2];
-				t2[4*0 + 3] = tex[vin.get(1)][3];
-				t2[4*1 + 0] = n1[1][0];
-				t2[4*1 + 1] = n1[1][1];
-				t2[4*1 + 2] = n1[1][2];
-				t2[4*1 + 3] = n1[1][3];
-				t2[4*2 + 0] = n2[1][0];
-				t2[4*2 + 1] = n2[1][1];
-				t2[4*2 + 2] = n2[1][2];
-				t2[4*2 + 3] = n2[1][3];
-				return new Triangle[] {
-					new Triangle(v1, t1, bufIndex), // TODO: Might be incorrect in how bufIndex is passed
-					new Triangle(v2, t2, bufIndex)
-				};
+			{
+				Triangle[] newTriangles = new Triangle[2];
+				float[][] n1 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(0)], tex[vin.get(0)], tex[vout.get(0)]);
+				float[][] n2 = intersect(p, pn, vert[vin.get(1)], vert[vout.get(0)], tex[vin.get(1)], tex[vout.get(0)]);
+	
+				// First triangle
+				float[] v1 = { vert[vin.get(0)][0], vert[vin.get(0)][1], vert[vin.get(0)][2], vert[vin.get(0)][3],
+							   vert[vin.get(1)][0], vert[vin.get(1)][1], vert[vin.get(1)][2], vert[vin.get(1)][3],
+							   n1[0][0], n1[0][1], n1[0][2], n1[0][3] };
+	
+				float[] t1 = { tex[vin.get(0)][0], tex[vin.get(0)][1], tex[vin.get(0)][2], tex[vin.get(0)][3],
+							   tex[vin.get(1)][0], tex[vin.get(1)][1], tex[vin.get(1)][2], tex[vin.get(1)][3],
+							   n1[1][0], n1[1][1], n1[1][2], n1[1][3] };
+	
+				// Second triangle
+				float[] v2 = { vert[vin.get(1)][0], vert[vin.get(1)][1], vert[vin.get(1)][2], vert[vin.get(1)][3],
+							   n1[0][0], n1[0][1], n1[0][2], n1[0][3],
+							   n2[0][0], n2[0][1], n2[0][2], n2[0][3] };
+	
+				float[] t2 = { tex[vin.get(1)][0], tex[vin.get(1)][1], tex[vin.get(1)][2], tex[vin.get(1)][3],
+							   n1[1][0], n1[1][1], n1[1][2], n1[1][3],
+							   n2[1][0], n2[1][1], n2[1][2], n2[1][3] };
+	
+				newTriangles[0] = new Triangle(v1, t1, new int[] { 0, 1, 2 });
+				newTriangles[1] = new Triangle(v2, t2, new int[] { 0, 1, 2 });
+				newTriangles[0].setClipped();
+				newTriangles[1].setClipped();
+				return newTriangles;
+			}
 			case 3:
-				return new Triangle[] { this };
+				return new Triangle[] { this }; // No clipping needed
 		}
 		throw new java.lang.IllegalStateException();
 	}
@@ -393,4 +350,8 @@ class Triangle
 			add(ta, mul(sub(tb, ta), ratio))
 		};
 	}
+
+	public void setClipped() { isClipped = true; }
+
+	public boolean isClipped() { return isClipped; }
 }
