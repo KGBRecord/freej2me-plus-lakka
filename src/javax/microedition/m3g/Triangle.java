@@ -23,8 +23,6 @@ import java.util.stream.Stream;
 // package-private
 class Triangle
 {
-	static final float EPSILON = Float.MIN_VALUE * 16f;
-
 	static float[][] xp = new float[][] {{ 0, 0, 0, 0 }, {-1, 0, 0, 1 }};
 	static float[][] xn = new float[][] {{ 0, 0, 0, 0 }, { 1, 0, 0, 1 }};
 	static float[][] yp = new float[][] {{ 0, 0, 0, 0 }, { 0,-1, 0, 1 }};
@@ -153,9 +151,9 @@ class Triangle
 	private boolean isValid()
 	{
 		return
-			this.wA() >= EPSILON ||
-			this.wB() >= EPSILON ||
-			this.wC() >= EPSILON;
+			this.wA() >= M3GMath.EPSILON ||
+			this.wB() >= M3GMath.EPSILON ||
+			this.wC() >= M3GMath.EPSILON;
 	}
 
 	private Triangle project()
@@ -191,7 +189,7 @@ class Triangle
 
 	private Triangle[] clipPlane(float[] p, float[] pn)
 	{
-		pn = div(pn, (float) Math.sqrt(dot(pn, pn)));
+		pn = M3GMath.div(pn, (float) Math.sqrt(M3GMath.dotProduct(pn, pn)));
 		ArrayList<Integer> vin = new ArrayList<Integer>();
 		ArrayList<Integer> vout = new ArrayList<Integer>();
 		float[][] vert = 
@@ -209,7 +207,7 @@ class Triangle
 
 		for (int i = 0; i < 3; i++) 
 		{
-			if (dot(pn, vert[i]) - dot(pn, p) >= 0) { vin.add(i); }
+			if (M3GMath.dotProduct(pn, vert[i]) - M3GMath.dotProduct(pn, p) >= 0) { vin.add(i); }
 			else { vout.add(i); }
 		}
 			
@@ -221,8 +219,8 @@ class Triangle
 			{
 				// Calculate intersections and create new triangles
 				Triangle[] newTriangles = new Triangle[1];
-				float[][] n1 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(0)], tex[vin.get(0)], tex[vout.get(0)]);
-				float[][] n2 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(1)], tex[vin.get(0)], tex[vout.get(1)]);
+				float[][] n1 = M3GMath.intersectTriangle(p, pn, vert[vin.get(0)], vert[vout.get(0)], tex[vin.get(0)], tex[vout.get(0)]);
+				float[][] n2 = M3GMath.intersectTriangle(p, pn, vert[vin.get(0)], vert[vout.get(1)], tex[vin.get(0)], tex[vout.get(1)]);
 				float[] v1 = { vert[vin.get(0)][0], vert[vin.get(0)][1], vert[vin.get(0)][2], vert[vin.get(0)][3],
 							   n1[0][0], n1[0][1], n1[0][2], n1[0][3],
 							   n2[0][0], n2[0][1], n2[0][2], n2[0][3] };
@@ -240,8 +238,8 @@ class Triangle
 			case 2:
 			{
 				Triangle[] newTriangles = new Triangle[2];
-				float[][] n1 = intersect(p, pn, vert[vin.get(0)], vert[vout.get(0)], tex[vin.get(0)], tex[vout.get(0)]);
-				float[][] n2 = intersect(p, pn, vert[vin.get(1)], vert[vout.get(0)], tex[vin.get(1)], tex[vout.get(0)]);
+				float[][] n1 = M3GMath.intersectTriangle(p, pn, vert[vin.get(0)], vert[vout.get(0)], tex[vin.get(0)], tex[vout.get(0)]);
+				float[][] n2 = M3GMath.intersectTriangle(p, pn, vert[vin.get(1)], vert[vout.get(0)], tex[vin.get(1)], tex[vout.get(0)]);
 	
 				// First triangle
 				float[] v1 = { vert[vin.get(0)][0], vert[vin.get(0)][1], vert[vin.get(0)][2], vert[vin.get(0)][3],
@@ -285,71 +283,6 @@ class Triangle
         System.arraycopy(texCoordB, 0, this.t, 4, 4); // sB, tB, rB, qB
         System.arraycopy(texCoordC, 0, this.t, 8, 4); // sC, tC, rC, qC
     }
-
-	private static float[] add(float[] a, float[] b)
-	{
-		if (a.length != b.length)
-			throw new java.lang.IllegalArgumentException();
-		float[] out = new float[a.length];
-		for (int i = 0; i < a.length; i++)
-			out[i] = a[i] + b[i];
-		return out;
-	}
-
-	private static float[] sub(float[] a, float[] b)
-	{
-		return add(a, neg(b));
-	}
-
-	private static float[] mul(float[] a, float b)
-	{
-		float[] out = new float[a.length];
-		for (int i = 0; i < a.length; i++)
-			out[i] = a[i] * b;
-		return out;
-	}
-
-	private static float[] div(float[] a, float b)
-	{
-		return mul(a, 1f / b);
-	}
-
-	private static float[] neg(float[] a)
-	{
-		float[] out = new float[a.length];
-		for (int i = 0; i < a.length; i++)
-			out[i] = -1f * a[i];
-		return out;
-	}
-
-	private static float dot(float[] a, float[] b)
-	{
-		if (a.length != b.length)
-			throw new java.lang.IllegalArgumentException();
-		float sum = 0;
-		for (int i = 0; i < a.length; i++)
-			sum += a[i] * b[i];
-		return sum;
-	}
-
-	private static float[][] intersect(
-		float[] p,
-		float[] pn,
-		float[] a,
-		float[] b,
-		float[] ta,
-		float[] tb
-	) {
-		float pd, ad, bd, ratio;
-		pd = dot(p, pn);
-		ad = dot(a, pn);
-		bd = dot(b, pn);
-		ratio = (pd - ad) / (bd - ad);
-		return new float[][] {
-			add(a, mul(sub(b, a), ratio)),
-			add(ta, mul(sub(tb, ta), ratio))
-		};
-	}
 
 	public void setClipped() { isClipped = true; }
 

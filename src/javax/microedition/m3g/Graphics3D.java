@@ -384,8 +384,7 @@ public class Graphics3D
 		boolean perspectiveCorrectionEnabled = appearance.getPolygonMode() != null ? appearance.getPolygonMode().isPerspectiveCorrectionEnabled() : false;
 
 		// Camera view direction used for culling checks
-		float[] viewDirection = new float[] { 0, 0, -1 };
-		viewDirection = normalize(viewDirection);
+		final float[] viewDirection = M3GMath.normalize(new float[] { 0, 0, -1 });
 
 		// Set up fog properties
 		Fog fog = appearance.getFog();
@@ -412,7 +411,6 @@ public class Graphics3D
 		Image2D teximg = tex == null ? null : tex.getImage();
 		VertexArray texCoords = vertices.getTexCoords(0, scaleBias); // get Texture coordinates
 
-		
 		if (tex != null) { tex.getCompositeTransform(texcomptr); }
 
 		// Scale and translate texture coordinates (same scaleBias)
@@ -451,42 +449,6 @@ public class Graphics3D
 		Triangle[] trisScreen = Arrays.stream(trisClip)
 				.flatMap(t -> t.clip())
 				.toArray(Triangle[]::new);
-
-		// If perspective correction is enabled, do it for texture coordinates
-		if(perspectiveCorrectionEnabled)
-		{
-			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Perspective Correction Enabled! UNTESTED");
-			for (Triangle t : trisScreen) 
-			{
-				// Get the w components for each triangle vertex
-				float wA = t.wA();
-				float wB = t.wB();
-				float wC = t.wC();
-		
-				// Calculate perspective-correct texture coordinates
-				float[] texCoordA = {
-					t.sA() / wA,
-					t.tA() / wA,
-					0, // rA
-					1  // qA
-				};
-				float[] texCoordB = {
-					t.sB() / wB,
-					t.tB() / wB,
-					0, // rB
-					1  // qB
-				};
-				float[] texCoordC = {
-					t.sC() / wC,
-					t.tC() / wC,
-					0, // rC
-					1  // qC
-				};
-		
-				// Set the corrected texture coordinates back into the triangle
-				t.setTexCoords(texCoordA, texCoordB, texCoordC);
-			}
-		}
 		// At this point the triangles in `trisScreen` are actually
 		// in Normalized Device Coordinates, but they will be tranformed
 		// to Screen space in-place, hence the name.
@@ -520,21 +482,79 @@ public class Graphics3D
 			int[] rasterData = ((DataBufferInt) pgrp.getCanvas().getRaster().getDataBuffer()).getData();
 
 			Color colorOrig = grp.getColor();
-			// Unused, as we are now getting vertex colors from the Triangle data
-			//Color colorFill = new Color(0, 150, 240, 255);
-			// Color colorDraw = new Color(255, 255, 255, 128);
+
+			final float[] vertexA = new float[3];
+			final float[] vertexB = new float[3];
+			final float[] vertexC = new float[3];
+			final float[] edge1 = new float[3];
+			final float[] edge2 = new float[3];
+
+			// Collect vertex attributes
+			float[] coX = new float[3];
+			float[] coY = new float[3];
+			float[] coZ = new float[3];
+			float[] coS = new float[3];
+			float[] coT = new float[3];
+
+			float[] xOrdered = new float[3];
+			float[] yOrdered = new float[3];
+			float[] zOrdered = new float[3];
+			float[] sOrdered = new float[3];
+			float[] tOrdered = new float[3];
+
+			float xTop, yTop, zTop, sTop, tTop;
+			float xMidL, yMid, zMidL, sMidL, tMidL;
+			float xBot, yBot, zBot, sBot, tBot;
+
+			float rHorizon, xMidR, zMidR, sMidR, tMidR;
+
 
 			for (int tri_id = 0; tri_id < trisScreen.length; tri_id++)
 			{
-				float[] vA = { trisScreen[tri_id].xA(), trisScreen[tri_id].yA(), trisScreen[tri_id].zA() };
-				float[] vB = { trisScreen[tri_id].xB(), trisScreen[tri_id].yB(), trisScreen[tri_id].zB() };
-				float[] vC = { trisScreen[tri_id].xC(), trisScreen[tri_id].yC(), trisScreen[tri_id].zC() };
+
+				// If perspective correction is enabled, do it for texture coordinates
+				if(perspectiveCorrectionEnabled)
+				{
+					// Get the w components for each triangle vertex
+					float wA = trisScreen[tri_id].wA();
+					float wB = trisScreen[tri_id].wB();
+					float wC = trisScreen[tri_id].wC();
+			
+					// Calculate perspective-correct texture coordinates
+					float[] texCoordA = {
+						trisScreen[tri_id].sA() / wA,
+						trisScreen[tri_id].tA() / wA,
+						0, // rA
+						1  // qA
+					};
+					float[] texCoordB = {
+						trisScreen[tri_id].sB() / wB,
+						trisScreen[tri_id].tB() / wB,
+						0, // rB
+						1  // qB
+					};
+					float[] texCoordC = {
+						trisScreen[tri_id].sC() / wC,
+						trisScreen[tri_id].tC() / wC,
+						0, // rC
+						1  // qC
+					};
+			
+					// Set the corrected texture coordinates back into the triangle
+					trisScreen[tri_id].setTexCoords(texCoordA, texCoordB, texCoordC);
+				}
+				
+				// Then move on to culling tests
+
+				vertexA[0] = trisScreen[tri_id].xA(); vertexA[1] = trisScreen[tri_id].yA(); vertexA[2] = trisScreen[tri_id].zA();
+				vertexB[0] = trisScreen[tri_id].xB(); vertexB[1] = trisScreen[tri_id].yB(); vertexB[2] = trisScreen[tri_id].zB();
+				vertexC[0] = trisScreen[tri_id].xC(); vertexC[1] = trisScreen[tri_id].yC(); vertexC[2] = trisScreen[tri_id].zC();
 
 				// Check if the triangle is outside the frustum
 				boolean isOutside = true;
 				for (Plane plane : currCam.getViewFrustum()) 
 				{
-					if (plane.isInFrontOfPlane(vA) || plane.isInFrontOfPlane(vB) || plane.isInFrontOfPlane(vC)) 
+					if (plane.isInFrontOfPlane(vertexA) || plane.isInFrontOfPlane(vertexB) || plane.isInFrontOfPlane(vertexC)) 
 					{
 						isOutside = false;
 						break; // At least one vertex is inside the frustum
@@ -543,15 +563,10 @@ public class Graphics3D
 
 				if (isOutside) { continue; } // Triangle is completely outside the frustum, skip rendering
 
-				// Calculate the edges
-				float[] edge1 = new float[] { vB[0] - vA[0], vB[1] - vA[1], vB[2] - vA[2] };
-				float[] edge2 = new float[] { vC[0] - vA[0], vC[1] - vA[1], vC[2] - vA[2] };
-
 				// Calculate the normal using cross product
-				float[] normal = crossProduct(edge1, edge2);
-				normal = normalize(normal); // Normalize the normal vector
+				final float[] normal = M3GMath.calculateNormal(trisScreen[tri_id].v);
 
-				boolean isBackFacing = dotProduct(normal, viewDirection) <= 0;
+				boolean isBackFacing = M3GMath.dotProduct(normal, viewDirection) <= 0;
 				
 				if(!trisScreen[tri_id].isClipped()) // TODO: HACK, Do not cull triangles that were clipped. (for some reason, clipped triangles have wrong normals, facing away from the screen when the original wasn't, etc)
 				{
@@ -576,7 +591,15 @@ public class Graphics3D
 						Math.round(trisScreen[tri_id].yC())
 					};
 					
-					if(vertices.getColors() == null) { grp.setColor(new Color(vertices.getDefaultColor()));} // If there's no vertex colors, we have to render with the VertexBuffer's default color.
+					grp.translate(viewx, viewy);
+					if(vertices.getColors() == null) // If there's no vertex colors, we have to render with the VertexBuffer's default color.
+					{ 
+						grp.setColor(new Color(vertices.getDefaultColor()));
+
+						grp.fillPolygon(coXr, coYr, 3);
+						//grp.setColor(colorDraw);
+						//grp.drawPolygon(coXr, coYr, 3); // TODO: Maybe use this for debugging, like a Wireframe mode?
+					} 
 					else // If we have vertex colors, good. Read them to color up the triangles properly.
 					{
 						GradientPaint gradient;
@@ -657,17 +680,13 @@ public class Graphics3D
 						grp.fillPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, new int[]{coYr[1], coYr[2], coYr[0]}, 3 );
 
 						grp.setPaint(originalPaint);
-
-						continue; // continue because now we shouldn't hit the fillPolygon call below
 					}
-					
-					grp.fillPolygon(coXr, coYr, 3);
-					//grp.setColor(colorDraw);
-					//grp.drawPolygon(coXr, coYr, 3); // TODO: Maybe use this for debugging, like a Wireframe mode?
 
+					grp.translate(-viewx, -viewy);
 					continue;
 				}
 
+				// Text
 				// Prepare ordering based on vertex positions
 				Integer[] ord = {0, 1, 2};
 
@@ -683,32 +702,32 @@ public class Graphics3D
 				Arrays.sort(ord, (a, b) -> Float.compare(trisScreen[curID].v[4 * a + 1], trisScreen[curID].v[4 * b + 1]));
 
 				// Collect vertex attributes
-				float[] coX = {trisScreen[tri_id].xA(), trisScreen[tri_id].xB(), trisScreen[tri_id].xC()};
-				float[] coY = {trisScreen[tri_id].yA(), trisScreen[tri_id].yB(), trisScreen[tri_id].yC()};
-				float[] coZ = {trisScreen[tri_id].zA(), trisScreen[tri_id].zB(), trisScreen[tri_id].zC()};
-				float[] coS = {trisScreen[tri_id].sA(), trisScreen[tri_id].sB(), trisScreen[tri_id].sC()};
-				float[] coT = {trisScreen[tri_id].tA(), trisScreen[tri_id].tB(), trisScreen[tri_id].tC()};
+				coX[0] = trisScreen[tri_id].xA(); coX[1] = trisScreen[tri_id].xB(); coX[2] = trisScreen[tri_id].xC();
+				coY[0] = trisScreen[tri_id].yA(); coY[1] = trisScreen[tri_id].yB(); coY[2] = trisScreen[tri_id].yC();
+				coZ[0] = trisScreen[tri_id].zA(); coZ[1] = trisScreen[tri_id].zB(); coZ[2] = trisScreen[tri_id].zC();
+				coS[0] = trisScreen[tri_id].sA(); coS[1] = trisScreen[tri_id].sB(); coS[2] = trisScreen[tri_id].sC();
+				coT[0] = trisScreen[tri_id].tA(); coT[1] = trisScreen[tri_id].tB(); coT[2] = trisScreen[tri_id].tC();
 
 				// Extract ordered vertex attributes
-				float[] xOrdered = {coX[ord[0]], coX[ord[1]], coX[ord[2]]};
-				float[] yOrdered = {coY[ord[0]], coY[ord[1]], coY[ord[2]]};
-				float[] zOrdered = {coZ[ord[0]], coZ[ord[1]], coZ[ord[2]]};
-				float[] sOrdered = {coS[ord[0]], coS[ord[1]], coS[ord[2]]};
-				float[] tOrdered = {coT[ord[0]], coT[ord[1]], coT[ord[2]]};
+				xOrdered[0] = coX[ord[0]]; xOrdered[1] = coX[ord[1]]; xOrdered[2] = coX[ord[2]];
+				yOrdered[0] = coY[ord[0]]; yOrdered[1] = coY[ord[1]]; yOrdered[2] = coY[ord[2]];
+				zOrdered[0] = coZ[ord[0]]; zOrdered[1] = coZ[ord[1]]; zOrdered[2] = coZ[ord[2]];
+				sOrdered[0] = coS[ord[0]]; sOrdered[1] = coS[ord[1]]; sOrdered[2] = coS[ord[2]];
+				tOrdered[0] = coT[ord[0]]; tOrdered[1] = coT[ord[1]]; tOrdered[2] = coT[ord[2]];
 
 				// Define top, middle, and bottom vertices
-				float xTop = xOrdered[0], xMidL = xOrdered[1], xBot = xOrdered[2];
-				float yTop = yOrdered[0], yMid = yOrdered[1], yBot = yOrdered[2];
-				float zTop = zOrdered[0], zMidL = zOrdered[1], zBot = zOrdered[2];
-				float sTop = sOrdered[0], sMidL = sOrdered[1], sBot = sOrdered[2];
-				float tTop = tOrdered[0], tMidL = tOrdered[1], tBot = tOrdered[2];
+				xTop = xOrdered[0]; xMidL = xOrdered[1]; xBot = xOrdered[2];
+				yTop = yOrdered[0]; yMid = yOrdered[1]; yBot = yOrdered[2];
+				zTop = zOrdered[0]; zMidL = zOrdered[1]; zBot = zOrdered[2];
+				sTop = sOrdered[0]; sMidL = sOrdered[1]; sBot = sOrdered[2];
+				tTop = tOrdered[0]; tMidL = tOrdered[1]; tBot = tOrdered[2];
 
 				// Calculate the right horizon
-				float rHorizon = (yMid - yTop) / (yBot - yTop);
-				float xMidR = xTop + rHorizon * (xBot - xTop);
-				float zMidR = zTop + rHorizon * (zBot - zTop);
-				float sMidR = sTop + rHorizon * (sBot - sTop);
-				float tMidR = tTop + rHorizon * (tBot - tTop);
+				rHorizon = (yMid - yTop) / (yBot - yTop);
+				xMidR = xTop + rHorizon * (xBot - xTop);
+				zMidR = zTop + rHorizon * (zBot - zTop);
+				sMidR = sTop + rHorizon * (sBot - sTop);
+				tMidR = tTop + rHorizon * (tBot - tTop);
 
 				// Swap midpoints if necessary
 				if (xMidL > xMidR) 
@@ -841,11 +860,7 @@ public class Graphics3D
 						}
 					}
 				}
-				// }
-				// end of texture unit loop
-
 			}
-
 			grp.setColor(colorOrig);
 		}
 	}
@@ -1090,26 +1105,5 @@ public class Graphics3D
 	
 		// Fog only has RGB channels, so it's always fully opaque
 		return (255 << 24) | (blendedR << 16) | (blendedG << 8) | blendedB;
-	}
-
-	// These are used for culling calculations
-	private float[] crossProduct(float[] a, float[] b) 
-	{
-		return new float[] {
-			a[1] * b[2] - a[2] * b[1],
-			a[2] * b[0] - a[0] * b[2],
-			a[0] * b[1] - a[1] * b[0]
-		};
-	}
-	
-	private float dotProduct(float[] a, float[] b) 
-	{
-		return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-	}
-	
-	private float[] normalize(float[] v) 
-	{
-		float length = (float) Math.sqrt(dotProduct(v, v));
-		return new float[] { v[0] / length, v[1] / length, v[2] / length };
 	}
 }

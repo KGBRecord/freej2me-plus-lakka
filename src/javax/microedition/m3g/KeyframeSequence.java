@@ -43,8 +43,8 @@ public class KeyframeSequence extends Object3D
 	private float[][] inTangents;
 	private float[][] outTangents;
 	private int[] keyFrameTimes;
-	private QVec4[] a;
-	private QVec4[] b;
+	private float[][] a;
+	private float[][] b;
 
 
 	public KeyframeSequence(int numKeyframes, int numComponents, int interpolation) 
@@ -64,8 +64,8 @@ public class KeyframeSequence extends Object3D
 			case SQUAD:
 				if (numComponents != 4)
 					throw new IllegalArgumentException("SLERP and SQUAD mode requires 4 components in each keyframe");
-				a = new QVec4[numKeyframes];
-				b = new QVec4[numKeyframes];
+				a = new float[numKeyframes][4];
+				b = new float[numKeyframes][4];
 				break;
 			case STEP:
 				break;
@@ -190,53 +190,53 @@ public class KeyframeSequence extends Object3D
 			else if (intType == SQUAD) 
 			{
 				int kf = rangeFirst;
-				QVec4 start = new QVec4();
-				QVec4 end = new QVec4();
-				QVec4 prev = new QVec4();
-				QVec4 next = new QVec4();
-				QVec4 tempq = new QVec4();
-				Vector3 tempv = new Vector3();
-				Vector3 cfd = new Vector3();
-				Vector3 tangent = new Vector3();
+				float[] start = new float[4];
+				float[] end = new float[4];
+				float[] prev = new float[4];
+				float[] next = new float[4];
+				float[] tempq = new float[4];
+				float[] tempv = new float[3];
+				float[] cfd = new float[3];
+				float[] tangent = new float[3];
 				do {
-					prev.setQuat(keyframeBefore(kf));
-					start.setQuat(keyframeAt(kf));
-					end.setQuat(keyframeAfter(kf));
-					next.setQuat(keyframeAfter(nextKeyframeIndex(kf)));
+					prev = keyframeBefore(kf);
+					start = keyframeAt(kf);
+					end = keyframeAfter(kf);
+					next = keyframeAfter(nextKeyframeIndex(kf));
 
-					cfd.logDiffQuat(start, end);
-					tempv.logDiffQuat(prev, start);
-					cfd.addVec3(tempv);
-					cfd.scaleVec3(0.5f);
+					M3GMath.logDiffQuat(cfd, start, end);
+					M3GMath.logDiffQuat(tempv, prev, start);
+					M3GMath.addVec(cfd, tempv);
+					M3GMath.scaleVec(cfd, 0.5f);
 
-					tangent.assign(cfd);
-					tangent.scaleVec3(outgoingTangentScale(kf));
+					tangent = cfd;
+					M3GMath.scaleVec(tangent, outgoingTangentScale(kf));
 
-					tempv.logDiffQuat(start, end);
-					tangent.subVec3(tempv);
-					tangent.scaleVec3(0.5f);
-					tempq.x = tempv.x;
-					tempq.y = tempv.y;
-					tempq.z = tempv.z;
-					tempq.expQuat(tangent);
-					a[kf].assign(start);
-					a[kf].mulQuat(tempq);
+					M3GMath.logDiffQuat(tempv, start, end);
+					M3GMath.subVec(tangent, tempv);
+					M3GMath.scaleVec(tangent, 0.5f);
+					tempq[0] = tempv[0];
+					tempq[1] = tempv[1];
+					tempq[2] = tempv[2];
+					M3GMath.expQuat(tempq, tangent);
+					a[kf] = start;
+					a[kf] = M3GMath.mulQuat(tempq);
 
-					tangent.assign(cfd);
-					tangent.scaleVec3(incomingTangentScale(kf));
+					tangent = cfd;
+					M3GMath.scaleVec(tangent, incomingTangentScale(kf));
 
-					tempv.x = tempq.x;
-					tempv.y = tempq.y;
-					tempv.z = tempq.z;
-					tempv.logDiffQuat(prev, start);
-					tempv.subVec3(tangent);
-					tempv.scaleVec3(0.5f);
-					tempq.x = tempv.x;
-					tempq.y = tempv.y;
-					tempq.z = tempv.z;
-					tempq.expQuat(tempv);
-					b[kf].assign(start);
-					b[kf].mulQuat(tempq);
+					tempv[0] = tempq[0];
+					tempv[1] = tempq[1];
+					tempv[2] = tempq[2];
+					M3GMath.logDiffQuat(tempv, prev, start);
+					M3GMath.subVec(tempv, tangent);
+					M3GMath.scaleVec(tempv, 0.5f);
+					tempq[0] = tempv[0];
+					tempq[1] = tempv[1];
+					tempq[2] = tempv[2];
+					M3GMath.expQuat(tempq, tempv);
+					b[kf] = start;
+					b[kf] = M3GMath.mulQuat(tempq);
 
 					kf = nextKeyframeIndex(kf);
 				} while (kf != rangeFirst);
@@ -298,47 +298,47 @@ public class KeyframeSequence extends Object3D
 		float[] tEnd;
 		float s2;
 		float s3;
-		QVec4 q0;
-		QVec4 q1;
-		QVec4 sampl;
-		QVec4 temp0;
-		QVec4 temp1;
-		QVec4 A;
-		QVec4 B;
+		float[] q0;
+		float[] q1;
+		float[] sampl;
+		float[] temp0;
+		float[] temp1;
+		float[] A;
+		float[] B;
 		switch (intType) 
 		{
 			case LINEAR:
 				Start = keyframeAt(start);
 				End = keyframeAt(end);
-				Vector3.lerp(componentCount, sample, s, Start, End);
+				M3GMath.lerpVec3(componentCount, sample, s, Start, End);
 				break;
 			case SLERP:
 				if (componentCount != 4)
 					throw new IllegalStateException();
-				q0 = new QVec4();
-				q1 = new QVec4();
-				sampl = new QVec4();
+				q0 = new float[4];
+				q1 = new float[4];
+				sampl = new float[4];
 
-				q0.setQuat(keyframeAt(start));
-				q1.setQuat(keyframeAt(end));
-				sampl.setQuat(sample);
+				q0 = keyframeAt(start);
+				q1 = keyframeAt(end);
+				sampl = sample;
 
-				sampl.slerpQuat(s, q0, q1);
-				sample[0] = sampl.x;
-				sample[1] = sampl.y;
-				sample[2] = sampl.z;
-				sample[3] = sampl.w;
+				M3GMath.slerpQuat(sampl, s, q0, q1);
+				sample[0] = sampl[0];
+				sample[1] = sampl[1];
+				sample[2] = sampl[2];
+				sample[3] = sampl[3];
 				// may be not necessary
 				temp = keyframeAt(start);
-				temp[0] = q0.x;
-				temp[1] = q0.y;
-				temp[2] = q0.z;
-				temp[3] = q0.w;
+				temp[0] = q0[0];
+				temp[1] = q0[1];
+				temp[2] = q0[2];
+				temp[3] = q0[3];
 				temp = keyframeAt(end);
-				temp[0] = q1.x;
-				temp[1] = q1.y;
-				temp[2] = q1.z;
-				temp[3] = q1.w;
+				temp[0] = q1[0];
+				temp[1] = q1[1];
+				temp[2] = q1[2];
+				temp[3] = q1[3];
 				break;
 			case SPLINE:
 				Start = keyframeAt(start);
@@ -355,47 +355,47 @@ public class KeyframeSequence extends Object3D
 			case SQUAD:
 				if (componentCount != 4)
 					throw new IllegalStateException();
-				temp0 = new QVec4();
-				temp1 = new QVec4();
-				q0 = new QVec4();
-				q1 = new QVec4();
-				//A = new QVec4();
-				//B = new QVec4();
-				sampl = new QVec4();
+				temp0 = new float[4];
+				temp1 = new float[4];
+				q0 = new float[4];
+				q1 = new float[4];
+				//A = new float[4];
+				//B = new float[4];
+				sampl = new float[4];
 
-				q0.setQuat(keyframeAt(start));
-				q1.setQuat(keyframeAt(end));
+				q0 = keyframeAt(start);
+				q1 = keyframeAt(end);
 				//A.setQuat(a[start]);
 				//B.setQuat(b[end]);
-				sampl.setQuat(sample);
-				temp0.slerpQuat(s, q0, q1);
-				temp1.slerpQuat(s, a[start], b[end]);
-				sampl.slerpQuat(((s * (1.0f - s)) * 2), temp0, temp1);
-				sample[0] = sampl.x;
-				sample[1] = sampl.y;
-				sample[2] = sampl.z;
-				sample[3] = sampl.w;
+				sampl = sample;
+				M3GMath.slerpQuat(temp0, s, q0, q1);
+				M3GMath.slerpQuat(temp1, s, a[start], b[end]);
+				M3GMath.slerpQuat(sampl, ((s * (1.0f - s)) * 2), temp0, temp1);
+				sample[0] = sampl[0];
+				sample[1] = sampl[1];
+				sample[2] = sampl[2];
+				sample[3] = sampl[3];
 				// may be not necessary
 				temp = keyframeAt(start);
-				temp[0] = q0.x;
-				temp[1] = q0.y;
-				temp[2] = q0.z;
-				temp[3] = q0.w;
+				temp[0] = q0[0];
+				temp[1] = q0[1];
+				temp[2] = q0[2];
+				temp[3] = q0[3];
 				temp = keyframeAt(end);
-				temp[0] = q1.x;
-				temp[1] = q1.y;
-				temp[2] = q1.z;
-				temp[3] = q1.w;
+				temp[0] = q1[0];
+				temp[1] = q1[1];
+				temp[2] = q1[2];
+				temp[3] = q1[3];
 				/*temp = a[start];
-                temp[0] = A.x;
-				temp[1] = A.y;
-				temp[2] = A.z;
-				temp[3] = A.w;
+                temp[0] = A[0];
+				temp[1] = A[1];
+				temp[2] = A[2];
+				temp[3] = A[3];
 				temp = b[end];
-				temp[0] = B.x;
-				temp[1] = B.y;
-				temp[2] = B.z;
-				temp[3] = B.w;*/
+				temp[0] = B[0];
+				temp[1] = B[1];
+				temp[2] = B[2];
+				temp[3] = B[3];*/
 				break;
 			default:
 				throw new IllegalStateException();
@@ -456,14 +456,14 @@ public class KeyframeSequence extends Object3D
 		System.arraycopy(value, 0, keyFrames[index], 0, componentCount);
 		keyFrameTimes[index] = time;
 		if (intType == SLERP || intType == SQUAD) {
-			QVec4 q = new QVec4();
+			float[] q = new float[4];
 			float[] kf = keyframeAt(index);
-			q.setQuat(kf);
-			q.normalizeQuat();
-			kf[0] = q.x;
-			kf[1] = q.y;
-			kf[2] = q.z;
-			kf[3] = q.w;
+			q = kf;
+			q = M3GMath.normalizeQuat(q);
+			kf[0] = q[0];
+			kf[1] = q[1];
+			kf[2] = q[2];
+			kf[3] = q[3];
 		}
 		dirty = true;
 	}

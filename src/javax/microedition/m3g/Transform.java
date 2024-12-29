@@ -378,41 +378,6 @@ public class Transform
 		return new Transform(translationMatrix);
 	}
 
-	// package-private
-	void debug()
-	{
-		System.out.println();
-		for (int i = 0; i < 16; i += 4)
-		{
-			System.out.println(String.format(
-				"dbg-mat %5.2f %5.2f %5.2f %5.2f",
-				this.matrix[i + 0],
-				this.matrix[i + 1],
-				this.matrix[i + 2],
-				this.matrix[i + 3]
-			));
-		}
-	}
-
-	// package-private
-	void debug(VertexArray in)
-	{
-		float[] buf = new float[4 * in.getVertexCount()];
-		this.transform(in, buf, true);
-		this.debug();
-		for (int i = 0; i < buf.length; i += 4)
-		{
-			System.out.println(String.format(
-				"dbg-out %5.2f %5.2f %5.2f %5.2f",
-				buf[i + 0],
-				buf[i + 1],
-				buf[i + 2],
-				buf[i + 3]
-			));
-		}
-		System.out.println();
-	}
-
 	/* ------------------------- private methods ------------------------- */
 
 	private Transform(float[] matrix)
