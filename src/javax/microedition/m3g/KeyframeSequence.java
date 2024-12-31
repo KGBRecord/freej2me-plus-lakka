@@ -35,7 +35,7 @@ public class KeyframeSequence extends Object3D
 	private int repeat;
 	private int rangeFirst;
 	private int rangeLast;
-	private int componentCount;
+	public int componentCount;
 	private int nextKeyframe;
 	private boolean dirty;
 

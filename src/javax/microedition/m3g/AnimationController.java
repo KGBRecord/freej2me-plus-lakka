@@ -20,74 +20,75 @@ package javax.microedition.m3g;
 public class AnimationController extends Object3D
 {
 
-	private float weight;
-	private float speed;
-	private int world;
-	private float sequence;
-	private int intStart;
-	private int intEnd;
-
-
-	public AnimationController() {  }
-
+	private int activationTime = 0;
+	private int deactivationTime = 0;
+	private float speed = 1.0f;
+	private int refWorldTime = 0;
+	private float refSequenceTime = 0;
+	private float weight = 1.0f;
 
 	public int timeToActivation(int worldTime) 
 	{
-		if (worldTime < intStart) { return intStart - worldTime; }
-		else if (worldTime < intEnd) { return 0; }
+		if (worldTime < activationTime) { return activationTime - worldTime; }
+		else if (worldTime < deactivationTime) { return 0; }
 
 		return 0x7FFFFFFF;
 	}
 
 	public int timeToDeactivation(int worldTime) 
 	{
-		if (worldTime < intEnd) { return intEnd - worldTime; }
+		if (worldTime < deactivationTime) { return deactivationTime - worldTime; }
 		return 0x7FFFFFFF;
 	}
 
 	public boolean isActive(int worldTime) 
 	{
-		if (intStart == intEnd) { return true; }
-		return (worldTime >= intStart && worldTime < intEnd);
+		if (activationTime == deactivationTime) { return true; }
+		return (worldTime >= activationTime && worldTime < deactivationTime);
 	}
 
-	public int getActiveIntervalEnd() { return intEnd; }
-
-	public int getActiveIntervalStart()  { return intStart; }
-
-	public float getPosition(int worldTime)  { return (this.sequence + (this.speed * (float) (worldTime - this.world))); }
-
-	public int getRefWorldTime()  { return world; }
-
-	public float getSpeed()  { return speed; }
-
-	public float getWeight()  { return weight; }
-
-	public void setActiveInterval(int start, int end)
+	public void setActiveInterval(int start, int end) 
 	{
-		if (start > end) { throw new IllegalArgumentException("Invalid Active interval (> than end interval)"); }
+		if (start > end)
+			throw new IllegalArgumentException("Start time must be inferior to end time");
 
-		this.intStart = start;
-		this.intEnd = end;
+		activationTime = start;
+		deactivationTime = end;
 	}
 
-	public void setPosition(float sequenceTime, int worldTime)
+	public int getActiveIntervalStart() { return activationTime; }
+
+	public int getActiveIntervalEnd() { return deactivationTime; }
+
+	public void setSpeed(float speed, int worldTime) 
 	{
-		this.sequence = sequenceTime;
-		this.world = worldTime;
+		this.refSequenceTime = getPosition(worldTime);
+		this.refWorldTime = worldTime;
+		this.speed = speed;
 	}
 
-	public void setSpeed(float value, int worldTime)
+	public float getSpeed() { return speed; }
+
+	public void setPosition(float sequenceTime, int worldTime) 
 	{
-		this.sequence = getPosition(worldTime);
-		this.speed = value;
-		this.world = worldTime;
+		this.refSequenceTime = sequenceTime;
+		this.refWorldTime = worldTime;
 	}
 
-	public void setWeight(float value)  
+	public float getPosition(int worldTime) 
 	{
-		if (weight < 0) { throw new IllegalArgumentException("Weight must be >= 0"); }
-		this.weight = value; 
+		return (refSequenceTime + (speed * (float) (worldTime - refWorldTime)));
 	}
+
+	public int getRefWorldTime() { return refWorldTime; }
+
+	public void setWeight(float weight) 
+	{
+		if (weight < 0)
+			throw new IllegalArgumentException("Weight must be positive or zero");
+		this.weight = weight;
+	}
+
+	public float getWeight() { return weight; }
 
 }

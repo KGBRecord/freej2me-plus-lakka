@@ -55,7 +55,7 @@ public class Graphics3D
 	public static final int MAX_TEXTURE_DIMENSION = 256;
 	public static final int MAX_SPRITE_CROP_DIMENSION = 256;
 	public static final int MAX_TRANSFORMS_PER_VERTEX = 2;
-	public static final int NUM_TEXTURE_UNITS = 1;
+	public static final int NUM_TEXTURE_UNITS = 8;
 	private static Hashtable properties;
 
 	// Render target
@@ -307,6 +307,8 @@ public class Graphics3D
 
 		return Graphics3D.properties;
 	}
+
+	public static int getTextureUnitCount() { return NUM_TEXTURE_UNITS; }
 
 	public Object getTarget() { return this.target; }
 

@@ -19,62 +19,145 @@ package javax.microedition.m3g;
 public class Appearance extends Object3D
 {
 
-	private CompositingMode compositingMode;
-	private Fog fog;
-	private Material material;
-	private PolygonMode polygonMode;
-	private int layer;
-	private Texture2D[] texture;
-
+	private int layer = 0;
+	private CompositingMode compositingMode = null;
+	private Fog fog = null;
+	private PolygonMode polygonMode = null;
+	private Material material = null;
+	private Texture2D[] textures;
 
 	public Appearance()
 	{
 		this.layer = 0;
 		this.polygonMode = null;
 		this.compositingMode = null;
-		this.texture = new Texture2D[Graphics3D.NUM_TEXTURE_UNITS];
+		this.textures = new Texture2D[Graphics3D.NUM_TEXTURE_UNITS];
 		this.material = null;
 		this.fog = null;
 	}
 
-
-	public CompositingMode getCompositingMode() { return this.compositingMode; }
-
-	public Fog getFog() { return this.fog; }
-
-	public int getLayer() { return this.layer; }
-
-	public Material getMaterial() { return this.material; }
-
-	public PolygonMode getPolygonMode() { return this.polygonMode; }
-
-	public Texture2D getTexture(int index)
+	@Override
+	public int doGetReferences(Object3D[] references) 
 	{
-		if (index < 0 || Graphics3D.NUM_TEXTURE_UNITS - 1 < index) { throw new java.lang.IndexOutOfBoundsException("Tried to get texture from invalid index"); }
-
-		return this.texture[index];
+		int num = super.doGetReferences(references);
+		if (compositingMode != null) 
+		{
+			if (references != null) { references[num] = compositingMode; }
+			num++;
+		}
+		if (polygonMode != null) 
+		{
+			if (references != null) { references[num] = polygonMode; }
+			num++;
+		}
+		if (fog != null) 
+		{
+			if (references != null) { references[num] = fog; }
+			num++;
+		}
+		if (material != null) 
+		{
+			if (references != null) { references[num] = material; }
+			num++;
+		}
+		for (int i = 0; i < textures.length; i++) 
+		{
+			if (textures[i] != null) 
+			{
+				if (references != null) { references[num] = textures[i]; }
+				num++;
+			}
+		}
+		return num;
 	}
 
-	public void setCompositingMode(CompositingMode compositingMode) { this.compositingMode = compositingMode; }
+	@Override
+	public Object3D findID(int userID) 
+	{
+		Object3D found = super.findID(userID);
+
+		if ((found == null) && (compositingMode != null)) { found = compositingMode.findID(userID); }
+		if ((found == null) && (polygonMode != null)) { found = polygonMode.findID(userID); }
+		if ((found == null) && (fog != null)) { found = fog.findID(userID); }
+		if ((found == null) && (material != null)) { found = material.findID(userID); }
+		
+		for (int i = 0; (found == null) && (i < textures.length); i++)
+		{
+			if (textures[i] != null) { found = textures[i].find(userID); }
+		}
+		return found;
+	}
+
+	@Override
+	public int applyAnimation(int time) 
+	{
+		int minValidity = 0x7FFFFFFF;
+		int validity;
+
+		if (compositingMode != null) 
+		{
+			validity = compositingMode.applyAnimation(time);
+			minValidity = Math.min(validity, minValidity);
+		}
+		if (fog != null) 
+		{
+			validity = fog.applyAnimation(time);
+			minValidity = Math.min(validity, minValidity);
+		}
+		if (material != null) 
+		{
+			validity = material.applyAnimation(time);
+			minValidity = Math.min(validity, minValidity);
+		}
+		for (int i = 0; i < textures.length; i++) 
+		{
+			if (textures[i] != null) 
+			{
+				validity = textures[i].applyAnimation(time);
+				minValidity = Math.min(validity, minValidity);
+			}
+		}
+			
+		return minValidity;
+	}
+
+	public void setLayer(int layer) { this.layer = layer; }
+
+	public int getLayer() { return layer; }
 
 	public void setFog(Fog fog) { this.fog = fog; }
 
-	public void setLayer(int layer)
-	{
-		if (layer < -63 || 63 < layer) { throw new java.lang.IndexOutOfBoundsException("Cannot set invalid layer"); }
-
-		this.layer = layer;
-	}
-
-	public void setMaterial(Material material) { this.material = material; }
+	public Fog getFog() { return fog; }
 
 	public void setPolygonMode(PolygonMode polygonMode) { this.polygonMode = polygonMode; }
 
-	public void setTexture(int index, Texture2D texture)
-	{
-		if (index < 0 || Graphics3D.NUM_TEXTURE_UNITS - 1 < index) { throw new java.lang.IndexOutOfBoundsException("Tried to set texture on an invalid index"); }
+	public PolygonMode getPolygonMode() { return polygonMode; }
 
-		this.texture[index] = texture;
+	public void setMaterial(Material material) { this.material = material; }
+
+	public Material getMaterial() { return material; }
+
+	public void setCompositingMode(CompositingMode comp) { this.compositingMode = comp; }
+
+	public CompositingMode getCompositingMode() { return this.compositingMode; }
+
+	public void setTexture(int index, Texture2D texture) 
+	{
+		if (index < 0 || index >= textures.length) 
+		{
+			throw new IndexOutOfBoundsException("index must be in [0," + textures.length + "]");
+		}
+		textures[index] = texture;
+	}
+
+	public Texture2D getTexture(int index) 
+	{
+		if (index < 0 || index >= textures.length) 
+		{
+			throw new IndexOutOfBoundsException("index must be in [0," + textures.length + "]");
+		}
+			
+		return textures[index];
 	}
 
 }

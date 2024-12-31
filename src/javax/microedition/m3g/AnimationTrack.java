@@ -42,27 +42,48 @@ public class AnimationTrack extends Object3D
 	public static final int VISIBILITY = 276;
 
 
+	public KeyframeSequence sequence;
+	public int property;
 	private AnimationController controller;
-	private KeyframeSequence sequence;
-	private int property;
 
-
-	public AnimationTrack(KeyframeSequence seq, int prop)
+	public AnimationTrack(KeyframeSequence sequence, int property) 
 	{
-		sequence = seq;
-		property = prop;
+		if (sequence == null) { throw new NullPointerException("Sequence must not be null"); }
+		if ((property < ALPHA) || (property > VISIBILITY)) { throw new IllegalArgumentException("Unknown property"); }
+		if (!isCompatible(sequence.getComponentCount(), property)) { throw new IllegalArgumentException("Sequence is not compatible with property"); }
+		this.sequence = sequence;
+		this.property = property;
 	}
 
+	@Override
+	public int doGetReferences(Object3D[] references) 
+	{
+		int num = super.doGetReferences(references);
+		if (sequence != null) 
+		{
+			if (references != null) { references[num] = (Object3D) sequence; }
+			num++;
+		}
+		if (controller != null) 
+		{
+			if (references != null) { references[num] = (Object3D) controller; }
+			num++;
+		}
+		return num;
+	}
 
-	public AnimationController getController() { return controller; }
+	@Override
+	public Object3D findID(int userID) 
+	{
+		Object3D found = super.findID(userID);
 
-	public KeyframeSequence getKeyframeSequence() { return sequence; }
+		if (found == null && sequence != null) { found = sequence.findID(userID); }
+		if (found == null && controller != null) { found = controller.findID(userID); }
 
-	public int getTargetProperty() { return property; }
+		return found;
+	}
 
-	public void setController(AnimationController ac) { controller = ac; }
-
-	void getContribution(int time, float[] accumSamples, float[] weight, int[] validity) 
+	public void getContribution(int time, float[] accumSamples, float[] weight, int[] validity) 
 	{
 		if (this.controller == null || !controller.isActive(time)) 
 		{
@@ -93,6 +114,50 @@ public class AnimationTrack extends Object3D
 			if (sampleValidity < validity[0]) { validity[0] = sampleValidity; }
 
 			for (int i = 0; i < sampleLength; i++) { accumSamples[i] += sample[i] * weight[0]; }
+		}
+	}
+
+	public AnimationController getController() { return controller; }
+
+	public void setController(AnimationController controller) { this.controller = controller; }
+
+	public int getTargetProperty() { return property; }
+
+	public KeyframeSequence getKeyframeSequence() { return sequence; }
+
+	private boolean isCompatible(int components, int property) 
+	{
+		switch (property) 
+		{
+			case ALPHA:
+			case DENSITY:
+			case FAR_DISTANCE:
+			case FIELD_OF_VIEW:
+			case INTENSITY:
+			case NEAR_DISTANCE:
+			case PICKABILITY:
+			case SHININESS:
+			case SPOT_ANGLE:
+			case SPOT_EXPONENT:
+			case VISIBILITY:
+				return components == 1;
+			case CROP:
+				return components == 2 || components == 4;
+			case AMBIENT_COLOR:
+			case COLOR:
+			case DIFFUSE_COLOR:
+			case EMISSIVE_COLOR:
+			case SPECULAR_COLOR:
+			case TRANSLATION:
+				return components == 3;
+			case SCALE:
+				return components == 1 || components == 3;
+			case ORIENTATION:
+				return components == 4;
+			case MORPH_WEIGHTS:
+				return components > 0;
+			default:
+				return false; // Shouldn't occur
 		}
 	}
 

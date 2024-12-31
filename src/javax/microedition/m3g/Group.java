@@ -21,63 +21,146 @@ import java.util.Vector;
 public class Group extends Node
 {
 
-	private Vector<Node> childrenNodes;
-	int numCullableNodes;
-	int numRenderableNodes;
+	public Node firstChild;
+	public int numNonCullables = 0, numRenderables = 0;
 
-	public Group() 
-	{ 
-		this.childrenNodes = new Vector<Node>();
-		this.numCullableNodes = 0;
-		this.numRenderableNodes = 0;
-	}
-
-
-	public void addChild(Node child)
+	public void addChild(Node child) 
 	{
-		/* As per JSR-184, throw NullPointerException if child is null. */
-		if (child == null)
-			{ throw new NullPointerException("Received a null child node."); };
+		if (child == null) { throw new NullPointerException("child can not be null"); }
+		if (child == this) { throw new IllegalArgumentException("can not add self as child"); }
 
-		/* Also per JSR-184, throw IllegalArgumentException if child is this group, already has a parent and is a world node. */
-		if (child == this) 
-			{ throw new IllegalArgumentException("Child node is this group."); };
-		if (child.getParent() != null)
-			{ throw new IllegalArgumentException("Child node already has a parent node."); };
-		if(child instanceof World)
-			{ throw new IllegalArgumentException("Child node is a World node."); };
-		
-		/* Also per JSR-184, throw IllegalArgumentException if the child node is actually an ancestor of this Group. */
-		/* if(child instanceof Group && child.getChild(TODO))
-			{ throw new IllegalArgumentException("Received child node is an ancestor of this group."); }; */
+		if (child.parent == null) 
+		{
+			if (firstChild == null) 
+			{
+				firstChild = child;
+				child.left = child;
+				child.right = child;
+			} 
+			else 
+			{
+				Node linkChild = firstChild;
+				child.left = linkChild.left;
+				linkChild.left.right = child;
 
-		childrenNodes.add(child);
-		child.setParent(this);
+				child.right = linkChild;
+				linkChild.left = child;
+			}
+			child.setParent(this);
+		}
 	}
 
-	public Node getChild(int index) { return (Node) childrenNodes.elementAt(index); }
+	public Node getChild(int idx) 
+	{
+		if (idx < 0) { throw new IllegalArgumentException(); }
 
-	public int getChildCount() { return childrenNodes.size(); }
+		Node n = firstChild;
+		while (idx-- > 0) 
+		{
+			n = n.right;
+			if (n == firstChild) { throw new IllegalArgumentException(); }
+		}
+		return n;
+	}
 
-	public boolean pick(int scope, float x, float y, Camera camera, RayIntersection ri) { return false; }
+	public int getChildCount() 
+	{
+		int count = 0;
+		Node child = firstChild;
+		if (child != null) 
+		{
+			do 
+			{
+				++count;
+				child = child.right;
+			} while (child != firstChild);
+		}
+		return count;
+	}
 
-	public boolean pick(int scope, float ox, float oy, float oz, float dx, float dy, float dz, RayIntersection ri) { return false; }
+	@Override
+	public int doGetReferences(Object3D[] references) 
+	{
+		int num = super.doGetReferences(references);
+		Node child = firstChild;
+		if (child != null) 
+		{
+			do 
+			{
+				if (references != null) { references[num] = child; }
+				child = child.right;
+				num++;
+			} while (child != firstChild);
+		}
+		return num;
+	}
+
+	public Object3D findID(int userID) 
+	{
+		Object3D found = super.findID(userID);
+		Node child = firstChild;
+		if (child != null && found == null) 
+		{
+			do 
+			{
+				found = child.findID(userID);
+				child = child.right;
+			} while (found == null && child != firstChild);
+		}
+		return found;
+	}
+
+	@Override
+	public int applyAnimation(int time) 
+	{
+		int minValidity = super.applyAnimation(time);
+		Node child = firstChild;
+		int validity;
+		if (child != null && minValidity > 0) 
+		{
+			do 
+			{
+				validity = child.applyAnimation(time);
+				minValidity = Math.min(validity, minValidity);
+				child = child.right;
+			} while (minValidity > 0 && child != firstChild);
+		}
+		return minValidity;
+	}
+
+	public boolean pick(int scope, float x, float y, Camera camera, RayIntersection ri) 
+	{
+		// TODO
+		return false;
+	}
+
+	public boolean pick(int scope, float ox, float oy, float oz, float dx, float dy, float dz, RayIntersection ri) 
+	{
+		// TODO
+		return false;
+	}
 
 	public void removeChild(Node child) 
-	{ 
-		childrenNodes.remove(child);
-		child.setParent(null);
-	}
-
-	public int getReferences(Object3D[] references) 
 	{
-		int parentCount = super.getReferences(references);
-		if (references != null)
+		if (child != null && firstChild != null) 
 		{
-			for (int index = 0; index < childrenNodes.size(); ++index)
-				{ references[parentCount + index] = (Object3D) childrenNodes.get(index); }
+			Node n = firstChild;
+			do {
+				if (n == child) {
+					n.right.left = n.left;
+					n.left.right = n.right;
+
+					if (firstChild == n)
+						firstChild = (n.right != n) ? n.right : null;
+
+					n.left = null;
+					n.right = null;
+					n.setParent(null);
+					return;
+				}
+				n = n.right;
+			} while (n != firstChild);
 		}
-		return parentCount + childrenNodes.size();
 	}
 
 }

@@ -25,7 +25,9 @@ public abstract class Node extends Transformable
 	public static final int Y_AXIS  = 147;
 	public static final int Z_AXIS  = 148;
 
-	private Node parentNode = null;
+	public Node parent = null;
+	public Node left;
+	public Node right;
 	private Node alignRef = null;
 	private Node yRef = null;
 	private Node zRef = null;
@@ -74,8 +76,8 @@ public abstract class Node extends Transformable
 
 	static boolean isChildOf(Node parent, Node child) {
 		Node n;
-		for (n = child; n != null; n = n.parentNode)
-			if (n.parentNode == parent)
+		for (n = child; n != null; n = n.parent)
+			if (n.parent == parent)
 				return true;
 
 		return false;
@@ -118,7 +120,7 @@ public abstract class Node extends Transformable
 
 	public float getAlphaFactor() { return this.alphaFactor; }
 
-	public Node getParent() { return this.parentNode; }
+	public Node getParent() { return this.parent; }
 
 	public int getScope() { return this.scope; }
 
@@ -165,10 +167,10 @@ public abstract class Node extends Transformable
 
 	public void setScope(int scope) { this.scope = scope; }
 
-	public void setParent(Node parentNode) 
+	public void setParent(Node parent) 
 	{
 		/* TODO: Flesh out this method. */
-		this.parentNode = parentNode;
+		this.parent = parent;
 	}
 
 	/* Mostly used so we can find whether a child node*/
