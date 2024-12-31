@@ -60,7 +60,6 @@ import static io.github.libsdl4j.api.joystick.SdlJoystick.*;
 import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.IOException;
-
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -129,6 +128,26 @@ public class Anbu
 		Mobile.config = new Config();
 		Mobile.config.onChange = new Runnable() { public void run() { settingsChanged(); } };
 
+		// Set painter right before the jar is loaded
+		Mobile.getPlatform().setPainter(new Runnable()
+		{
+			public void run()
+			{
+				try
+				{
+					/* Check if vibration commands have to be handled */
+					if(Mobile.vibrationDuration != 0) 
+					{
+						int vib = SDL_JoystickRumble(joy, (short) (Mobile.vibrationStrength & 0xFFFF), (short) (Mobile.vibrationStrength & 0xFFFF), Mobile.vibrationDuration);
+						Mobile.vibrationDuration = 0;
+					}
+					
+					sdl.paint();
+				}
+				catch (Exception e) { }
+			}
+		});
+
 		if(file != null && Mobile.getPlatform().load(file))
 		{
 			// Check config
@@ -154,26 +173,6 @@ public class Anbu
 			// Run jar
 			Mobile.getPlatform().runJar();
 
-
-			// Set painter once jar has been loaded
-			Mobile.getPlatform().setPainter(new Runnable()
-			{
-				public void run()
-				{
-					try
-					{
-						/* Check if vibration commands have to be handled */
-						if(Mobile.vibrationDuration != 0) 
-						{
-							int vib = SDL_JoystickRumble(joy, (short) (Mobile.vibrationStrength & 0xFFFF), (short) (Mobile.vibrationStrength & 0xFFFF), Mobile.vibrationDuration);
-							Mobile.vibrationDuration = 0;
-						}
-						
-						sdl.paint();
-					}
-					catch (Exception e) { }
-				}
-			});
 		}
 		else
 		{

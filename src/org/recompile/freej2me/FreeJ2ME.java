@@ -257,6 +257,24 @@ public class FreeJ2ME
 		resize();
 		main.setSize(lcdWidth*scaleFactor+xborder, lcdHeight*scaleFactor+yborder);
 
+		// Set painter right before the jar is loaded
+		Mobile.getPlatform().setPainter(new Runnable()
+		{
+			public void run()
+			{
+				/* Set menuBar option states based on loaded config */
+				if(awtGUI.hasJustLoaded()) { awtGUI.updateOptions(); }
+
+				/* Only update mem dialog's stats if it is visible */
+				if(awtGUI.awtDialogs[2].isVisible()) { awtGUI.updateMemStatDialog(); }
+
+				/* Whenever AWT GUI notifies that its menu options were changed, update settings */
+				if(awtGUI.hasChanged()) { settingsChanged(); awtGUI.clearChanged(); }
+
+				lcd.repaint();
+			}
+		});
+
 		if(args.length<1)
 		{
 			while(!awtGUI.hasLoadedFile())
@@ -282,23 +300,6 @@ public class FreeJ2ME
 
 			Mobile.getPlatform().runJar();
 
-			// Set painter once jar has been loaded
-			Mobile.getPlatform().setPainter(new Runnable()
-			{
-				public void run()
-				{
-					/* Set menuBar option states based on loaded config */
-					if(awtGUI.hasJustLoaded()) { awtGUI.updateOptions(); }
-
-					/* Only update mem dialog's stats if it is visible */
-					if(awtGUI.awtDialogs[2].isVisible()) { awtGUI.updateMemStatDialog(); }
-
-					/* Whenever AWT GUI notifies that its menu options were changed, update settings */
-					if(awtGUI.hasChanged()) { settingsChanged(); awtGUI.clearChanged(); }
-
-					lcd.repaint();
-				}
-			});
 		}
 		else
 		{
