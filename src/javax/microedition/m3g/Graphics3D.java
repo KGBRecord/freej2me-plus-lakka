@@ -54,7 +54,7 @@ public class Graphics3D
 	public static final int MAX_VIEWPORT_DIMENSION = 1024;
 	public static final int MAX_TEXTURE_DIMENSION = 256;
 	public static final int MAX_SPRITE_CROP_DIMENSION = 256;
-	public static final int MAX_TRANSFORMS_PER_VERTEX = 2;
+	public static final int MAX_TRANSFORMS_PER_VERTEX = 4;
 	public static final int NUM_TEXTURE_UNITS = 8;
 	private static Hashtable properties;
 
@@ -124,10 +124,8 @@ public class Graphics3D
 		 * NullPointerException: If no render target is received as argument
 		 * IllegalStateException: If the current Graphics3D Object already has a render target
 		 */
-		if (target == null)
-			{ throw new NullPointerException("bindTarget() was called but no render target was provided."); }
-		if (this.target != null)
-			{ throw new IllegalStateException("This Graphics3D object already has a render target."); }
+		if (target == null) { throw new NullPointerException("bindTarget() was called but no render target was provided."); }
+		if (this.target != null) { throw new IllegalStateException("This Graphics3D object already has a render target."); }
 
 		/* The target can be an Image2D Object, or a Graphics Object (PlatformGraphics in our case). */
 		if (target instanceof Image2D)
@@ -343,22 +341,21 @@ public class Graphics3D
 		if(node == null) { throw new NullPointerException("render() was called but no node was provided."); }
 	
 		/* Also per JSR-184, throw IllegalStateException if this method is called but there's no camera or render target available. */ 
-		if (this.target == null || this.currCam == null) 
-			{ throw new IllegalStateException("render() was called but there is no camera or render target."); }
+		if (this.target == null || this.currCam == null) { throw new IllegalStateException("render() was called but there is no camera or render target."); }
 
 		/* Also per JSR-184, throw IllegalStateException if if node is not a Sprite3D, Mesh, or Group Object. */
-		if (!(node instanceof Mesh || node instanceof Sprite3D || node instanceof Group)) 
-			{ throw new IllegalArgumentException("Node is not an instance of any of the following: Sprite3D, Mesh, Group"); }
+		if (!(node instanceof Mesh || node instanceof Sprite3D || node instanceof Group)) { throw new IllegalArgumentException("Node is not an instance of any of the following: Sprite3D, Mesh, Group"); }
 
 		// if any Mesh that is rendered violates the constraints defined in
 		//    Mesh, MorphingMesh, SkinnedMesh, VertexBuffer, or IndexBuffer
 		//    throw new java.lang.IllegalStateException();
 
-		/* Receiving a null transform indicates that the identity matrix must be used. */
-		if (transform == null) { transform = new Transform(); }
-
-		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render NT");
 		// TODO implement Graphics3D.render(Node, Transform)
+		if ((node instanceof Mesh) || (node instanceof Sprite3D) || (node instanceof Group)) 
+		{
+			renderNode(node, transform);
+		} 
+		else { throw new IllegalArgumentException("Node must be a Sprite3D, Mesh, or Group"); }
 	}
 
 	public void render(VertexBuffer vertices, IndexBuffer triangles, Appearance appearance, Transform transform) 
@@ -377,6 +374,9 @@ public class Graphics3D
 		// if `vertices` or `triangles` violates the constraints
 		//    defined in VertexBuffer or IndexBuffer
 		//    throw new java.lang.IllegalStateException();
+
+		/* Receiving a null transform indicates that the identity matrix must be used. */
+		if (transform == null) { transform = new Transform(); }
 
 		// TODO: Shading mode is not implemented
 		int shadingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getShading() : PolygonMode.SHADE_SMOOTH;
@@ -911,6 +911,49 @@ public class Graphics3D
 
 		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render W");
 		// TODO implement Graphics3D.render(World)
+	}
+
+	private void renderNode(Node node, Transform transform) 
+	{
+		if (node instanceof Mesh) 
+		{
+			Mesh mesh = (Mesh) node;
+			int subMeshes = mesh.getSubmeshCount();
+			VertexBuffer vertices = mesh.getVertexBuffer();
+			for (int i = 0; i < subMeshes; i++) 
+			{
+				if (mesh.getAppearance(i) != null) { render(vertices, mesh.getIndexBuffer(i), mesh.getAppearance(i), transform); }
+			}
+		} 
+		else if (node instanceof Sprite3D) 
+		{
+			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Sprite3D Not Implemented!");
+		}
+		else if (node instanceof Group) 
+		{
+			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Group Untested!");
+			renderDescendants((Group) node, (Object3D) node, transform);
+		}
+
+	}
+
+	private void renderDescendants(Group group, Object3D caller, Transform transform) 
+	{
+		Node child = group.firstChild;
+		if (child != null) 
+		{
+			do 
+			{
+				if (child != caller) 
+				{
+					Transform t = new Transform();
+					child.getCompositeTransform(t);
+					t.preMultiply(transform);
+					renderNode(child, t);
+				}
+				child = child.right;
+			} while (child != group.firstChild);
+		}
 	}
 
 	public void resetLights()
