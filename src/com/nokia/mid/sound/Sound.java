@@ -179,12 +179,12 @@ public class Sound
 	public void setGain(int gain) 
 	{ 
 		// Gain goes from 0 to 255, while setLevel works from 0 to 100
-		if(player != null) { ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setLevel((int) (gain / 255 * 100)); }
+		if(player != null) { ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setLevel((int) (gain / 255f * 100f)); }
 	}
 
 	public int getGain() 
 	{ 
-		if(player != null) { return (int) ((((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).getLevel() / 100) * 255); }
+		if(player != null) { return (int) ((((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).getLevel() / 100f) * 255f); }
 		return 0;
 	}
 
