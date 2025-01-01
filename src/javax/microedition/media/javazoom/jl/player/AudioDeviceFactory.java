@@ -20,6 +20,9 @@
 
 package javazoom.jl.player;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import javazoom.jl.decoder.JavaLayerException;
 
 /**
@@ -62,10 +65,13 @@ public abstract class AudioDeviceFactory
 	 * @param name		The name of the class to load.
 	 * @return			A newly-created instance of the audio device class.
 	 */
+	@SuppressWarnings("unchecked") // This is assumed to be type-safe
 	protected AudioDevice instantiate(ClassLoader loader, String name)
 		throws ClassNotFoundException, 
 			   IllegalAccessException, 
-			   InstantiationException
+			   InstantiationException,
+			   InvocationTargetException,
+			   NoSuchMethodException
 	{
 		AudioDevice dev = null;
 		
@@ -79,7 +85,8 @@ public abstract class AudioDeviceFactory
 			cls = loader.loadClass(name);	
 		}
 
-		Object o = cls.newInstance();
+		Constructor constructor = cls.getDeclaredConstructor();
+		Object o = constructor.newInstance();
 		dev = (AudioDevice)o;
 		
 		return dev;
