@@ -107,7 +107,12 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 
 		InputStream stream = Mobile.getPlatform().loader.getMIDletResourceAsStream(name);
 
-		if(stream==null) { throw new NullPointerException("Can't load image from resource, as the returned image is null."); }
+		if(stream==null) 
+		{
+			// We should really throw an exception here, but House M.D is one game that explicitly tries to load null images without proper exception handling 
+			//throw new NullPointerException("Can't load image from resource, as the returned image is null.");
+			Mobile.log(Mobile.LOG_WARNING, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image From Resource Name failed, is NULL. Might not render properly unless the jar expects it");
+		}
 		else
 		{
 			try { temp = ImageIO.read(stream); } 
