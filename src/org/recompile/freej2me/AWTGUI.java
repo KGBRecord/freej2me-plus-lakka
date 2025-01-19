@@ -677,10 +677,17 @@ public final class AWTGUI
 				filePicker.setVisible(true);
 
 				filename = filePicker.getFile();
-				jarfile = new File(filePicker.getDirectory()+File.separator+filePicker.getFile()).toURI().toString();
-
-				if(filename == null) { Mobile.log(Mobile.LOG_DEBUG, AWTGUI.class.getPackage().getName() + "." + AWTGUI.class.getSimpleName() + ": " + "JAR Loading was cancelled"); }
-				else { loadJarFile(jarfile, true); }
+				
+				if(filename == null) { Mobile.log(Mobile.LOG_DEBUG, AWTGUI.class.getPackage().getName() + "." + AWTGUI.class.getSimpleName() + ": " + "JAR/JAD Loading was cancelled"); }
+				else
+				{
+					try 
+					{
+						jarfile = new File(filePicker.getDirectory()+filename).toURI().toString();
+						loadJarFile(jarfile, true); 
+					}
+				 	catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, AWTGUI.class.getPackage().getName() + "." + AWTGUI.class.getSimpleName() + ": " + "Load error:" + e.getMessage()); }
+				}
 			}
 
 			else if(a.getActionCommand() == "Close") 

@@ -216,6 +216,12 @@ public class MobilePlatform
 	{
         Map<String, String> descriptorProperties = new HashMap<>();
 
+		/* 
+		 * Java treats "!/" sequences as a pointer to a file inside a jar, which will cause
+		 * issues with MIDletLoader, so convert exclamations beforehand to not confuse it.
+		 */
+		fileName = fileName.replaceAll("!", "%21");
+
 		/*
 		 * If loading a jar directly, check if an accompanying jad with the same name 
 		 * is present in the directory, to load any platform properties from there.
