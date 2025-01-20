@@ -143,7 +143,6 @@ int framesDropped = 0;
 
 char *options_update; /* String containing the options updated in check_variables() */
 char *systemPath; /* Path of FreeJ2ME's jar */
-char *outPath; /* Actual path of FreeJ2ME's jar to start */
 char** params; /* Char matrix containing launch arguments */
 unsigned int optstrlen; /* length of the string above */
 unsigned long int screenRes[2]; /* {width, height} */
@@ -541,7 +540,6 @@ void retro_init(void)
 			for (int i = 0; params[i] != NULL; i++) { free(params[i]); }
 			free(params);
 		}
-		if (outPath) { free(outPath); }
 	}
 	else // System path is not meant to change on restarts
 	{
@@ -549,14 +547,11 @@ void retro_init(void)
 		Environ(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemPath);
 	}
 
-	outPath = malloc(sizeof(char) * PATH_MAX_LENGTH);
-	fill_pathname_join(outPath, systemPath, "freej2me-lr.jar", PATH_MAX_LENGTH);
-
 	/* Allocate memory for launch arguments */
 	params = (char**)malloc(sizeof(char*) * 15);
 	params[0] = strdup("java");
 	params[1] = strdup("-jar");
-	params[2] = strdup(outPath);
+	params[2] = strdup("freej2me-lr.jar");
 	params[3] = strdup(resArg[0]);
 	params[4] = strdup(resArg[1]);
 	params[5] = strdup(rotateArg);
@@ -1188,7 +1183,7 @@ int javaOpen(char *cmd, char **params)
 		close(pWrite[1]);
 		close(pRead[0]);
 		
-		//chdir(systemPath); /* chdir is not needed since this retroarch linux core version uses absolute paths */
+		chdir(systemPath);
 
 		execvp(cmd, params);
 
@@ -1265,9 +1260,6 @@ int javaOpen(char *cmd, char **params)
 
 	log_fn(RETRO_LOG_INFO, "Trying to create process... \n");
 	log_fn(RETRO_LOG_INFO, "Process name: %s \n", cmd);
-
-	/* Move to the parent directory beforehand, as win32 will try to load "system/freej2me-lr.jar". */
-	_chdir("..");
 
 	/* Try starting the child process. */
 	char cmdWin[PATH_MAX_LENGTH];
