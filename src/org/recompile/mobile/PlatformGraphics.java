@@ -344,20 +344,19 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 				{
 					canvasData[destIndex] = ((pixel & 0x00FFFFFF) | 0xFF000000); // Set alpha to 255
 				} 
-				else 
+				else // Handle alpha blending
 				{
-					// Handle alpha blending
 					int srcAlpha = (pixel >> 24) & 0xFF; // Source alpha
-					if (srcAlpha != 0) 
+					if (srcAlpha > 0) 
 					{
 						int existingPixel = canvasData[destIndex]; // Current pixel in the canvas
-						int destAlpha = (existingPixel >> 24) & 0xFF; // Destination alpha
+						int destAlpha = (existingPixel >> 24) & 0xFF;
 	
-						// Calculate new color values using alpha blending
+						// Blend alpha and color values using the srcOver alpha compositing method
 						int newAlpha = Math.min(255, srcAlpha + destAlpha);
-						int newRed = ((pixel >> 16) & 0xFF) * srcAlpha / 255 + ((existingPixel >> 16) & 0xFF) * destAlpha * (255 - srcAlpha) / (255 * 255);
-						int newGreen = ((pixel >> 8) & 0xFF) * srcAlpha / 255 + ((existingPixel >> 8) & 0xFF) * destAlpha * (255 - srcAlpha) / (255 * 255);
-						int newBlue = (pixel & 0xFF) * srcAlpha / 255 + (existingPixel & 0xFF) * destAlpha * (255 - srcAlpha) / (255 * 255);
+						int newRed = (((pixel >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+						int newGreen = (((pixel >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+						int newBlue = ((pixel & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
 	
 						// Store the new pixel back in canvasData
 						canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
