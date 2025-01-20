@@ -545,8 +545,8 @@ void retro_init(void)
 	}
 	else // System path is not meant to change on restarts
 	{
-	log_fn(RETRO_LOG_INFO, "Setting up FreeJ2ME-Plus' System Path.\n");
-	Environ(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemPath);
+		log_fn(RETRO_LOG_INFO, "Setting up FreeJ2ME-Plus' System Path.\n");
+		Environ(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemPath);
 	}
 
 	outPath = malloc(sizeof(char) * PATH_MAX_LENGTH);
@@ -1187,9 +1187,8 @@ int javaOpen(char *cmd, char **params)
 
 		close(pWrite[1]);
 		close(pRead[0]);
-
-		/* Change the working directory to libretro's 'system' folder */
-		chdir(systemPath);
+		
+		//chdir(systemPath); /* chdir is not needed since this retroarch linux core version uses absolute paths */
 
 		execvp(cmd, params);
 
@@ -1266,6 +1265,9 @@ int javaOpen(char *cmd, char **params)
 
 	log_fn(RETRO_LOG_INFO, "Trying to create process... \n");
 	log_fn(RETRO_LOG_INFO, "Process name: %s \n", cmd);
+
+	/* Move to the parent directory beforehand, as win32 will try to load "system/freej2me-lr.jar". */
+	_chdir("..");
 
 	/* Try starting the child process. */
 	char cmdWin[PATH_MAX_LENGTH];
