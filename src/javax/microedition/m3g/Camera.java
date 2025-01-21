@@ -29,7 +29,6 @@ public class Camera extends Node
 	private float[] projMatrix; /* A 4D Projection Matrix represented as 1D array to allow the direct usage of Transform.get() and Transform.set(). */
 	/* Based on JSR-184, the camera object has 4 main parameters: fovy, aspectRatio, near, and far. */
 	private float[] params;
-	Plane[] frustum;
 
 	public Camera()
 	{
@@ -41,7 +40,6 @@ public class Camera extends Node
 			0, 0, 0, 1
 		};
 		this.params = new float[4];
-		frustum = createFrustum(projMatrix);
 	}
 
 
@@ -152,41 +150,5 @@ public class Camera extends Node
 				 0 ,  0 ,  -1 ,       0
 			};
 		}
-
-		frustum = createFrustum(this.projMatrix);
 	}
-
-	class Plane {
-		float a, b, c, d; // Plane equation: ax + by + cz + d = 0
-	
-		public Plane(float a, float b, float c, float d) {
-			this.a = a;
-			this.b = b;
-			this.c = c;
-			this.d = d;
-		}
-	
-		// Check if a point is in front of the plane
-		public boolean isInFrontOfPlane(float[] point) {
-			return (a * point[0] + b * point[1] + c * point[2] + d) > 0;
-		}
-	}
-
-	private Plane[] createFrustum(float[] projectionMatrix) 
-	{
-		Plane[] frustum = new Plane[6];
-
-		// Extract the planes from the projection matrix (simplified)
-		frustum[0] = new Plane(projectionMatrix[3] + projectionMatrix[0], projectionMatrix[7] + projectionMatrix[4], projectionMatrix[11] + projectionMatrix[8], projectionMatrix[15] + projectionMatrix[12]); // Left
-		frustum[1] = new Plane(projectionMatrix[3] - projectionMatrix[0], projectionMatrix[7] - projectionMatrix[4], projectionMatrix[11] - projectionMatrix[8], projectionMatrix[15] - projectionMatrix[12]); // Right
-		frustum[2] = new Plane(projectionMatrix[3] + projectionMatrix[1], projectionMatrix[7] + projectionMatrix[5], projectionMatrix[11] + projectionMatrix[9], projectionMatrix[15] + projectionMatrix[13]); // Bottom
-		frustum[3] = new Plane(projectionMatrix[3] - projectionMatrix[1], projectionMatrix[7] - projectionMatrix[5], projectionMatrix[11] - projectionMatrix[9], projectionMatrix[15] - projectionMatrix[13]); // Top
-		frustum[4] = new Plane(projectionMatrix[3] + projectionMatrix[2], projectionMatrix[7] + projectionMatrix[6], projectionMatrix[11] + projectionMatrix[10], projectionMatrix[15] + projectionMatrix[14]); // Near
-		frustum[5] = new Plane(projectionMatrix[3] - projectionMatrix[2], projectionMatrix[7] - projectionMatrix[6], projectionMatrix[11] - projectionMatrix[10], projectionMatrix[15] - projectionMatrix[14]); // Far
-
-		return frustum;
-	}
-
-	public Plane[] getViewFrustum() { return this.frustum; }
-
 }

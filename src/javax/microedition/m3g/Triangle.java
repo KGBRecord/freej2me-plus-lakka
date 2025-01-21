@@ -44,7 +44,7 @@ class Triangle
 
 	int[] bufIndex;
 
-	boolean isClipped = false;
+	int orientation = 1; // will be -1 in cases where triangles in a strip array have inverted winding to save memory by reusing vertices
 
 	Triangle(float[] vertices, float[] texcoords, int[] indices)
 	{
@@ -57,7 +57,8 @@ class Triangle
 	{
 		Triangle[] result = new Triangle[tris.length / 3];
 
-		for (int tri_id = 0; tri_id < tris.length / 3; tri_id++)
+		for (int tri_id = 0; tri_id < tris.length / 3; tri_id++) 
+		{
 			result[tri_id] = new Triangle(new float[] //Vertex positions
 			{
 				vert[4 * tris[3 * tri_id + 0] + 0], // xA
@@ -73,7 +74,7 @@ class Triangle
 				vert[4 * tris[3 * tri_id + 2] + 2], // zC
 				vert[4 * tris[3 * tri_id + 2] + 3]  // wC
 			}, 
-			texc == null ? new float[12] : new float[] // Tex Coordinates
+			texc == null ? null : new float[] // Tex Coordinates
 			{
 				texc[4 * tris[3 * tri_id + 0] + 0],
 				texc[4 * tris[3 * tri_id + 0] + 1],
@@ -94,6 +95,10 @@ class Triangle
 				tris[3* tri_id + 1],
 				tris[3* tri_id + 2]
 			});
+
+			// If each second triangle has inverted order (by reusing the last triangle's vertices for better memory efficiency), we'll have to handle them accordingly by inverting its orientation for culling.
+			if(tri_id % 2 == 1 && (result[tri_id].bufIndex[0] == result[tri_id-1].bufIndex[1]) && (result[tri_id].bufIndex[1] == result[tri_id-1].bufIndex[2])) { result[tri_id].orientation = -1; }
+		}
 
 		return result;
 	}
@@ -215,9 +220,8 @@ class Triangle
 		{
 			case 0: // Entire triangle is outside the plane so return an empty one
 				return new Triangle[0];
-			case 1: 
+			case 1: // One vertex is on screen, clipping will generate a single triangle A, B', C'
 			{
-				// Calculate intersections and create new triangles
 				Triangle[] newTriangles = new Triangle[1];
 				float[][] n1 = M3GMath.intersectTriangle(p, pn, vert[vin.get(0)], vert[vout.get(0)], tex[vin.get(0)], tex[vout.get(0)]);
 				float[][] n2 = M3GMath.intersectTriangle(p, pn, vert[vin.get(0)], vert[vout.get(1)], tex[vin.get(0)], tex[vout.get(1)]);
@@ -229,19 +233,17 @@ class Triangle
 							   n1[1][0], n1[1][1], n1[1][2], n1[1][3],
 							   n2[1][0], n2[1][1], n2[1][2], n2[1][3] };
 	
-				// New index for the clipped triangle
-				int[] newIndex = { 0, 1, 2 }; // Adjust based on your needs
-				newTriangles[0] = new Triangle(v1, t1, newIndex);
-				newTriangles[0].setClipped();
+				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[0]+1, bufIndex[0]+2 });
+				if(newTriangles[0].isCounterClockwise() != this.isCounterClockwise()) { newTriangles[0].orientation = -1; } // Triangle must maintain the correct winding order
 				return newTriangles;
 			}
-			case 2:
+			case 2: // Two vertices on screen, clip will result in a quad, so it has to be re-triangulated (which is why we return two triangles here)
 			{
 				Triangle[] newTriangles = new Triangle[2];
 				float[][] n1 = M3GMath.intersectTriangle(p, pn, vert[vin.get(0)], vert[vout.get(0)], tex[vin.get(0)], tex[vout.get(0)]);
 				float[][] n2 = M3GMath.intersectTriangle(p, pn, vert[vin.get(1)], vert[vout.get(0)], tex[vin.get(1)], tex[vout.get(0)]);
 	
-				// First triangle
+				// First triangle A, B, A'
 				float[] v1 = { vert[vin.get(0)][0], vert[vin.get(0)][1], vert[vin.get(0)][2], vert[vin.get(0)][3],
 							   vert[vin.get(1)][0], vert[vin.get(1)][1], vert[vin.get(1)][2], vert[vin.get(1)][3],
 							   n1[0][0], n1[0][1], n1[0][2], n1[0][3] };
@@ -250,19 +252,19 @@ class Triangle
 							   tex[vin.get(1)][0], tex[vin.get(1)][1], tex[vin.get(1)][2], tex[vin.get(1)][3],
 							   n1[1][0], n1[1][1], n1[1][2], n1[1][3] };
 	
-				// Second triangle
-				float[] v2 = { vert[vin.get(1)][0], vert[vin.get(1)][1], vert[vin.get(1)][2], vert[vin.get(1)][3],
-							   n1[0][0], n1[0][1], n1[0][2], n1[0][3],
+				// Second triangle A', B, B'
+				float[] v2 = { n1[0][0], n1[0][1], n1[0][2], n1[0][3],
+							   vert[vin.get(1)][0], vert[vin.get(1)][1], vert[vin.get(1)][2], vert[vin.get(1)][3],
 							   n2[0][0], n2[0][1], n2[0][2], n2[0][3] };
 	
-				float[] t2 = { tex[vin.get(1)][0], tex[vin.get(1)][1], tex[vin.get(1)][2], tex[vin.get(1)][3],
-							   n1[1][0], n1[1][1], n1[1][2], n1[1][3],
+				float[] t2 = { n1[1][0], n1[1][1], n1[1][2], n1[1][3],
+							   tex[vin.get(1)][0], tex[vin.get(1)][1], tex[vin.get(1)][2], tex[vin.get(1)][3],
 							   n2[1][0], n2[1][1], n2[1][2], n2[1][3] };
 	
-				newTriangles[0] = new Triangle(v1, t1, new int[] { 0, 1, 2 });
-				newTriangles[1] = new Triangle(v2, t2, new int[] { 0, 1, 2 });
-				newTriangles[0].setClipped();
-				newTriangles[1].setClipped();
+				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[1], bufIndex[1]+1});
+				newTriangles[1] = new Triangle(v2, t2, new int[] { bufIndex[1]-1, bufIndex[1], bufIndex[1]+1});
+				if(newTriangles[0].isCounterClockwise() != this.isCounterClockwise()) { newTriangles[0].orientation = -1; }
+				if(newTriangles[1].isCounterClockwise() != this.isCounterClockwise()) { newTriangles[1].orientation = -1; }
 				return newTriangles;
 			}
 			case 3:
@@ -284,7 +286,15 @@ class Triangle
         System.arraycopy(texCoordC, 0, this.t, 8, 4); // sC, tC, rC, qC
     }
 
-	public void setClipped() { isClipped = true; }
+	public boolean isCounterClockwise() 
+	{
+		// Compute edges
+		float[] edge1 = { xB() - xA(), yB() - yA(), zB() - zA() }; // Edge AB
+		float[] edge2 = { xC() - xA(), yC() - yA(), zC() - zA() }; // Edge AC
 
-	public boolean isClipped() { return isClipped; }
+		float[] normal = M3GMath.crossProduct(edge1, edge2);
+
+		return normal[2]*orientation <= 0; // Clockwise if normal points towards the viewer (with corrected orientation)
+	}
 }
+

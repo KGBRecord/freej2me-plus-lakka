@@ -18,7 +18,6 @@ package javax.microedition.m3g;
 
 import java.util.Hashtable;
 
-import javax.microedition.m3g.Camera.Plane;
 import javax.microedition.m3g.Transform;
 
 import java.util.ArrayList;
@@ -510,7 +509,6 @@ public class Graphics3D
 
 			float rHorizon, xMidR, zMidR, sMidR, tMidR;
 
-
 			for (int tri_id = 0; tri_id < trisScreen.length; tri_id++)
 			{
 
@@ -547,36 +545,11 @@ public class Graphics3D
 				}
 				
 				// Then move on to culling tests
+			
+				// Cull the triangle based on its culling mode, and which way it's facing
+				if (cullingMode == PolygonMode.CULL_BACK && !trisScreen[tri_id].isCounterClockwise()) { continue; }
+				if (cullingMode == PolygonMode.CULL_FRONT && trisScreen[tri_id].isCounterClockwise()) { continue; }
 
-				vertexA[0] = trisScreen[tri_id].xA(); vertexA[1] = trisScreen[tri_id].yA(); vertexA[2] = trisScreen[tri_id].zA();
-				vertexB[0] = trisScreen[tri_id].xB(); vertexB[1] = trisScreen[tri_id].yB(); vertexB[2] = trisScreen[tri_id].zB();
-				vertexC[0] = trisScreen[tri_id].xC(); vertexC[1] = trisScreen[tri_id].yC(); vertexC[2] = trisScreen[tri_id].zC();
-
-				// Check if the triangle is outside the frustum
-				boolean isOutside = true;
-				for (Plane plane : currCam.getViewFrustum()) 
-				{
-					if (plane.isInFrontOfPlane(vertexA) || plane.isInFrontOfPlane(vertexB) || plane.isInFrontOfPlane(vertexC)) 
-					{
-						isOutside = false;
-						break; // At least one vertex is inside the frustum
-					}
-				}
-
-				if (isOutside) { continue; } // Triangle is completely outside the frustum, skip rendering
-
-				// Calculate the normal using cross product
-				final float[] normal = M3GMath.calculateNormal(trisScreen[tri_id].v);
-
-				boolean isBackFacing = M3GMath.dotProduct(normal, viewDirection) <= 0;
-				
-				if(!trisScreen[tri_id].isClipped()) // TODO: HACK, Do not cull triangles that were clipped. (for some reason, clipped triangles have wrong normals, facing away from the screen when the original wasn't, etc)
-				{
-					// Cull the triangle based on its culling mode, and which way it's facing
-					if (cullingMode == PolygonMode.CULL_BACK && isBackFacing) { continue; }
-					else if (cullingMode == PolygonMode.CULL_FRONT && !isBackFacing) { continue; }
-				}
-				
 
 				if (tex == null || texCoords == null) // If there's no texture coords or a texture image, we should try rendering with vertex colors.
 				{
