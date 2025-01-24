@@ -146,6 +146,9 @@ public class RecordStore
 			Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + e.getMessage());
 			throw(new RecordStoreException("Problem Reading Record Store: "+rmsFile));
 		}
+
+		if(!recordStoreIsOpen) { recordStoreIsOpen = true; }
+		recordsOpened++;
 	}
 
 	private void save()
@@ -456,38 +459,30 @@ public class RecordStore
 
 	public static RecordStore openRecordStore(String recordStoreName, boolean createIfNecessary) throws RecordStoreException, RecordStoreNotFoundException
 	{
-		if(!recordStoreIsOpen) { recordStoreIsOpen = true; }
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Open Record Store A "+ createIfNecessary + ": " + recordStoreName.replaceAll("[/\\\\:*?\"<>|]", ""));
-		recordsOpened++;
 		return new RecordStore(recordStoreName.replaceAll("[/\\\\:*?\"<>|]", ""), createIfNecessary);
 	}
 
 	public static RecordStore openRecordStore(String recordStoreName, boolean createIfNecessary, int authmode, boolean writable) throws RecordStoreException, RecordStoreNotFoundException
 	{
-		if(!recordStoreIsOpen) { recordStoreIsOpen = true; }
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Open Record Store B "+ createIfNecessary + ": " + recordStoreName.replaceAll("[/\\\\:*?\"<>|]", ""));
-		recordsOpened++;
 		return new RecordStore(recordStoreName.replaceAll("[/\\\\:*?\"<>|]", ""), createIfNecessary);
 	}
 
 	public static RecordStore openRecordStore(String recordStoreName, boolean createIfNecessary, int authmode, boolean writable, String password) throws RecordStoreException, RecordStoreNotFoundException//, SecureRecordStoreException
 	{
-		//if(!recordStoreIsOpen) { recordStoreIsOpen = true; }
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Open Record Store with authmode and password not implemented.");
 		return null;
 	}
 
 	public static RecordStore openRecordStore(String recordStoreName, String vendorName, String suiteName) throws RecordStoreException, RecordStoreNotFoundException
 	{
-		if(!recordStoreIsOpen) { recordStoreIsOpen = true; }
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Open Record Store C:" + recordStoreName.replaceAll("[/\\\\:*?\"<>|]", ""));
-		recordsOpened++;
 		return new RecordStore(recordStoreName.replaceAll("[/\\\\:*?\"<>|]", ""), false);
 	}
 
 	public static RecordStore openRecordStore(String recordStoreName, String vendorName, String suiteName, String password) throws RecordStoreException, RecordStoreNotFoundException//, SecureRecordStoreException
 	{
-		//if(!recordStoreIsOpen) { recordStoreIsOpen = true; }
 		Mobile.log(Mobile.LOG_WARNING, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Open Record Store with password not implemented:.");
 		return null;
 	}
