@@ -110,11 +110,11 @@ public class Sound
 			{
 				try 
 				{
+					if(Mobile.dumpAudioStreams) { Manager.dumpAudioStream(new ByteArrayInputStream(data), "audio/x-tone-seq"); } // Dump original OTA as well
 					if(player == null || !isPrevPlayerTone)  // check for null because release() can be called after all.
 					{
-						if(Mobile.dumpAudioStreams) { Manager.dumpAudioStream(new ByteArrayInputStream(data), "audio/x-tone-seq"); } // Dump original OTA as well
 						if(player != null) { player.close(); }
-						player = Manager.createPlayer(new ByteArrayInputStream(convertToMidi(data)), "audio/x-tone-seq"); 
+						player = Manager.createPlayer(new ByteArrayInputStream(convertToMidi(data)), "audio/x-tone-seq"); // This will dump the converted file if the setting is enabled
 						isPrevPlayerTone = true; 
 					}
 					else
@@ -122,6 +122,7 @@ public class Sound
 						player.stop();
 						player.deallocate();
 						((ToneControl) player.getControl("ToneControl")).setSequence(convertToMidi(data));
+						if(Mobile.dumpAudioStreams) { Manager.dumpAudioStream(new ByteArrayInputStream(convertToMidi(data)), "audio/x-tone-seq"); } // Here we have to dump the stream manually, as setSequence is a fast way to swap short tone sequences
 					}
 					player.prefetch();
 				}
@@ -197,7 +198,7 @@ public class Sound
 	// This is the same conversion used in Sprintpcs' DualTone implementation., as it also uses this constant.
 	public static int convertFreqToNote(int freq) { return (int) (Math.round(Math.log((double) freq / 8.176) * SEMITONE_CONST)); }
 
-	public static byte[] convertToMidi(byte[] data) throws MidiUnavailableException, IOException  // Start by parsing the OTT Header
+	public static synchronized byte[] convertToMidi(byte[] data) throws MidiUnavailableException, IOException  // Start by parsing the OTT Header
 	{
 		try 
 		{
@@ -450,21 +451,25 @@ public class Sound
 		// Create MIDI events for the note, accounting for the current Note Style.
 		try 
 		{
-			if(noteStyle == STACCATO_STYLE) // Simulate shorter notes for a subtle staccato effect by making NOTE_OFF end before the next note's NOTE_ON
+			if(midiNote != -1) 
 			{
-				track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
-				track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick + (int) (ticks * 0.70f) )); // NOTE_OFF
+				if(noteStyle == STACCATO_STYLE) // Simulate shorter notes for a subtle staccato effect by making NOTE_OFF end before the next note's NOTE_ON
+				{
+					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
+					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick + (int) (ticks * 0.70f) )); // NOTE_OFF
+				}
+				else if (noteStyle == CONTINUOUS_STYLE) // Try to add a small overlap between notes to connect them a bit better, making NOTE_OFF go a bit beyond the next note's NOTE_ON
+				{
+					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
+					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick+ (int) (ticks * 1.1f) )); // NOTE_OFF
+				}
+				else // NATURAL just adds notes as is.
+				{
+					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
+					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick+ticks)); // NOTE_OFF
+				}
 			}
-			else if (noteStyle == CONTINUOUS_STYLE) // Try to add a small overlap between notes to connect them a bit better, making NOTE_OFF go a bit beyond the next note's NOTE_ON
-			{
-				track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
-				track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick+ (int) (ticks * 1.1f) )); // NOTE_OFF
-			}
-			else // NATURAL just adds notes as is.
-			{
-				track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
-				track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick+ticks)); // NOTE_OFF
-			}
+			
 			
 			curTick += ticks;
 		}
@@ -657,7 +662,9 @@ public class Sound
 		// Get the base frequency from the frequency table starting from C1
 		switch (noteValue) 
 		{
-			case 0b0000: return 0; // Pause (no MIDI note)
+			case 0b0000: 
+			Mobile.log(Mobile.LOG_DEBUG, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Parsed Pause note. "); 
+			return -1; // Pause (no MIDI note)
 			case 0b0001: baseFrequency = 523; break;// C1
 			case 0b0010: baseFrequency = 554; break;// C#1 (D1b)
 			case 0b0011: baseFrequency = 587; break;// D1
@@ -672,7 +679,7 @@ public class Sound
 			case 0b1100: baseFrequency = 988; break;// B(or H)1
 			default:
 			Mobile.log(Mobile.LOG_WARNING, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Parsed Note: " + noteStrings[noteValue] + ". Returning a pause instead."); 
-			return 0; // Invalid note, but CaveCab tries to add notes with reserved values. Let's just return a pause instead of causing issues for midi playback.
+			return -1; // Invalid note, but CaveCab tries to add notes with reserved values. Let's just return a pause instead of causing issues for midi playback.
 		}
 
 		/* 
@@ -691,7 +698,7 @@ public class Sound
 			int octave = (int) Math.floor(Math.log(noteScale) / Math.log(2));
 			if(octave < 0) { octave = 0; }
 
-			Mobile.log(Mobile.LOG_DEBUG, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Parsed Note: " + noteStrings[noteValue] + octave + " | Converted to Midi:" + noteFromFreq);
+			Mobile.log(Mobile.LOG_DEBUG, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Parsed Note: " + noteStrings[noteValue] + (octave+1) + " | Converted to Midi:" + noteFromFreq);
 		}
 
 		return noteFromFreq;
