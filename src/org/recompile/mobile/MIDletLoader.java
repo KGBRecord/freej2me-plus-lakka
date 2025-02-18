@@ -51,9 +51,8 @@ import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import javax.microedition.lcdui.*;
-import javax.microedition.midlet.*;
-import javax.microedition.io.*;
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
 
 public class MIDletLoader extends URLClassLoader
 {

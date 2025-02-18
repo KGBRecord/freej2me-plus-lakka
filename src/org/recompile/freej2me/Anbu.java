@@ -16,7 +16,8 @@
 */
 package org.recompile.freej2me;
 
-import org.recompile.mobile.*;
+import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 
 import io.github.libsdl4j.api.event.SDL_Event;
 import io.github.libsdl4j.api.render.SDL_Renderer;
@@ -26,8 +27,8 @@ import io.github.libsdl4j.api.joystick.SDL_Joystick;
 import io.github.libsdl4j.api.joystick.SDL_JoystickID;
 
 import static io.github.libsdl4j.api.Sdl.SDL_Init;
-import static io.github.libsdl4j.api.SdlSubSystemConst.SDL_INIT_VIDEO;
 import static io.github.libsdl4j.api.SdlSubSystemConst.SDL_INIT_JOYSTICK;
+import static io.github.libsdl4j.api.SdlSubSystemConst.SDL_INIT_VIDEO;
 
 import static io.github.libsdl4j.api.render.SdlRender.SDL_CreateRenderer;
 import static io.github.libsdl4j.api.render.SdlRender.SDL_RenderClear;
@@ -39,23 +40,47 @@ import static io.github.libsdl4j.api.render.SdlRender.SDL_CreateTexture;
 import static io.github.libsdl4j.api.render.SdlRender.SDL_DestroyRenderer;
 import static io.github.libsdl4j.api.render.SdlRender.SDL_DestroyTexture;
 
-import static io.github.libsdl4j.api.video.SdlVideo.*;
-import static io.github.libsdl4j.api.video.SdlVideo.*;
-import static io.github.libsdl4j.api.video.SdlVideoConst.*;
-import static io.github.libsdl4j.api.video.SDL_WindowFlags.*;
+import static io.github.libsdl4j.api.video.SdlVideo.SDL_SetWindowSize;
+import static io.github.libsdl4j.api.video.SdlVideo.SDL_SetWindowFullscreen;
+import static io.github.libsdl4j.api.video.SdlVideo.SDL_CreateWindow;
+import static io.github.libsdl4j.api.video.SdlVideoConst.SDL_WINDOWPOS_CENTERED;
+import static io.github.libsdl4j.api.video.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
+import static io.github.libsdl4j.api.video.SDL_WindowFlags.SDL_WINDOW_SHOWN;
 import static io.github.libsdl4j.api.pixels.SDL_PixelFormatEnum.SDL_PIXELFORMAT_RGB888;
 
 import static io.github.libsdl4j.api.event.SdlEvents.SDL_PollEvent;
-import static io.github.libsdl4j.api.event.SDL_EventType.*;
-import static io.github.libsdl4j.api.event.SdlEventsConst.SDL_PRESSED;
 import static io.github.libsdl4j.api.event.SdlEventsConst.SDL_ENABLE;
-
-import static io.github.libsdl4j.api.keycode.SDL_Keycode.*;
+import static io.github.libsdl4j.api.event.SdlEventsConst.SDL_PRESSED;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_JOYDEVICEADDED;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_JOYDEVICEREMOVED;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_JOYBUTTONDOWN;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_JOYBUTTONUP;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_JOYHATMOTION;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_KEYDOWN;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_KEYUP;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_MOUSEBUTTONDOWN;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_MOUSEBUTTONUP;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_MOUSEMOTION;
+import static io.github.libsdl4j.api.event.SDL_EventType.SDL_QUIT;
 
 import static io.github.libsdl4j.api.joystick.SdlJoystick.SDL_JoystickOpen;
 import static io.github.libsdl4j.api.joystick.SdlJoystick.SDL_JoystickEventState;
-import static io.github.libsdl4j.api.joystick.SdlJoystickConst.*;
-import static io.github.libsdl4j.api.joystick.SdlJoystick.*;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_DOWN;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_LEFTDOWN;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_RIGHTDOWN;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_UP;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_LEFTUP;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_RIGHTUP;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_LEFT;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_RIGHT;
+import static io.github.libsdl4j.api.joystick.SdlJoystickConst.SDL_HAT_CENTERED;
+
+import static io.github.libsdl4j.api.joystick.SdlJoystick.SDL_JoystickClose;
+import static io.github.libsdl4j.api.joystick.SdlJoystick.SDL_JoystickName;
+import static io.github.libsdl4j.api.joystick.SdlJoystick.SDL_JoystickRumble;
+
+import static io.github.libsdl4j.api.keycode.SDL_Keycode.*; // We can import all keyboard keycodes here
+
 
 import java.awt.image.DataBufferInt;
 import java.io.File;

@@ -21,11 +21,8 @@ import java.awt.Desktop;
 import java.net.URI;
 import java.io.IOException;
 
-import javax.microedition.io.*;
-import javax.microedition.lcdui.*;
-import javax.microedition.lcdui.game.*;
-import javax.microedition.pki.*;
-import javax.microedition.rms.*;
+import javax.microedition.io.ConnectionNotFoundException;
+import javax.microedition.lcdui.Display;
 
 import org.recompile.mobile.Mobile;
 

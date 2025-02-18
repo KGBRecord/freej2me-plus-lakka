@@ -24,7 +24,10 @@ import javax.microedition.lcdui.game.Sprite;
 
 import com.nokia.mid.ui.DirectGraphics;
 
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.DataBufferInt;

@@ -16,7 +16,8 @@
 */
 package org.recompile.freej2me;
 
-import org.recompile.mobile.*;
+import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 
 import java.awt.image.DataBufferInt;
 import java.util.Timer;

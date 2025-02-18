@@ -20,7 +20,10 @@
 
 	package javazoom.jl.player;
 
-	import java.io.*;
+	import java.io.InputStream;
+	import java.io.ByteArrayOutputStream;
+	import java.io.ByteArrayInputStream;
+	import java.io.IOException;
 
 	import javazoom.jl.decoder.Bitstream;
 	import javazoom.jl.decoder.BitstreamException;

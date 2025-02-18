@@ -16,7 +16,7 @@
 */
 package org.recompile.freej2me;
 
-import org.recompile.mobile.*;
+import org.recompile.mobile.Mobile;
 
 import java.io.File;
 import java.io.InputStream;
