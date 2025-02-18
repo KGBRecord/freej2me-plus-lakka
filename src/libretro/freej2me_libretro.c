@@ -497,9 +497,16 @@ static void check_variables(bool first_time_startup)
 void quit(int state)
 {
 #ifdef __linux__
-	if(isRunning()) { kill(javaProcess, SIGKILL); }
+	kill(javaProcess, SIGKILL);
+	wait(NULL);
 #elif _WIN32
-	if(isRunning()) { TerminateProcess(javaProcess.hProcess, state); }
+	CloseHandle(pRead[0]);
+	CloseHandle(pRead[1]);
+	CloseHandle(pWrite[0]);
+	CloseHandle(pWrite[1]);
+	TerminateProcess(javaProcess.hProcess, state);
+	WaitForSingleObject(javaProcess.hProcess, 1000); // Wait at most 1 second for the process to be terminated
+	CloseHandle(javaProcess.hProcess);
 #endif
 }
 
@@ -1096,7 +1103,7 @@ void retro_get_system_info(struct retro_system_info *info)
 {
 	memset(info, 0, sizeof(*info));
 	info->library_name = "FreeJ2ME-Plus";
-	info->library_version = "1.42";
+	info->library_version = "1.43";
 	info->valid_extensions = "jar|jad";
 	info->need_fullpath = true;
 }
