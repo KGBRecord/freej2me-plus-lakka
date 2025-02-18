@@ -38,14 +38,13 @@ public class FunLight
     private static DeviceRegion[] deviceRegions = 
     {
         new DeviceRegion(0), // Blank Region
-        new DeviceRegion(1),  // Display Region (this array position is the same on all devices that support it, it seems)
-        // TODO: Implement those other Regions in some way, maybe by lighting the corners of the screen or something, as most jars light up the main display fully white
+        new DeviceRegion(1), // Display Region
         new DeviceRegion(2), // Navigation Keypad
         new DeviceRegion(3), // Numeric Keypad
         new DeviceRegion(4)  // Sidebands
     };
 
-    private static int[] availableRegions = {0, 1};
+    private static int[] availableRegions = {0, 1, 2, 3, 4};
 
 	public static int getControl() { return QUEUED; } // Calls to the Blank Region will always return QUEUED, even if others succeed
 
