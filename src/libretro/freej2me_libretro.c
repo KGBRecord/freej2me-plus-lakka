@@ -1123,11 +1123,11 @@ void retro_get_system_info(struct retro_system_info *info)
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
 	memset(info, 0, sizeof(*info));
-	info->geometry.base_width   = MAX_WIDTH;
-	info->geometry.base_height  = MAX_HEIGHT;
+	info->geometry.base_width   = BASE_WIDTH;
+	info->geometry.base_height  = BASE_HEIGHT;
 	info->geometry.max_width    = MAX_WIDTH;
 	info->geometry.max_height   = MAX_HEIGHT;
-	info->geometry.aspect_ratio = ((float)MAX_WIDTH) / ((float)MAX_HEIGHT);
+	info->geometry.aspect_ratio = ((float)BASE_WIDTH) / ((float)BASE_HEIGHT);
 
 	info->timing.fps = DEFAULT_FPS;
 	int pixelformat = RETRO_PIXEL_FORMAT_XRGB8888;
