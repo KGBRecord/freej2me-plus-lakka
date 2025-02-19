@@ -105,6 +105,11 @@ struct retro_core_option_v2_category option_categories[] =
         "Speed Hacks",
         "Options that can increase FreeJ2ME's performance in exchange for lower compatibility by going out of J2ME specifications."
     },
+    {
+        "compat_settings",
+        "Compatibility Settings",
+        "Options that help some specific games run, but that may break others."
+    },
 };
 
 /* Core config options if running on a frontend with support for config version 2 */
@@ -412,6 +417,20 @@ struct retro_core_option_v2_definition core_options[] =
         },
         "off"
     },
+    {
+        "freej2me_compatnonfatalnullimages",
+        "Compatibility Settings > Don't throw Exception on null images",
+        "Don't throw Exception on null images",
+        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
+        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
+        "compat_settings",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
     { NULL, NULL, NULL, NULL, NULL, NULL, {{0}}, NULL },
 };
 
@@ -679,6 +698,17 @@ struct retro_core_option_definition core_options_v1 [] =
         },
         "off"
     },
+    {
+        "freej2me_compatnonfatalnullimages",
+        "Don't throw Exception on null images",
+        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
     { NULL, NULL, NULL, {{0}}, NULL },
 };
 
@@ -755,6 +785,10 @@ static const struct retro_variable vars[] =
     { /* No Alpha on Blank Images speed hack */
         "freej2me_spdhacknoalpha",
         "No Alpha on Blank Images(SpeedHack); off|on",
+    },
+    { /* No Alpha on Blank Images compat setting */
+        "freej2me_compatnonfatalnullimages",
+        "Don't throw Exception on null images; off|on",
     },
     { NULL, NULL },
 };
