@@ -26,6 +26,7 @@ import java.util.TimerTask;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import javax.microedition.midlet.MIDlet;
 
@@ -46,7 +47,6 @@ public class Libretro
 	 * StringBuilder used to get the updated configs from the libretro core
 	 * String[] used to tokenize each setting as its own string.
 	 */
-	private StringBuilder cfgs;
 	String[] cfgtokens;
 
 	LibretroIO lio;
@@ -156,8 +156,9 @@ public class Libretro
 			private int[] din = new int[5];
 			private int count = 0;
 			private int code;
-			private StringBuilder path;
-			private URL url;
+			private byte[] buffer;
+			private int bytesRead = 0;
+			private String path;
 
 			public void run()
 			{
@@ -244,14 +245,12 @@ public class Libretro
 								break;
 
 								case 10: // load jar
-									path = new StringBuilder();
-									for(int i=0; i<code; i++)
-									{
-										bin = System.in.read();
-										path.append((char)bin);
-									}
-									url = (new File(path.toString())).toURI().toURL();
-									if(Mobile.getPlatform().load(url.toString()))
+									buffer = new byte[code];
+									bytesRead = System.in.read(buffer);
+
+									path = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+
+									if(Mobile.getPlatform().load(getFormattedLocation(path.toString())))
 									{
 										// Check config
 										Mobile.config.init();
@@ -308,24 +307,18 @@ public class Libretro
 								break;
 
 								case 11: // set save path //
-									path = new StringBuilder();
-									for(int i=0; i<code; i++)
-									{
-										bin = System.in.read();
-										path.append((char)bin);
-									}
-									Mobile.getPlatform().dataPath = path.toString();
+									buffer = new byte[code];
+									bytesRead = System.in.read(buffer);
+
+									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
 								break;
 
 								case 13:
 									/* Received updated settings from libretro core */
-									cfgs = new StringBuilder();
-									for(int i=0; i<code; i++)
-									{
-										bin = System.in.read();
-										cfgs.append((char)bin);
-									}
-									String cfgvars = cfgs.toString();
+									buffer = new byte[code];
+									bytesRead = System.in.read(buffer);
+									
+									String cfgvars = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
 									/* Tokens: [0]="FJ2ME_LR_OPTS:", [1]=width, [2]=height, [3]=rotate, [4]=phone, [5]=fps, ... */
 									cfgtokens = cfgvars.split("[| x]", 0);
 									/* 
@@ -431,6 +424,21 @@ public class Libretro
 			}
 		} // timer
 	} // LibretroIO
+
+	private static String getFormattedLocation(String loc)
+	{
+		if (loc.startsWith("file://") || loc.startsWith("http://") || loc.startsWith("https://"))
+			return loc;
+
+		File file = new File(loc);
+		if(!file.isFile())
+		{
+			Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "File '" + loc + "' not found...");
+			System.exit(0);
+		}
+
+		return file.toURI().toString();
+	}
 
 	private void settingsChanged()
 	{
