@@ -28,6 +28,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.DataBufferInt;
@@ -90,6 +91,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		setStrokeStyle(SOLID);
 		gc.setBackground(new Color(0, 0, 0, 0));
 		gc.setFont(font.platformFont.awtFont);
+		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 	}
 
 	public void reset() //Internal use method, resets the Graphics object to its inital values
@@ -406,7 +408,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			int ascent = gc.getFontMetrics().getAscent();
 			int height = gc.getFontMetrics().getHeight();
 
-			y += ascent;
+			y += ascent - 1;
 			
 			if((anchor & Graphics.VCENTER)>0) { y = y+height/2; }
 			if((anchor & Graphics.BOTTOM)>0) { y = y-height; }
