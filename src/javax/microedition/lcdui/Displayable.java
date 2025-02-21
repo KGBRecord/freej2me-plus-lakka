@@ -362,7 +362,7 @@ public abstract class Displayable
 		{
 			isValidating = true;
 
-			try { render(); } 
+			try { Mobile.getDisplay().callSerially(() -> { render(); }); }
 			finally { isValidating = false; }
 		}
 	}
