@@ -708,7 +708,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			{
 				int index = offset + (col) + (row * scanlength);
 				data[row * width + col] = pixelToColor(pixels[index], format);
-				if (!transparency) { data[row * width + col] &= 0x00FFFFFF; } // Clear the alpha channel
+				if (!transparency) { data[row * width + col] = (data[row * width + col] & 0x00FFFFFF) | 0xFF000000; } // Set alpha to 255
 			}
 		}
 	
