@@ -65,7 +65,7 @@ public class MobilePlatform
 	private long sleepTime = 0;
 
 	// Whether the user has toggled the ShowFPS option
-	private final int OVERLAY_WIDTH = 80;
+	private final int OVERLAY_WIDTH = 100;
 	private final int OVERLAY_HEIGHT = 20;
 	private String showFPS = "Off";
 	private int frameCount = 0;
@@ -376,8 +376,7 @@ public class MobilePlatform
 		BufferedImage overlayImage = new BufferedImage(OVERLAY_WIDTH, OVERLAY_HEIGHT, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D overlayGraphics = overlayImage.createGraphics();
 
-		// Enable font AA for better text quality (GASP uses font resource information to apply AA when appropriate)
-        gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+        gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		
 		// Set the overlay background
@@ -399,12 +398,12 @@ public class MobilePlatform
 		double scale = Math.min(lcdWidth, lcdHeight);
 
 		int scaledWidth = 0;
-		if(scale < 100) { scaledWidth = (int) (lcdWidth / 2.5);}
-		if(scale > 100) { scaledWidth = (int) (lcdWidth / 3);}
-		if(scale > 200) { scaledWidth = (int) (lcdWidth / 4);}
-		if(scale > 300) { scaledWidth = (int) (lcdWidth / 5);}
-		if(scale > 400) { scaledWidth = (int) (lcdWidth / 6);}
-		int scaledHeight = (int) (scaledWidth / 4);
+		if(scale < 100) { scaledWidth = (int) (lcdWidth / 2);}
+		if(scale > 100) { scaledWidth = (int) (lcdWidth / 2.5);}
+		if(scale > 200) { scaledWidth = (int) (lcdWidth / 3);}
+		if(scale > 300) { scaledWidth = (int) (lcdWidth / 4);}
+		if(scale > 400) { scaledWidth = (int) (lcdWidth / 5);}
+		int scaledHeight = (int) (scaledWidth / 5);
 	
 		// Draw the scaled overlay image onto the jar's main screen.
 		if(showFPS.equals("TopLeft"))          { gc.getGraphics2D().drawImage(overlayImage, 2, 2, scaledWidth, scaledHeight, null); }

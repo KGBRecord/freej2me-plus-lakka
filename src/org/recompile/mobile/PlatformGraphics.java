@@ -91,7 +91,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		setStrokeStyle(SOLID);
 		gc.setBackground(new Color(0, 0, 0, 0));
 		gc.setFont(font.platformFont.awtFont);
-		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	}
 
 	public void reset() //Internal use method, resets the Graphics object to its inital values
