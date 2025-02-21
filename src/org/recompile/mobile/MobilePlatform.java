@@ -64,8 +64,6 @@ public class MobilePlatform
 	private long elapsedTime = 0;
 	private long sleepTime = 0;
 
-	private long lastEventTime = System.nanoTime();
-
 	// Whether the user has toggled the ShowFPS option
 	private final int OVERLAY_WIDTH = 80;
 	private final int OVERLAY_HEIGHT = 20;
@@ -153,34 +151,34 @@ public class MobilePlatform
 
 	public void keyPressed(int keycode)
 	{
-		updateKeyState(Mobile.getGameAction(keycode), 1);
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyPressed(keycode); }
+		Mobile.getDisplay().callSerially(() -> { updateKeyState(Mobile.getGameAction(keycode), 1); });
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.keyPressed(keycode); }); }
 	}
 
 	public void keyReleased(int keycode)
 	{
-		updateKeyState(Mobile.getGameAction(keycode), 0);
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyReleased(keycode); }
+		Mobile.getDisplay().callSerially(() -> {updateKeyState(Mobile.getGameAction(keycode), 0); });
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.keyReleased(keycode); }); }
 	}
 
 	public void keyRepeated(int keycode)
 	{
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyRepeated(keycode); }
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.keyRepeated(keycode); }); }
 	}
 
 	public void pointerDragged(int x, int y)
 	{
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerDragged(x, y); }
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.pointerDragged(x, y); }); }
 	}
 
 	public void pointerPressed(int x, int y)
 	{
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerPressed(x, y); }
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.pointerPressed(x, y); }); }
 	}
 
 	public void pointerReleased(int x, int y)
 	{
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerReleased(x, y); }
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.pointerReleased(x, y); }); }
 	}
 
 	private void updateKeyState(int key, int val)
@@ -327,33 +325,20 @@ public class MobilePlatform
 
 		for(int i = 0; i < pressedKeys.length; i++) 
 		{
-			/* 
-			 * We'll poll new inputs 1000 times per second, any inputs done in a smaller interval
-			 * will be ignored. This is actually a workaround for games that don't work well with a
-			 * JVM spanning multiple cores (e.g. Some versions of Ratatouille) which can result in
-			 * the input thread being locked sending many commands during transitions, commands 
-			 * that the game will then have to process in its own time, making it seem like it's not
-			 * responding to inputs.
-			 */
-			if(lastEventTime - System.nanoTime() < -1_000_000) 
+			if(pressedKeys[i] == true && previouslyPressed[i] == false) 
 			{
-				if(pressedKeys[i] == true && previouslyPressed[i] == false) 
-				{
-					lastEventTime = System.nanoTime(); 
-					keyPressed(Mobile.getMobileKey(i));
-					previouslyPressed[i] = true;
-				}
-				else if(pressedKeys[i] == true && previouslyPressed[i] == true) 
-				{
-					keyRepeated(Mobile.getMobileKey(i));
-				}
-				else if (pressedKeys[i] == false && previouslyPressed[i] == true)
-				{
-					keyReleased(Mobile.getMobileKey(i));
-					previouslyPressed[i] = false;
-				}
+				keyPressed(Mobile.getMobileKey(i));
+				previouslyPressed[i] = true;
 			}
-			
+			else if(pressedKeys[i] == true && previouslyPressed[i] == true) 
+			{
+				keyRepeated(Mobile.getMobileKey(i));
+			}
+			else if (pressedKeys[i] == false && previouslyPressed[i] == true)
+			{
+				keyReleased(Mobile.getMobileKey(i));
+				previouslyPressed[i] = false;
+			}
 		}
 	}
 

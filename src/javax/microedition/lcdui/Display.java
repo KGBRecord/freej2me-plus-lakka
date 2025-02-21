@@ -165,9 +165,9 @@ public class Display
 				isSettingCurrent = true;
 				try 
 				{
-					if (current != null) { current.hideNotify(); }
+					if (current != null) { callSerially(() -> { current.hideNotify(); }); }
 					Mobile.getPlatform().keyState = 0; // reset keystate
-					next.showNotify();
+					callSerially(() -> { next.showNotify(); });
 				} 
 				finally { isSettingCurrent = false; }
 				if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
