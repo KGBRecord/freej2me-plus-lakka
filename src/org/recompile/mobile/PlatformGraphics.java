@@ -575,7 +575,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 	private int colorAlpha;
 
-	public int getNativePixelFormat() { return DirectGraphics.TYPE_USHORT_565_RGB; }
+	public int getNativePixelFormat() { return 0; } // Don't explicitly set any native format for color, let the jar send in whatever it has and we'll convert.
 
 	public int getAlphaComponent() { return colorAlpha; }
 
