@@ -46,11 +46,10 @@ public class Manager
 	public static final String MIDI_DEVICE_LOCATOR = "device://midi";
 
 	/* Custom MIDI variables */
-	public static boolean hasLoadedSynth = false;
+	public static boolean hasLoadedSoundfont = false;
 	public static boolean hasLoadedToneSynth = false;
 	public static File soundfontDir = new File("freej2me_system" + File.separatorChar + "customMIDI" + File.separatorChar);
-	private static Soundbank customSoundfont;
-	public static Synthesizer mainSynth;
+	public static Soundbank customSoundfont;
 	private static Synthesizer dedicatedTonePlayer = null;
 	private static MidiChannel dedicatedToneChannel;
 	private static Thread toneThread;
@@ -282,15 +281,15 @@ public class Manager
 	private static final void checkCustomMidi() 
 	{
 		/* 
-		 * Check if the user wants to run a custom MIDI soundfont. Also, there's no harm 
-		 * in checking if the directory exists again. If it has already been loaded, jsut return.
-		 */
-		if(hasLoadedSynth) { return; }
+			* Check if the user wants to run a custom MIDI soundfont. Also, there's no harm 
+			* in checking if the directory exists again. If it has already been loaded, jsut return.
+			*/
+		if(hasLoadedSoundfont) { return; }
 
 		/* 
-		 * If the directory for custom soundfonts doesn't exist, create it, no matter if the user
-		 * is going to use it or not.
-		 */
+			* If the directory for custom soundfonts doesn't exist, create it, no matter if the user
+			* is going to use it or not.
+			*/
 		if(!soundfontDir.isDirectory()) 
 		{
 			try 
@@ -310,55 +309,25 @@ public class Manager
 		});
 
 		/* 
-		 * Only really set the player to use a custom midi soundfont if there is
-		 * at least one inside the directory.
-		 */
+			* Only really set the player to use a custom midi soundfont if there is
+			* at least one inside the directory.
+			*/
 		if(Mobile.useCustomMidi && fontfile != null && fontfile.length > 0) 
 		{
 			try 
 			{
 				// Load the first .sf2 font available, if there's none that's valid, don't set any and use JVM's default
 				customSoundfont = MidiSystem.getSoundbank(new File(soundfontDir, fontfile[0]));
-				mainSynth = MidiSystem.getSynthesizer();
-				mainSynth.open();
-				mainSynth.loadAllInstruments(customSoundfont);
 
-				PlatformPlayer.synthesizer = mainSynth;
-				PlatformPlayer.receiver = mainSynth.getReceiver();
-
-				hasLoadedSynth = true; // We have now loaded the custom midi soundfont, mark as such so we don't waste time entering here again
+				hasLoadedSoundfont = true; // We have now loaded the custom midi soundfont, mark as such so we don't waste time entering here again
 			} 
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load soundfont into synth: " + e.getMessage());}
 		}
-		else if (!Mobile.useCustomMidi) 
-		{
-			try 
-			{
-				mainSynth = MidiSystem.getSynthesizer();
-				mainSynth.open();
-
-				PlatformPlayer.synthesizer = mainSynth;
-				PlatformPlayer.receiver = mainSynth.getReceiver();
-
-				hasLoadedSynth = true;
-			}
-			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load default synth: " + e.getMessage());}
-		}
+		else if (!Mobile.useCustomMidi) { hasLoadedSoundfont = true; }
 		else 
 		{ 
 			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Custom MIDI enabled but there's no soundfont in" + (soundfontDir.getPath() + File.separatorChar)); 
-
-			try 
-			{
-				mainSynth = MidiSystem.getSynthesizer();
-				mainSynth.open();
-
-				PlatformPlayer.synthesizer = mainSynth;
-				PlatformPlayer.receiver = mainSynth.getReceiver();
-
-				hasLoadedSynth = true;
-			}
-			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load default synth: " + e.getMessage());}
+			hasLoadedSoundfont = true;
 		}
 	}
 }
