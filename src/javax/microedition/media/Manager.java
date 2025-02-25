@@ -53,6 +53,7 @@ public class Manager
 	public static Synthesizer mainSynth;
 	private static Synthesizer dedicatedTonePlayer = null;
 	private static MidiChannel dedicatedToneChannel;
+	private static Thread toneThread;
 
 	public static synchronized Player createPlayer(InputStream stream, String type) throws IOException, MediaException
 	{
@@ -161,6 +162,8 @@ public class Manager
 	
 	public static void playTone(int note, int duration, int volume) throws MediaException
 	{
+		if(Mobile.sound == false) { return; }
+		
 		checkCustomMidi();
 		Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Play Tone");
 
@@ -182,10 +185,8 @@ public class Manager
 			} 
 			catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); return;}
 		}
-		else 
-		{
-			for (int stopNote = 0; stopNote <= 127; stopNote++) { dedicatedToneChannel.noteOff(note);}
-		}
+
+		if(toneThread != null && toneThread.isAlive()) { toneThread.interrupt(); } // Interrupt the currently playing tone if one is playing
 
 		// Notes that are too short can't even be heard in FreeJ2ME (some Karma Studios games use 10ms for sound, which is barely enough time for the media to start playing). A reasonable minimum duration is 50ms.
 		if(duration < 50) { Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Tone duration too short (" + duration + " ms), changing to the 50ms min."); }
@@ -200,12 +201,14 @@ public class Manager
 		dedicatedToneChannel.noteOn(note, effectiveDuration); // Make the decay just long enough for the note not to fade shorter than expected
 
 		/* Since it has to be non-blocking, wait for the specified duration in a separate Thread before stopping the note. */
-		new Thread(() -> 
+		toneThread = new Thread(() -> 
 		{
-            try { Thread.sleep(effectiveDuration); } 
-			catch (InterruptedException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to keep playing note for its specified duration: " + e.getMessage()); }
-            dedicatedToneChannel.noteOff(note);
-        }).start();
+			try { Thread.sleep(effectiveDuration); } 
+			catch (InterruptedException e) { dedicatedToneChannel.noteOff(note); } // Stop playing earlier if interrupted
+			dedicatedToneChannel.noteOff(note);
+		});
+		
+		toneThread.start();
 	}
 
 	public static final InputStream dumpAudioStream(InputStream stream, String type) 
