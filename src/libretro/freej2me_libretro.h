@@ -433,6 +433,20 @@ struct retro_core_option_v2_definition core_options[] =
         },
         "off"
     },
+    {
+        "freej2me_compatcliprectongfxreset",
+        "Compatibility Settings > Do clipRect instead of setClip on gfx reset",
+        "Do clipRect instead of setClip on gfx reset",
+        "Fantasy Zone's 128x128 version relies on a clipRect() call being issued whenever a fullscreen draw is made instead of setClip(). So far, it seems to be the only jar in the compatibility list that needs this, and enabling it will break quite a few others.",
+        "Fantasy Zone's 128x128 version relies on a clipRect() call being issued whenever a fullscreen draw is made instead of setClip(). So far, it seems to be the only jar in the compatibility list that needs this, and enabling it will break quite a few others.",
+        "compat_settings",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
     { NULL, NULL, NULL, NULL, NULL, NULL, {{0}}, NULL },
 };
 
@@ -711,6 +725,17 @@ struct retro_core_option_definition core_options_v1 [] =
         },
         "off"
     },
+    {
+        "freej2me_compatcliprectongfxreset",
+        "Do clipRect instead of setClip on gfx reset",
+        "Fantasy Zone's 128x128 version relies on a clipRect() call being issued whenever a fullscreen draw is made instead of setClip(). So far, it seems to be the only jar in the compatibility list that needs this, and enabling it will break quite a few others.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
     { NULL, NULL, NULL, {{0}}, NULL },
 };
 
@@ -791,6 +816,10 @@ static const struct retro_variable vars[] =
     { /* No Alpha on Blank Images compat setting */
         "freej2me_compatnonfatalnullimages",
         "Don't throw Exception on null images; off|on",
+    },
+    { /* No Alpha on Blank Images compat setting */
+        "freej2me_compatcliprectongfxreset",
+        "Do clipRect instead of setClip on gfx reset; off|on",
     },
     { NULL, NULL },
 };
