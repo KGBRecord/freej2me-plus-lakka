@@ -97,7 +97,7 @@ class Triangle
 			});
 
 			// If each second triangle has inverted order (by reusing the last triangle's vertices for better memory efficiency), we'll have to handle them accordingly by inverting its orientation for culling.
-			if(tri_id % 2 == 1 && (result[tri_id].bufIndex[0] == result[tri_id-1].bufIndex[1]) && (result[tri_id].bufIndex[1] == result[tri_id-1].bufIndex[2])) { result[tri_id].orientation = -1; }
+			if(tri_id > 0 && result[tri_id].isClockwise()) { result[tri_id].orientation = -1; }
 		}
 
 		return result;
@@ -234,7 +234,7 @@ class Triangle
 							   n2[1][0], n2[1][1], n2[1][2], n2[1][3] };
 	
 				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[0]+1, bufIndex[0]+2 });
-				if(newTriangles[0].isCounterClockwise() != this.isCounterClockwise()) { newTriangles[0].orientation = -1; } // Triangle must maintain the correct winding order
+				if(newTriangles[0].isClockwise() != this.isClockwise()) { newTriangles[0].orientation = -1; } // Triangle must maintain the correct winding order
 				return newTriangles;
 			}
 			case 2: // Two vertices on screen, clip will result in a quad, so it has to be re-triangulated (which is why we return two triangles here)
@@ -263,8 +263,8 @@ class Triangle
 	
 				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[1], bufIndex[1]+1});
 				newTriangles[1] = new Triangle(v2, t2, new int[] { bufIndex[1]-1, bufIndex[1], bufIndex[1]+1});
-				if(newTriangles[0].isCounterClockwise() != this.isCounterClockwise()) { newTriangles[0].orientation = -1; }
-				if(newTriangles[1].isCounterClockwise() != this.isCounterClockwise()) { newTriangles[1].orientation = -1; }
+				if(newTriangles[0].isClockwise() != this.isClockwise()) { newTriangles[0].orientation = -1; }
+				if(newTriangles[1].isClockwise() != this.isClockwise()) { newTriangles[1].orientation = -1; }
 				return newTriangles;
 			}
 			case 3:
@@ -286,7 +286,7 @@ class Triangle
         System.arraycopy(texCoordC, 0, this.t, 8, 4); // sC, tC, rC, qC
     }
 
-	public boolean isCounterClockwise() 
+	public boolean isClockwise() 
 	{
 		// Compute edges
 		float[] edge1 = { xB() - xA(), yB() - yA(), zB() - zA() }; // Edge AB
@@ -294,7 +294,7 @@ class Triangle
 
 		float[] normal = M3GMath.crossProduct(edge1, edge2);
 
-		return normal[2]*orientation <= 0; // Clockwise if normal points towards the viewer (with corrected orientation)
+		return normal[2]*orientation > 0; // Clockwise if normal points towards the viewer (with corrected orientation)
 	}
 }
 

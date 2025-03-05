@@ -547,8 +547,8 @@ public class Graphics3D
 				// Then move on to culling tests
 			
 				// Cull the triangle based on its culling mode, and which way it's facing
-				if (cullingMode == PolygonMode.CULL_BACK && !trisScreen[tri_id].isCounterClockwise()) { continue; }
-				if (cullingMode == PolygonMode.CULL_FRONT && trisScreen[tri_id].isCounterClockwise()) { continue; }
+				if (cullingMode == PolygonMode.CULL_BACK && !trisScreen[tri_id].isClockwise()) { continue; }
+				if (cullingMode == PolygonMode.CULL_FRONT && trisScreen[tri_id].isClockwise()) { continue; }
 
 
 				if (tex == null || texCoords == null) // If there's no texture coords or a texture image, we should try rendering with vertex colors.
