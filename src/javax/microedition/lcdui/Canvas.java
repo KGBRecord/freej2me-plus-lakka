@@ -166,6 +166,7 @@ public abstract class Canvas extends Displayable
 
 	public void repaint(int x, int y, int width, int height)
 	{
+		Mobile.getPlatform().limitFps();
 		try 
 		{
 			if (!isShown() || listCommands) { return; }
@@ -173,6 +174,7 @@ public abstract class Canvas extends Displayable
 			// TODO: This might be an issue
 			if (isPainting) 
 			{
+				Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " +"Recursive repaint attempted");
 				// we need this to avoid stackoverflow
 				// but it seems the underlying problem is that when paint calls
 				// repaint, we shouldn't even land here...
@@ -208,10 +210,11 @@ public abstract class Canvas extends Displayable
 	public void serviceRepaints() 
 	{
 		// TODO: Flesh this out properly, some games might need it.
-		if(!isShown() || isPainting) { return; }
+		if(!isShown()) { return; }
 
-		// Right now all this does is force a redraw, no queue consideration is made.
+		// serviceRepaints has to force any pending repaints to be serviced
 		Mobile.getPlatform().flushGraphics(platformImage, 0, 0, width, height);
+		isPainting = false;
 	}
 
 	public void setFullScreenMode(boolean mode)

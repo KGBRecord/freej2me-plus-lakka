@@ -46,7 +46,6 @@ public class Display
 
 	private final Queue<Runnable> serialCalls;
 	private final Thread serialThread;
-	private volatile boolean processingCalls;
 
 	private boolean isSettingCurrent = false;
 
@@ -59,7 +58,6 @@ public class Display
 		Mobile.setDisplay(this);
 
 		serialCalls = new LinkedList<>();
-		processingCalls = true;
 		serialThread = new Thread(this::processSerialCalls);
 		serialThread.start();
 	}
@@ -71,25 +69,13 @@ public class Display
 
 	private void processSerialCalls() 
 	{
-		while (processingCalls) 
+		while (true) 
 		{
-			Runnable runnable = null;
-
 			synchronized (serialCalls) 
 			{
-				if (!serialCalls.isEmpty()) { runnable = serialCalls.poll(); }
-				
-				if (runnable != null) { runnable.run(); } 
+				if (!serialCalls.isEmpty()) { serialCalls.poll().run(); }
 			}
 		}
-	}
-
-	public void stop() // Didn't find an use for this yet
-	{
-		processingCalls = false;
-		serialThread.interrupt();
-		try { serialThread.join(); } 
-		catch (InterruptedException e) { Thread.currentThread().interrupt(); }
 	}
 
 	public boolean flashBacklight(int duration) 

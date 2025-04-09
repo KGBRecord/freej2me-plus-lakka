@@ -52,6 +52,10 @@ public abstract class GameCanvas extends Canvas
 
 	public void flushGraphics(int x, int y, int width, int height)
 	{
+		Mobile.getPlatform().limitFps();
+
+		if (width <= 0 || height <= 0 || x + width < 0 || y + height < 0 || x >= this.width || y >= this.height) { return; }
+
 		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
 	}
 

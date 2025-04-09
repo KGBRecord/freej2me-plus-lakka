@@ -151,34 +151,34 @@ public class MobilePlatform
 
 	public void keyPressed(int keycode)
 	{
-		Mobile.getDisplay().callSerially(() -> { updateKeyState(Mobile.getGameAction(keycode), 1); });
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.keyPressed(keycode); }); }
+		updateKeyState(Mobile.getGameAction(keycode), 1);
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyPressed(keycode); }
 	}
 
 	public void keyReleased(int keycode)
 	{
-		Mobile.getDisplay().callSerially(() -> {updateKeyState(Mobile.getGameAction(keycode), 0); });
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.keyReleased(keycode); }); }
+		updateKeyState(Mobile.getGameAction(keycode), 0);
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyReleased(keycode); }
 	}
 
 	public void keyRepeated(int keycode)
 	{
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.keyRepeated(keycode); }); }
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyRepeated(keycode); }
 	}
 
 	public void pointerDragged(int x, int y)
 	{
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.pointerDragged(x, y); }); }
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerDragged(x, y); }
 	}
 
 	public void pointerPressed(int x, int y)
 	{
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.pointerPressed(x, y); }); }
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerPressed(x, y); }
 	}
 
 	public void pointerReleased(int x, int y)
 	{
-		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { Mobile.getDisplay().callSerially(() -> {displayable.pointerReleased(x, y); }); }
+		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerReleased(x, y); }
 	}
 
 	private void updateKeyState(int key, int val)
@@ -298,7 +298,6 @@ public class MobilePlatform
 		
 		if(!showFPS.equals("Off")) { showFPS();}
 		painter.run(); // Update the frontend's painter first to then process inputs
-		limitFps();
 
 		processInputs();
 	}
@@ -342,8 +341,9 @@ public class MobilePlatform
 		}
 	}
 
-	private void limitFps() 
+	public void limitFps() 
 	{
+		frameCount++;
 		if(Mobile.limitFPS == 0) { lastRenderTime = System.nanoTime(); return; }
 
 		requiredFrametime = 1_000_000_000 / Mobile.limitFPS;
@@ -364,8 +364,6 @@ public class MobilePlatform
 	// For now, the logic here works by updating the framerate counter every second
 	private final void showFPS() 
 	{
-		frameCount++;
-	
 		if (System.nanoTime() - lastFpsTime >= 1_000_000_000) 
 		{ 
 			fps = frameCount; 
