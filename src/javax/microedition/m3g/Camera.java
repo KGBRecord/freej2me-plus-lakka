@@ -18,6 +18,8 @@ package javax.microedition.m3g;
 
 import java.lang.Math;
 
+import org.recompile.mobile.Mobile;
+
 public class Camera extends Node
 {
 
@@ -159,6 +161,40 @@ public class Camera extends Node
 				 0 ,  0 , -b/d, -2*near*far/d,
 				 0 ,  0 ,  -1 ,       0
 			};
+		}
+	}
+
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating camera property");
+		switch (property) 
+		{
+			case AnimationTrack.FAR_DISTANCE:
+				params[3] = (projMode == PERSPECTIVE) ? Math.max(0.f, value[0]) : value[0];
+				break;
+			case AnimationTrack.FIELD_OF_VIEW:
+				params[0] = (projMode == PERSPECTIVE) ? Math.max(0.f, Math.min(180.f, value[0])) : Math.max(0, value[0]);
+				break;
+			case AnimationTrack.NEAR_DISTANCE:
+				params[2] = (projMode == PERSPECTIVE) ? Math.max(0.f, value[0]) : value[0];
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+
+		computeMatrix();
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.FAR_DISTANCE:
+			case AnimationTrack.FIELD_OF_VIEW:
+			case AnimationTrack.NEAR_DISTANCE:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
 		}
 	}
 }

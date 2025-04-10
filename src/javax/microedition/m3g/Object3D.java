@@ -25,7 +25,7 @@ public abstract class Object3D {
 	protected Object userObject = null;
 	Vector<AnimationTrack> animationTracks = new Vector<AnimationTrack>();
 
-	void updateProperty(int property, float[] value) { /* TODO */ }
+	void updateProperty(int property, float[] value) { }
 
 	int applyAnimation(int time) 
 	{
@@ -168,4 +168,5 @@ public abstract class Object3D {
 
 	public final int animate(int time) { return applyAnimation(time); }
 
+	boolean animTrackCompatible(AnimationTrack animationtrack) { return false; }
 }

@@ -20,6 +20,8 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.ByteOrder;
 
+import org.recompile.mobile.Mobile;
+
 public class Background extends Object3D
 {
 
@@ -121,8 +123,6 @@ public class Background extends Object3D
 		}
 		this.image = img;
 
-		if(img == null) { return; } // If image is null, we'll clear with the bg color only
-
 		texture = new Texture2D(img);
 		texture.setFiltering(Texture2D.FILTER_LINEAR, Texture2D.FILTER_LINEAR);
 		texture.setWrapping(Texture2D.WRAP_CLAMP, Texture2D.WRAP_CLAMP);
@@ -139,4 +139,44 @@ public class Background extends Object3D
 		modey=modeY; 
 	}
 
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating background property");
+		switch (property) 
+		{
+			case AnimationTrack.ALPHA:
+				color = (color | 0xFF000000) & ((int) value[0] << 24);
+				break;
+			case AnimationTrack.COLOR:
+				color = (color | 0x00FFFFFF) & (int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2];
+				break;
+			case AnimationTrack.CROP:
+				int x = (int)value[0];
+				int y = (int)value[1];
+				int width = cropw;
+				int height = croph;
+				if (value.length > 2) {
+					width = (value[2] < 0) ? 0 : (int)value[2];
+					height = (value[3] < 0) ? 0 : (int)value[3];
+				}
+				setCrop(x, y, width, height);
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.ALPHA:
+			case AnimationTrack.COLOR:
+			case AnimationTrack.CROP:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 }

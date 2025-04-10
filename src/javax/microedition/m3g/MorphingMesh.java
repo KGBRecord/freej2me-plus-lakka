@@ -16,6 +16,8 @@
 */
 package javax.microedition.m3g;
 
+import org.recompile.mobile.Mobile;
+
 public class MorphingMesh extends Mesh
 {
 
@@ -64,23 +66,6 @@ public class MorphingMesh extends Mesh
 		}
 			
 		return found;
-	}
-
-	@Override
-	public void updateProperty(int property, float[] value) 
-	{
-		switch (property) 
-		{
-			case AnimationTrack.MORPH_WEIGHTS:
-				for (int i = 0; i < targets.length; i++) 
-				{
-					if (i < value.length) { weights[i] = value[i]; }
-					else { weights[i] = 0; }
-				}
-				break;
-			default:
-				super.updateProperty(property, value);
-		}
 	}
 
 	public VertexBuffer getMorphTarget(int index) { return targets[index]; }
@@ -133,4 +118,33 @@ public class MorphingMesh extends Mesh
 
 	}
 
+	@Override
+	public void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating morphingMesh property");
+		switch (property) 
+		{
+			case AnimationTrack.MORPH_WEIGHTS:
+				for (int i = 0; i < targets.length; i++) 
+				{
+					if (i < value.length) { weights[i] = value[i]; }
+					else { weights[i] = 0; }
+				}
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+		
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.MORPH_WEIGHTS:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 }

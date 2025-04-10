@@ -167,4 +167,37 @@ public abstract class Transformable extends Object3D
 		this.translate.preTranslate(tx, ty, tz);
 	}
 
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating Transformable property");
+		boolean invalidate = true;
+		switch (property) 
+		{
+			case AnimationTrack.ORIENTATION:
+				setOrientation(value[0], value[1], value[2], value[3]);
+				break;
+			case AnimationTrack.TRANSLATION:
+				translate(value[0], value[1], value[2]);
+				break;
+			case AnimationTrack.SCALE:
+				scale(value[0], value[1], value[2]);
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.ORIENTATION:
+			case AnimationTrack.SCALE:
+			case AnimationTrack.TRANSLATION:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 }

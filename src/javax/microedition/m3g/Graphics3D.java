@@ -52,7 +52,7 @@ public class Graphics3D
 	public static final int MAX_VIEWPORT_WIDTH = 1024;
 	public static final int MAX_VIEWPORT_HEIGHT = 1024;
 	public static final int MAX_VIEWPORT_DIMENSION = 1024;
-	public static final int MAX_TEXTURE_DIMENSION = 256;
+	public static final int MAX_TEXTURE_DIMENSION = 512;
 	public static final int MAX_SPRITE_CROP_DIMENSION = 256;
 	public static final int MAX_TRANSFORMS_PER_VERTEX = 4;
 	public static final int NUM_TEXTURE_UNITS = 8;
@@ -337,7 +337,7 @@ public class Graphics3D
 
 	public void render(Node node, Transform transform)
 	{
-		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Render(N, T).");
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Render(Node, Transform) Not Fully Implemented.");
 		/* As per JSR-184, throw NullPointerException if no node is received. */
 		if(node == null) { throw new NullPointerException("render() was called but no node was provided."); }
 	
@@ -361,14 +361,13 @@ public class Graphics3D
 			{
 				if (mesh.getAppearance(i) != null) { render(vertices, mesh.getIndexBuffer(i), mesh.getAppearance(i), transform); }
 			}
-		} 
+		}
 		else if (node instanceof Sprite3D) 
 		{
 			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Sprite3D Not Implemented!");
 		}
 		else if (node instanceof Group) 
 		{
-			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Group Untested!");
 			Node child = ((Group) node).firstChild;
 			if (child != null) 
 			{
@@ -379,13 +378,12 @@ public class Graphics3D
 						Transform t = new Transform();
 						child.getCompositeTransform(t);
 						t.preMultiply(transform);
-						render(child, t);
+						if(child instanceof Sprite3D || child instanceof Mesh || child instanceof Group) { render(child, t); }
 					}
 					child = child.right;
 				} while (child != ((Group) node).firstChild);
 			}
 		}
-		else { throw new IllegalArgumentException("Node must be a Sprite3D, Mesh, or Group"); }
 	}
 
 	public void render(VertexBuffer vertices, IndexBuffer triangles, Appearance appearance, Transform transform) 
@@ -924,7 +922,6 @@ public class Graphics3D
 
 	public void render(World world)
 	{
-		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Render(W).");
 		/* Clear the background first */
 		clear(world.getBackground());
 
@@ -965,8 +962,31 @@ public class Graphics3D
 		 * Note: this will be thrown by Transform.invert() if appropriate
 		 */
 
-		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render W");
-		// TODO implement Graphics3D.render(World)
+		setCamera(worldCamera, tr);
+		resetLights();
+		positionLights(world, world);
+
+		render((Group) world, new Transform());
+	}
+
+	private void positionLights(World world, Object3D obj) 
+	{
+		int numReferences = obj.getReferences(null);
+		if (numReferences > 0) 
+		{
+			Object3D[] objArray = new Object3D[numReferences];
+			obj.getReferences(objArray);
+			for (int i = 0; i < numReferences; ++i) 
+			{
+				if (objArray[i] instanceof Light) 
+				{
+					Transform t = new Transform();
+					Light light = (Light) objArray[i];
+					if (light.isRenderingEnabled() && light.getTransformTo(world, t)) { addLight(light, t); }
+				}
+				positionLights(world, objArray[i]);
+			}
+		}
 	}
 
 	public void resetLights()

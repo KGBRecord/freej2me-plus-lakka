@@ -18,6 +18,8 @@ package javax.microedition.m3g;
 
 import java.lang.Math;
 
+import org.recompile.mobile.Mobile;
+
 public class Texture2D extends Transformable
 {
 
@@ -161,5 +163,30 @@ public class Texture2D extends Transformable
 		int log2v = (int) Math.round(Math.log(value) / Math.log(2));
 		int pow2v = (int) Math.round(Math.pow(2, log2v));
 		return value == pow2v && log2v >= 0;
+	}
+
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating Texture2D property");
+		switch (property) 
+		{
+			case AnimationTrack.COLOR:
+				blendcolor = (value.length == 3) ? (int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2] : (int) value[0] >> 24 & (int) value[1] >> 16 & (int) value[2] >> 8 & (int) value[3];
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.COLOR:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
 	}
 }

@@ -16,6 +16,8 @@
 */
 package javax.microedition.m3g;
 
+import org.recompile.mobile.Mobile;
+
 public abstract class Node extends Transformable
 {
 
@@ -28,7 +30,6 @@ public abstract class Node extends Transformable
 	public Node parent = null;
 	public Node left;
 	public Node right;
-	private Node alignRef = null;
 	private Node yRef = null;
 	private Node zRef = null;
 	private int yTarget = NONE;
@@ -100,23 +101,6 @@ public abstract class Node extends Transformable
 		return false;
 	}
 
-	@Override
-	void updateProperty(int property, float[] value) {
-		switch (property) {
-			case AnimationTrack.ALPHA:
-				alphaFactor = (int) (Math.max(0.f, Math.min(1.f, value[0]) * 0xFFFF));
-				break;
-			case AnimationTrack.PICKABILITY:
-				picking = (value[0] >= 0.5f);
-				break;
-			case AnimationTrack.VISIBILITY:
-				rendering = (value[0] >= 0.5f);
-				break;
-			default:
-				super.updateProperty(property, value);
-		}
-	}
-
 	public Node getAlignmentReference(int axis) 
 	{ 
 		if(axis == Y_AXIS) { return this.yRef; }
@@ -141,7 +125,46 @@ public abstract class Node extends Transformable
 
 	public int getScope() { return this.scope; }
 
-	public boolean getTransformTo(Node target, Transform transform) { return false; }
+	public boolean getTransformTo(Node target, Transform transform) {
+		// Validate inputs
+		if (target == null) {
+			throw new NullPointerException("Target node cannot be null");
+		}
+		if (transform == null) {
+			throw new NullPointerException("Transform object cannot be null");
+		}
+	
+		// Initialize a temporary transformation
+		Transform compositeTransform = new Transform();
+		Node currentNode = this;
+	
+		// Traverse upwards to find the target node
+		while (currentNode != null) {
+			if (currentNode == target) {
+				// We found the target node, apply the accumulated transformations
+				transform.set(compositeTransform);
+				return true;
+			}
+	
+			// Accumulate the transformation
+			try {
+				if (currentNode.getParent() != null) {
+					// Multiply the current transform with the parent's transform
+					Transform localTransform = new Transform();
+					currentNode.getTransform(localTransform);
+					compositeTransform.preMultiply(localTransform);
+				}
+			} catch (ArithmeticException e) {
+				throw new ArithmeticException("Singular transformation encountered");
+			}
+	
+			// Move to the parent node
+			currentNode = currentNode.getParent();
+		}
+	
+		// If we exit the loop, there was no path to the target node
+		return false;
+	}
 
 	public boolean isPickingEnabled() { return this.picking; }
 
@@ -200,4 +223,37 @@ public abstract class Node extends Transformable
 		return root;
 	}
 
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating Node property");
+		switch (property) 
+		{
+			case AnimationTrack.ALPHA:
+				alphaFactor = (int) (Math.max(0.f, Math.min(1.f, value[0]) * 0xFFFF));
+				break;
+			case AnimationTrack.PICKABILITY:
+				picking = (value[0] >= 0.5f);
+				break;
+			case AnimationTrack.VISIBILITY:
+				rendering = (value[0] >= 0.5f);
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.ALPHA:
+			case AnimationTrack.VISIBILITY:
+			case AnimationTrack.PICKABILITY:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 }

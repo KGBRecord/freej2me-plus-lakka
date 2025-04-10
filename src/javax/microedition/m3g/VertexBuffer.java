@@ -16,6 +16,8 @@
 */
 package javax.microedition.m3g;
 
+import org.recompile.mobile.Mobile;
+
 public class VertexBuffer extends Object3D
 {
 
@@ -234,4 +236,32 @@ public class VertexBuffer extends Object3D
 		}
 	}
 
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating VertexBuffer property");
+		switch (property) 
+		{
+			case AnimationTrack.ALPHA:
+				defaultColor = (defaultColor | 0xFF000000) & ((int) value[0] << 24);
+				break;
+			case AnimationTrack.COLOR:
+				defaultColor = (defaultColor | 0x00FFFFFF) & (int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2];
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.ALPHA:
+			case AnimationTrack.COLOR:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 }

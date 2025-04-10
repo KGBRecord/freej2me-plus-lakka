@@ -16,6 +16,8 @@
 */
 package javax.microedition.m3g;
 
+import org.recompile.mobile.Mobile;
+
 public class Light extends Node
 {
 
@@ -85,5 +87,42 @@ public class Light extends Node
 	public void setSpotAngle(float theta) { angle = theta; }
 
 	public void setSpotExponent(float exp) { exponent = exp; }
+
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating light property");
+		switch (property) 
+		{
+			case AnimationTrack.COLOR:
+				color = (int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2];
+				break;
+			case AnimationTrack.INTENSITY:
+				intensity = value[0];
+				break;
+			case AnimationTrack.SPOT_ANGLE:
+				angle = Math.max(0.f, Math.min(90.f, value[0]));
+				break;
+			case AnimationTrack.SPOT_EXPONENT:
+				exponent = Math.max(0.f, Math.min(128.f, value[0]));
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.COLOR:
+			case AnimationTrack.INTENSITY:
+			case AnimationTrack.SPOT_ANGLE:
+			case AnimationTrack.SPOT_EXPONENT:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 
 }

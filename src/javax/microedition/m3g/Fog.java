@@ -16,6 +16,8 @@
 */
 package javax.microedition.m3g;
 
+import org.recompile.mobile.Mobile;
+
 public class Fog extends Object3D
 {
 
@@ -73,4 +75,40 @@ public class Fog extends Object3D
 		mode = value; 
 	}
 
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating fog property");
+		switch (property) 
+		{
+			case AnimationTrack.COLOR:
+				color = (int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2] & 0x00FFFFFF;
+				break;
+			case AnimationTrack.DENSITY:
+				density = (value[0] < 0.f) ? 0.f : value[0];
+				break;
+			case AnimationTrack.FAR_DISTANCE:
+				far = value[0];
+				break;
+			case AnimationTrack.NEAR_DISTANCE:
+				near = value[0];
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.COLOR:
+			case AnimationTrack.DENSITY:
+			case AnimationTrack.FAR_DISTANCE:
+			case AnimationTrack.NEAR_DISTANCE:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 }

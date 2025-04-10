@@ -16,6 +16,8 @@
 */
 package javax.microedition.m3g;
 
+import org.recompile.mobile.Mobile;
+
 public class Material extends Object3D
 {
 
@@ -104,4 +106,47 @@ public class Material extends Object3D
 
 	public void setVertexColorTrackingEnable(boolean enable) { this.tracking = enable; }
 
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating material property");
+		switch (property) 
+		{
+			case AnimationTrack.ALPHA:
+				diffuseColor = (diffuseColor | 0xFF000000) & ((int) value[0] << 24);
+				break;
+			case AnimationTrack.AMBIENT_COLOR:
+				ambientColor = (int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2];
+				break;
+			case AnimationTrack.DIFFUSE_COLOR:
+				diffuseColor = (diffuseColor | 0x00FFFFFF) & ((int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2]);
+				break;
+			case AnimationTrack.EMISSIVE_COLOR:
+				emissiveColor = ((int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2] & 0x00FFFFFF);
+				break;
+			case AnimationTrack.SHININESS:
+				shininess = Math.max(0.f, Math.min(128.f, value[0]));
+				break;
+			case AnimationTrack.SPECULAR_COLOR:
+				specularColor = (int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2];
+				break;
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) {
+			case AnimationTrack.ALPHA:
+			case AnimationTrack.AMBIENT_COLOR:
+			case AnimationTrack.DIFFUSE_COLOR:
+			case AnimationTrack.EMISSIVE_COLOR:
+			case AnimationTrack.SHININESS:
+			case AnimationTrack.SPECULAR_COLOR:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 }

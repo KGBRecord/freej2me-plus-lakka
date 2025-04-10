@@ -18,6 +18,8 @@ package javax.microedition.m3g;
 
 import java.util.Hashtable;
 
+import org.recompile.mobile.Mobile;
+
 public class Sprite3D extends Node
 {
 
@@ -98,4 +100,35 @@ public class Sprite3D extends Node
 		}
 	}
 
+	@Override
+	void updateProperty(int property, float[] value) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating Sprite3D property");
+		switch (property) 
+		{
+			case AnimationTrack.CROP:
+				if (value.length > 2) 
+				{
+					setCrop((int)value[0], (int)value[1], (int)Math.max(-Graphics3D.MAX_TEXTURE_DIMENSION, Math.min(Graphics3D.MAX_TEXTURE_DIMENSION, value[2])),
+							(int)Math.max(-Graphics3D.MAX_TEXTURE_DIMENSION, Math.min(Graphics3D.MAX_TEXTURE_DIMENSION, value[3])));
+				} 
+				else 
+				{
+					setCrop((int)value[0], (int)value[1], getCropWidth(), getCropHeight());
+				}
+			default:
+				super.updateProperty(property, value);
+		}
+	}
+
+	boolean animTrackCompatible(AnimationTrack track) 
+	{
+		switch (track.getTargetProperty()) 
+		{
+			case AnimationTrack.CROP:
+				return true;
+			default:
+				return super.animTrackCompatible(track);
+		}
+	}
 }
