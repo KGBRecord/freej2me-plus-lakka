@@ -385,6 +385,15 @@ public class Graphics3D
 		int windingOrder = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getWinding() : PolygonMode.WINDING_CCW;
 		boolean perspectiveCorrectionEnabled = appearance.getPolygonMode() != null ? appearance.getPolygonMode().isPerspectiveCorrectionEnabled() : false;
 
+		// Handle winding order
+		Integer[] ord = {0, 1, 2};
+
+		if (windingOrder == PolygonMode.WINDING_CW) 
+		{
+			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Polygon Winding is Clockwise! Untested, might render incorrectly");
+			ord = new Integer[]{0, 2, 1}; // Adjust order for Clockwise Winding 
+		}
+
 		// Set up fog properties
 		Fog fog = appearance.getFog();
 		float fogFactor[] = { 0.0f, 0.0f, 0.0f };
@@ -464,18 +473,18 @@ public class Graphics3D
 			if (!cullTriangle) 
 			{
 				trisClip[renderableTriangles++] = tri; // Move non-culled triangles to the front of the array (culled stuff will be dropped in "trisScreen")
-			}
 
-			// We now have to restore the geometry back to its original coordinates, otherwise rendering will be broken
-			for (int i = 0; i < 3; i++) 
-			{
-				int index = i * 4;
-				float w = tri.v[index + 3];
-				if (w >= near) 
+				// We now have to restore the renderable geometry back to its original coordinates, otherwise rendering will be broken
+				for (int i = 0; i < 3; i++) 
 				{
-					tri.v[index + 0] *= w; // x * w
-					tri.v[index + 1] *= w; // y * w
-					tri.v[index + 2] *= w; // z * w
+					int index = i * 4;
+					float w = tri.v[index + 3];
+					if (w >= near) 
+					{
+						tri.v[index + 0] *= w; // x * w
+						tri.v[index + 1] *= w; // y * w
+						tri.v[index + 2] *= w; // z * w
+					}
 				}
 			}
 		}
@@ -547,36 +556,48 @@ public class Graphics3D
 			{
 
 				// If perspective correction is enabled, do it for texture coordinates
-				if(perspectiveCorrectionEnabled)
+				if (perspectiveCorrectionEnabled) 
 				{
 					// Get the w components for each triangle vertex
 					float wA = trisScreen[tri_id].wA();
 					float wB = trisScreen[tri_id].wB();
 					float wC = trisScreen[tri_id].wC();
-			
-					// Calculate perspective-correct texture coordinates
-					float[] texCoordA = {
-						trisScreen[tri_id].sA() / wA,
-						trisScreen[tri_id].tA() / wA,
-						0, // rA
-						1  // qA
-					};
-					float[] texCoordB = {
-						trisScreen[tri_id].sB() / wB,
-						trisScreen[tri_id].tB() / wB,
-						0, // rB
-						1  // qB
-					};
-					float[] texCoordC = {
-						trisScreen[tri_id].sC() / wC,
-						trisScreen[tri_id].tC() / wC,
-						0, // rC
-						1  // qC
-					};
-			
-					// Set the corrected texture coordinates back into the triangle
-					trisScreen[tri_id].setTexCoords(texCoordA, texCoordB, texCoordC);
+				
+					// W again cannot be smaller than the near plane, otherwise it'll result in incorrect calculations
+					if (wA > near && wB > near && wC > near) 
+					{
+						// Calculate perspective correction through Inverse-Z.
+						float invW_A = 1.0f / wA;
+						float invW_B = 1.0f / wB;
+						float invW_C = 1.0f / wC;
+				
+						float[] texCoordA = 
+						{
+							trisScreen[tri_id].sA() * invW_A,
+							trisScreen[tri_id].tA() * invW_A,
+							0, // rA
+							1  // qA
+						};
+						float[] texCoordB = 
+						{
+							trisScreen[tri_id].sB() * invW_B,
+							trisScreen[tri_id].tB() * invW_B,
+							0, // rB
+							1  // qB
+						};
+						float[] texCoordC = 
+						{
+							trisScreen[tri_id].sC() * invW_C,
+							trisScreen[tri_id].tC() * invW_C,
+							0, // rC
+							1  // qC
+						};
+				
+						// Set the corrected texture coordinates back into the triangle
+						trisScreen[tri_id].setTexCoords(texCoordA, texCoordB, texCoordC);
+					}
 				}
+				
 
 
 				if (tex == null || texCoords == null) // If there's no texture coords or a texture image, we should try rendering with vertex colors.
@@ -689,21 +710,6 @@ public class Graphics3D
 					continue;
 				}
 
-				// Text
-				// Prepare ordering based on vertex positions
-				Integer[] ord = {0, 1, 2};
-
-				// Handle winding order
-				if (windingOrder == PolygonMode.WINDING_CW) 
-				{
-					Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Polygon Winding is Clockwise! Untested, might render incorrectly");
-					ord = new Integer[]{0, 2, 1}; // Adjust order for Clockwise Winding 
-				}
-
-				final int curID = tri_id;
-				Arrays.sort(ord, (a, b) -> Float.compare(trisScreen[curID].v[4 * a + 0], trisScreen[curID].v[4 * b + 0]));
-				Arrays.sort(ord, (a, b) -> Float.compare(trisScreen[curID].v[4 * a + 1], trisScreen[curID].v[4 * b + 1]));
-
 				// Collect vertex attributes
 				coX[0] = trisScreen[tri_id].xA(); coX[1] = trisScreen[tri_id].xB(); coX[2] = trisScreen[tri_id].xC();
 				coY[0] = trisScreen[tri_id].yA(); coY[1] = trisScreen[tri_id].yB(); coY[2] = trisScreen[tri_id].yC();
@@ -711,19 +717,34 @@ public class Graphics3D
 				coS[0] = trisScreen[tri_id].sA(); coS[1] = trisScreen[tri_id].sB(); coS[2] = trisScreen[tri_id].sC();
 				coT[0] = trisScreen[tri_id].tA(); coT[1] = trisScreen[tri_id].tB(); coT[2] = trisScreen[tri_id].tC();
 
-				// Extract ordered vertex attributes
-				xOrdered[0] = coX[ord[0]]; xOrdered[1] = coX[ord[1]]; xOrdered[2] = coX[ord[2]];
-				yOrdered[0] = coY[ord[0]]; yOrdered[1] = coY[ord[1]]; yOrdered[2] = coY[ord[2]];
-				zOrdered[0] = coZ[ord[0]]; zOrdered[1] = coZ[ord[1]]; zOrdered[2] = coZ[ord[2]];
-				sOrdered[0] = coS[ord[0]]; sOrdered[1] = coS[ord[1]]; sOrdered[2] = coS[ord[2]];
-				tOrdered[0] = coT[ord[0]]; tOrdered[1] = coT[ord[1]]; tOrdered[2] = coT[ord[2]];
+				// Instead of using the previous Arrays.sort() call. Let's handle position and winding sorting by hand, i think it's more readable.
+				int topIdx = ord[0], midIdx = ord[1], botIdx = ord[2];
 
-				// Define top, middle, and bottom vertices
-				xTop = xOrdered[0]; xMidL = xOrdered[1]; xBot = xOrdered[2];
-				yTop = yOrdered[0]; yMid = yOrdered[1]; yBot = yOrdered[2];
-				zTop = zOrdered[0]; zMidL = zOrdered[1]; zBot = zOrdered[2];
-				sTop = sOrdered[0]; sMidL = sOrdered[1]; sBot = sOrdered[2];
-				tTop = tOrdered[0]; tMidL = tOrdered[1]; tBot = tOrdered[2];
+				if (coY[midIdx] < coY[topIdx]) 
+				{
+					int temp = topIdx;
+					topIdx = midIdx;
+					midIdx = temp;
+				}
+				if (coY[botIdx] < coY[topIdx]) 
+				{
+					int temp = topIdx;
+					topIdx = botIdx;
+					botIdx = temp;
+				}
+				if (coY[botIdx] < coY[midIdx]) 
+				{
+					int temp = midIdx;
+					midIdx = botIdx;
+					botIdx = temp;
+				}
+
+				// Assign ordered vertex attributes based on their determined order
+				xTop = coX[topIdx]; xMidL = coX[midIdx]; xBot = coX[botIdx];
+				yTop = coY[topIdx]; yMid = coY[midIdx]; yBot = coY[botIdx];
+				zTop = coZ[topIdx]; zMidL = coZ[midIdx]; zBot = coZ[botIdx];
+				sTop = coS[topIdx]; sMidL = coS[midIdx]; sBot = coS[botIdx];
+				tTop = coT[topIdx]; tMidL = coT[midIdx]; tBot = coT[botIdx];
 
 				// Calculate the right horizon
 				rHorizon = (yMid - yTop) / (yBot - yTop);
@@ -785,8 +806,11 @@ public class Graphics3D
 							? tTop + drawY * (tMidR - tTop)
 							: tBot + drawY * (tMidR - tBot);
 
+
+						final int ixL = Math.round(xL), ixR = Math.round(xR);
+
 						// Draw the pixels for the current y-coordinate
-						for (int x = Math.round(xL); x < Math.round(xR); x++) 
+						for (int x = ixL; x < ixR; x++) 
 						{
 							// Check the current pixel's x and y values against the viewport bounds and skip drawing if it's out of bounds
 							if(x+viewx < 0 || x+viewx > vieww+viewx || x+viewx > pgrp.getCanvas().getWidth())  { continue; }
