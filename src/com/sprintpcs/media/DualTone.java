@@ -52,10 +52,14 @@ public class DualTone
 			Track trackB = midiSequence.createTrack();
 
 			// Like siemens' MelodyComposer, use a square wave instrument here.
+			trackA.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1), 0)); // Bank change MSB (Bank 1)
+			trackA.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0), 1)); // Bank change LSB
 			trackA.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0), 0));
+			trackB.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1), 0)); // Bank change MSB (Bank 1)
+			trackB.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0), 1)); // Bank change LSB
 			trackB.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0), 0));
 
-			// Start from tick 0, and move onwards afte reading each note pair's duration.
+			// Start from tick 0, and move onwards after reading each note pair's duration.
             long currentTick = 0;
 			int tmpNote;
 

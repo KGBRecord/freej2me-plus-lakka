@@ -221,6 +221,8 @@ public class Sound
 			// Create a new sequence and track for the converted tone
 			Sequence sequence = new Sequence(Sequence.PPQ, 24);
 			Track track = sequence.createTrack();
+			track.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1), 0)); // Bank change MSB (Bank 1)
+			track.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0), 1)); // Bank change LSB
 			track.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0), 0)); // 80 is the Square Wave / Lead 1 instrument, which we'll use to get closer to what this should sound like
 		
 			// Validate command length

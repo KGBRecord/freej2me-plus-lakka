@@ -332,6 +332,8 @@ public class MelodyComposer
 			this.bpm = bpm; 
 			tmpSequence = new Sequence(Sequence.PPQ, 24); // This PPQ value for siemens is assumed to be the same as Nokia's OTA/OTT (which is correct in playback speed). Tested in AH-1 SeaBomber which is available for both
 			tmpTrack = tmpSequence.createTrack();
+			tmpTrack.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1), 0)); // Bank change MSB (Bank 1)
+			tmpTrack.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0), 1)); // Bank change LSB
 			tmpTrack.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0), 0)); // 80 is the Square Wave / Lead 1 instrument, which we'll use to get closer to what this should sound like
 
 			int microsecondsPerBeat = 60000000 / bpm;
