@@ -42,6 +42,16 @@ public class Camera extends Node
 		this.params = new float[4];
 	}
 
+	Object3D duplicateImpl() 
+	{
+		Camera copy = new Camera();
+		super.duplicate((Node) copy);
+		copy.projMode = projMode;
+		System.arraycopy(this.projMatrix, 0, copy.projMatrix, 0, projMatrix.length);
+		System.arraycopy(this.params, 0, copy.params, 0, params.length);
+		return copy;
+	}
+
 
 	public int getProjection(float[] params)
 	{

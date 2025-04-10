@@ -42,6 +42,23 @@ public abstract class Node extends Transformable
 	boolean hasBones = false;
 	boolean[] dirty = new boolean[2];
 
+	void duplicate(Node copy) 
+	{
+		super.duplicate((Transformable) copy);
+		copy.parent = null;
+		copy.left = null;
+		copy.right = null;
+		copy.scope = scope;
+		copy.zRef = zRef;
+		copy.yRef = yRef;
+		copy.alphaFactor = alphaFactor;
+		copy.zTarget = zTarget;
+		copy.yTarget = yTarget;
+		copy.picking = picking;
+		copy.rendering = rendering;
+		copy.hasRenderables = hasRenderables;
+		copy.hasBones = hasBones;
+	}
 
 	public void align(Node reference) 
 	{  

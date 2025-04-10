@@ -37,6 +37,21 @@ public class Light extends Node
 
 	public Light() {  }
 
+	Object3D duplicateImpl() 
+	{
+		Light copy = new Light();
+		super.duplicate((Node) copy);
+		copy.constant = constant;
+		copy.linear = linear;
+		copy.quadratic = quadratic;
+		copy.color = color;
+		copy.mode = mode;
+		copy.intensity = intensity;
+		copy.angle = angle;
+		copy.exponent = exponent;
+		return copy;
+	}
+
 
 	public int getColor() { return color; }
 

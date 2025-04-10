@@ -21,6 +21,8 @@ import java.util.Arrays;
 public class TriangleStripArray extends IndexBuffer
 {
 
+	TriangleStripArray() { }
+
 	public TriangleStripArray(int[] indices, int[] stripLengths)
 	{
 		/* Per JSR-184, throw NullPointerException if indices or stripLengths are null */
@@ -54,6 +56,14 @@ public class TriangleStripArray extends IndexBuffer
 
 		/* Setup the StripArray with implicit indices. */
 		this.updateFields(false, new int[] { firstIndex }, stripLengths);
+	}
+
+	Object3D duplicateImpl() 
+	{
+		TriangleStripArray copy = new TriangleStripArray();
+		copy.indexCount = indexCount;
+		copy.indices = indices;
+		return copy;
 	}
 
 	private void updateFields(boolean isExplicit, int[] indices, int[] stripLengths) 

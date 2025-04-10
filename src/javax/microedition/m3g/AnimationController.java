@@ -27,6 +27,18 @@ public class AnimationController extends Object3D
 	private float refSequenceTime = 0;
 	private float weight = 1.0f;
 
+	Object3D duplicateImpl() 
+	{
+		AnimationController copy = new AnimationController();
+		copy.activationTime = activationTime;
+		copy.deactivationTime = deactivationTime;
+		copy.weight = weight;
+		copy.speed = speed;
+		copy.refWorldTime = refWorldTime;
+		copy.refSequenceTime = refSequenceTime;
+		return copy;
+	}
+
 	public int timeToActivation(int worldTime) 
 	{
 		if (worldTime < activationTime) { return activationTime - worldTime; }

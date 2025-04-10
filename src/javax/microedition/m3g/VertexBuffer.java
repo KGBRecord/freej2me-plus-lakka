@@ -57,6 +57,41 @@ public class VertexBuffer extends Object3D
 		this.texCoordBias = new float[Graphics3D.NUM_TEXTURE_UNITS][0];
 	}
 
+	Object3D duplicateImpl() {
+		VertexBuffer copy = new VertexBuffer();
+		copy.fixed = fixed;
+		copy.length = length;
+		copy.positions = positions;
+		copy.normals = normals;
+		copy.colors = colors;
+		copy.positionScale = positionScale;
+
+		if (positionBias != null) {
+			copy.positionBias = new float[positionBias.length];
+			System.arraycopy(positionBias, 0, copy.positionBias, 0, positionBias.length);
+		}
+
+		if (texCoords != null) {
+			for (int i = 0; i < texCoords.length; i++) {
+				copy.texCoords[i] = texCoords[i];
+			}
+		}
+
+		if (texCoordBias != null) {
+			copy.texCoordBias = new float[texCoordBias.length][3];
+			for (int i = 0; i < texCoordBias.length; i++)
+				System.arraycopy(texCoordBias[i], 0, copy.texCoordBias[i], 0, texCoordBias[i].length);
+		}
+
+		if (texCoordScale != null) {
+			copy.texCoordScale = new float[texCoordScale.length];
+			System.arraycopy(texCoordScale, 0, copy.texCoordScale, 0, texCoordScale.length);
+		}
+
+		copy.defaultColor = defaultColor;
+		return copy;
+	}
+
 
 	public VertexArray getColors() { return this.colors; }
 

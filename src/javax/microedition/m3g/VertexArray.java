@@ -25,6 +25,8 @@ public class VertexArray extends Object3D
 	private int numComponents;
 	private int componentType;
 
+	VertexArray() { }
+
 	public VertexArray(int numVertices, int numComponents, int componentSize)
 	{
 		/* As per JSR-184, throw IllegalArgumentException if any of the parameters are outside of their allowed range. */
@@ -45,6 +47,17 @@ public class VertexArray extends Object3D
 				this.inner2 = new short[numVertices][numComponents];
 				break;
 		}
+	}
+
+	Object3D duplicateImpl()
+	 {
+		VertexArray copy = new VertexArray();
+		copy.numVertices = numVertices;
+		copy.numComponents = numComponents;
+		copy.componentType = componentType;
+		System.arraycopy(this.inner1, 0, copy.inner1, 0, inner1.length);
+		System.arraycopy(this.inner2, 0, copy.inner2, 0, inner2.length);
+		return copy;
 	}
 
 

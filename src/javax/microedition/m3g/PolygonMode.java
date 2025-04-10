@@ -46,6 +46,18 @@ public class PolygonMode extends Object3D
 		this.perspectiveCorrection = false;
 	}
 
+	Object3D duplicateImpl() 
+	{
+		PolygonMode copy = new PolygonMode();
+		copy.culling = culling;
+		copy.shading = shading;
+		copy.winding = winding;
+		copy.twoSidedLighting = twoSidedLighting;
+		copy.localCameraLighting = localCameraLighting;
+		copy.perspectiveCorrection = perspectiveCorrection;
+		return copy;
+	}
+
 
 	public int getCulling()
 	{

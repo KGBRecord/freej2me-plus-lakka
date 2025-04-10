@@ -37,6 +37,15 @@ public class SkinnedMesh extends Mesh
 
 	private SkinnedMesh() { }
 
+	Object3D duplicateImpl() 
+	{
+		Group skeleton = (Group) this.skeleton.duplicate();
+		SkinnedMesh copy = new SkinnedMesh();
+		super.duplicate((Mesh) copy);
+		copy.skeleton = skeleton;
+		return copy;
+	}
+
 	@Override
 	public int doGetReferences(Object3D[] references) 
 	{

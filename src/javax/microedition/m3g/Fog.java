@@ -32,6 +32,16 @@ public class Fog extends Object3D
 
 	public Fog() {  }
 
+	Object3D duplicateImpl() 
+	{
+		Fog copy = new Fog();
+		copy.color = color;
+		copy.mode = mode;
+		copy.density = density;
+		copy.near = near;
+		copy.far = far;
+		return copy;
+	}
 
 	public int getColor() { return color; }
 

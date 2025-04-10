@@ -36,6 +36,19 @@ public class Appearance extends Object3D
 		this.fog = null;
 	}
 
+	Object3D duplicateImpl() 
+	{
+		Appearance copy = new Appearance();
+		copy.layer = layer;
+		copy.compositingMode = compositingMode;
+		copy.fog = fog;
+		copy.polygonMode = polygonMode;
+		copy.material = material;
+		copy.textures = new Texture2D[textures.length];
+		System.arraycopy(this.textures, 0, copy.textures, 0, textures.length);
+		return copy;
+	}
+
 	@Override
 	public int doGetReferences(Object3D[] references) 
 	{

@@ -16,6 +16,8 @@
 */
 package javax.microedition.m3g;
 
+import org.recompile.mobile.Mobile;
+
 public abstract class Transformable extends Object3D
 {
 	private Transform matrix = new Transform();
@@ -25,14 +27,21 @@ public abstract class Transformable extends Object3D
 
 	public void getCompositeTransform(Transform transform)
 	{
-		if (transform == null)
-			throw new java.lang.NullPointerException("Cannot copy composite transform data into a null transform.");
+		if (transform == null) { throw new java.lang.NullPointerException("Cannot copy composite transform data into a null transform."); }
 
 		transform.setIdentity();
 		transform.preMultiply(this.matrix);
 		transform.preMultiply(this.scale);
 		transform.preMultiply(this.rotate);
 		transform.preMultiply(this.translate);
+	}
+
+	void duplicate(Transformable copy) 
+	{
+		copy.matrix = matrix;
+		copy.scale = scale;
+		copy.rotate = rotate;
+		copy.translate = translate;
 	}
 
 	public void getOrientation(float[] angleAxis)
@@ -133,14 +142,15 @@ public abstract class Transformable extends Object3D
 	public void setTransform(Transform transform)
 	{
 		if (transform == null)
+		{
+			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Received null transform! Creating identity transform...");
 			transform = new Transform();
+		}
 
 		if (this instanceof Node)
 		{
 			float[] m = new float[16];
 			transform.get(m);
-			if (m[4*3+0] != 0 || m[4*3+1] != 0 || m[4*3+2] != 0 || m[4*3+3] != 1)
-				{ throw new java.lang.IllegalArgumentException(); }
 		}
 
 		this.matrix = new Transform(transform);

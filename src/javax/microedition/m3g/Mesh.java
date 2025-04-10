@@ -27,6 +27,24 @@ public class Mesh extends Node
 
 	protected Mesh() { }
 
+	void duplicate(Mesh copy) 
+	{
+		super.duplicate((Node) copy);
+		copy.vertices = vertices;
+		copy.submeshes = submeshes;
+		/*copy.appearances = new Appearance[appearances.length];
+		for (int i = 0; i < appearances.length; ++i)
+			copy.appearances[i] = appearances[i];*/
+		copy.appearances = appearances;
+	}
+
+	Object3D duplicateImpl() 
+	{
+		Mesh copy = new Mesh();
+		duplicate((Mesh) copy);
+		return copy;
+	}
+
 	@Override
 	public int applyAnimation(int time) 
 	{

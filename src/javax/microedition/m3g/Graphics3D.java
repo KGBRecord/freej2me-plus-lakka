@@ -337,6 +337,7 @@ public class Graphics3D
 
 	public void render(Node node, Transform transform)
 	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Render(N, T).");
 		/* As per JSR-184, throw NullPointerException if no node is received. */
 		if(node == null) { throw new NullPointerException("render() was called but no node was provided."); }
 	
@@ -351,10 +352,39 @@ public class Graphics3D
 		//    throw new java.lang.IllegalStateException();
 
 		// TODO implement Graphics3D.render(Node, Transform)
-		if ((node instanceof Mesh) || (node instanceof Sprite3D) || (node instanceof Group)) 
+		if (node instanceof Mesh) 
 		{
-			renderNode(node, transform);
+			Mesh mesh = (Mesh) node;
+			int subMeshes = mesh.getSubmeshCount();
+			VertexBuffer vertices = mesh.getVertexBuffer();
+			for (int i = 0; i < subMeshes; i++) 
+			{
+				if (mesh.getAppearance(i) != null) { render(vertices, mesh.getIndexBuffer(i), mesh.getAppearance(i), transform); }
+			}
 		} 
+		else if (node instanceof Sprite3D) 
+		{
+			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Sprite3D Not Implemented!");
+		}
+		else if (node instanceof Group) 
+		{
+			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Group Untested!");
+			Node child = ((Group) node).firstChild;
+			if (child != null) 
+			{
+				do 
+				{
+					if (child != (Object3D) node) 
+					{
+						Transform t = new Transform();
+						child.getCompositeTransform(t);
+						t.preMultiply(transform);
+						render(child, t);
+					}
+					child = child.right;
+				} while (child != ((Group) node).firstChild);
+			}
+		}
 		else { throw new IllegalArgumentException("Node must be a Sprite3D, Mesh, or Group"); }
 	}
 
@@ -894,6 +924,7 @@ public class Graphics3D
 
 	public void render(World world)
 	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Render(W).");
 		/* Clear the background first */
 		clear(world.getBackground());
 
@@ -936,49 +967,6 @@ public class Graphics3D
 
 		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render W");
 		// TODO implement Graphics3D.render(World)
-	}
-
-	private void renderNode(Node node, Transform transform) 
-	{
-		if (node instanceof Mesh) 
-		{
-			Mesh mesh = (Mesh) node;
-			int subMeshes = mesh.getSubmeshCount();
-			VertexBuffer vertices = mesh.getVertexBuffer();
-			for (int i = 0; i < subMeshes; i++) 
-			{
-				if (mesh.getAppearance(i) != null) { render(vertices, mesh.getIndexBuffer(i), mesh.getAppearance(i), transform); }
-			}
-		} 
-		else if (node instanceof Sprite3D) 
-		{
-			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Sprite3D Not Implemented!");
-		}
-		else if (node instanceof Group) 
-		{
-			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Group Untested!");
-			renderDescendants((Group) node, (Object3D) node, transform);
-		}
-
-	}
-
-	private void renderDescendants(Group group, Object3D caller, Transform transform) 
-	{
-		Node child = group.firstChild;
-		if (child != null) 
-		{
-			do 
-			{
-				if (child != caller) 
-				{
-					Transform t = new Transform();
-					child.getCompositeTransform(t);
-					t.preMultiply(transform);
-					renderNode(child, t);
-				}
-				child = child.right;
-			} while (child != group.firstChild);
-		}
 	}
 
 	public void resetLights()

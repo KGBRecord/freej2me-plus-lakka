@@ -71,6 +71,18 @@ public abstract class Object3D {
 		return validity;
 	}
 
+	public final Object3D duplicate() 
+	{
+		Object3D copy = duplicateImpl();
+		copy.userID = userID;
+		copy.userObject = userObject;
+		for (int i = 0; i < animationTracks.size(); i++)
+			copy.animationTracks.add(animationTracks.elementAt(i));
+		return copy;
+	}
+
+	abstract Object3D duplicateImpl();
+
 	public int doGetReferences(Object3D[] references) 
 	{
 		if (!animationTracks.isEmpty()) 
@@ -123,11 +135,11 @@ public abstract class Object3D {
 
 	public void addAnimationTrack(AnimationTrack animationTrack) 
 	{
-
 		if (animationTrack == null) { throw new NullPointerException(); }
-		if ((!isCompatible(animationTrack)) || animationTracks.contains(animationTrack)) 
+
+		if (animationTracks.contains(animationTrack))
 		{
-			throw new IllegalArgumentException("AnimationTrack is already existing or incompatible");
+			throw new IllegalArgumentException("AnimationTrack already exists");
 		}
 
 		int newTrackTarget = animationTrack.getTargetProperty();
@@ -155,7 +167,5 @@ public abstract class Object3D {
 	public int getAnimationTrackCount() { return animationTracks.size(); }
 
 	public final int animate(int time) { return applyAnimation(time); }
-
-	public boolean isCompatible(AnimationTrack animationtrack) { return false; }
 
 }

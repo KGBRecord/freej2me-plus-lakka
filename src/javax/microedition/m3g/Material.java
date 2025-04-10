@@ -41,6 +41,17 @@ public class Material extends Object3D
 		this.shininess = 0f;
 	}
 
+	Object3D duplicateImpl() {
+		Material copy = new Material();
+		copy.ambientColor = ambientColor;
+		copy.diffuseColor = diffuseColor;
+		copy.emissiveColor = emissiveColor;
+		copy.specularColor = specularColor;
+		copy.shininess = shininess;
+		copy.tracking = tracking;
+		return copy;
+	}
+
 
 	public int getColor(int target) 
 	{ 

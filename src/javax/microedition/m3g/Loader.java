@@ -990,7 +990,8 @@ public class Loader
 		}
 	}
 
-	private void loadTransformable(Transformable transformable) throws IOException {
+	private void loadTransformable(Transformable transformable) throws IOException 
+	{
 		loadObject3D(transformable);
 		if (readBoolean()) // hasComponentTransform
 		{

@@ -24,6 +24,28 @@ public class Group extends Node
 	public Node firstChild;
 	public int numNonCullables = 0, numRenderables = 0;
 
+	Object3D duplicateImpl() 
+	{
+		Group copy = new Group();
+		duplicate((Group) copy);
+		return copy;
+	}
+
+	void duplicate(Group copy) 
+	{
+		super.duplicate((Node) copy);
+		Node child = firstChild;
+		if (child != null) 
+		{
+			do 
+			{
+				Node temp = (Node) ((Object3D) child).duplicate();
+				copy.addChild(temp);
+				child = child.right;
+			} while (child != firstChild);
+		}
+	}
+
 	public void addChild(Node child) 
 	{
 		if (child == null) { throw new NullPointerException("child can not be null"); }

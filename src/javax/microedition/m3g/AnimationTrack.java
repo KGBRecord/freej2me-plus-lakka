@@ -55,6 +55,13 @@ public class AnimationTrack extends Object3D
 		this.property = property;
 	}
 
+	Object3D duplicateImpl() 
+	{
+		AnimationTrack copy = new AnimationTrack(sequence, property);
+		copy.controller = controller;
+		return copy;
+	}
+
 	@Override
 	public int doGetReferences(Object3D[] references) 
 	{
