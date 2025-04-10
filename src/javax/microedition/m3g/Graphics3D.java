@@ -17,6 +17,7 @@
 package javax.microedition.m3g;
 
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.microedition.m3g.Transform;
 
@@ -384,9 +385,6 @@ public class Graphics3D
 		int windingOrder = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getWinding() : PolygonMode.WINDING_CCW;
 		boolean perspectiveCorrectionEnabled = appearance.getPolygonMode() != null ? appearance.getPolygonMode().isPerspectiveCorrectionEnabled() : false;
 
-		// Camera view direction used for culling checks
-		final float[] viewDirection = M3GMath.normalize(new float[] { 0, 0, -1 });
-
 		// Set up fog properties
 		Fog fog = appearance.getFog();
 		float fogFactor[] = { 0.0f, 0.0f, 0.0f };
@@ -445,11 +443,47 @@ public class Graphics3D
 
 		// Create Triangle objects for clipping
 		Triangle[] trisClip = Triangle.fromVertAndTris(vertClip, texVert, triIndices);
+		int renderableTriangles = 0; // Counter for non-culled triangles
 
-		// Clip triangles
-		Triangle[] trisScreen = Arrays.stream(trisClip)
-				.flatMap(t -> t.clip())
-				.toArray(Triangle[]::new);
+		for (Triangle tri : trisClip) 
+		{
+			for (int i = 0; i < 3; i++) // Go through vertices A, B and C
+			{ 
+				int index = i * 4;
+				float w = tri.v[index + 3];
+				if (w >= near) // W cannot be smaller than the near plane, otherwise we'll erroneously cull triangles close to the camera
+				{ 
+					tri.v[index + 0] /= w; // x / w
+					tri.v[index + 1] /= w; // y / w
+					tri.v[index + 2] /= w; // z / w
+				}
+			}
+
+			boolean cullTriangle = (cullingMode == PolygonMode.CULL_BACK && tri.isCounterClockwise()) ||
+								(cullingMode == PolygonMode.CULL_FRONT && !tri.isCounterClockwise());
+			if (!cullTriangle) 
+			{
+				trisClip[renderableTriangles++] = tri; // Move non-culled triangles to the front of the array (culled stuff will be dropped in "trisScreen")
+			}
+
+			// We now have to restore the geometry back to its original coordinates, otherwise rendering will be broken
+			for (int i = 0; i < 3; i++) 
+			{
+				int index = i * 4;
+				float w = tri.v[index + 3];
+				if (w >= near) 
+				{
+					tri.v[index + 0] *= w; // x * w
+					tri.v[index + 1] *= w; // y * w
+					tri.v[index + 2] *= w; // z * w
+				}
+			}
+		}
+		
+		// Clip the remaining triangles (less work than clipping everything, THEN culling)
+		Triangle[] trisScreen = Arrays.stream(Arrays.copyOf(trisClip, renderableTriangles))
+						.flatMap(t -> t.clip())
+						.toArray(Triangle[]::new);
 		// At this point the triangles in `trisScreen` are actually
 		// in Normalized Device Coordinates, but they will be tranformed
 		// to Screen space in-place, hence the name.
@@ -543,12 +577,6 @@ public class Graphics3D
 					// Set the corrected texture coordinates back into the triangle
 					trisScreen[tri_id].setTexCoords(texCoordA, texCoordB, texCoordC);
 				}
-				
-				// Then move on to culling tests
-			
-				// Cull the triangle based on its culling mode, and which way it's facing
-				if (cullingMode == PolygonMode.CULL_BACK && !trisScreen[tri_id].isClockwise()) { continue; }
-				if (cullingMode == PolygonMode.CULL_FRONT && trisScreen[tri_id].isClockwise()) { continue; }
 
 
 				if (tex == null || texCoords == null) // If there's no texture coords or a texture image, we should try rendering with vertex colors.
