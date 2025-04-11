@@ -241,7 +241,6 @@ public class Graphics3D
 							rasterData[y * grp.getCanvas().getWidth() + x] = background.getImage().getConvertedPixel(x, y);
 						}
 					}
-					
 				}
 			}
 		}
@@ -335,9 +334,39 @@ public class Graphics3D
 		}
 	}
 
+	public void render(World world)
+	{
+		/* Clear the background first */
+		clear(world.getBackground());
+
+		/* As per JSR-184, throw NullPointerException if the received world is null. */
+		if (world == null) { throw new NullPointerException("render(world) was called but no world was provided."); }
+		
+		/* Also per JSR-184, throw IllegalStateException this object has no render target yet. */
+		if (this.target == null) { throw new IllegalStateException("render(world) was called but there is no render target."); }
+
+		Transform tr = new Transform();
+
+		Camera worldCamera = world.getActiveCamera();
+
+		if(worldCamera == null) { throw new IllegalStateException("Cannot render a world that has no active camera."); }
+
+		if(!worldCamera.getTransformTo(world, tr)) { throw new IllegalStateException("Active camera is not in world."); }
+		
+		/* 
+		 * if the bg-img of `world` is not the same format as `this.target`:
+		 * throw new IllegalStateException();
+		 */
+
+		setCamera(worldCamera, tr);
+		resetLights();
+		positionLights(world, world);
+
+		render((Group) world, new Transform());
+	}
+
 	public void render(Node node, Transform transform)
 	{
-		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Render(Node, Transform) Not Fully Implemented.");
 		/* As per JSR-184, throw NullPointerException if no node is received. */
 		if(node == null) { throw new NullPointerException("render() was called but no node was provided."); }
 	
@@ -443,16 +472,26 @@ public class Graphics3D
 		tr.preScale(scaleBias[0], scaleBias[0], scaleBias[0]);
 		tr.preTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
 
-		Texture2D tex = appearance.getTexture(0);
-		Image2D teximg = tex == null ? null : tex.getImage();
-		VertexArray texCoords = vertices.getTexCoords(0, scaleBias); // get Texture coordinates
+		Texture2D[] tex = new Texture2D[NUM_TEXTURE_UNITS];
+		Image2D[] teximg = new Image2D[NUM_TEXTURE_UNITS];
+		VertexArray[] texCoords = new VertexArray[NUM_TEXTURE_UNITS];
 
-		if (tex != null) { tex.getCompositeTransform(texcomptr); }
+		int numTexUnitsUsed = 0;
 
+		for(byte i = 0; i < NUM_TEXTURE_UNITS; i++) 
+		{
+			tex[i] = appearance.getTexture(i);
+			teximg[i] = tex[i] == null ? null : tex[i].getImage();
+			texCoords[i] = vertices.getTexCoords(i, scaleBias); // get Texture coordinates
+
+			if (tex[i] != null) { tex[i].getCompositeTransform(texcomptr); numTexUnitsUsed++; }
+		}
+
+		if(numTexUnitsUsed > 1) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Game is attempting to use multiple tex units. Untested!"); }
 		// Scale and translate texture coordinates (same scaleBias)
 		textr.preScale(scaleBias[0], scaleBias[0], scaleBias[0]);
 		textr.preTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
-		textr.preMultiply(texcomptr);
+		for(byte i = 0; i < NUM_TEXTURE_UNITS; i++) { textr.preMultiply(texcomptr); }
 		
 		// -> Local space
 
@@ -476,10 +515,14 @@ public class Graphics3D
 		tr.transform(vertPos, vertClip, true);
 
 		float[] texVert = new float[4 * vertCount];
-		if (texCoords != null) { textr.transform(texCoords, texVert, true); }
+		for(byte i = 0; i < NUM_TEXTURE_UNITS; i++) 
+		{
+			if (texCoords[i] != null) { textr.transform(texCoords[i], texVert, true); }
+		}
 
 		// Create Triangle objects for clipping
 		Triangle[] trisClip = Triangle.fromVertAndTris(vertClip, texVert, triIndices);
+
 		int renderableTriangles = 0; // Counter for non-culled triangles
 
 		for (Triangle tri : trisClip) 
@@ -534,7 +577,7 @@ public class Graphics3D
 		tr.preScale(1, -1, 1);
 		tr.preTranslate(1, 1, 0);
 		tr.preScale((float) vieww / 2f, (float) viewh / 2f, 1f);
-		if (teximg != null) { textr.preScale(teximg.getWidth(), teximg.getHeight(), 1); }
+		if (teximg != null) { textr.preScale(teximg[0].getWidth(), teximg[0].getHeight(), 1); }
 
 		// -> Screen space
 
@@ -793,180 +836,136 @@ public class Graphics3D
 					temp = tMidL; tMidL = tMidR; tMidR = temp;
 				}
 
-				// Draw both halves of the triangle
-				for (int half = 0; half < 2; half++) 
+				for (int tex_id = 0; tex_id < NUM_TEXTURE_UNITS; tex_id++)
 				{
-					// Determine the range for the y-coordinate
-					int yStart = half == 0 ? Math.round(yTop) : Math.round(yMid);
-					int yEnd = half == 0 ? Math.round(yMid) : Math.round(yBot);
-					
-					// Adjust drawY calculation based on half
-					for (int y = yStart; y < yEnd; y++) 
+					if(teximg[tex_id] == null) { continue; } // Skip null textures (unused tex units)
+
+					// Draw both halves of the triangle
+					for (int half = 0; half < 2; half++) 
 					{
-						float drawY = half == 0
-							? (y - yTop) / (yMid - yTop)  // Upper half
-							: 1f - (y - yMid) / (yBot - yMid); // Lower half
-						drawY = Math.max(0f, Math.min(drawY, 1f));
-
-						// Calculate interpolated values
-						float xL = half == 0
-							? xTop + drawY * (xMidL - xTop)
-							: xBot + drawY * (xMidL - xBot);
-						float xR = half == 0
-							? xTop + drawY * (xMidR - xTop)
-							: xBot + drawY * (xMidR - xBot);
-						float zL = half == 0
-							? zTop + drawY * (zMidL - zTop)
-							: zBot + drawY * (zMidL - zBot);
-						float zR = half == 0
-							? zTop + drawY * (zMidR - zTop)
-							: zBot + drawY * (zMidR - zBot);
-						float sL = half == 0
-							? sTop + drawY * (sMidL - sTop)
-							: sBot + drawY * (sMidL - sBot);
-						float sR = half == 0
-							? sTop + drawY * (sMidR - sTop)
-							: sBot + drawY * (sMidR - sBot);
-						float tL = half == 0
-							? tTop + drawY * (tMidL - tTop)
-							: tBot + drawY * (tMidL - tBot);
-						float tR = half == 0
-							? tTop + drawY * (tMidR - tTop)
-							: tBot + drawY * (tMidR - tBot);
-
-
-						final int ixL = Math.round(xL), ixR = Math.round(xR);
-
-						// Draw the pixels for the current y-coordinate
-						for (int x = ixL; x < ixR; x++) 
+						// Determine the range for the y-coordinate
+						int yStart = half == 0 ? Math.round(yTop) : Math.round(yMid);
+						int yEnd = half == 0 ? Math.round(yMid) : Math.round(yBot);
+						
+						// Adjust drawY calculation based on half
+						for (int y = yStart; y < yEnd; y++) 
 						{
-							// Check the current pixel's x and y values against the viewport bounds and skip drawing if it's out of bounds
-							if(x+viewx < 0 || x+viewx > vieww+viewx || x+viewx > pgrp.getCanvas().getWidth())  { continue; }
-							if(y+viewy < 0 || y+viewy > viewh+viewh || y+viewy > pgrp.getCanvas().getHeight()) { continue; }
+							float drawY = half == 0
+								? (y - yTop) / (yMid - yTop)  // Upper half
+								: 1f - (y - yMid) / (yBot - yMid); // Lower half
+							drawY = Math.max(0f, Math.min(drawY, 1f));
 
-							try 
+							// Calculate interpolated values
+							float xL = half == 0
+								? xTop + drawY * (xMidL - xTop)
+								: xBot + drawY * (xMidL - xBot);
+							float xR = half == 0
+								? xTop + drawY * (xMidR - xTop)
+								: xBot + drawY * (xMidR - xBot);
+							float zL = half == 0
+								? zTop + drawY * (zMidL - zTop)
+								: zBot + drawY * (zMidL - zBot);
+							float zR = half == 0
+								? zTop + drawY * (zMidR - zTop)
+								: zBot + drawY * (zMidR - zBot);
+							float sL = half == 0
+								? sTop + drawY * (sMidL - sTop)
+								: sBot + drawY * (sMidL - sBot);
+							float sR = half == 0
+								? sTop + drawY * (sMidR - sTop)
+								: sBot + drawY * (sMidR - sBot);
+							float tL = half == 0
+								? tTop + drawY * (tMidL - tTop)
+								: tBot + drawY * (tMidL - tBot);
+							float tR = half == 0
+								? tTop + drawY * (tMidR - tTop)
+								: tBot + drawY * (tMidR - tBot);
+
+
+							final int ixL = Math.round(xL), ixR = Math.round(xR);
+
+							// Draw the pixels for the current y-coordinate
+							for (int x = ixL; x < ixR; x++) 
 							{
-								float drawX = (x - xL) / (xR - xL);
-								drawX = Math.max(0f, Math.min(drawX, 1f));
-								float z = zL + drawX * (zR - zL);
-								
-								// Only depth test if the compositingMode has the feature enabled. If compositingMode is not set, check if this target has depthBuffer enabled
-								if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthTestEnabled() == true)) && isDepthBufferEnabled()) 
-								{
-									// Depth testing and depth buffer updates don't need to match against the pixel's translated viewport coordinates, if they are translated
-									if (this.depthBuffer[this.vieww * y + x] < z) { continue; } // Skip if this pixel is not visible
-								}
-								
-								float s = sL + drawX * (sR - sL);
-								float t = tL + drawX * (tR - tL);
-								int texPixel = teximg.getConvertedPixel(Math.round(s), Math.round(t));
+								// Check the current pixel's x and y values against the viewport bounds and skip drawing if it's out of bounds
+								if(x+viewx < 0 || x+viewx > vieww+viewx || x+viewx > pgrp.getCanvas().getWidth())  { continue; }
+								if(y+viewy < 0 || y+viewy > viewh+viewh || y+viewy > pgrp.getCanvas().getHeight()) { continue; }
 
-								// Extract the alpha channel from the texture pixel
-								int alpha = (texPixel >> 24) & 0xFF; // Assuming ARGB format
-
-								if(appearance.getCompositingMode() != null) // Some games don't set up a compositingMode, so check it before using its threshold
+								try 
 								{
-									if (alpha < (int) (appearance.getCompositingMode().getAlphaThreshold() * 255)) { continue; } // Skip transparent pixels below the alpha threshold
-								}
-								else 
-								{
-									if (alpha == 0) { continue; }
-								}
-
-								// Blend the pixel with the background
-								int backgroundPixel = rasterData[(y+viewy) * pgrp.getCanvas().getWidth() + (x+viewx)];
-								int blendedPixel = texPixel;
-
-								// To blend the fog value here, we have to take the current pixel's z value into consideration
-								if(fog != null) 
-								{
-									if (fog.getMode() == Fog.LINEAR) 
+									float drawX = (x - xL) / (xR - xL);
+									drawX = Math.max(0f, Math.min(drawX, 1f));
+									float z = zL + drawX * (zR - zL);
+									
+									// Only depth test if the compositingMode has the feature enabled. If compositingMode is not set, check if this target has depthBuffer enabled
+									if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthTestEnabled() == true)) && isDepthBufferEnabled()) 
 									{
-										fogFactor[0] = Math.max(0, Math.min(1, (fog.getFarDistance() - z) / (fog.getFarDistance() - fog.getNearDistance())));
-									} 
+										// Depth testing and depth buffer updates don't need to match against the pixel's translated viewport coordinates, if they are translated
+										if (this.depthBuffer[this.vieww * y + x] < z) { continue; } // Skip if this pixel is not visible
+									}
+									
+									float s = sL + drawX * (sR - sL);
+									float t = tL + drawX * (tR - tL);
+									int texPixel = teximg[tex_id].getConvertedPixel(Math.round(s), Math.round(t));
+
+									// Extract the alpha channel from the texture pixel
+									int alpha = (texPixel >> 24) & 0xFF; // Assuming ARGB format
+
+									if(appearance.getCompositingMode() != null) // Some games don't set up a compositingMode, so check it before using its threshold
+									{
+										if (alpha < (int) (appearance.getCompositingMode().getAlphaThreshold() * 255)) { continue; } // Skip transparent pixels below the alpha threshold
+									}
 									else 
 									{
-										fogFactor[0] = (float) Math.abs(Math.exp(-fog.getDensity() * z));
-										fogFactor[0] = Math.max(0, Math.min(1, fogFactor[0])); // Clamp to the [0, 1] interval
+										if (alpha == 0) { continue; }
 									}
 
-									blendedPixel = blendFog(blendedPixel, fog.getColor(), fogFactor[0]);
-								}
+									// Blend the pixel with the background
+									int backgroundPixel = rasterData[(y+viewy) * pgrp.getCanvas().getWidth() + (x+viewx)];
+									int blendedPixel = texPixel;
 
-								// Handle compositing mode AFTER the fog calculation, otherwise alpha values won't be correct
-								if (appearance.getCompositingMode() != null) // Blend the background with the texture using compositing mode's blend
-								{
-									blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, appearance.getCompositingMode().getBlending());
-								} 
-								else // If compositingMode is absent, just use the texture's blend mode for blending
-								{
-									blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, tex.getBlending());
-								}
+									// To blend the fog value here, we have to take the current pixel's z value into consideration
+									if(fog != null) 
+									{
+										if (fog.getMode() == Fog.LINEAR) 
+										{
+											fogFactor[0] = Math.max(0, Math.min(1, (fog.getFarDistance() - z) / (fog.getFarDistance() - fog.getNearDistance())));
+										} 
+										else 
+										{
+											fogFactor[0] = (float) Math.abs(Math.exp(-fog.getDensity() * z));
+											fogFactor[0] = Math.max(0, Math.min(1, fogFactor[0])); // Clamp to the [0, 1] interval
+										}
 
-								rasterData[(y+viewy) * pgrp.getCanvas().getWidth() + (x+viewx)] = blendedPixel;
+										blendedPixel = blendFog(blendedPixel, fog.getColor(), fogFactor[0]);
+									}
 
-								// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
-								if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthWriteEnabled())) && isDepthBufferEnabled()) 
-								{ 
-									this.depthBuffer[this.vieww * y + x] = z; 
-								}
+									// Handle compositing mode AFTER the fog calculation, otherwise alpha values won't be correct
+									if (appearance.getCompositingMode() != null) // Blend the background with the texture using compositing mode's blend
+									{
+										blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, appearance.getCompositingMode().getBlending());
+									} 
+									else // If compositingMode is absent, just use the texture's blend mode for blending
+									{
+										blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, tex[tex_id].getBlending());
+									}
 
-							} catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); }
+									rasterData[(y+viewy) * pgrp.getCanvas().getWidth() + (x+viewx)] = blendedPixel;
+
+									// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
+									if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthWriteEnabled())) && isDepthBufferEnabled()) 
+									{ 
+										this.depthBuffer[this.vieww * y + x] = z; 
+									}
+
+								} catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); }
+							}
 						}
 					}
-				}
+				} // End of tex unit loop
 			}
 			grp.setColor(colorOrig);
 		}
-	}
-
-	public void render(World world)
-	{
-		/* Clear the background first */
-		clear(world.getBackground());
-
-		/* As per JSR-184, throw NullPointerException if the received world is null. */
-		if (world == null) { throw new NullPointerException("render(world) was called but no world was provided."); }
-		
-		/* Also per JSR-184, throw IllegalStateException this object has no render target yet. */
-		if (this.target == null) { throw new IllegalStateException("render(world) was called but there is no render target."); }
-
-		/* 
-		 * if `world` has no active camera, or
-		 * the active camera is not in that `world`
-		 * throw new IllegalStateException();
-		 */
-
-		Transform tr = new Transform();
-
-		Camera worldCamera = world.getActiveCamera();
-
-		if(worldCamera == null) { throw new IllegalStateException("Cannot render a world that has no active camera."); }
-
-		if(!worldCamera.getTransformTo(world, tr)) { throw new IllegalStateException("Active camera is not in world."); }
-		/* 
-		 * if the bg-img of `world` is not the same format as `this.target`:
-		 * throw new IllegalStateException();
-		 */
-
-		/* 
-		 * if any Mesh that is rendered violates the constraints defined in
-		 * Mesh, MorphingMesh, SkinnedMesh, VertexBuffer, or IndexBuffer
-		 * throw new IllegalStateException();
-		 */
-
-		/* 
-		 * if the Transform from the active camera of `world`
-		 * to the world space is uninvertible
-		 * throw new ArithmeticException();
-		 * Note: this will be thrown by Transform.invert() if appropriate
-		 */
-
-		setCamera(worldCamera, tr);
-		resetLights();
-		positionLights(world, world);
-
-		render((Group) world, new Transform());
 	}
 
 	private void positionLights(World world, Object3D obj) 
