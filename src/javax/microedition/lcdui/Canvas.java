@@ -174,11 +174,7 @@ public abstract class Canvas extends Displayable
 			// TODO: This might be an issue
 			if (isPainting) 
 			{
-				Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " +"Recursive repaint attempted");
-				// we need this to avoid stackoverflow
-				// but it seems the underlying problem is that when paint calls
-				// repaint, we shouldn't even land here...
-				Mobile.getDisplay().callSerially(() -> { repaint(x, y, width, height); });
+				Mobile.log(Mobile.LOG_DEBUG, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " +"Recursive repaint attempted");
 				return;
 			}
 
