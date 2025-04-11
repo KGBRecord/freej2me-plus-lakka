@@ -133,6 +133,7 @@ public class FreeJ2ME
 				{
 					int keycode = e.getKeyCode();
 					int mobikey = getMobileKey(keycode);
+					int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
 					
 					switch(keycode) // Handle emulator control keys
 					{
@@ -161,8 +162,16 @@ public class FreeJ2ME
 					{
 						return; 
 					}
-					
-					MobilePlatform.pressedKeys[mobikey] = true;
+
+					if (MobilePlatform.pressedKeys[mobikeyN] == false)
+ 					{
+						MobilePlatform.keyPressed(Mobile.getMobileKey(mobikey));
+ 					}
+ 					else
+ 					{
+						MobilePlatform.keyRepeated(Mobile.getMobileKey(mobikey));
+ 					}
+					MobilePlatform.pressedKeys[mobikeyN] = true;
 				}
 			}
 
@@ -171,13 +180,16 @@ public class FreeJ2ME
 				if(awtGUI.hasLoadedFile()) 
 				{
 					int mobikey = getMobileKey(e.getKeyCode());
+					int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
 					
 					if (mobikey == Integer.MIN_VALUE) // Ignore events from keys not mapped to a phone keypad key (AWTGUI does use 0, so this can't mirror libretro)
 					{
 						return; 
 					}
 					
-					MobilePlatform.pressedKeys[mobikey] = false;
+					MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
+
+					MobilePlatform.pressedKeys[mobikeyN] = false;
 				}
 			}
 
@@ -202,9 +214,7 @@ public class FreeJ2ME
 						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					}
 
-					MobilePlatform.pointerPressed[0] = 1;
-					MobilePlatform.pointerPressed[1] = x;
-					MobilePlatform.pointerPressed[2] = y;
+					MobilePlatform.pointerPressed(x, y);
 				}
 			}
 
@@ -221,9 +231,7 @@ public class FreeJ2ME
 						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					}
 
-					MobilePlatform.pointerReleased[0] = 1;
-					MobilePlatform.pointerReleased[1] = x;
-					MobilePlatform.pointerReleased[2] = y;
+					MobilePlatform.pointerReleased(x, y);
 				}
 			}
 
@@ -248,9 +256,7 @@ public class FreeJ2ME
 						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					}
 					
-					MobilePlatform.pointerDragged[0] = 1;
-					MobilePlatform.pointerDragged[1] = x;
-					MobilePlatform.pointerDragged[2] = y;
+					MobilePlatform.pointerDragged(x, y);
 				}
 			}
 		});

@@ -487,9 +487,7 @@ public class Anbu
 					mouseX = event.button.x;
 					mouseY = event.button.y;
 					
-					MobilePlatform.pointerPressed[0] = 1;
-					MobilePlatform.pointerPressed[1] = mouseX;
-					MobilePlatform.pointerPressed[2] = mouseY;
+					MobilePlatform.pointerPressed(mouseX, mouseY);
 
 					//printf("\npress coords-> X: %d | Y: %d", correctedMouseX, correctedMouseY);
 				}
@@ -504,9 +502,7 @@ public class Anbu
 					{ 
 						mousePressed = false;
 						mouseDragged = false;
-						MobilePlatform.pointerReleased[0] = 1;
-						MobilePlatform.pointerReleased[1] = mouseX;
-						MobilePlatform.pointerReleased[2] = mouseY;
+						MobilePlatform.pointerReleased(mouseX, mouseY);
 					}
 				}
 				else if(event.type == SDL_MOUSEMOTION) 
@@ -520,9 +516,7 @@ public class Anbu
 						// calculateCorrectedMousePos(&event);
 				
 						//printf("\ndrag coords-> X: %d | Y: %d", correctedMouseX, correctedMouseY);
-						MobilePlatform.pointerDragged[0] = 1;
-						MobilePlatform.pointerDragged[1] = mouseX;
-						MobilePlatform.pointerDragged[2] = mouseY;
+						MobilePlatform.pointerDragged(mouseX, mouseY);
 					}
 				}
 			}
@@ -534,7 +528,14 @@ public class Anbu
 			{
 				return;
 			}
-			MobilePlatform.pressedKeys[key] = true;
+
+			if(MobilePlatform.pressedKeys[key] = true) { MobilePlatform.keyRepeated(key); }
+			else 
+			{
+				MobilePlatform.keyPressed(key);
+				MobilePlatform.pressedKeys[key] = true;
+			}
+			
 		}
 
 		private void keyUp(int key)
@@ -544,6 +545,7 @@ public class Anbu
 				return;
 			}
 
+			MobilePlatform.keyReleased(key);
 			MobilePlatform.pressedKeys[key] = false;
 		}
 

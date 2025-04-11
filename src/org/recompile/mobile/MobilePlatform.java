@@ -79,15 +79,10 @@ public class MobilePlatform
 
 	public String dataPath = "";
 
-	public volatile int keyState = 0;
+	public volatile static int keyState = 0;
 
-	// MobilePlatform will handle the inputs as well
+	// MobilePlatform will handle the input repeats as well
 	public static boolean[] pressedKeys = new boolean[128];
-	private static boolean[] previouslyPressed = new boolean[128];
-
-	public static int[] pointerPressed = new int[3];
-	public static int[] pointerReleased = new int[3];
-	public static int[] pointerDragged = new int[3];
 
 	public Runnable painter;
 
@@ -114,7 +109,6 @@ public class MobilePlatform
 			// If 16ms have passed and a new painter run did not happen, force it to happen
 			if(lastRenderTime - System.nanoTime() < -16_666_666)
 			{
-				processInputs();
 				lastRenderTime = System.nanoTime();
 			}
 		}, 16_666_666, 16_666_666, TimeUnit.NANOSECONDS);
@@ -149,39 +143,39 @@ public class MobilePlatform
 
 	public void setPainter(Runnable r) { painter = r; }
 
-	public void keyPressed(int keycode)
+	public static void keyPressed(int keycode)
 	{
 		updateKeyState(Mobile.getGameAction(keycode), 1);
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyPressed(keycode); }
 	}
 
-	public void keyReleased(int keycode)
+	public static void keyReleased(int keycode)
 	{
 		updateKeyState(Mobile.getGameAction(keycode), 0);
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyReleased(keycode); }
 	}
 
-	public void keyRepeated(int keycode)
+	public static void keyRepeated(int keycode)
 	{
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyRepeated(keycode); }
 	}
 
-	public void pointerDragged(int x, int y)
+	public static void pointerDragged(int x, int y)
 	{
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerDragged(x, y); }
 	}
 
-	public void pointerPressed(int x, int y)
+	public static void pointerPressed(int x, int y)
 	{
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerPressed(x, y); }
 	}
 
-	public void pointerReleased(int x, int y)
+	public static void pointerReleased(int x, int y)
 	{
 		if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.pointerReleased(x, y); }
 	}
 
-	private void updateKeyState(int key, int val)
+	private static void updateKeyState(int key, int val)
 	{
 		int mask=0;
 		switch (key)
@@ -298,47 +292,6 @@ public class MobilePlatform
 		
 		if(!showFPS.equals("Off")) { showFPS();}
 		painter.run(); // Update the frontend's painter first to then process inputs
-
-		processInputs();
-	}
-
-	public final void processInputs() 
-	{
-		if(pointerPressed[0] == 1) 
-		{
-			pointerPressed(pointerPressed[1], pointerPressed[2]);
-			pointerPressed[0] = 0;
-		}
-
-		if(pointerReleased[0] == 1) 
-		{
-			pointerReleased(pointerReleased[1], pointerReleased[2]);
-			pointerReleased[0] = 0;
-			pointerDragged[0] = 0;
-		}
-
-		if(pointerDragged[0] == 1) 
-		{
-			pointerDragged(pointerDragged[1], pointerDragged[2]);
-		}
-
-		for(int i = 0; i < pressedKeys.length; i++) 
-		{
-			if(pressedKeys[i] == true && previouslyPressed[i] == false) 
-			{
-				keyPressed(Mobile.getMobileKey(i));
-				previouslyPressed[i] = true;
-			}
-			else if(pressedKeys[i] == true && previouslyPressed[i] == true) 
-			{
-				keyRepeated(Mobile.getMobileKey(i));
-			}
-			else if (pressedKeys[i] == false && previouslyPressed[i] == true)
-			{
-				keyReleased(Mobile.getMobileKey(i));
-				previouslyPressed[i] = false;
-			}
-		}
 	}
 
 	public void limitFps() 

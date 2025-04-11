@@ -189,26 +189,25 @@ public class Libretro
 
 								case 2:	// joypad key up
 									MobilePlatform.pressedKeys[code] = false;
+									MobilePlatform.keyReleased(Mobile.getMobileKey(code));
 								break;
 
 								case 3: // joypad key down					
 									MobilePlatform.pressedKeys[code] = true;
+									MobilePlatform.keyPressed(Mobile.getMobileKey(code));
 								break;
 
 								case 4: // mouse up
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
 									
-									MobilePlatform.pointerReleased[0] = 1;
 									if(!Mobile.rotateDisplay)
 									{
-										MobilePlatform.pointerReleased[1] = mousex;
-										MobilePlatform.pointerReleased[2] = mousey;
+										MobilePlatform.pointerReleased(mousex, mousey);
 									}
 									else
 									{
-										MobilePlatform.pointerReleased[1] = lcdWidth-mousey;
-										MobilePlatform.pointerReleased[2] = mousex;
+										MobilePlatform.pointerReleased(lcdWidth-mousey, mousex);
 									}
 								break;
 
@@ -216,16 +215,13 @@ public class Libretro
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
 
-									MobilePlatform.pointerPressed[0] = 1;
 									if(!Mobile.rotateDisplay)
 									{
-										MobilePlatform.pointerPressed[1] = mousex;
-										MobilePlatform.pointerPressed[2] = mousey;
+										MobilePlatform.pointerPressed(mousex, mousey);
 									}
 									else
 									{
-										MobilePlatform.pointerPressed[1] = lcdWidth-mousey;
-										MobilePlatform.pointerPressed[2] = mousex;
+										MobilePlatform.pointerPressed(lcdWidth-mousey, mousex);
 									}
 								break;
 
@@ -233,16 +229,13 @@ public class Libretro
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
 
-									MobilePlatform.pointerDragged[0] = 1;
 									if(!Mobile.rotateDisplay)
 									{
-										MobilePlatform.pointerDragged[1] = mousex;
-										MobilePlatform.pointerDragged[2] = mousey;
+										MobilePlatform.pointerPressed(mousex, mousey);
 									}
 									else
 									{
-										MobilePlatform.pointerDragged[1] = lcdWidth-mousey;
-										MobilePlatform.pointerDragged[2] = mousex;
+										MobilePlatform.pointerPressed(lcdWidth-mousey, mousex);
 									}
 								break;
 
