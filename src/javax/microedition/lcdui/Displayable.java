@@ -49,8 +49,6 @@ public abstract class Displayable
 
 	public Ticker ticker;
 
-	private volatile boolean isValidating = false;
-
 	public Displayable()
 	{
 		width = Mobile.getPlatform().lcdWidth;
@@ -129,7 +127,7 @@ public abstract class Displayable
 	public void showNotify() { }
 	public void hideNotify() { }
 
-	public void notifySetCurrent() { render(); }
+	public void notifySetCurrent() { _invalidate(); }
 
 	protected void render()
 	{
@@ -277,34 +275,31 @@ public abstract class Displayable
 
 	protected void keyPressedCommands(int key)
 	{
-		if(!isValidating) 
+		if(key == Canvas.KEY_NUM2 || key == Canvas.UP) 
 		{
-			if(key == Canvas.KEY_NUM2 || key == Canvas.UP) 
-			{
-				currentCommand--;
-				if(currentCommand<0) { currentCommand = commands.size()-1; }
-			}
-			else if(key == Canvas.KEY_NUM8 || key == Canvas.DOWN) 
-			{
-				currentCommand++;
-				if(currentCommand>=commands.size()) { currentCommand = 0; }
-			}
-			else if (key == Canvas.KEY_NUM5 || key == Canvas.FIRE || key == Canvas.KEY_SOFT_LEFT) 
-			{
-				doLeftCommand();
-				currentCommand = 0;
-				listCommands = false;
-			}
-			else if (key == Canvas.KEY_SOFT_RIGHT) 
-			{
-				listCommands = false;
-				doRightCommand();
-				currentCommand = 0;
-			}
-			else { return; }
-
-			_invalidate(); 
+			currentCommand--;
+			if(currentCommand<0) { currentCommand = commands.size()-1; }
 		}
+		else if(key == Canvas.KEY_NUM8 || key == Canvas.DOWN) 
+		{
+			currentCommand++;
+			if(currentCommand>=commands.size()) { currentCommand = 0; }
+		}
+		else if (key == Canvas.KEY_NUM5 || key == Canvas.FIRE || key == Canvas.KEY_SOFT_LEFT) 
+		{
+			doLeftCommand();
+			currentCommand = 0;
+			listCommands = false;
+		}
+		else if (key == Canvas.KEY_SOFT_RIGHT) 
+		{
+			listCommands = false;
+			doRightCommand();
+			currentCommand = 0;
+		}
+		else { return; }
+
+		_invalidate(); 
 	}
 
 	protected void doCommand(int index)
@@ -349,21 +344,8 @@ public abstract class Displayable
 
 	protected void _invalidate() 
 	{
-		if (getDisplay().getCurrent() != this) { return; }
+		if (!isShown()) { return; }
 
-		if (isValidating) // Shouldn't happen, but if it does, treat it like Canvas does and queue this next invalidate for later.
-		{
-			Mobile.log(Mobile.LOG_WARNING, Displayable.class.getPackage().getName() + "." + Displayable.class.getSimpleName() + ": " + "Recursive invalidation attempt detected.");
-			//Thread.dumpStack();
-			Mobile.getDisplay().callSerially(() -> { _invalidate(); });
-			return;
-		} 
-		else 
-		{
-			isValidating = true;
-
-			try { Mobile.getDisplay().callSerially(() -> { render(); }); }
-			finally { isValidating = false; }
-		}
+		Mobile.getDisplay().postPaintRequest(() -> { render(); });
 	}
 }

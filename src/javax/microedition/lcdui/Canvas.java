@@ -52,7 +52,6 @@ public abstract class Canvas extends Displayable
 
 	private int barHeight;
 	private boolean fullscreen = false;
-	private boolean isPainting = false;
 
 	protected Canvas()
 	{
@@ -167,34 +166,22 @@ public abstract class Canvas extends Displayable
 	public void repaint(int x, int y, int width, int height)
 	{
 		Mobile.getPlatform().limitFps();
+		Mobile.getDisplay().postPaintRequest(() -> { paintRequest(x, y, width, height); });
+	}
+
+	public void paintRequest(int x, int y, int width, int height) // Repaint queues this (looks better than throwing all this code inside the postPaintRequest lambda above)
+	{
 		try 
 		{
 			if (!isShown() || listCommands) { return; }
-			
-			// TODO: This might be an issue
-			if (isPainting) 
-			{
-				Mobile.log(Mobile.LOG_DEBUG, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " +"Recursive repaint attempted");
-				return;
-			}
 
 			graphics.reset();
-			isPainting = true;
+			paint(graphics);
+			
+			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
 
-			try 
-			{ 
-				paint(graphics);
-				
-				// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-				if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
-
-				Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
-			}
-			catch (Exception e) 
-			{
-				Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Exception hit when painting graphics: " + e.getMessage());
-			}
-			finally { isPainting = false; }
+			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
 		}
 		catch (Exception e) 
 		{
@@ -205,12 +192,10 @@ public abstract class Canvas extends Displayable
 
 	public void serviceRepaints() 
 	{
-		// TODO: Flesh this out properly, some games might need it.
 		if(!isShown()) { return; }
 
-		// serviceRepaints has to force any pending repaints to be serviced
-		Mobile.getPlatform().flushGraphics(platformImage, 0, 0, width, height);
-		isPainting = false;
+		// serviceRepaints has to force pending repaints to happen
+		Mobile.getDisplay().processPaintsNow();
 	}
 
 	public void setFullScreenMode(boolean mode)
@@ -229,8 +214,6 @@ public abstract class Canvas extends Displayable
 		width = w;
 		height = h;
 	}
-
-	public void notifySetCurrent() { _invalidate(); }
 
 	public int getHeight() { return height; }
 

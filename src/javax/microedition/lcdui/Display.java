@@ -47,7 +47,10 @@ public class Display
 	private final Queue<Runnable> serialCalls;
 	private final Thread serialThread;
 
-	private boolean isSettingCurrent = false;
+	private final Queue<Runnable> paintQueue;
+	private final Thread paintThread;
+
+	private Runnable setCurrentRequest;
 
 	private Thread flashThread;
 
@@ -60,12 +63,14 @@ public class Display
 		serialCalls = new LinkedList<>();
 		serialThread = new Thread(this::processSerialCalls);
 		serialThread.start();
+
+		paintQueue = new LinkedList<>();
+		paintThread = new Thread(this::processPaintCalls);
+		paintThread.start();
 	}
 
-	public void callSerially(Runnable r) 
-	{
-		synchronized (serialCalls) { serialCalls.add(r); }
-	}
+	// MIDlet serial call queue methods
+	public void callSerially(Runnable r) { synchronized (serialCalls) { serialCalls.add(r); } }
 
 	private void processSerialCalls() 
 	{
@@ -75,6 +80,34 @@ public class Display
 			{
 				if (!serialCalls.isEmpty()) { serialCalls.poll().run(); }
 			}
+		}
+	}
+
+	// Paint queue methods
+	public void postPaintRequest(Runnable r) { synchronized (paintQueue) { paintQueue.add(r); } }
+
+	private void processPaintCalls() 
+	{
+		while (true) 
+		{
+			if(setCurrentRequest != null) 
+			{
+				synchronized (paintQueue) { paintQueue.clear(); }
+				setCurrentRequest.run();
+				setCurrentRequest = null;
+			}
+			synchronized (paintQueue) 
+			{
+				if (!paintQueue.isEmpty()) { paintQueue.poll().run(); }
+			}
+		}
+	}
+
+	public void processPaintsNow() // Used by Canvas.serviceRepaints() to force repaints to be serviced
+	{
+		synchronized (paintQueue) 
+		{
+			while (!paintQueue.isEmpty()) { paintQueue.poll().run(); }
 		}
 	}
 
@@ -146,40 +179,31 @@ public class Display
 
 	public void setCurrent(Displayable next)
 	{
-		Displayable prev;
-		if (next == null) { return; }
+		setCurrentRequest = (() -> 
+		{
+			Displayable prev;
+			if (next == null || current == next) { return; }
 
-		try 
-		{		
-			if(current == next || isSettingCurrent) { return; }
-			try
-			{
-				isSettingCurrent = true;
-				try 
+			try 
+			{		
+				try
 				{
-					prev = current;
+					prev = current; // Harry Potter: Find Scabbers closes itself if its current displayable calls hideNotify at boot.
 					if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
 					current = next;
-					if (prev != null) { callSerially(() -> { prev.hideNotify(); }); }
-					Mobile.getPlatform().keyState = 0; // reset keystate
-					callSerially(() -> 
-					{ 
-						current.showNotify();
-						current.notifySetCurrent();
-						Mobile.getPlatform().flushGraphics(current.platformImage, 0,0, current.width, current.height);
-						Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
-					});
-					
-				} 
-				finally { isSettingCurrent = false; }
-			}
-			catch (Exception e)
-			{
-				Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(next)");
-				e.printStackTrace();
-			}
-		} 
-		finally { Mobile.displayUpdated = true; }
+					if (prev != null && prev instanceof Canvas) { prev.hideNotify(); }
+					if(current instanceof Canvas) { current.showNotify(); }
+					current.notifySetCurrent();
+					Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
+				}
+				catch (Exception e)
+				{
+					Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(next)");
+					e.printStackTrace();
+				}
+			} 
+			finally { Mobile.displayUpdated = true; }
+		});
 	}
 
 	public void setCurrent(Alert alert, Displayable next)
