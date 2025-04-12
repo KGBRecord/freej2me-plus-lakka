@@ -43,7 +43,63 @@ public class TextField extends Item
 	private String mode;
 	private int padding;
 	private int margin;
-	private boolean hilighted;
+	private boolean highlighted;
+
+	private char[][] charSet = // Not all of these charsets are complete.
+	{
+		"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%~^<.,;?/[]{}>&*()-_+'\"|`\n".toCharArray(), // Default subset, BASIC_LATIN, IS_LATIN
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%~^<.,;?/[]{}>&*()-_+'\"|`\n".toCharArray(),                           // MIDP_UPPERCASE_LATIN
+		"abcdefghijklmnopqrstuvwxyz!@#$%~^<.,;?/[]{}>&*()-_+'\"|`0123456789\n".toCharArray(),                           // MIDP_LOWERCASE_LATIN
+		"0123456789".toCharArray(),                                                                                     // NUMERIC, IS_LATIN_DIGITS
+		"αβγδεζηθικλμνξοπρστυφχψω\n".toCharArray(),                                                                      // UCB_GREEK
+		"абвгдежзийклмнопрстуфхцчшщъыьэюя\n".toCharArray(),                                                              // UCB_CYRILLIC
+		"աբգդեիզլւխճմյնոպջռտուքֆք\n".toCharArray(),                                                                    // UCB_ARMENIAN
+		"אבגדהווזחטיך\n".toCharArray(),                                                                                     // UCB_HEBREW
+		"ابجدهوزحطی\n".toCharArray(),                                                                                     // UCB_ARABIC
+		"अआइईउऊऋएऐओऔकखगघचछजझटठडढणतथदधनपरयलवशषसह\n".toCharArray(),                                                     // UCB_DEVANAGARI
+		"অআইঈউঊএঐও\n".toCharArray(),                                                                                  // UCB_BENGALI
+		"กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟห\n".toCharArray(),                                                            // UCB_THAI
+		"あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん\n".toCharArray(),                 // UCB_HIRAGANA
+		"アイウエオカキクケコサシスセソタチツテトナニヌネノ\n".toCharArray(),                                                    // UCB_KATAKANA
+		"가각갂갃간갅갆갇\n".toCharArray(),                                                                                 // USB_HANGUL_SYLLABLES
+		"０１２３４５６７８９\n".toCharArray(),                                                                             // IS_FULLWIDTH_DIGITS
+		"ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ\n".toCharArray(),       // IS_FULLWIDTH_LATIN
+		"ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝﾞﾟ\n".toCharArray(),                                                      // IS_HALFWIDTH_KATAKANA
+		"日月火水木金土山川田口目耳手足心大小多少新古白黒青赤\n".toCharArray(),                                                  // IS_HANJA, IS_KANJI
+		"我你他她它是不在有这那了人们说去来好学吃喝玩笑爱天日月年时\n".toCharArray(),                                             // IS_SIMPLIFIED_HANZI
+		"我你他她它是不好在有這那了人們說去來好學吃喝玩笑愛天日月年時\n".toCharArray()                                            // IS_TRADITIONAL_HANZI
+	};
+
+	private char[][] charSetHint = 
+	{
+		"Lat".toCharArray(),
+		"LAT".toCharArray(),
+		"lat".toCharArray(),
+		"NUM".toCharArray(),
+		"GRK".toCharArray(),
+		"CYR".toCharArray(),
+		"ARME".toCharArray(),
+		"HEBR".toCharArray(),
+		"ARAB".toCharArray(),
+		"DEVA".toCharArray(),
+		"BENG".toCharArray(),
+		"THAI".toCharArray(),
+		"JP_あ".toCharArray(),
+		"JP_ア".toCharArray(),
+		"HANG".toCharArray(),
+		"F_NUM".toCharArray(),
+		"F_LAT".toCharArray(),
+		"JP_ｱ".toCharArray(),
+		"TH_日".toCharArray(),
+		"JP_日".toCharArray(),
+		"CN_S".toCharArray(),
+		"CN_T".toCharArray()
+	};
+
+	private byte charSetIdx = 0; // Maps to the charsets above
+
+	private int selectedCharIndex = 0;  // Index for the currently selected character
+
 
 	public TextField(String label, String value, int maxSize, int Constraints)
 	{
@@ -51,6 +107,8 @@ public class TextField extends Item
 		text = value == null ? "" : value;
 		max = maxSize;
 		constraints = Constraints;
+
+		caretPosition = text.length();
 
 		// these can't be static because of Font.getDefaultFont().getHeight()
 		padding = Font.getDefaultFont().getHeight() / 5; 
@@ -89,6 +147,8 @@ public class TextField extends Item
 		out.append(text.substring(position));
 		text = out.toString();
 
+		caretPosition = text.length();
+
 		_invalidateContents();
 	}
 
@@ -99,6 +159,8 @@ public class TextField extends Item
 		out.append(src);
 		out.append(text.substring(position));
 		text = out.toString();
+
+		caretPosition = text.length();
 
 		_invalidateContents();
 	}
@@ -117,12 +179,80 @@ public class TextField extends Item
 		_invalidateContents();
 	}
 
-	public void setConstraints(int Constraints) { 
-		constraints = Constraints;
-		_invalidateContents(); // because it might change arrows visibility
-	}
+	public void setConstraints(int Constraints) { constraints = Constraints; }
 
-	public void setInitialInputMode(String characterSubset) { mode = characterSubset; }
+	public void setInitialInputMode(String characterSubset) 
+	{ 
+		mode = characterSubset;
+
+		switch (mode) 
+		{
+            case "MIDP_UPPERCASE_LATIN":
+                charSetIdx = 1;
+                break;
+            case "MIDP_LOWERCASE_LATIN":
+                charSetIdx = 2;
+                break;
+            case "NUMERIC":
+			case "IS_LATIN_DIGITS":
+                charSetIdx = 3;
+                break;
+			case "UCB_GREEK":
+                charSetIdx = 4;
+                break;
+            case "UCB_CYRILLIC":
+                charSetIdx = 5;
+                break;
+            case "UCB_ARMENIAN":
+                charSetIdx = 6;
+                break;
+			case "UCB_HEBREW":
+                charSetIdx = 7;
+                break;
+			case "UCB_ARABIC":
+                charSetIdx = 8;
+                break;
+            case "UCB_DEVANAGARI":
+                charSetIdx = 9;
+                break;
+            case "UCB_BENGALI":
+                charSetIdx = 10;
+                break;
+			case "UCB_THAI":
+                charSetIdx = 11;
+                break;
+			case "UCB_HIRAGANA":
+                charSetIdx = 12;
+                break;
+            case "UCB_KATAKANA":
+                charSetIdx = 13;
+                break;
+            case "USB_HANGUL_SYLLABLES":
+                charSetIdx = 14;
+                break;
+			case "IS_FULLWIDTH_DIGITS":
+                charSetIdx = 15;
+                break;
+            case "IS_FULLWIDTH_LATIN":
+                charSetIdx = 16;
+                break;
+			case "IS_HALFWIDTH_KATAKANA":
+                charSetIdx = 17;
+                break;
+            case "IS_HANJA":
+                charSetIdx = 18;
+                break;
+			case "IS_SIMPLIFIED_HANZI":
+                charSetIdx = 19;
+                break;
+			case "IS_TRADITIONAL_HANZI":
+                charSetIdx = 20;
+                break;
+            default:
+                charSetIdx = 0; // Default subset (BASIC_LATIN, IS_LATIN)
+                break;
+        }
+	}
 
 	public int setMaxSize(int maxSize) { max = maxSize; return max; }
 
@@ -141,111 +271,176 @@ public class TextField extends Item
 
 	protected boolean keyPressed(int key) 
 	{
-		boolean handled = true, changed = false;
+		boolean handled = true, changed = true;
 
-		Mobile.log(Mobile.LOG_WARNING, TextField.class.getPackage().getName() + "." + TextField.class.getSimpleName() + ": " + "TextField keyPress handling not fully implemented!");
-
-		if (key == Canvas.DOWN && caretPosition > 0) // Same as TextBox, DOWN works as Backspace
+		if(constraints == UNEDITABLE) { return false; } // If this field is uneditable, the user shall not be able to make changes through input
+		else 
 		{
-			text = text.substring(0, caretPosition-1) + text.substring(caretPosition);
-			caretPosition--;
-			changed = true;
-		} 
-		else if (key == Canvas.UP && caretPosition < text.length()) // Also just as TextBox, UP works as Delete
-		{
-			text = text.substring(0, caretPosition) + text.substring(caretPosition+1);
-			changed = true;
-		} 
-		else if (constraints != NUMERIC && key == Canvas.LEFT && caretPosition > 0) { caretPosition--; } 
-		else if (constraints != NUMERIC && key == Canvas.RIGHT && caretPosition < text.length()) { caretPosition++; } 
-		else if (constraints == NUMERIC && key == Canvas.LEFT) 
-		{
-			int value = 0;
-
-			try {
-				value = Integer.parseInt(text);
-			} catch(Exception exc) {}
-
-			value--;
-
-			text = Integer.toString(value);
-			changed = true;
-		} 
-		else if (constraints == NUMERIC && key == Canvas.RIGHT) 
-		{
-			int value = 0;
-
-			try { value = Integer.parseInt(text); } 
-			catch(Exception exc) {}
-
-			value++;
-
-			text = Integer.toString(value);
-			changed = true;
-		} 
-		/* Same as TextBox here too
-		else if (e.getKeyChar() > ' ' && e.getKeyChar() < 0x7f) 
-		{
-			char chr = e.getKeyChar();
-			boolean ok = true;
-
-			if (constraints == NUMERIC && !((chr >= '0' && chr <= '9') || chr == '-')) { ok = false; } 
-			else if (constraints == DECIMAL && !((chr >= '0' && chr <= '9') || chr == '-' || chr == '.' || chr == ',')) { ok = false; }
-
-			if (ok) 
-			{
-				text = text.substring(0, caretPosition) + String.valueOf(chr) + text.substring(caretPosition);
-				caretPosition++;
+			if (key == Canvas.DOWN) { selectedCharIndex = (selectedCharIndex - 1 + charSet[charSetIdx].length) % charSet[charSetIdx].length; } // Cycle down through the character set
+			else if (key == Canvas.UP) { selectedCharIndex = (selectedCharIndex + 1) % charSet[charSetIdx].length; } // Cycle up through the character set
+			else if (key == Canvas.LEFT && caretPosition > 0) // Move back one char
+			{ 
+				caretPosition--;
+				// Check the character under the caret
+				char currentChar = text.charAt(caretPosition);
+				// Find the index of the current character in charSet
+				for (int i = 0; i < charSet[charSetIdx].length; i++) 
+				{
+					if (charSet[charSetIdx][i] == currentChar) 
+					{
+						selectedCharIndex = i;
+						break;
+					}
+				}
 				changed = true;
 			} 
-			else { handled = false; }
-		} 
-		*/
-		else { handled = false; }
+			else if (key == Canvas.RIGHT && caretPosition < text.length()) // Move forward one char
+			{
+				if(caretPosition+1 < text.length())
+				{
+					char currentChar = text.charAt(caretPosition+1);
+					for (int i = 0; i < charSet[charSetIdx].length; i++) 
+					{
+						if (charSet[charSetIdx][i] == currentChar) 
+						{
+							selectedCharIndex = i;
+							break;
+						}
+					}
+					changed = true;
+				}
+				caretPosition++;
+			} 
+			else if (key == Canvas.FIRE) // Insert the selected character into the current caret position
+			{ 
+				if (caretPosition < text.length()) // Replace the character at the caret position
+				{
+					text = text.substring(0, caretPosition) + charSet[charSetIdx][selectedCharIndex] + text.substring(caretPosition + 1);
+					caretPosition++;
+				} 
+				else // Append if at the end if the caret is already at the end
+				{
+					if(text.length() < max) 
+					{
+						text += charSet[charSetIdx][selectedCharIndex];
+						caretPosition++;
+					}
+				}
+				changed = true;
+			}
+			else if (key == Canvas.KEY_STAR) // Remove the char at the current caret position
+			{ 
+				if (caretPosition < text.length()) 
+				{
+					// Remove the character at the caret position
+					text = text.substring(0, caretPosition) + text.substring(caretPosition + 1);
+					// Optionally, move caret left after deletion
+					caretPosition = Math.max(caretPosition - 1, 0);
+					changed = true;
+				}
+			}
+			else if (key == Canvas.KEY_POUND && constraints != (NUMERIC | EMAILADDR | PHONENUMBER | DECIMAL)) // Insert a space into the current caret position (in constrants that allow it)
+			{ 
+				if (caretPosition < text.length() && text.length() < max) // Replace the character at the caret position
+				{
+					text = text.substring(0, caretPosition) + ' ' + text.substring(caretPosition);
+					caretPosition++;
+				} 
+				else // Append if at the end if the caret is already at the end
+				{
+					if(text.length() < max) 
+					{
+						text += ' ';
+						caretPosition++;
+					}
+				}
+				changed = true;
+			}
+			else { handled = false; changed = false; }
 
-		if (changed) { notifyStateChanged(); }
-		
-		if (handled) { _invalidateContents(); }
+			if (changed) { notifyStateChanged(); }
 
-		return handled;
+			if (handled) { _invalidateContents(); }
+
+			return handled;
+		}
 	}
 
 	protected void renderItem(PlatformGraphics graphics, int x, int y, int width, int height) 
 	{
 		graphics.getGraphics2D().translate(x, y);
 
-		int arrowSpacing = 0;
-
-		if (constraints == NUMERIC) 
-		{
-			arrowSpacing = _drawArrow(graphics, -1,  true, 0, margin+padding, width, Font.getDefaultFont().getHeight());
-		}
-
-		graphics.setColor(Mobile.lcduiTextColor);
-		graphics.drawRect(arrowSpacing+margin, margin, width-2*arrowSpacing-2*margin, Font.getDefaultFont().getHeight()+2*padding);
-
-		graphics.drawString(text, arrowSpacing+margin+padding, margin+padding, 0);
-
-		int cwidth = Font.getDefaultFont().stringWidth(text.substring(0, caretPosition));
-
-		if (hilighted) 
-		{
-			graphics.drawRect(arrowSpacing+margin+padding+cwidth, margin+padding, 0, Font.getDefaultFont().getHeight());
-		}
-
-		if (constraints == NUMERIC) {
-			_drawArrow(graphics, 1,  true, 0, margin+padding, width, Font.getDefaultFont().getHeight());
-		}
-	
+		// Clear the background
+		graphics.setColor(Mobile.lcduiBGColor);
+		graphics.fillRect( margin, margin, width - 2 * margin, Font.getDefaultFont().getHeight() + 2 * padding);
 		
+		// Draw the border of the field
+		graphics.setColor(Mobile.lcduiTextColor);
+		graphics.drawRect( margin, margin, width - 2 * margin, Font.getDefaultFont().getHeight() + 2 * padding);
+
+		// Replace line breaks, they aren't visible by default.
+		String formattedText = text.replace('\n', '↳');
+		
+		// Draw the existing text before the caret (we'll make a space to highlight the char position the user is currently editing)
+		graphics.setColor(Mobile.lcduiTextColor);
+
+		if (caretPosition > 0) {
+			graphics.drawChars(formattedText.substring(0, caretPosition).toCharArray(), 0, formattedText.substring(0, caretPosition).length(), margin + padding, margin + padding, 0);
+		}
+
+		int caretWidth = Font.getDefaultFont().stringWidth(formattedText.substring(0, caretPosition));
+
+		// Fill the background for the character to be inserted (always at the caret position)
+		// Check if the character to be drawn at the caret is a line break
+		String caretChar = (charSet[charSetIdx][selectedCharIndex] == '\n') ? "↳" : String.valueOf(charSet[charSetIdx][selectedCharIndex]);
+		int caretCharWidth = Font.getDefaultFont().stringWidth(caretChar);
+
+		graphics.setColor(Mobile.lcduiTextColor); // Fill with the same color as the text (effectively giving a strong background color to the caret position
+		graphics.fillRect(margin + padding + caretWidth, margin + padding, caretCharWidth, Font.getDefaultFont().getHeight());
+
+		graphics.setColor(Mobile.lcduiBGColor); // Set to background color for the character
+		graphics.drawString(caretChar, margin + padding + caretWidth, margin + padding, 0);
+
+
+		// Draw the remaining text after the caret
+		int remainWidth = 0;
+		graphics.setColor(Mobile.lcduiTextColor); // Restore color to the text's default after the caret position
+		if(formattedText.length() - (caretPosition+1) > 0) 
+		{
+			graphics.drawChars(formattedText.substring(caretPosition + 1).toCharArray(), 0, formattedText.length() - (caretPosition + 1), margin + padding + caretWidth + caretCharWidth, margin + padding, 0);
+			remainWidth = Font.getDefaultFont().stringWidth(formattedText.substring(caretPosition + 1));
+		}
+		
+		// Draw indicators to show whether more text is allowed or not
+		String indicator = (formattedText.length() < max) ? "⨁" : "⨂";
+		graphics.setColor(formattedText.length() < max ? 0x00BB00 : 0x770000); // Color based on state
+		graphics.drawString(indicator, margin + padding + caretWidth + caretCharWidth + remainWidth, margin + padding, 0);
+
+		// Draw arrows using "^" and "v" characters to hint the user that the current field can be altered
+		graphics.setColor(Mobile.lcduiTextColor); // Set arrow color
+		graphics.drawString("^", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + padding - 10, 0); // Arrow up
+		graphics.drawString("v", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + padding + Font.getDefaultFont().getHeight() + 10, 0); // Arrow down
+
+
+		// Render the characterSet hint
+		String hintText = new String(charSetHint[charSetIdx]);
+		int hintWidth = Font.getDefaultFont().stringWidth(hintText);
+	
+		// Draw background for hint text (it follows the same logic as the highlighted caret char)
+		graphics.setColor(Mobile.lcduiTextColor);
+		graphics.fillRect(width - margin - hintWidth - padding, margin + padding - 11, hintWidth+1, Font.getDefaultFont().getHeight() - 4);
+	
+		graphics.setColor(Mobile.lcduiBGColor);
+		graphics.drawString(hintText, width - margin - hintWidth - padding, margin + padding - 12, 0);
+
 		graphics.getGraphics2D().translate(-x, -y);
 	}
 
 	protected boolean traverse(int dir, int viewportWidth, int viewportHeight, int[] visRect_inout) 
 	{
-		if (!hilighted) 
+		if (!highlighted) 
 		{
-			hilighted = true;
+			highlighted = true;
 			_invalidateContents();
 		}
 		
@@ -254,9 +449,9 @@ public class TextField extends Item
 
 	protected void traverseOut() 
 	{ 
-		if (hilighted) 
+		if (highlighted) 
 		{
-			hilighted = false;
+			highlighted = false;
 			_invalidateContents();
 		}
 	}
