@@ -34,13 +34,18 @@ public abstract class CustomItem extends Item
 
 	protected CustomItem(String label)
 	{
-		Mobile.log(Mobile.LOG_WARNING, CustomItem.class.getPackage().getName() + "." + CustomItem.class.getSimpleName() + ": " + "CustomItem created. LCDUI support is incomplete");
+		Mobile.log(Mobile.LOG_WARNING, CustomItem.class.getPackage().getName() + "." + CustomItem.class.getSimpleName() + ": " + "CustomItem created. This LCDUI feature is untested");
 		setLabel(label);
 	}
 
-	public int getGameAction(int keycode) { return 0; }
+	public int getGameAction(int keycode) 
+	{ 
+		int castKey = Mobile.getGameAction(keycode);
 
-	protected final int getInteractionModes() { return 0xFC; }
+		return castKey;
+	}
+
+	protected final int getInteractionModes() { return KEY_PRESS | KEY_RELEASE | POINTER_PRESS | POINTER_RELEASE | TRAVERSE_HORIZONTAL | TRAVERSE_VERTICAL; }
 
 	protected abstract int getMinContentHeight();
 
@@ -78,9 +83,63 @@ public abstract class CustomItem extends Item
 
 	protected int getContentHeight(int width) { return this.getPrefContentHeight(width); }
 
-	protected boolean traverse(int dir, int viewportWidth, int viewportHeight, int[] visRect_inout) { return true; }
+	protected boolean traverse(int dir, int viewportWidth, int viewportHeight, int[] visRect_inout) 
+	{
+		int currentX = visRect_inout[0]; // Current X position
+		int currentY = visRect_inout[1]; // Current Y position
+		int currentWidth = visRect_inout[2]; // Current width of the focused element
+		int currentHeight = visRect_inout[3]; // Current height of the focused element
 
-	protected void traverseOut() { }
+		// Initial state tracking for traversal
+		if (dir == NONE) { return true; } // Indicate traversal is happening within the item, but no direction
+	
+		// Track the current position based on direction
+		switch (dir) 
+		{
+			case Canvas.UP:
+				if (currentY > 0) 
+				{
+					currentY -= 5; // Move up
+					visRect_inout[1] = currentY; // Update visible rectangle
+					if(currentY < 0) { currentY = 0; }
+					return true;
+				}
+				break;
+			case Canvas.DOWN:
+				if (currentY + currentHeight < viewportHeight) {
+					currentY += 5; // Move down
+					if(currentY + currentHeight > viewportHeight) { currentY = viewportHeight; }
+					visRect_inout[1] = currentY;
+					return true; 
+				}
+				break;
+			case Canvas.LEFT:
+				if (currentX > 0) 
+				{
+					currentX -= 5; // Move left
+					if(currentX < 0) { currentX = 0; }
+					visRect_inout[0] = currentX; // Update visible rectangle
+					return true; // Traversal occurred
+				}
+				break;
+			case Canvas.RIGHT:
+				if (currentX + currentWidth < viewportWidth) 
+				{
+					currentX += 5; // Move right
+					if(currentX + currentWidth < viewportWidth) { currentX = viewportWidth; }
+					visRect_inout[0] = currentX;
+					return true;
+				}
+				break;
+			default:
+				return false;
+		}
+	
+		// If no movement occurred, return false
+		return false;
+	}
+
+	protected void traverseOut() { repaint(); } // Request a repaint to clear highlights, traversing out of the object
 
 	protected void renderItem(PlatformGraphics graphics, int x, int y, int width, int height) 
 	{
@@ -92,5 +151,4 @@ public abstract class CustomItem extends Item
 		graphics.getGraphics2D().translate(-x, -y);
 		graphics.setColor(color);
 	}
-
 }

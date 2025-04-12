@@ -363,8 +363,9 @@ public class Form extends Screen
 			{
 				Item item = items.get(t);
 
-				if (!viewport.intersects(itemBounds[t]))
-				continue;
+				if(t >= itemBounds.length) { break; }
+
+				if (!viewport.intersects(itemBounds[t])) { continue; }
 
 				int thisX = x + itemBounds[t].x;
 				int thisY = y + itemBounds[t].y - scrollY;

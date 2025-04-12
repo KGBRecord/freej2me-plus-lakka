@@ -159,6 +159,7 @@ public abstract class Item
 		graphics.setFont(oldFont);
 	}
 
+	// Only CustomItem has a need for these traversal methods
 	protected boolean traverse(int dir, int viewportWidth, int viewportHeight, int[] visRect_inout) { return false; }
 
 	protected void traverseOut() { }
