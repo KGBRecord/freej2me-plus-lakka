@@ -179,8 +179,11 @@ public class Manager
 				dedicatedTonePlayer.open();
 				if(Mobile.useCustomMidi && !hasLoadedToneSynth) { dedicatedTonePlayer.loadAllInstruments(customSoundfont); hasLoadedToneSynth = true; }
 
-				dedicatedToneChannel = dedicatedTonePlayer.getChannels()[0]; 
-				dedicatedToneChannel.programChange(80); // Set it to use the square wave instrument, just so all tones formats are using the same
+				dedicatedToneChannel = dedicatedTonePlayer.getChannels()[0];
+
+				dedicatedToneChannel.controlChange(0, 1);   // Bank change MSB (Bank 1)
+        		dedicatedToneChannel.controlChange(32, 0);  // Bank change LSB
+				dedicatedToneChannel.programChange(80);     // Set it to use the square wave instrument, just so all tones formats are using the same
 			} 
 			catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); return;}
 		}
