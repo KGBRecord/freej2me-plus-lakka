@@ -219,7 +219,7 @@ public class Alert extends Screen
 		{
 			scrollY = Math.min(maxScroll, scrollY + scrollAmount);
 		}
-		else if((key == Canvas.FIRE || key == Canvas.KEY_NUM5))
+		else if((key == Canvas.FIRE || key == Canvas.KEY_NUM5 || key == Canvas.KEY_SOFT_LEFT))
 		{
 			defaultListener.commandAction(DISMISS_COMMAND, nextScreen);
 		}

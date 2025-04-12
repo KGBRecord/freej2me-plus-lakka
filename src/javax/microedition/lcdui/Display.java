@@ -180,44 +180,53 @@ public class Display
 	public void setCurrent(Displayable next)
 	{
 		setCurrentRequest = (() -> 
-		{
-			Displayable prev;
+		{			
 			if (next == null || current == next) { return; }
 
 			try 
 			{		
-				try
-				{
-					prev = current; // Harry Potter: Find Scabbers closes itself if its current displayable calls hideNotify at boot.
-					if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
-					current = next;
-					if (prev != null && prev instanceof Canvas) { prev.hideNotify(); }
-					if(current instanceof Canvas) { current.showNotify(); }
-					current.notifySetCurrent();
-					Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
-				}
-				catch (Exception e)
-				{
-					Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(next)");
-					e.printStackTrace();
-				}
-			} 
+				if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
+
+				// Harry Potter: Find Scabbers closes itself if its current displayable calls hideNotify at boot, but i couldn't find a use for hideNotify yet, so it'll remain commented
+				// if (current != null && current instanceof Canvas) { current.hideNotify(); }
+
+				current = next;
+				if(current instanceof Canvas) { current.showNotify(); }
+				current.notifySetCurrent();
+
+				Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
+			}
+			catch (Exception e)
+			{
+				Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(next)");
+				e.printStackTrace();
+			}
 			finally { Mobile.displayUpdated = true; }
 		});
 	}
 
 	public void setCurrent(Alert alert, Displayable next)
 	{
-		try
-		{
-			setCurrent(alert);
-			alert.setNextScreen(next);
-		}
-		catch (Exception e)
-		{
-			Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(alert, next)");
-			e.printStackTrace();
-		}
+		setCurrentRequest = (() -> 
+		{	
+			if(alert == null || next == null) { throw new NullPointerException("Cannot pass a null alert or next displayable into setCurrent(Alert, Displayable)"); }
+			if(next instanceof Alert) { throw new IllegalArgumentException("Cannot pass an alert as the next screen of another alert in setCurrent(Alert, Displayable)"); }
+
+			try
+			{
+				alert.setNextScreen(next);
+
+				current = next;
+				current.notifySetCurrent();
+
+				Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current Alert "+current.width+", "+current.height);	
+			}
+			catch (Exception e)
+			{
+				Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(alert, next)");
+				e.printStackTrace();
+			}
+		});
 	}
 
 	public void setCurrentItem(Item item) 
