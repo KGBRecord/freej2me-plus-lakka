@@ -118,7 +118,7 @@ public class VertexBuffer extends Object3D
 	public VertexArray getTexCoords(int index, float[] scaleBias)
 	{
 		/* As per JSR-184, throw IndexOutOfBoundsException if index != [0,N] where N is the implementation specific maximum texturing unit index*/
-		if (index < 0 || Graphics3D.NUM_TEXTURE_UNITS - 1 < index)
+		if (index < 0 || index >= Graphics3D.NUM_TEXTURE_UNITS)
 			{ throw new IndexOutOfBoundsException("Tried to access invalid texture unit index."); }
 
 		if (scaleBias != null && this.texCoords[index] != null)
@@ -201,7 +201,7 @@ public class VertexBuffer extends Object3D
 	public void setTexCoords( int index, VertexArray texCoords, float scale, float[] bias) 
 	{
 		/* As per JSR-184, throw IndexOutOfBoundsException if if index != [0,N] where N is the implementation specific maximum texturing unit index. */
-		if (index < 0 || Graphics3D.NUM_TEXTURE_UNITS - 1 < index)
+		if (index < 0 || index >= Graphics3D.NUM_TEXTURE_UNITS)
 			{ throw new IndexOutOfBoundsException("Tried to access invalid texture unit index."); }
 
 		if (texCoords == null) { this.texCoords[index] = null; }
