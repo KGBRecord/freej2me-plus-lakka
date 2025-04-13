@@ -91,6 +91,16 @@ public class FreeJ2ME
 
 		// Setup Device //
 
+		if(args.length>=3)
+		{
+			Mobile.lcdWidth = Integer.parseInt(args[1]);
+			Mobile.lcdHeight = Integer.parseInt(args[2]);
+		}
+		if(args.length>=4)
+		{
+			scaleFactor = Integer.parseInt(args[3]);
+		}
+
 		lcdWidth = Mobile.lcdWidth;
 		lcdHeight = Mobile.lcdHeight;
 
@@ -110,18 +120,9 @@ public class FreeJ2ME
 		/* Append the awt menu bar into FreeJ2ME's frame */
 		main.setMenuBar(awtGUI.getMenuBar());
 
-		if(args.length>=1)
+		if(args.length>=1) // Only now we can load the jar passed as argument
 		{
 			awtGUI.loadJarFile(getFormattedLocation(args[0]), true);
-		}
-		if(args.length>=3)
-		{
-			lcdWidth = Integer.parseInt(args[1]);
-			lcdHeight = Integer.parseInt(args[2]);
-		}
-		if(args.length>=4)
-		{
-			scaleFactor = Integer.parseInt(args[3]);
 		}
 
 		/* Inputs should only be registered if a jar has been loaded, otherwise AWT will throw NullPointerException */
