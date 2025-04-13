@@ -262,12 +262,12 @@ public class List extends Screen implements Choice
 		{
 			if(currentItem<0) { currentItem = 0; }
 
-			int listPadding = Font.getDefaultFont().getHeight()/5;
+			int itemPadding = Font.fontPadding[Font.screenType];
 			int itemHeight = Font.getDefaultFont().getHeight();
 			int imagePadding = Font.getDefaultFont().getHeight()/4;
 
-			int ah = height - 2*listPadding; // allowed height
-			int max = Math.max(1, (int) Math.floor(ah / itemHeight)); // max items per page (minimum of 1)
+			int ah = height - itemPadding; // allowed height
+			int max = Math.max(1, (int) Math.floor(ah / (itemHeight-itemPadding))); // max items per page (minimum of 1)
 
 			if(items.size()<max) { max = items.size(); }
 		
@@ -278,13 +278,18 @@ public class List extends Screen implements Choice
 
 			if(last>=items.size()) { last = items.size()-1; }
 			
-			y += listPadding;
+			y += itemPadding;
+
+			//graphics.setColor(0xFF0000);  // Area Debug
+			//graphics.fillRect(x+itemPadding, y+itemPadding, width-2*itemPadding, height); // Area Debug
+			//graphics.setColor(Mobile.lcduiTextColor); // Area Debug
+
 			for(int i=first; i<=last; i++)
 			{
 				if(currentItem == i)
 				{
 					// Don't touch the edges of the screen, or the border from another item for better spacing
-					graphics.fillRect(x+2, y+1, width-4, itemHeight-1);
+					graphics.fillRect(x+itemPadding, y, width-2*itemPadding, itemHeight-itemPadding);
 					graphics.setColor(Mobile.lcduiBGColor);
 				}
 
@@ -319,7 +324,7 @@ public class List extends Screen implements Choice
 					graphics.drawImage(((ImageItem)items.get(i)).getImage(), x+imagePadding, y, 0);
 				}
 				
-				y += itemHeight;
+				y += itemHeight-itemPadding;
 			}
 		}
 

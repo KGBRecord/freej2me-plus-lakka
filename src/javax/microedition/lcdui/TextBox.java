@@ -290,7 +290,7 @@ public class TextBox extends Screen
 				}
 				caretPosition++;
 			} 
-			else if (key == Canvas.FIRE) // Insert the selected character into the current caret position
+			else if (key == Canvas.FIRE || key == Canvas.KEY_NUM5) // Insert the selected character into the current caret position
 			{ 
 				if (caretPosition < text.length()) // Replace the character at the caret position
 				{
@@ -342,13 +342,9 @@ public class TextBox extends Screen
 	{
 		graphics.getGraphics2D().translate(x, y);
 
-		// Clear the background
-		graphics.setColor(Mobile.lcduiBGColor);
-		graphics.fillRect( margin, margin, width - 2 * margin, Font.getDefaultFont().getHeight() + 2 * padding);
-		
 		// Draw the border of the field
 		graphics.setColor(Mobile.lcduiTextColor);
-		graphics.drawRect( margin, margin, width - 2 * margin, Font.getDefaultFont().getHeight() + 2 * padding);
+		graphics.drawRect( margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
 
 		// Replace line breaks, they aren't visible by default.
 		String formattedText = text.replace('\n', '↳');
@@ -390,9 +386,8 @@ public class TextBox extends Screen
 
 		// Draw arrows using "^" and "v" characters to hint the user that the current field can be altered
 		graphics.setColor(Mobile.lcduiTextColor); // Set arrow color
-		graphics.drawString("^", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + padding - 10, 0); // Arrow up
-		graphics.drawString("v", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + padding + Font.getDefaultFont().getHeight() + 10, 0); // Arrow down
-
+		graphics.drawString("^", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + padding - Font.getDefaultFont().getHeight() + padding, 0); // Arrow up
+		graphics.drawString("v", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + padding + Font.getDefaultFont().getHeight(), 0); // Arrow down
 
 		// Render the characterSet hint
 		String hintText = new String(charSetHint[charSetIdx]);
@@ -406,7 +401,7 @@ public class TextBox extends Screen
 		graphics.drawString(hintText, width - margin - hintWidth - padding, margin + padding - 12, 0);
 
 		graphics.getGraphics2D().translate(-x, -y);
+
 		return null;
 	}
-
  }

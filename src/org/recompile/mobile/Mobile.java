@@ -347,10 +347,10 @@ public class Mobile
 				case 11: return NOKIAKB_NUM3; // R
 				case 12: return NOKIAKB_STAR; // L2
 				case 13: return NOKIAKB_POUND; // R2
-				case 14: return NOKIAKB_NUM2; // Up 
-				case 15: return NOKIAKB_NUM4; // Left
-				case 16: return NOKIAKB_NUM6; // Right
-				case 17: return NOKIAKB_NUM8; // Down
+				case 14: return NOKIAKB_NUM2; // Up (Analog)
+				case 15: return NOKIAKB_NUM4; // Left (Analog)
+				case 16: return NOKIAKB_NUM6; // Right (Analog)
+				case 17: return NOKIAKB_NUM8; // Down (Analog)
 				case 18: return NOKIAKB_NUM5; // User-Mappable (often same as case 7)
 			}
 		}
@@ -407,10 +407,10 @@ public class Mobile
 			case 11: return KEY_NUM3; // R
 			case 12: return KEY_STAR; // L2
 			case 13: return KEY_POUND; // R2
-			case 14: return KEY_NUM2; // Up 
-			case 15: return KEY_NUM4; // Left
-			case 16: return KEY_NUM6; // Right
-			case 17: return KEY_NUM8; // Down
+			case 14: return KEY_NUM2; // Up (Analog)
+			case 15: return KEY_NUM4; // Left (Analog)
+			case 16: return KEY_NUM6; // Right (Analog)
+			case 17: return KEY_NUM8; // Down (Analog)
 			case 18: return KEY_NUM5; // User-Mappable (often same as case 7)
 		}
 
@@ -482,16 +482,16 @@ public class Mobile
 				case NOKIAKB_DOWN: return Canvas.DOWN; // Down
 				case NOKIAKB_LEFT: return Canvas.LEFT; // Left
 				case NOKIAKB_RIGHT: return Canvas.RIGHT; // Right
-				case NOKIAKB_NUM9: return Canvas.GAME_D; // A
-				case NOKIAKB_NUM7: return Canvas.GAME_C; // B
+				case NOKIAKB_NUM9: return Canvas.KEY_NUM9; // A
+				case NOKIAKB_NUM7: return Canvas.KEY_NUM7; // B
 				case NOKIAKB_SOFT3: return Canvas.FIRE; // Y
-				case NOKIAKB_NUM1: return Canvas.GAME_A; // L
-				case NOKIAKB_NUM3: return Canvas.GAME_B; // R
+				case NOKIAKB_NUM1: return Canvas.KEY_NUM1; // L
+				case NOKIAKB_NUM3: return Canvas.KEY_NUM3; // R
 				case NOKIAKB_NUM5: return Canvas.KEY_NUM5;
-				case NOKIAKB_NUM2: return Canvas.UP;
-				case NOKIAKB_NUM8: return Canvas.DOWN;
-				case NOKIAKB_NUM4: return Canvas.LEFT;
-				case NOKIAKB_NUM6: return Canvas.RIGHT;
+				case NOKIAKB_NUM2: return Canvas.KEY_NUM2;
+				case NOKIAKB_NUM8: return Canvas.KEY_NUM8;
+				case NOKIAKB_NUM4: return Canvas.KEY_NUM4;
+				case NOKIAKB_NUM6: return Canvas.KEY_NUM6;
 				case NOKIAKB_NUM0: return Canvas.KEY_NUM0;
 				case NOKIAKB_STAR: return Canvas.KEY_STAR;
 				case NOKIAKB_POUND: return Canvas.KEY_POUND;
@@ -533,15 +533,15 @@ public class Mobile
 			case NOKIA_DOWN:  return Canvas.DOWN;
 			case NOKIA_LEFT:  return Canvas.LEFT;
 			case NOKIA_RIGHT: return Canvas.RIGHT;
-			case KEY_NUM2:    return Canvas.UP;
-			case KEY_NUM8:    return Canvas.DOWN;
-			case KEY_NUM4:    return Canvas.LEFT;
-			case KEY_NUM6:    return Canvas.RIGHT;
-			case KEY_NUM9:    return Canvas.GAME_D;
-			case KEY_NUM7:    return Canvas.GAME_C;
+			case KEY_NUM2:    return Canvas.KEY_NUM2;
+			case KEY_NUM8:    return Canvas.KEY_NUM8;
+			case KEY_NUM4:    return Canvas.KEY_NUM4;
+			case KEY_NUM6:    return Canvas.KEY_NUM6;
+			case KEY_NUM9:    return Canvas.KEY_NUM9;
+			case KEY_NUM7:    return Canvas.KEY_NUM7;
 			case KEY_NUM5:    return Canvas.KEY_NUM5;
-			case KEY_NUM1:    return Canvas.GAME_A;
-			case KEY_NUM3:    return Canvas.GAME_B;
+			case KEY_NUM1:    return Canvas.KEY_NUM1;
+			case KEY_NUM3:    return Canvas.KEY_NUM3;
 			case KEY_NUM0:    return Canvas.KEY_NUM0;
 			case KEY_STAR:    return Canvas.KEY_STAR;
 			case KEY_POUND:   return Canvas.KEY_POUND;

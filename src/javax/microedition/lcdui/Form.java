@@ -353,6 +353,8 @@ public class Form extends Screen
 			doTraverseItem(focusedItem, CustomItem.NONE);
 		}
 
+		int itemPadding = Font.fontPadding[Font.screenType];
+
 		if(items.size()>0)
 		{
 			int scrollbarWidth = 4;
@@ -372,15 +374,15 @@ public class Form extends Screen
 
 				if (t == focusedItem && items.size() > 1)
 				{
-					graphics.setColor(Mobile.lcduiBGColor);
-					// drawRect needs size - 1
-					graphics.drawRect(thisX - 3, thisY - 3, itemBounds[t].width + 6 - 1, itemBounds[t].height + 6 - 1);
 					graphics.setColor(Mobile.lcduiTextColor);
+					// drawRect needs size - 1
+					graphics.drawRect(thisX - itemPadding, thisY - itemPadding, itemBounds[t].width + itemPadding, itemBounds[t].height + itemPadding - 1);
 				}
 
-				if (item.hasLabel()) {
-					item.renderItemLabel(graphics, thisX, thisY, itemContentWidth);
-					thisY += item.getLabelHeight(itemContentWidth);
+				if (item.hasLabel()) 
+				{
+					item.renderItemLabel(graphics, thisX, thisY, itemContentWidth-itemPadding);
+					thisY += item.getLabelHeight(itemContentWidth)-itemPadding;
 				}
 
 				// paint...
@@ -402,7 +404,7 @@ public class Form extends Screen
 		
 			if (height < scrollHeight)
 			{
-				graphics.setColor(Mobile.lcduiBGColor);
+				graphics.setColor(Mobile.lcduiTextColor);
 				graphics.fillRect(x + width - scrollbarWidth, y+yscrollStart, scrollbarWidth, yscrollHeight);
 			}
 		
