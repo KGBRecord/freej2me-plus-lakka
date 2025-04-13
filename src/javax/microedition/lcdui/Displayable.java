@@ -96,18 +96,18 @@ public abstract class Displayable
 
 	public void keyPressed(int key) 
 	{ 
-		if (listCommands) { keyPressedCommands(Mobile.getGameAction(key)); } 
+		if (listCommands) { keyPressedCommands(Mobile.getCanvasAction(key)); } 
 		else 
 		{
-			boolean handled = screenKeyPressed(Mobile.getGameAction(key));
+			boolean handled = screenKeyPressed(Mobile.getCanvasAction(key));
 			if (!handled)
 			{
-				if (Mobile.getGameAction(key) == Canvas.KEY_SOFT_LEFT || Mobile.getGameAction(key) == Canvas.FIRE 
-				|| Mobile.getGameAction(key) == Canvas.KEY_NUM5) 
+				if (Mobile.getCanvasAction(key) == Canvas.KEY_SOFT_LEFT || Mobile.getCanvasAction(key) == Canvas.FIRE 
+				|| Mobile.getCanvasAction(key) == Canvas.KEY_NUM5) 
 				{
 					doLeftCommand();
 				} 
-				else if (Mobile.getGameAction(key) == Canvas.KEY_SOFT_RIGHT) 
+				else if (Mobile.getCanvasAction(key) == Canvas.KEY_SOFT_RIGHT) 
 				{
 					doRightCommand();
 				}
