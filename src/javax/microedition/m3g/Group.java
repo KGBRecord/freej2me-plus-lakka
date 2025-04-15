@@ -150,6 +150,23 @@ public class Group extends Node
 		return minValidity;
 	}
 
+	@Override
+	boolean doAlign(Node ref) 
+	{
+		if (!super.doAlign(ref)) { return false; }
+
+		Node child = firstChild;
+		if (child != null) 
+		{
+			do 
+			{
+				if (!child.doAlign(ref)) { return false; } 
+				child = child.right;
+			} while (child != firstChild);
+		}
+		return true;
+	}
+
 	public boolean pick(int scope, float x, float y, Camera camera, RayIntersection ri) 
 	{
 		// TODO
@@ -167,13 +184,14 @@ public class Group extends Node
 		if (child != null && firstChild != null) 
 		{
 			Node n = firstChild;
-			do {
-				if (n == child) {
+			do 
+			{
+				if (n == child) 
+				{
 					n.right.left = n.left;
 					n.left.right = n.right;
 
-					if (firstChild == n)
-						firstChild = (n.right != n) ? n.right : null;
+					if (firstChild == n) { firstChild = (n.right != n) ? n.right : null; }
 
 					n.left = null;
 					n.right = null;

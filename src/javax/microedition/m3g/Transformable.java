@@ -98,6 +98,13 @@ public abstract class Transformable extends Object3D
 		transform.set(this.matrix);
 	}
 
+	public void getMatrix(float[] matrix)
+	{
+		if (matrix == null) { throw new java.lang.NullPointerException("Cannot copy matrix data into a null matrix."); }
+
+		System.arraycopy(this.matrix, 0, matrix, 0, 16);
+	}
+
 	public void getTranslation(float[] xyz)
 	{
 		if (xyz == null)
@@ -185,6 +192,17 @@ public abstract class Transformable extends Object3D
 				break;
 			default:
 				super.updateProperty(property, value);
+		}
+	}
+
+	void invalidateTransformable() 
+	{
+		if (!(this instanceof Texture2D)) 
+		{
+			if (((Node) this).parent != null && (((Node) this).hasRenderables || ((Node) this).hasBones)) 
+			{
+				((Node) this).parent.invalidateNode(new boolean[]{false, false});
+			}
 		}
 	}
 

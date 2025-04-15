@@ -41,7 +41,7 @@ public abstract class Node extends Transformable
 
 	boolean hasRenderables = false;
 	boolean hasBones = false;
-	boolean[] dirty = new boolean[2];
+	boolean[] dirtyBits = new boolean[2]; // {renderablesBit, BonesBit}, used mostly to track for animation changes
 
 	void duplicate(Node copy) 
 	{
@@ -61,50 +61,171 @@ public abstract class Node extends Transformable
 		copy.hasBones = hasBones;
 	}
 
-	public void align(Node reference) 
-	{  
-		/* 
-		 * TODO: Throw...
-		 * java.lang.IllegalArgumentException - if reference is not in the same scene graph as this node 
-    	 * java.lang.IllegalStateException - if the zRef or yRef node of any aligned node is not in the same scene graph as the aligned node 
-    	 * java.lang.IllegalStateException - if any node is aligned to itself or its descendant (note: this applies to null alignment references, as well) 
-    	 * java.lang.ArithmeticException - if a transformation required in the alignment computations cannot be computed
-		*/
+	boolean doAlign(Node ref) 
+	{
+		if (ref == null) { return this.computeAlignment(this); }
+		else { return this.computeAlignment(ref); }
+	}
 
+	public final void align(Node reference) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Node.class.getPackage().getName() + "." + Node.class.getSimpleName() + ": " + "Node Alignment requested (untested)");
+		if (reference != null && (this.getRootNode() != reference.getRootNode())) { throw new IllegalArgumentException(); }
+		
+		doAlign(reference == null ? this : reference);
+	}
+
+	static void transformAlignmentTarget(int target, float[] transform, float[] out) // transform is a 4x4 matrix, out is a float[4] array (Vec4)
+	{
+		out[0] = out[1] = out[2] = 0; out[3] = 0;
+
+		switch (target) 
+		{
+			case ORIGIN:
+				out[0] = 0;
+				out[1] = 0;
+				out[2] = 0;
+				out[3] = 1;
+				break;
+			case X_AXIS:
+				out[0] = 1;
+				out[1] = 0;
+				out[2] = 0;
+				out[3] = 0;
+				break;
+			case Y_AXIS:
+				out[0] = 0;
+				out[1] = 1;
+				out[2] = 0;
+				out[3] = 0;
+				break;
+			case Z_AXIS:
+				out[0] = 0;
+				out[1] = 0;
+				out[2] = 1;
+				out[3] = 0;
+				break;
+		}
+
+		// Transfrom the 4x4 matrix by the out array
+		float[] result = new float[4];
+		result[0] = transform[0] * out[0] + transform[1] * out[1] + transform[2] * out[2] + transform[3] * out[3];
+		result[1] = transform[4] * out[0] + transform[5] * out[1] + transform[6] * out[2] + transform[7] * out[3];
+		result[2] = transform[8] * out[0] + transform[9] * out[1] + transform[10] * out[2] + transform[11] * out[3];
+		result[3] = transform[12] * out[0] + transform[13] * out[1] + transform[14] * out[2] + transform[15] * out[3];
+
+		System.arraycopy(result, 0, out, 0, 4); // Now we copy the result to out
+	}
+
+	boolean computeAlignmentRotation(float[] srcAxis, Node targetNode, int targetAxisName, int constraint) 
+	{
+		Node parent = this.parent;
+		Transform transform = new Transform();
+		float[] transformMatrix = new float[16];
+		float[] orientation = new float[4];
+		float[] targetAxis = new float[] {0, 0, 0, 0};
+
+		if (!targetNode.getTransformTo(parent, transform)) { return false; } 
+
+		getOrientation(orientation);
+		getMatrix(transformMatrix);
+
+		transform.preTranslate(transformMatrix[12], transformMatrix[13], transformMatrix[14]);
+
+		if (constraint != NONE) 
+		{
+			float[] rot = new float[4];
+			System.arraycopy(orientation, 0, rot, 0, 4);
+			rot[3] = -rot[3];
+			transform.preRotate(rot[0], rot[1], rot[2], rot[3]);
+		}
+
+		
+		transform.get(transformMatrix);
+
+		transformAlignmentTarget(targetAxisName, transformMatrix, targetAxis);
+
+		if (constraint == Z_AXIS) 
+		{
+			float norm = targetAxis[0] * targetAxis[0] + targetAxis[1] * targetAxis[1];
+	
+			if (norm < 1.0e-5f) { return true; }
+	
+			norm = (float) (1.0 / Math.sqrt(norm));
+			targetAxis[0] *= norm;
+			targetAxis[1] *= norm;
+			targetAxis[2] = 0.0f;
+		} 
+		else 
+		{
+			// Normalize targetAxis
+			float norm = targetAxis[0] * targetAxis[0] + targetAxis[1] * targetAxis[1] + targetAxis[2] * targetAxis[2];
+			if (norm > 1.0e-5f) 
+			{
+				norm = (float) (1.0 / Math.sqrt(norm));
+				targetAxis[0] *= norm;
+				targetAxis[1] *= norm;
+				targetAxis[2] *= norm;
+			}
+		}
+
+		float[] rot = setQuatRotation(srcAxis, targetAxis);
+	
+		if (constraint != NONE) 
+		{
+			float[] newOrientation = new float[4];
+			mulQuat(orientation, rot, newOrientation);
+			System.arraycopy(newOrientation, 0, orientation, 0, 4);
+		} 
+		else { System.arraycopy(rot, 0, orientation, 0, 4); }
+	
+		invalidateTransformable();
+		return false;
+	}
+
+	boolean computeAlignment(Node refNode) 
+	{
 		Node root = this.getRootNode();
 		Node zRef = this.zRef;
 		Node yRef = this.yRef;
 		int zTarget = this.zTarget;
 		int yTarget = this.yTarget;
 
-		System.out.println("align(Node)");
-		/* TODO: Flesh out the alignment itself. */
-		if (zTarget != NONE || yTarget != NONE)
+		if (zTarget == NONE && yTarget == NONE) { return true; }
+
+		if (zRef != null && (isChildOf(this, zRef) || zRef.getRootNode() != root)) { return false; }
+		if (yRef != null && (isChildOf(this, yRef) || yRef.getRootNode() != root)) { return false; }
+
+		if (this.zTarget != NONE) 
 		{
-			if(reference == null) /* Align based on this node. */
-			{
-				System.out.println("align(Node) based on this node");
-			} else /* Align based on the reference node. */
-			{
-				System.out.println("align(Node) based on reference node");
-			}
+			if (zRef == null && refNode == this) { return false; }
+			if (!computeAlignmentRotation(new float[] { 0, 0, 1 }, (zRef != null) ? zRef : refNode, zTarget, NONE)) { return false; }
 		}
-		
+
+		if (this.yTarget != NONE) 
+		{
+			if (yRef == null && refNode == this) { return false; }
+			if (!computeAlignmentRotation(new float[] { 0, 1, 0 }, (yRef != null) ? yRef : refNode, yTarget, (zTarget != NONE) ? Z_AXIS : NONE)) { return false; }
+		}
+
+		return true;
 	}
 
-	static boolean isChildOf(Node parent, Node child) {
+	static boolean isChildOf(Node parent, Node child) 
+	{
 		Node n;
-		for (n = child; n != null; n = n.parent)
-			if (n.parent == parent)
-				return true;
-
+		for (n = child; n != null; n = n.parent) 
+		{
+			if (n.parent == parent) { return true; }
+		}
+			
 		return false;
 	}
 
 	public Node getAlignmentReference(int axis) 
 	{ 
 		if(axis == Y_AXIS) { return this.yRef; }
-		else if(axis == Z_AXIS) {return this.zRef; }
+		else if(axis == Z_AXIS) { return this.zRef; }
 
 		/* If it's not Y_AXIS or Z_AXIS, throw IllegalArgumentException as per JSR-184. */
 		throw new IllegalArgumentException("Tried requesting alignment reference on invalid axis.");
@@ -113,7 +234,7 @@ public abstract class Node extends Transformable
 	public int getAlignmentTarget(int axis) 
 	{ 
 		if(axis == Y_AXIS) { return this.yTarget; }
-		else if(axis == Z_AXIS) {return this.zTarget; }
+		else if(axis == Z_AXIS) { return this.zTarget; }
 
 		/* If it's not Y_AXIS or Z_AXIS, throw IllegalArgumentException as per JSR-184. */
 		throw new IllegalArgumentException("Tried requesting alignment target on invalid axis.");
@@ -125,38 +246,37 @@ public abstract class Node extends Transformable
 
 	public int getScope() { return this.scope; }
 
-	public boolean getTransformTo(Node target, Transform transform) {
-		// Validate inputs
-		if (target == null) {
-			throw new NullPointerException("Target node cannot be null");
-		}
-		if (transform == null) {
-			throw new NullPointerException("Transform object cannot be null");
-		}
+	public boolean getTransformTo(Node target, Transform transform) 
+	{
+		if (target == null) { throw new NullPointerException("Target node cannot be null"); }
+		if (transform == null) { throw new NullPointerException("Transform object cannot be null"); }
 	
 		// Initialize a temporary transformation
 		Transform compositeTransform = new Transform();
 		Node currentNode = this;
 	
 		// Traverse upwards to find the target node
-		while (currentNode != null) {
-			if (currentNode == target) {
+		while (currentNode != null) 
+		{
+			if (currentNode == target) 
+			{
 				// We found the target node, apply the accumulated transformations
 				transform.set(compositeTransform);
 				return true;
 			}
 	
 			// Accumulate the transformation
-			try {
-				if (currentNode.getParent() != null) {
+			try 
+			{
+				if (currentNode.getParent() != null) 
+				{
 					// Multiply the current transform with the parent's transform
 					Transform localTransform = new Transform();
 					currentNode.getTransform(localTransform);
 					compositeTransform.preMultiply(localTransform);
 				}
-			} catch (ArithmeticException e) {
-				throw new ArithmeticException("Singular transformation encountered");
-			}
+			} 
+			catch (ArithmeticException e) { throw new ArithmeticException("Singular transformation encountered"); }
 	
 			// Move to the parent node
 			currentNode = currentNode.getParent();
@@ -207,10 +327,87 @@ public abstract class Node extends Transformable
 
 	public void setScope(int scope) { this.scope = scope; }
 
-	public void setParent(Node parent) 
+	void setParent(Node parent) 
 	{
-		/* TODO: Flesh out this method. */
+		int nonCullableChange = 0, renderableChange = 0;
+
+		if (this instanceof Group) 
+		{
+			nonCullableChange = ((Group) this).numNonCullables;
+			renderableChange = ((Group) this).numRenderables;
+		} 
+		else if (this instanceof Sprite3D) 
+		{
+			renderableChange = 1;
+			if (!((Sprite3D) this).isScaled()) { nonCullableChange = 1; }
+		}
+		else if (this instanceof Light) { nonCullableChange = 1; }
+		else if (this instanceof SkinnedMesh) 
+		{
+			nonCullableChange += ((SkinnedMesh) this).skeleton.numNonCullables;
+			renderableChange += ((SkinnedMesh) this).skeleton.numRenderables + 1;
+		} 
+		else if (this instanceof Mesh || this instanceof MorphingMesh) { renderableChange = 1; }
+
+		if (this.parent != null) 
+		{
+			this.parent.updateNodeCounters(-nonCullableChange, -renderableChange);
+			if (renderableChange != 0) { this.parent.invalidateNode(new boolean[]{true, true}); }
+		}
+
 		this.parent = parent;
+
+		if (parent != null) 
+		{
+			boolean[] dirtyBits = new boolean[2];
+			System.arraycopy(this.dirtyBits, 0, dirtyBits, 0, 2);
+			if (renderableChange != 0) { dirtyBits[0] = true; }
+			if (hasBones) { dirtyBits[1] = true; }
+			parent.updateNodeCounters(nonCullableChange, renderableChange);
+			parent.invalidateNode(dirtyBits);
+		}
+	}
+
+	boolean compareFlags(boolean[] flags) 
+	{
+		if (dirtyBits[0] == flags[0] && dirtyBits[1] == flags[1]) { return true; }
+
+		return false;
+	}
+
+	void invalidateNode(boolean[] flags) 
+	{
+		Node node = this;
+		while (node != null && !compareFlags(flags)) 
+		{
+			System.arraycopy(flags, 0, dirtyBits, 0, 2);
+			node = node.parent;
+		}
+	}
+
+	boolean validate(boolean[] state, int scope) 
+	{
+		if (dirtyBits != null && parent != null) { parent.invalidateNode(dirtyBits); }
+		dirtyBits[0] = false;
+		dirtyBits[1] = false;
+		return true;
+	}
+
+	void updateNodeCounters(int nonCullableChange, int renderableChange) 
+	{
+		boolean hasRenderables = (renderableChange > 0);
+		Node node = this;
+		while (node != null) 
+		{
+			if (node instanceof Group || node instanceof World) 
+			{
+				((Group) node).numNonCullables += nonCullableChange;
+				((Group) node).numRenderables += renderableChange;
+				hasRenderables = ((Group) node).numRenderables > 0;
+			}
+			node.hasRenderables = hasRenderables;
+			node = node.parent;
+		}
 	}
 
 	/* Mostly used so we can find whether a child node*/
@@ -226,7 +423,7 @@ public abstract class Node extends Transformable
 	@Override
 	void updateProperty(int property, float[] value) 
 	{
-		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating Node property");
+		Mobile.log(Mobile.LOG_WARNING, Node.class.getPackage().getName() + "." + Node.class.getSimpleName() + ": " + "AnimTrack updating Node property");
 		switch (property) 
 		{
 			case AnimationTrack.ALPHA:
@@ -255,5 +452,33 @@ public abstract class Node extends Transformable
 			default:
 				return super.animTrackCompatible(track);
 		}
+	}
+
+	float[] setQuatRotation(float[] srcAxis, float[] targetAxis) {
+		float[] rot = new float[4];
+		float[] cross = new float[3];
+		float dot = srcAxis[0] * targetAxis[0] + srcAxis[1] * targetAxis[1] + srcAxis[2] * targetAxis[2];
+	
+		cross[0] = srcAxis[1] * targetAxis[2] - srcAxis[2] * targetAxis[1];
+		cross[1] = srcAxis[2] * targetAxis[0] - srcAxis[0] * targetAxis[2];
+		cross[2] = srcAxis[0] * targetAxis[1] - srcAxis[1] * targetAxis[0];
+	
+		float angle = (float) Math.acos(dot);
+		float sinHalfAngle = (float) Math.sin(angle / 2);
+	
+		rot[0] = cross[0] * sinHalfAngle; // x
+		rot[1] = cross[1] * sinHalfAngle; // y
+		rot[2] = cross[2] * sinHalfAngle; // z
+		rot[3] = (float) Math.cos(angle / 2); // w
+	
+		return rot;
+	}
+
+	void mulQuat(float[] q1, float[] q2, float[] result) {
+		// Assuming q1 and q2 are the quaternions to multiply, and result is where the output will be stored
+		result[0] = q1[3] * q2[0] + q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1]; // x
+		result[1] = q1[3] * q2[1] + q1[1] * q2[3] + q1[2] * q2[0] - q1[0] * q2[2]; // y
+		result[2] = q1[3] * q2[2] + q1[2] * q2[3] + q1[0] * q2[1] - q1[1] * q2[0]; // z
+		result[3] = q1[3] * q2[3] - q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2]; // w
 	}
 }

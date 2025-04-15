@@ -91,7 +91,8 @@ public class KeyframeSequence extends Object3D
 		dirty = true;
 	}
 
-	Object3D duplicateImpl() {
+	Object3D duplicateImpl() 
+	{
 		KeyframeSequence copy = new KeyframeSequence(keyframes, componentCount, intType);
 		copy.repeat = repeat;
 		copy.duration = duration;
@@ -103,31 +104,29 @@ public class KeyframeSequence extends Object3D
 		//copy.probablyNext = probablyNext;
 
 		copy.keyFrames = new float[keyFrames.length][keyFrames[0].length];
-		for (int i = 0; i < keyFrames.length; i++)
-			System.arraycopy(keyFrames[i], 0, copy.keyFrames[i], 0, keyFrames[i].length);
+		for (int i = 0; i < keyFrames.length; i++) { System.arraycopy(keyFrames[i], 0, copy.keyFrames[i], 0, keyFrames[i].length); }
+
 		copy.keyFrameTimes = new int[keyFrameTimes.length];
 		System.arraycopy(keyFrameTimes, 0, copy.keyFrameTimes, 0, keyFrameTimes.length);
 
-		if (!dirty) {
+		if (!dirty) 
+		{
 			copy.dirty = false;
-			if (inTangents != null) {
+			if (inTangents != null) 
+			{
 				copy.inTangents = new float[inTangents.length][inTangents[0].length];
-				for (int i = 0; i < inTangents.length; i++)
-					System.arraycopy(inTangents[i], 0, copy.inTangents[i], 0, inTangents[i].length);
+				for (int i = 0; i < inTangents.length; i++) { System.arraycopy(inTangents[i], 0, copy.inTangents[i], 0, inTangents[i].length); }
 				copy.outTangents = new float[outTangents.length][outTangents[0].length];
-				for (int i = 0; i < outTangents.length; i++)
-					System.arraycopy(outTangents[i], 0, copy.outTangents[i], 0, inTangents[i].length);
+				for (int i = 0; i < outTangents.length; i++) { System.arraycopy(outTangents[i], 0, copy.outTangents[i], 0, inTangents[i].length); }
 			}
-			if (a != null) {
+			if (a != null) 
+			{
 				copy.a = new float[a.length][4];
-				for (int i = 0; i < a.length; i++)
-					copy.a[i] = a[i];
+				for (int i = 0; i < a.length; i++) { copy.a[i] = a[i]; }
 				copy.b = new float[b.length][4];
-				for (int i = 0; i < b.length; i++)
-					copy.b[i] = b[i];
+				for (int i = 0; i < b.length; i++) { copy.b[i] = b[i]; }
 			}
-		} else
-			copy.dirty = true;
+		} else { copy.dirty = true; }
 		return copy;
 	}
 
@@ -138,22 +137,16 @@ public class KeyframeSequence extends Object3D
 
 	public int previousKeyframeIndex(int ind) 
 	{
-		if (ind == rangeFirst)
-			return rangeLast;
-		else if (ind == 0)
-			return keyframes - 1;
-		else
-			return ind - 1;
+		if (ind == rangeFirst) { return rangeLast; }
+		else if (ind == 0) { return keyframes - 1; }
+		else { return ind - 1; }
 	}
 
 	public int nextKeyframeIndex(int ind) 
 	{
-		if (ind == rangeLast)
-			return rangeFirst;
-		else if (ind == (keyframes - 1))
-			return 0;
-		else
-			return (ind + 1);
+		if (ind == rangeLast) { return rangeFirst; }
+		else if (ind == (keyframes - 1)) { return 0; }
+		else { return (ind + 1); }
 	}
 
 	public float[] keyframeBefore(int idx) { return keyframeAt(previousKeyframeIndex(idx)); }
@@ -162,16 +155,14 @@ public class KeyframeSequence extends Object3D
 
 	public int timeDelta(int ind) 
 	{
-		if (ind == rangeLast)
-			return (duration - keyFrameTimes[rangeLast]) + keyFrameTimes[rangeFirst];
+		if (ind == rangeLast) { return (duration - keyFrameTimes[rangeLast]) + keyFrameTimes[rangeFirst]; }
 
 		return keyFrameTimes[nextKeyframeIndex(ind)] - keyFrameTimes[ind];
 	}
 
 	public float incomingTangentScale(int ind) 
 	{
-		if (repeat != LOOP && (ind == rangeFirst || ind == rangeLast))
-			return 0;
+		if (repeat != LOOP && (ind == rangeFirst || ind == rangeLast)) { return 0; }
 		else 
 		{
 			int prevind = previousKeyframeIndex(ind);
@@ -181,8 +172,7 @@ public class KeyframeSequence extends Object3D
 
 	public float outgoingTangentScale(int ind) 
 	{
-		if (repeat != LOOP && (ind == rangeFirst || ind == rangeLast))
-			return 0;
+		if (repeat != LOOP && (ind == rangeFirst || ind == rangeLast)) { return 0; }
 		else 
 		{
 			int prevind = previousKeyframeIndex(ind);
@@ -192,15 +182,13 @@ public class KeyframeSequence extends Object3D
 
 	public float[] tangentTo(int idx) 
 	{
-		if (inTangents == null)
-			throw new NullPointerException("Cannot find tangent to keyframe if tangents are null");
+		if (inTangents == null) { throw new NullPointerException("Cannot find tangent to keyframe if tangents are null"); }
 		return inTangents[idx];
 	}
 
 	public float[] tangentFrom(int idx) 
 	{
-		if (outTangents == null)
-			throw new NullPointerException("Cannot find tangent from keyframe if tangents are null");
+		if (outTangents == null) { throw new NullPointerException("Cannot find tangent from keyframe if tangents are null"); }
 		return outTangents[idx];
 	}
 
@@ -211,7 +199,8 @@ public class KeyframeSequence extends Object3D
 			if (intType == SPLINE) 
 			{
 				int kf = rangeFirst;
-				do {
+				do 
+				{
 					float[] prev = keyframeBefore(kf);
 					float[] next = keyframeAfter(kf);
 					float sIn = incomingTangentScale(kf);
@@ -219,7 +208,8 @@ public class KeyframeSequence extends Object3D
 					float[] in = tangentTo(kf);
 					float[] out = tangentFrom(kf);
 
-					for (int i = 0; i < componentCount; i++) {
+					for (int i = 0; i < componentCount; i++) 
+					{
 						in[i] = ((0.5f * ((next[i] - prev[i]))) * sIn);
 						out[i] = ((0.5f * ((next[i] - prev[i]))) * sOut);
 					}
@@ -238,7 +228,8 @@ public class KeyframeSequence extends Object3D
 				float[] tempv = new float[3];
 				float[] cfd = new float[3];
 				float[] tangent = new float[3];
-				do {
+				do 
+				{
 					prev = keyframeBefore(kf);
 					start = keyframeAt(kf);
 					end = keyframeAfter(kf);
@@ -287,44 +278,36 @@ public class KeyframeSequence extends Object3D
 
 		if (repeat == LOOP) 
 		{
-			if (time < 0)
-				time = (time % duration) + duration;
-			else
-				time = time % duration;
+			if (time < 0) { time = (time % duration) + duration; }
+			else { time = time % duration; }
 
-			if (time < keyFrameTimes[rangeFirst])
-				time += duration;
+			if (time < keyFrameTimes[rangeFirst]) { time += duration; }
 		} 
 		else 
 		{
 			if (time < keyFrameTimes[rangeFirst]) 
 			{
 				float[] value = keyframeAt(rangeFirst);
-				for (int i = 0; i < componentCount; i++)
-					sample[i] = value[i];
+				for (int i = 0; i < componentCount; i++) { sample[i] = value[i]; }
 				return (keyFrameTimes[rangeFirst] - time);
 			}
 			else if (time >= keyFrameTimes[rangeLast]) 
 			{
 				float[] value = keyframeAt(rangeLast);
-				for (int i = 0; i < componentCount; i++)
-					sample[i] = value[i];
+				for (int i = 0; i < componentCount; i++) { sample[i] = value[i]; }
 				return 0x7FFFFFFF;
 			}
 		}
 
 		int start = nextKeyframe;
-		if (keyFrameTimes[start] > time)
-			start = rangeFirst;
-		while (start != rangeLast && keyFrameTimes[nextKeyframeIndex(start)] <= time)
-			start = nextKeyframeIndex(start);
+		if (keyFrameTimes[start] > time) { start = rangeFirst; }
+		while (start != rangeLast && keyFrameTimes[nextKeyframeIndex(start)] <= time) { start = nextKeyframeIndex(start); }
 		nextKeyframe = start;
 
 		if (time == keyFrameTimes[start] || intType == STEP) 
 		{
 			float[] value = keyframeAt(start);
-			for (int i = 0; i < componentCount; i++)
-				sample[i] = value[i];
+			for (int i = 0; i < componentCount; i++) { sample[i] = value[i]; }
 			return (intType == STEP) ? (timeDelta(start) - (time - keyFrameTimes[start])) : 1;
 		}
 
@@ -353,8 +336,7 @@ public class KeyframeSequence extends Object3D
 				M3GMath.lerpVec3(componentCount, sample, s, Start, End);
 				break;
 			case SLERP:
-				if (componentCount != 4)
-					throw new IllegalStateException();
+				if (componentCount != 4) { throw new IllegalStateException(); }
 				q0 = new float[4];
 				q1 = new float[4];
 				sampl = new float[4];
@@ -389,8 +371,7 @@ public class KeyframeSequence extends Object3D
 				s2 = s * s;
 				s3 = s2 * s;
 
-				for (int i = 0; i < componentCount; i++)
-					sample[i] = (Start[i] * (((s3 * 2) - (3.f * s2)) + 1.f) + (End[i] * ((3.f * s2) - (s3 * 2)) + (tStart[i] * ((s3 - (s2 * 2)) + s) + (tEnd[i] * (s3 - s2)))));
+				for (int i = 0; i < componentCount; i++) { sample[i] = (Start[i] * (((s3 * 2) - (3.f * s2)) + 1.f) + (End[i] * ((3.f * s2) - (s3 * 2)) + (tStart[i] * ((s3 - (s2 * 2)) + s) + (tEnd[i] * (s3 - s2))))); }
 				break;
 			case SQUAD:
 				if (componentCount != 4)
@@ -449,17 +430,11 @@ public class KeyframeSequence extends Object3D
 
 	public int getKeyframe(int index, float[] value) 
 	{ 
-		if ((index < 0) || (index >= keyframes)) {
-			throw new IndexOutOfBoundsException();
-		}
+		if ((index < 0) || (index >= keyframes)) { throw new IndexOutOfBoundsException(); }
 
-		if ((value != null) && (value.length < componentCount)) {
-			throw new IllegalArgumentException();
-		}
+		if ((value != null) && (value.length < componentCount)) { throw new IllegalArgumentException(); }
 
-		if (value != null) {
-			System.arraycopy(keyFrames[index], 0, value, 0, componentCount);
-		}
+		if (value != null) { System.arraycopy(keyFrames[index], 0, value, 0, componentCount); }
 
 		return keyFrameTimes[index];
 	}
@@ -480,22 +455,14 @@ public class KeyframeSequence extends Object3D
 
 	public void setKeyframe(int index, int time, float[] value) 
 	{ 
-		if (value == null) 
-		{
-			throw new NullPointerException("Keyframe value vector must not be null");
-		}
-		if ((index < 0) || (index >= keyframes)) 
-		{
-			throw new IndexOutOfBoundsException();
-		}
-		if ((value.length < componentCount) || (time < 0)) 
-		{
-			throw new IllegalArgumentException();
-		}
+		if (value == null) { throw new NullPointerException("Keyframe value vector must not be null"); }
+		if ((index < 0) || (index >= keyframes))  { throw new IndexOutOfBoundsException(); }
+		if ((value.length < componentCount) || (time < 0)) { throw new IllegalArgumentException(); }
 
 		System.arraycopy(value, 0, keyFrames[index], 0, componentCount);
 		keyFrameTimes[index] = time;
-		if (intType == SLERP || intType == SQUAD) {
+		if (intType == SLERP || intType == SQUAD) 
+		{
 			float[] q = new float[4];
 			float[] kf = keyframeAt(index);
 			q = kf;
