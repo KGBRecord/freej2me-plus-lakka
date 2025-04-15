@@ -108,6 +108,7 @@ public class Camera extends Node
 		this.projMatrix = null;
 		this.projMode = PARALLEL;
 		this.params = new float[] { fovy, aspectRatio, near, far };
+		computeMatrix();
 	}
 
 	public void setPerspective(float fovy, float aspectRatio, float near, float far) 
@@ -119,48 +120,51 @@ public class Camera extends Node
 		/* Clears the Projection Matrix (it has to be computed again), sets the mode to PERSPECTIVE projection, and sets the camera parameters. */
 		this.projMatrix = null;
 		this.projMode = PERSPECTIVE;
-		this.params = new float[] {
-			fovy, aspectRatio, near, far
-		};
+		this.params = new float[] { fovy, aspectRatio, near, far };
+		computeMatrix();
 	}
 
 	private void computeMatrix()
 	{
-		float fovy = this.params[0];
-		float aspectRatio = this.params[1];
-		float near = this.params[2];
-		float far = this.params[3];
-
-		float h, w, d, b;
-
-		if (this.projMode == PARALLEL) /* If it's parallel, calculate the matrix based on setParallel. */
+		if (this.projMode != GENERIC) 
 		{
-			h = fovy;
-			w = aspectRatio * h;
-			d = Math.abs(far - near);
-			b = near + far;
+			float fovy = this.params[0];
+			float aspectRatio = this.params[1];
+			float near = this.params[2];
+			float far = this.params[3];
 
-			this.projMatrix = new float[] 
-			{
-				2/w,  0 ,   0 ,   0 ,
-				 0 , 2/h,   0 ,   0 ,
-				 0 ,  0 , -2/d, -b/d,
-				 0 ,  0 ,   0 ,   1
-			};
-		} else if (this.projMode == PERSPECTIVE) /* If it's perspective, calculate the matrix based on setPerspective. */
-		{
-			h = (float) Math.tan(Math.toRadians(fovy)/2f);
-			w = aspectRatio * h;
-			d = Math.abs(far - near);
-			b = near + far;
+			float h, w, d, b;
 
-			this.projMatrix = new float[] 
+			if (this.projMode == PARALLEL) /* If it's parallel, calculate the matrix based on setParallel. */
 			{
-				1/w,  0 ,   0 ,       0      ,
-				 0 , 1/h,   0 ,       0      ,
-				 0 ,  0 , -b/d, -2*near*far/d,
-				 0 ,  0 ,  -1 ,       0
-			};
+				h = fovy;
+				w = aspectRatio * h;
+				d = Math.abs(far - near);
+				b = near + far;
+
+				this.projMatrix = new float[] 
+				{
+					2/w, 0 ,   0 ,   0  ,
+					0 , 2/h,   0 ,   0  ,
+					0 ,  0 , -2/d, -b/d ,
+					0 ,  0 ,   0 ,   1
+				};
+			} 
+			else if (this.projMode == PERSPECTIVE) /* If it's perspective, calculate the matrix based on setPerspective. */
+			{
+				h = (float) Math.tan(Math.toRadians(fovy)/2f);
+				w = aspectRatio * h;
+				d = Math.abs(far - near);
+				b = near + far;
+
+				this.projMatrix = new float[] 
+				{
+					1/w, 0 ,   0 ,       0      ,
+					0 , 1/h,   0 ,       0      ,
+					0 ,  0 , -b/d, -2*near*far/d,
+					0 ,  0 ,  -1 ,       0
+				};
+			}
 		}
 	}
 
