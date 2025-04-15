@@ -82,6 +82,40 @@ public class Graphics3D
 	private ArrayList<Light> currLights;
 	private ArrayList<Transform> currLightTrans;
 
+	// Reusable rendering variables
+	int[] rasterData;
+	int canvasWidth, canvasHeight;
+	
+	// Untextured polygon variables
+	Color colorOrig;
+	GradientPaint gradient;
+
+	final int[] coXr = new int[3];
+	final int[] coYr = new int[3]; 
+
+	byte[][] color_vertex = new byte[3][4]; 
+	
+	Color[] colors = new Color[3];
+
+	// Textured polygon variables
+	final float[] coX = new float[3];
+	final float[] coY = new float[3];
+	final float[] coZ = new float[3];
+	final float[] coS = new float[3];
+	final float[] coT = new float[3];
+
+	final float[] xOrdered = new float[3];
+	final float[] yOrdered = new float[3];
+	final float[] zOrdered = new float[3];
+	final float[] sOrdered = new float[3];
+	final float[] tOrdered = new float[3];
+
+	float xTop, yTop, zTop, sTop, tTop;
+	float xMidL, yMid, zMidL, sMidL, tMidL;
+	float xBot, yBot, zBot, sBot, tBot;
+
+	float rHorizon, xMidR, zMidR, sMidR, tMidR;
+
 
 	public Graphics3D()
 	{
@@ -89,8 +123,8 @@ public class Graphics3D
 		 * The default depth range used is that of window coordinates, so 0 to near, and 1 to far
 		 * JSR-184 specifies that Normalized Device Coordinates (NDC) can also be used, which ranges from -1 to 1.
 		 */
-		this.near = 0;
-		this.far = 1;
+		this.near = 0f;
+		this.far = 1f;
 		this.currCam = null;
 		this.currCamTrans = null;
 		this.currCamTransInv = null;
@@ -151,11 +185,14 @@ public class Graphics3D
 			//
 			// I assume it serves the same purpose and will work as expected.
 
-			PlatformGraphics grp = (PlatformGraphics) target;
-			this.viewx = grp.getClipX();
-			this.viewy = grp.getClipY();
-			this.vieww = grp.getClipWidth();
-			this.viewh = grp.getClipHeight();
+			PlatformGraphics pgrp = (PlatformGraphics) target;
+			this.viewx = pgrp.getClipX();
+			this.viewy = pgrp.getClipY();
+			this.vieww = pgrp.getClipWidth();
+			this.viewh = pgrp.getClipHeight();
+			rasterData = ((DataBufferInt) pgrp.getCanvas().getRaster().getDataBuffer()).getData();
+			canvasWidth = pgrp.getCanvas().getWidth();
+			canvasHeight = pgrp.getCanvas().getHeight();
 		} else 
 		{
 			/* If it is neither of those, throw an IllegalArgumentException as per JSR-184. */ 
@@ -173,6 +210,7 @@ public class Graphics3D
 
 		this.target = target;
 		this.depthBuffer = new float[this.vieww * this.viewh];
+		Arrays.fill(this.depthBuffer, this.far);
 		this.depthEnabled = depthBuffer;
 		this.hints = hints;
 	}
@@ -233,12 +271,11 @@ public class Graphics3D
 				if(background.getImage() != null) 
 				{
 					Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Clear with Background Image Untested");
-					int[] rasterData = ((DataBufferInt) grp.getCanvas().getRaster().getDataBuffer()).getData();
 					for(; y < h; y++) 
 					{
 						for(; x < w; x++) 
 						{
-							rasterData[y * grp.getCanvas().getWidth() + x] = background.getImage().getConvertedPixel(x, y);
+							rasterData[y * canvasWidth + x] = background.getImage().getConvertedPixel(x, y);
 						}
 					}
 				}
@@ -437,6 +474,8 @@ public class Graphics3D
 		/* Receiving a null transform indicates that the identity matrix must be used. */
 		if (transform == null) { transform = new Transform(); }
 
+		CompositingMode compositingMode = appearance.getCompositingMode() != null ? appearance.getCompositingMode() : new CompositingMode();
+		
 		// TODO: Shading mode is not implemented
 		int shadingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getShading() : PolygonMode.SHADE_SMOOTH;
 		
@@ -582,34 +621,8 @@ public class Graphics3D
 		{
 			PlatformGraphics pgrp = (PlatformGraphics) this.target;
 			Graphics2D grp = pgrp.getGraphics2D();
-			int[] rasterData = ((DataBufferInt) pgrp.getCanvas().getRaster().getDataBuffer()).getData();
 
-			Color colorOrig = grp.getColor();
-
-			final float[] vertexA = new float[3];
-			final float[] vertexB = new float[3];
-			final float[] vertexC = new float[3];
-			final float[] edge1 = new float[3];
-			final float[] edge2 = new float[3];
-
-			// Collect vertex attributes
-			float[] coX = new float[3];
-			float[] coY = new float[3];
-			float[] coZ = new float[3];
-			float[] coS = new float[3];
-			float[] coT = new float[3];
-
-			float[] xOrdered = new float[3];
-			float[] yOrdered = new float[3];
-			float[] zOrdered = new float[3];
-			float[] sOrdered = new float[3];
-			float[] tOrdered = new float[3];
-
-			float xTop, yTop, zTop, sTop, tTop;
-			float xMidL, yMid, zMidL, sMidL, tMidL;
-			float xBot, yBot, zBot, sBot, tBot;
-
-			float rHorizon, xMidR, zMidR, sMidR, tMidR;
+			colorOrig = grp.getColor();
 
 			for (int tri_id = 0; tri_id < trisScreen.length; tri_id++)
 			{
@@ -658,21 +671,15 @@ public class Graphics3D
 				}
 				
 
-
 				if (tex == null || texCoords == null) // If there's no texture coords or a texture image, we should try rendering with vertex colors.
 				{
-					int[] coXr = new int[] 
-					{
-						Math.round(trisScreen[tri_id].xA()),
-						Math.round(trisScreen[tri_id].xB()),
-						Math.round(trisScreen[tri_id].xC())
-					};
-					int[] coYr = new int[] 
-					{
-						Math.round(trisScreen[tri_id].yA()),
-						Math.round(trisScreen[tri_id].yB()),
-						Math.round(trisScreen[tri_id].yC())
-					};
+					coXr[0] = Math.round(trisScreen[tri_id].xA());
+					coXr[1] = Math.round(trisScreen[tri_id].xB());
+					coXr[2] = Math.round(trisScreen[tri_id].xC());
+
+					coYr[0] = Math.round(trisScreen[tri_id].yA());
+					coYr[1] = Math.round(trisScreen[tri_id].yB());
+					coYr[2] = Math.round(trisScreen[tri_id].yC());
 					
 					grp.translate(viewx, viewy);
 					if(vertices.getColors() == null) // If there's no vertex colors, we have to render with the VertexBuffer's default color.
@@ -685,12 +692,6 @@ public class Graphics3D
 					} 
 					else // If we have vertex colors, good. Read them to color up the triangles properly.
 					{
-						GradientPaint gradient;
-
-						byte[][] color_vertex = new byte[3][4]; 
-
-						Color[] colors = new Color[3];
-					
 						if(vertColors.getComponentCount() == 3)  // If 3 components, RGB
 						{
 							for (int i = 0; i < 3; i++) // Run for each vertex of the triangle
@@ -872,8 +873,8 @@ public class Graphics3D
 						for (int x = ixL; x < ixR; x++) 
 						{
 							// Check the current pixel's x and y values against the viewport bounds and skip drawing if it's out of bounds
-							if(x+viewx < 0 || x+viewx > vieww+viewx || x+viewx > pgrp.getCanvas().getWidth())  { continue; }
-							if(y+viewy < 0 || y+viewy > viewh+viewh || y+viewy > pgrp.getCanvas().getHeight()) { continue; }
+							if(x+viewx < 0 || x+viewx > vieww+viewx || x+viewx > canvasWidth)  { continue; }
+							if(y+viewy < 0 || y+viewy > viewh+viewh || y+viewy > canvasHeight) { continue; }
 
 							try 
 							{
@@ -882,7 +883,7 @@ public class Graphics3D
 								float z = zL + drawX * (zR - zL);
 								
 								// Only depth test if the compositingMode has the feature enabled. If compositingMode is not set, check if this target has depthBuffer enabled
-								if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthTestEnabled() == true)) && isDepthBufferEnabled()) 
+								if(compositingMode.isDepthTestEnabled() && isDepthBufferEnabled())
 								{
 									// Depth testing and depth buffer updates don't need to match against the pixel's translated viewport coordinates, if they are translated
 									if (this.depthBuffer[this.vieww * y + x] < z) { continue; } // Skip if this pixel is not visible
@@ -895,25 +896,21 @@ public class Graphics3D
 								// Extract the alpha channel from the texture pixel
 								int alpha = (texPixel >> 24) & 0xFF; // Assuming ARGB format
 
-								if(appearance.getCompositingMode() != null) // Some games don't set up a compositingMode, so check it before using its threshold
-								{
-									if (alpha < (int) (appearance.getCompositingMode().getAlphaThreshold() * 255)) { continue; } // Skip transparent pixels below the alpha threshold
-								}
-								else 
-								{
-									if (alpha == 0) { continue; }
-								}
+								if (alpha < (int) (compositingMode.getAlphaThreshold() * 255)) { continue; } // Skip transparent pixels below the alpha threshold
 
 								// Blend the pixel with the background
-								int backgroundPixel = rasterData[(y+viewy) * pgrp.getCanvas().getWidth() + (x+viewx)];
+								int backgroundPixel = rasterData[(y+viewy) * canvasWidth + (x+viewx)];
 								int blendedPixel = texPixel;
 
 								// To blend the fog value here, we have to take the current pixel's z value into consideration
 								if(fog != null) 
 								{
+									float nearDistance = Math.max(fog.getNearDistance(), getDepthRangeNear());
+									float farDistance = Math.min(fog.getFarDistance(), getDepthRangeFar());
+
 									if (fog.getMode() == Fog.LINEAR) 
 									{
-										fogFactor[0] = Math.max(0, Math.min(1, (fog.getFarDistance() - z) / (fog.getFarDistance() - fog.getNearDistance())));
+										fogFactor[0] = Math.max(0, Math.min(1, (farDistance - z) / (farDistance - nearDistance)));
 									} 
 									else 
 									{
@@ -925,19 +922,12 @@ public class Graphics3D
 								}
 
 								// Handle compositing mode AFTER the fog calculation, otherwise alpha values won't be correct
-								if (appearance.getCompositingMode() != null) // Blend the background with the texture using compositing mode's blend
-								{
-									blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, appearance.getCompositingMode().getBlending());
-								} 
-								else // If compositingMode is absent, just use the texture's blend mode for blending
-								{
-									blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, tex.getBlending());
-								}
+								blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, compositingMode.getBlending());
 
-								rasterData[(y+viewy) * pgrp.getCanvas().getWidth() + (x+viewx)] = blendedPixel;
+								rasterData[(y+viewy) * canvasWidth + (x+viewx)] = blendedPixel;
 
 								// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
-								if((appearance.getCompositingMode() == null || (appearance.getCompositingMode() != null && appearance.getCompositingMode().isDepthWriteEnabled())) && isDepthBufferEnabled()) 
+								if(compositingMode.isDepthWriteEnabled() && isDepthBufferEnabled()) 
 								{ 
 									this.depthBuffer[this.vieww * y + x] = z; 
 								}
@@ -999,7 +989,11 @@ public class Graphics3D
 	{
 		/* As per JSR-184, throw IllegalArgumentException if the received near and/or far planes have unsupported values. */
 		if (near < 0 || far < 0 || 1 < near || 1 < far) { throw new IllegalArgumentException("The requested Depth Range values are invalid."); }
-		else { this.near=near; this.far=far; }	
+		else 
+		{ 
+			this.near=near; this.far=far;
+			Arrays.fill(this.depthBuffer, this.far);
+		}	
 	}
 
 	public void setLight(int index, Light light, Transform transform)
