@@ -117,7 +117,7 @@ public class Texture2D extends Transformable
 			func != FUNC_DECAL &&
 			func != FUNC_BLEND &&
 			func != FUNC_ADD)
-			throw new java.lang.IllegalArgumentException("Invalid texture blending mode");
+			{ throw new java.lang.IllegalArgumentException("Invalid texture blending mode"); }
 
 		this.blending = func;
 	}
@@ -129,7 +129,7 @@ public class Texture2D extends Transformable
 			 levelFilter != FILTER_LINEAR) ||
 			(imageFilter != FILTER_NEAREST &&
 			 imageFilter != FILTER_LINEAR))
-			throw new java.lang.IllegalArgumentException("Invalid texture filter mode");
+			{ throw new java.lang.IllegalArgumentException("Invalid texture filter mode"); }
 
 		this.levelFilter = levelFilter;
 		this.imageFilter = imageFilter;
@@ -141,9 +141,9 @@ public class Texture2D extends Transformable
 			{ throw new java.lang.NullPointerException("Cannot set texture as null image."); }
 		if (image.getWidth() > Graphics3D.MAX_TEXTURE_DIMENSION ||
 			image.getHeight() > Graphics3D.MAX_TEXTURE_DIMENSION ||
-			!isPositivePowerOfTwo(image.getWidth()) ||
-			!isPositivePowerOfTwo(image.getHeight()))
-			throw new java.lang.IllegalArgumentException("Invalid texture size");
+			!isPowerOfTwo(image.getWidth()) ||
+			!isPowerOfTwo(image.getHeight()))
+			{ throw new java.lang.IllegalArgumentException("Invalid texture size"); }
 
 		this.texImage = image;
 	}
@@ -152,18 +152,13 @@ public class Texture2D extends Transformable
 	{
 		if ((wrapS != WRAP_CLAMP && wrapS != WRAP_REPEAT) ||
 			(wrapT != WRAP_CLAMP && wrapT != WRAP_REPEAT))
-			throw new java.lang.IllegalArgumentException("Invalid texture wrap mode");
+			{ throw new java.lang.IllegalArgumentException("Invalid texture wrap mode"); }
 
 		this.wraps = wrapS;
 		this.wrapt = wrapT;
 	}
 
-	private static boolean isPositivePowerOfTwo(int value)
-	{
-		int log2v = (int) Math.round(Math.log(value) / Math.log(2));
-		int pow2v = (int) Math.round(Math.pow(2, log2v));
-		return value == pow2v && log2v >= 0;
-	}
+	private static boolean isPowerOfTwo(int value) { return ((value & (value-1)) == 0); }
 
 	@Override
 	void updateProperty(int property, float[] value) 
