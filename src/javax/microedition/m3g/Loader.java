@@ -34,6 +34,7 @@ public class Loader
 	private DataInputStream dis;
 	private Vector<Object3D> objs;
 	private String resName;
+	private static String resDir;
 	private int bytesRead = 0;
 
 	private static final byte[] M3G_FILE_IDENTIFIER = { -85, 74, 83, 82, 49, 56, 52, -69, 13, 10, 26, 10 };
@@ -64,6 +65,7 @@ public class Loader
 		try { return new Loader(data, offset).load(); } 
 		catch (Exception e) 
 		{
+			Mobile.log(Mobile.LOG_ERROR, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loader(byte[], int) could not load data.");
 			e.printStackTrace();
 			return null;
 		}
@@ -75,12 +77,14 @@ public class Loader
 		if (name.startsWith("/")) { is = Mobile.getResourceAsStream(Loader.class, name); } 
 		else 
 		{
-			/* TODO */
-			is = null;
+			resDir.concat(name); // resDir will become a directory again down below if a relative path is passed here
+			Mobile.log(Mobile.LOG_WARNING, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loader(String) relative path untested. Trying Path: " + resDir + ".");
+			is = Mobile.getResourceAsStream(Loader.class, resDir);
 		}
 
 		if (is == null) { throw new IOException("Can't load " + name); }
 		this.resName = name;
+		resDir = name.substring(0, name.lastIndexOf("/") + 1);
 		dis = new DataInputStream(new BufferedInputStream(is));
 	}
 
@@ -89,6 +93,7 @@ public class Loader
 		try { return new Loader(name).load(); } 
 		catch (Exception e) 
 		{
+			Mobile.log(Mobile.LOG_ERROR, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Failed to load() " + name + ".");
 			e.printStackTrace();
 			return null;
 		}
@@ -148,9 +153,8 @@ public class Loader
 				if (type == PNG_IDAT) { break; }
 				dis.skip(length + 4);
 			}
-		}
-		// EOF
-		catch (Exception e) { }
+		} // EOF
+		catch (Exception e) { throw new IOException("M3G Loader: Failed to load PNG Image"); }
 		dis.reset();
 		return buildImage2D(format);
 	}
@@ -170,8 +174,10 @@ public class Loader
 				while (dis.readUnsignedByte() != 0xff);
 				do { marker = dis.readUnsignedByte(); }
 				while (marker == 0xff);
+
 				// Parse marker
-				switch (marker) {
+				switch (marker) 
+				{
 					// 'SOFn' (Start Of Frame n)
 					case 0xC0:
 					case 0xC1:
@@ -186,9 +192,10 @@ public class Loader
 					case 0xCD:
 					case 0xCE:
 					case 0xCF:
-						// Skip length(2), precicion(1), width(2), height(2)
+						// Skip length(2), precision(1), width(2), height(2)
 						dis.skip(JPEG_SOFn_DELTA);
-						switch (dis.readUnsignedByte()) {
+						switch (dis.readUnsignedByte()) 
+						{
 							case 1:
 								format = Image2D.LUMINANCE;
 								break;
@@ -202,9 +209,7 @@ public class Loader
 					// APP0 (0xe0) marker segments and constrains certain parameters in the frame.
 					case 0xe0:
 						int length = dis.readUnsignedShort();
-						if (JPEG_JFIF != dis.readInt()) {
-							throw new IOException("Not a valid JPG file.");
-						}
+						if (JPEG_JFIF != dis.readInt()) { throw new IOException("Not a valid JPG file."); }
 						dis.skip(length - 4 - 2);
 						break;
 					default:
@@ -214,8 +219,7 @@ public class Loader
 				}
 			}
 			while (format == JPEG_INVALID_COLOUR_FORMAT);
-		} catch (Exception e) {
-		}
+		} catch (Exception e) { throw new IOException("M3G Loader: Failed to load JPG image"); }
 		dis.reset();
 		return buildImage2D(format);
 	}
@@ -223,69 +227,64 @@ public class Loader
 	private Object3D[] buildImage2D(int aColourFormat) throws IOException {
 		// Create an image object
 		Image2D i2d;
-		try {
-			i2d = new Image2D(aColourFormat, Image.createImage(dis));
-		} finally {
-			try {
-				dis.close();
-			} catch (Exception e) {
-			}
+		try { i2d = new Image2D(aColourFormat, Image.createImage(dis)); } 
+		finally 
+		{
+			try { dis.close(); } 
+			catch (Exception e) { throw new IOException("M3G Loader: Failed to close Image2D inputStream."); }
 		}
 		return new Object3D[]{i2d};
 	}
 
-	private int getIdentifierType(byte[] aData, int aOffset) {
-		// Try the JPEG/JFIF identifier
-		if (parseIdentifier(aData, aOffset, JPEG_FILE_IDENTIFIER)) {
-			return JPEG_TYPE;
-		}
-		// Try the PNG identifier
-		else if (parseIdentifier(aData, aOffset, PNG_FILE_IDENTIFIER)) {
-			return PNG_TYPE;
-		}
-		// Try the M3G identifier
-		else if (parseIdentifier(aData, aOffset, M3G_FILE_IDENTIFIER)) {
-			return M3G_TYPE;
-		}
+	private int getIdentifierType(byte[] aData, int aOffset) 
+	{
+		if (parseIdentifier(aData, aOffset, JPEG_FILE_IDENTIFIER)) { return JPEG_TYPE; }
+		else if (parseIdentifier(aData, aOffset, PNG_FILE_IDENTIFIER)) { return PNG_TYPE; }
+		else if (parseIdentifier(aData, aOffset, M3G_FILE_IDENTIFIER)) { return M3G_TYPE; }
 		return INVALID_HEADER_TYPE;
 	}
 
-	private boolean parseIdentifier(byte[] aData, int aOffset, byte[] aIdentifier) {
-		if ((aData.length - aOffset) < aIdentifier.length) {
-			return false;
-		}
-		for (int index = 0; index < aIdentifier.length; index++) {
-			if (aData[index + aOffset] != aIdentifier[index]) {
-				return false;
-			}
+	private boolean parseIdentifier(byte[] aData, int aOffset, byte[] aIdentifier) 
+	{
+		if ((aData.length - aOffset) < aIdentifier.length) { return false; }
+
+		for (int index = 0; index < aIdentifier.length; index++)
+		{
+			if (aData[index + aOffset] != aIdentifier[index]) { return false; }
 		}
 		return true;
 	}
 
-	private Loader(byte[] data, Vector<Object3D> objects) {
+	private Loader(byte[] data, Vector<Object3D> objects) 
+	{
 		this.dis = new DataInputStream(new ByteArrayInputStream(data));
 		this.objs = objects;
 	}
 
-	private void loadM3GSectionData() throws IOException {
-		while (dis.available() > 0) {
+	private void loadM3GSectionData() throws IOException 
+	{
+		// We don't really insert a null object at objs when starting and don't increase the index either (getObject() will correct this)
+
+		while (dis.available() > 0) 
+		{
 			int objectType = readByte();
 			int length = readInt();
 			bytesRead = 0;
 
-			Mobile.log(Mobile.LOG_DEBUG, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "objectType: " + objectType);
-			Mobile.log(Mobile.LOG_DEBUG, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "length: " + length);
-
 			dis.mark(Integer.MAX_VALUE);
 
-			if (objectType == 0) { // Header
+			if (objectType == 0) // M3G Header
+			{ 
 				int versionHigh = readByte();
 				int versionLow = readByte();
 				boolean hasExternalReferences = readBoolean();
 				int totalFileSize = readInt();
 				int approximateContentSize = readInt();
 				String authoringField = readString();
-			} else if (objectType == 1) { // AnimationController
+				// We don't really increase the index here either (getObject() will correct this as well)
+			} 
+			else if (objectType == 1) // AnimationController
+			{
 				AnimationController cont = new AnimationController();
 				loadObject3D(cont);
 				float speed = readFloat();
@@ -299,7 +298,9 @@ public class Loader
 				cont.setSpeed(speed, referenceWorldTime);
 				cont.setWeight(weight);
 				objs.addElement(cont);
-			} else if (objectType == 2) { // AnimationTrack
+			} 
+			else if (objectType == 2) // AnimationTrack
+			{
 				loadObject3D(new Group());
 				bytesRead = 0;
 				KeyframeSequence ks = (KeyframeSequence) getObject(readInt());
@@ -310,7 +311,9 @@ public class Loader
 				dis.reset();
 				loadObject3D(track);
 				objs.addElement(track);
-			} else if (objectType == 3) { // Appearance
+			} 
+			else if (objectType == 3) // Appearance
+			{
 				Appearance appearance = new Appearance();
 				loadObject3D(appearance);
 				appearance.setLayer(readByte());
@@ -321,7 +324,9 @@ public class Loader
 				int numTextures = readInt();
 				for (int i = 0; i < numTextures; ++i) { appearance.setTexture(i, (Texture2D) getObject(readInt())); }
 				objs.addElement(appearance);
-			} else if (objectType == 4) { // Background
+			} 
+			else if (objectType == 4) // Background
+			{
 				Background background = new Background();
 				loadObject3D(background);
 				background.setColor(readRGBA());
@@ -337,27 +342,32 @@ public class Loader
 				background.setDepthClearEnable(readBoolean());
 				background.setColorClearEnable(readBoolean());
 				objs.addElement(background); // dummy
-			} else if (objectType == 5) { // Camera
+			} 
+			else if (objectType == 5) // Camera
+			{ 
 				Camera camera = new Camera();
 				loadNode(camera);
 
 				int projectionType = readByte();
-				if (projectionType == Camera.GENERIC) {
+				if (projectionType == Camera.GENERIC) 
+				{
 					Transform t = new Transform();
 					t.set(readMatrix());
 					camera.setGeneric(t);
-				} else {
+				} 
+				else 
+				{
 					float fovy = readFloat();
 					float aspect = readFloat();
 					float near = readFloat();
 					float far = readFloat();
-					if (projectionType == Camera.PARALLEL)
-						camera.setParallel(fovy, aspect, near, far);
-					else
-						camera.setPerspective(fovy, aspect, near, far);
+					if (projectionType == Camera.PARALLEL) { camera.setParallel(fovy, aspect, near, far); }
+					else { camera.setPerspective(fovy, aspect, near, far); }
 				}
 				objs.addElement(camera);
-			} else if (objectType == 6) { // CompositingMode
+			} 
+			else if (objectType == 6) // CompositingMode
+			{ 
 				CompositingMode compositingMode = new CompositingMode();
 				loadObject3D(compositingMode);
 				compositingMode.setDepthTestEnable(readBoolean());
@@ -368,18 +378,19 @@ public class Loader
 				compositingMode.setAlphaThreshold((float) readByte() / 255.0f);
 				compositingMode.setDepthOffset(readFloat(), readFloat());
 				objs.addElement(compositingMode);
-			} else if (objectType == 7) { // Fog
+			} 
+			else if (objectType == 7) // Fog
+			{
 				Fog fog = new Fog();
 				loadObject3D(fog);
 				fog.setColor(readRGB());
 				fog.setMode(readByte());
-				if (fog.getMode() == Fog.EXPONENTIAL)
-					fog.setDensity(readFloat());
-				else {
-					fog.setLinear(readFloat(), readFloat());
-				}
+				if (fog.getMode() == Fog.EXPONENTIAL) { fog.setDensity(readFloat()); }
+				else { fog.setLinear(readFloat(), readFloat()); }
 				objs.addElement(fog);
-			} else if (objectType == 8) { // PolygonMode
+			} 
+			else if (objectType == 8) // PolygonMode
+			{ 
 				PolygonMode polygonMode = new PolygonMode();
 				loadObject3D(polygonMode);
 				polygonMode.setCulling(readByte());
@@ -389,11 +400,15 @@ public class Loader
 				polygonMode.setLocalCameraLightingEnable(readBoolean());
 				polygonMode.setPerspectiveCorrectionEnable(readBoolean());
 				objs.addElement(polygonMode);
-			} else if (objectType == 9) { // Group
+			} 
+			else if (objectType == 9) // Group
+			{
 				Group group = new Group();
 				loadGroup(group);
 				objs.addElement(group);
-			} else if (objectType == 10) { // Image2D
+			} 
+			else if (objectType == 10) // Image2D
+			{ 
 				Image2D image = null;
 				loadObject3D(new Group()); // dummy
 				bytesRead = 0;
@@ -401,10 +416,12 @@ public class Loader
 				boolean isMutable = readBoolean();
 				int width = readInt();
 				int height = readInt();
-				if (!isMutable) {
+				if (!isMutable) 
+				{
 					int paletteSize = readInt();
 					byte[] palette = null;
-					if (paletteSize > 0) {
+					if (paletteSize > 0) 
+					{
 						palette = new byte[paletteSize];
 						dis.readFully(palette);
 						bytesRead += paletteSize;
@@ -414,64 +431,62 @@ public class Loader
 					byte[] pixel = new byte[pixelSize];
 					dis.readFully(pixel);
 					bytesRead += pixelSize;
-					if (palette != null)
-						image = new Image2D(format, width, height, pixel, palette);
-					else
-						image = new Image2D(format, width, height, pixel);
-				} else
-					image = new Image2D(format, width, height);
+					if (palette != null) { image = new Image2D(format, width, height, pixel, palette); }
+					else { image = new Image2D(format, width, height, pixel); }
+				} 
+				else { image = new Image2D(format, width, height); }
 
 				dis.reset();
 				loadObject3D(image);
 
 				objs.addElement(image);
-			} else if (objectType == 11) { // TriangleStripArray
+			} 
+			else if (objectType == 11) // TriangleStripArray
+			{
 				loadObject3D(new Group()); // dummy
 				bytesRead = 0;
 
 				int encoding = readByte();
 				int firstIndex = 0;
 				int[] indices = null;
-				if (encoding == 0)
-					firstIndex = readInt();
-				else if (encoding == 1)
-					firstIndex = readByte();
-				else if (encoding == 2)
-					firstIndex = readShort();
-				else if (encoding == 128) {
+				if (encoding == 0) { firstIndex = readInt(); }
+				else if (encoding == 1) { firstIndex = readByte(); }
+				else if (encoding == 2) { firstIndex = readShort(); }
+				else if (encoding == 128) 
+				{
 					int numIndices = readInt();
 					indices = new int[numIndices];
-					for (int i = 0; i < numIndices; ++i)
-						indices[i] = readInt();
-				} else if (encoding == 129) {
+					for (int i = 0; i < numIndices; ++i) { indices[i] = readInt(); }
+				} 
+				else if (encoding == 129) 
+				{
 					int numIndices = readInt();
 					indices = new int[numIndices];
-					for (int i = 0; i < numIndices; ++i)
-						indices[i] = readByte();
-				} else if (encoding == 130) {
+					for (int i = 0; i < numIndices; ++i) { indices[i] = readByte(); }
+				} 
+				else if (encoding == 130) 
+				{
 					int numIndices = readInt();
 					indices = new int[numIndices];
-					for (int i = 0; i < numIndices; ++i)
-						indices[i] = readShort();
-					}
+					for (int i = 0; i < numIndices; ++i) { indices[i] = readShort(); }
+				}
 
 				int numStripLengths = readInt();
 				int[] stripLengths = new int[numStripLengths];
-				for (int i = 0; i < numStripLengths; i++)
-					stripLengths[i] = readInt();
+				for (int i = 0; i < numStripLengths; i++) { stripLengths[i] = readInt(); }
 
 				dis.reset();
 
 				TriangleStripArray triStrip = null;
-				if (indices == null)
-					triStrip = new TriangleStripArray(firstIndex, stripLengths);
-				else
-					triStrip = new TriangleStripArray(indices, stripLengths);
+				if (indices == null) { triStrip = new TriangleStripArray(firstIndex, stripLengths); }
+				else { triStrip = new TriangleStripArray(indices, stripLengths); }
 
 				loadObject3D(triStrip);
 
 				objs.addElement(triStrip);
-			} else if (objectType == 12) { // Light
+			} 
+			else if (objectType == 12) // Light
+			{ 
 				Light light = new Light();
 				loadNode(light);
 				float constant = readFloat();
@@ -484,7 +499,9 @@ public class Loader
 				light.setSpotAngle(readFloat());
 				light.setSpotExponent(readFloat());
 				objs.addElement(light);
-			} else if (objectType == 13) { // Material
+			} 
+			else if (objectType == 13) // Material
+			{
 				Material material = new Material();
 				loadObject3D(material);
 				material.setColor(Material.AMBIENT, readRGB());
@@ -494,7 +511,9 @@ public class Loader
 				material.setShininess(readFloat());
 				material.setVertexColorTrackingEnable(readBoolean());
 				objs.addElement(material);
-			} else if (objectType == 14) { // Mesh
+			} 
+			else if (objectType == 14) // Mesh
+			{
 				loadNode(new Group()); // dummy
 				bytesRead = 0;
 
@@ -503,7 +522,8 @@ public class Loader
 
 				IndexBuffer[] submeshes = new IndexBuffer[submeshCount];
 				Appearance[] appearances = new Appearance[submeshCount];
-				for (int i = 0; i < submeshCount; ++i) {
+				for (int i = 0; i < submeshCount; ++i) 
+				{
 					submeshes[i] = (IndexBuffer) getObject(readInt());
 					appearances[i] = (Appearance) getObject(readInt());
 				}
@@ -513,7 +533,9 @@ public class Loader
 				loadNode(mesh);
 
 				objs.addElement(mesh);
-			} else if (objectType == 15) { // MorphingMesh
+			} 
+			else if (objectType == 15) // MorphingMesh
+			{
 				loadNode(new Group());
 				bytesRead = 0;
 				VertexBuffer vb = (VertexBuffer) getObject(readInt());
@@ -521,7 +543,8 @@ public class Loader
 				IndexBuffer[] ib = new IndexBuffer[subMeshCount];
 				Appearance[] ap = new Appearance[subMeshCount];
 
-				for (int i = 0; i < subMeshCount; i++) {
+				for (int i = 0; i < subMeshCount; i++) 
+				{
 					ib[i] = (IndexBuffer) getObject(readInt());
 					ap[i] = (Appearance) getObject(readInt());
 				}
@@ -530,7 +553,8 @@ public class Loader
 				float[] weights = new float[targetCount];
 				VertexBuffer[] targets = new VertexBuffer[targetCount];
 
-				for (int i = 0; i < targetCount; i++) {
+				for (int i = 0; i < targetCount; i++) 
+				{
 					targets[i] = (VertexBuffer) getObject(readInt());
 					weights[i] = readFloat();
 				}
@@ -540,7 +564,9 @@ public class Loader
 				loadNode(mesh);
 
 				objs.addElement(mesh);
-			} else if (objectType == 16) { // SkinnedMesh
+			} 
+			else if (objectType == 16) // SkinnedMesh
+			{ 
 				loadNode(new Group());
 				bytesRead = 0;
 				VertexBuffer vb = (VertexBuffer) getObject(readInt());
@@ -548,7 +574,8 @@ public class Loader
 				IndexBuffer[] ib = new IndexBuffer[subMeshCount];
 				Appearance[] ap = new Appearance[subMeshCount];
 
-				for (int i = 0; i < subMeshCount; i++) {
+				for (int i = 0; i < subMeshCount; i++) 
+				{
 					ib[i] = (IndexBuffer) getObject(readInt());
 					ap[i] = (Appearance) getObject(readInt());
 				}
@@ -558,7 +585,8 @@ public class Loader
 				SkinnedMesh mesh = new SkinnedMesh(vb, ib, ap, skeleton);
 				int transformReferenceCount = readInt();
 
-				for (int i = 0; i < transformReferenceCount; i++) {
+				for (int i = 0; i < transformReferenceCount; i++) 
+				{
 					Node bone = (Node) getObject(readInt());
 					int firstVertex = readInt();
 					int vertexCount = readInt();
@@ -569,7 +597,9 @@ public class Loader
 				dis.reset();
 				loadNode(mesh);
 				objs.addElement(mesh);
-			} else if (objectType == 17) { // Texture2D
+			} 
+			else if (objectType == 17) // Texture2D
+			{
 				loadTransformable(new Group()); // dummy
 				bytesRead = 0;
 				Texture2D texture = new Texture2D((Image2D) getObject(readInt()));
@@ -586,7 +616,9 @@ public class Loader
 				loadTransformable(texture);
 
 				objs.addElement(texture);
-			} else if (objectType == 18) { // Sprite
+			} 
+			else if (objectType == 18) // Sprite3D
+			{
 				loadNode(new Group());
 				bytesRead = 0;
 				Image2D image = (Image2D) getObject(readInt());
@@ -600,7 +632,9 @@ public class Loader
 				dis.reset();
 				loadNode(sprite);
 				objs.addElement(sprite);
-			} else if (objectType == 19) { // KeyframeSequence
+			} 
+			else if (objectType == 19) // KeyframeSequence
+			{
 				loadObject3D(new Group());
 				bytesRead = 0;
 				int interpolation = readByte();
@@ -618,35 +652,39 @@ public class Loader
 				seq.setDuration(duration);
 				seq.setValidRange(rangeFirst, rangeLast);
 				float[] values = new float[components];
-				if (encoding == 0) {
-					for (int i = 0; i < keyFrames; i++) {
+				if (encoding == 0) 
+				{
+					for (int i = 0; i < keyFrames; i++) 
+					{
 						int time = readInt();
 
-						for (int j = 0; j < components; j++) {
-							values[j] = readFloat();
-						}
+						for (int j = 0; j < components; j++) { values[j] = readFloat(); }
 
 						seq.setKeyframe(i, time, values);
 					}
-				} else {
+				} 
+				else 
+				{
 					float[] vectorBiasScale = new float[components * 2];
-					for (int i = 0; i < components; i++) {
-						vectorBiasScale[i] = readFloat();
-					}
+					for (int i = 0; i < components; i++) { vectorBiasScale[i] = readFloat(); }
 
-					for (int i = 0; i < components; i++) {
-						vectorBiasScale[i + components] = readFloat();
-					}
+					for (int i = 0; i < components; i++) { vectorBiasScale[i + components] = readFloat(); }
 
-					for (int i = 0; i < keyFrames; i++) {
+					for (int i = 0; i < keyFrames; i++) 
+					{
 						int time = readInt();
-						if (encoding == 1) {
-							for (int j = 0; j < components; j++) {
+						if (encoding == 1) 
+						{
+							for (int j = 0; j < components; j++) 
+							{
 								int v = readByte();
 								values[j] = vectorBiasScale[j] + ((vectorBiasScale[j + components] * v) / 255.0f);
 							}
-						} else {
-							for (int j = 0; j < components; j++) {
+						} 
+						else 
+						{
+							for (int j = 0; j < components; j++) 
+							{
 								int v = readShort();
 								values[j] = vectorBiasScale[j] + ((vectorBiasScale[j + components] * v) / 65535.0f);
 							}
@@ -657,7 +695,9 @@ public class Loader
 				dis.reset();
 				loadObject3D(seq);
 				objs.addElement(seq);
-			} else if (objectType == 20) { // VertexArray
+			} 
+			else if (objectType == 20) // VertexArray
+			{
 				loadObject3D(new Group()); // dummy
 				bytesRead = 0;
 
@@ -669,27 +709,33 @@ public class Loader
 				VertexArray va = new VertexArray(vertices, components, componentSize);
 				int size = vertices * components;
 
-				if (componentSize == 1) {
+				if (componentSize == 1) 
+				{
 					byte[] values = new byte[size];
-					if (encoding == 0) {
+					if (encoding == 0) 
+					{
 						dis.readFully(values);
 						bytesRead += size;
 					}
 					else {
 						byte last = 0;
-						for (int i = 0; i < size; ++i) {
+						for (int i = 0; i < size; ++i) 
+						{
 							last += readByte();
 							values[i] = last;
 						}
 					}
 					va.set(0, vertices, values);
-				} else {
+				} 
+				else 
+				{
 					short last = 0;
 					short[] values = new short[size];
-					for (int i = 0; i < size; ++i) {
-						if (encoding == 0)
-							values[i] = (short) readShort();
-						else {
+					for (int i = 0; i < size; ++i) 
+					{
+						if (encoding == 0) { values[i] = (short) readShort(); }
+						else 
+						{
 							last += (short) readShort();
 							values[i] = last;
 						}
@@ -701,7 +747,9 @@ public class Loader
 				loadObject3D(va);
 
 				objs.addElement(va);
-			} else if (objectType == 21) { // VertexBuffer
+			} 
+			else if (objectType == 21) // VertexBuffer
+			{
 				VertexBuffer vertices = new VertexBuffer();
 				loadObject3D(vertices);
 
@@ -719,7 +767,8 @@ public class Loader
 				vertices.setColors((VertexArray) getObject(readInt()));
 
 				int texCoordArrayCount = readInt();
-				for (int i = 0; i < texCoordArrayCount; ++i) {
+				for (int i = 0; i < texCoordArrayCount; ++i) 
+				{
 					VertexArray texcoords = (VertexArray) getObject(readInt());
 					bias[0] = readFloat();
 					bias[1] = readFloat();
@@ -729,44 +778,79 @@ public class Loader
 				}
 
 				objs.addElement(vertices);
-			} else if (objectType == 22) { // World
+			} 
+			else if (objectType == 22) // World
+			{
 				World world = new World();
 				loadGroup(world);
 
 				world.setActiveCamera((Camera) getObject(readInt()));
 				world.setBackground((Background) getObject(readInt()));
 				objs.addElement(world);
-			} else if (objectType == 255) { // External resource
+			} 
+			else if (objectType == 255) // External reference
+			{
 				String uri = readString();
 				Object3D[] objArray;
 
-				if (resName != null) {
-					if (uri.charAt(0) == '/')
+				if (resName != null) 
+				{
+					if (uri.charAt(0) == '/')  // It's using absolute path
+					{
+						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G Resource from path " + uri + ".");
 						objArray = Loader.load(uri);
-					else
+					}
+					else // It's using relative path, and since we have the reference name, get the directory from it
+					{
 						objArray = Loader.load(resName.substring(resName.lastIndexOf("/") + 1) + uri);
-				} else {
-					if (uri.charAt(0) == '/')
+						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G Resource from path " + resName.substring(resName.lastIndexOf("/") + 1) + uri + ".");
+					}
+				} 
+				else // If we don't have the reference name
+				{
+					if (uri.charAt(0) == '/')  // It's using absolute path
+					{
+						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G Resource from path " + uri + ".");
 						objArray = Loader.load(uri);
-					else
-						// Assume we're in root
-						objArray = Loader.load("/" + uri);
+					}
+					else // It's using relative path. Use the last path known to resDir (which should be the directory of the current file)
+					{
+						objArray = Loader.load(resDir + uri);
+						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G Resource from path " + resDir + uri + ".");
+						
+						// Assuming the relative path in question doesn't return a valid file, it's possible that this is an absolute path but to a resource at the root of the Jar
+						if(objArray == null) 
+						{
+							objArray = Loader.load("/" + uri);
+							Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Couldn't load M3G Resource from path " + resDir + uri + ". Trying from /" + uri);
+						}
+					}
 				}
 
-				for (int i = 0; i < objArray.length; i++)
-					objs.addElement(objArray[i]);
-			} else {
-				Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Unsupported objectType " + objectType + ".");
-			}
+				//for (int i = 0; i < objArray.length; i++) { objs.addElement(objArray[i]); }
+				if (objArray != null && objArray.length > 0)
+				{
+					for (int i = 0; i < objArray.length; i++)
+					{
+						if(objArray[i] != null) { objs.addElement(objArray[i]); break; } // Add root-level object only at the External reference position
+					}
+				}
+				else
+				{
+					Mobile.log(Mobile.LOG_ERROR, "Failed to load external resource: " + uri);
+					throw new IOException("Could not load external resource: " + uri);
+				}
+			} 
+			else { Mobile.log(Mobile.LOG_WARNING, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Unsupported objectType " + objectType + "."); }
 
 			dis.reset();
-			if (bytesRead != length)
-				Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Length mismatch, expected: " + length + ", bytesRead: " + bytesRead + ", objectType: " + objectType);
+			if (bytesRead != length) { Mobile.log(Mobile.LOG_WARNING, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Length mismatch, expected: " + length + ", bytesRead: " + bytesRead + ", objectType: " + objectType); }
 			dis.skipBytes(length);
 		}
 	}
 
-	private Object3D[] loadM3G() throws IOException {
+	private Object3D[] loadM3G() throws IOException 
+	{
 		objs = new Vector<Object3D>();
 
 		bytesRead = 0;
@@ -789,7 +873,8 @@ public class Loader
 
 		int read = bytesRead + M3G_FILE_IDENTIFIER.length;
 		int size = (dis.available() != 0) ? (dis.available() + bytesRead) : 2048;
-		while (read < totalFileSize) {
+		while (read < totalFileSize) 
+		{
 		//while (dis.available() > 0) {
 			compressionScheme = readByte();
 			totalSectionLength = readInt();
@@ -797,9 +882,9 @@ public class Loader
 
 			byte[] uncompressedData = new byte[uncompressedLength];
 
-			if (compressionScheme == 0) {
-				dis.readFully(uncompressedData);
-			} else if (compressionScheme == 1) {
+			if (compressionScheme == 0) { dis.readFully(uncompressedData); } 
+			else if (compressionScheme == 1) 
+			{
 				int compressedLength = totalSectionLength - 13;
 				byte[] compressedData = new byte[compressedLength];
 				dis.readFully(compressedData);
@@ -807,18 +892,13 @@ public class Loader
 				Inflater decompresser = new Inflater();
 				decompresser.setInput(compressedData, 0, compressedLength);
 				int resultLength = 0;
-				try {
-					resultLength = decompresser.inflate(uncompressedData);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				try { resultLength = decompresser.inflate(uncompressedData); }
+				catch (Exception e) { e.printStackTrace(); }
 				decompresser.end();
 
-				if (resultLength != uncompressedLength)
-					throw new IOException("Unable to decompress data.");
-			} else {
-				throw new IOException("Unknown compression scheme.");
-			}
+				if (resultLength != uncompressedLength) { throw new IOException("Unable to decompress data."); }
+			} 
+			else { throw new IOException("Unknown compression scheme."); }
 
 			checkSum = readInt();
 
@@ -829,37 +909,37 @@ public class Loader
 		dis.close();
 
 		Object3D[] obj = new Object3D[objs.size()];
-		for (int i = 0; i < objs.size(); i++)
-			obj[i] = (Object3D) objs.elementAt(i);
+		for (int i = 0; i < objs.size(); i++) { obj[i] = (Object3D) objs.elementAt(i); }
 		return obj;
 	}
 
 
-	private Object3D[] load() {
-		try {
+	private Object3D[] load() 
+	{
+		try 
+		{
 			// Check header
 			dis.mark(12);
 			byte[] identifier = new byte[12];
 			int read = dis.read(identifier, 0, 12);
 			int type = getIdentifierType(identifier, 0);
 			dis.reset();
-			if (type == M3G_TYPE) {
+			if (type == M3G_TYPE) 
+			{
 				dis.skip(M3G_FILE_IDENTIFIER.length);
 				return loadM3G();
-			} else if (type == PNG_TYPE) {
-				return loadPNG();
-			} else if (type == JPEG_TYPE) {
-				return loadJPEG();
-			}
-		} catch (Exception e) {
-			Mobile.log(Mobile.LOG_ERROR, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Exception: " + e.getMessage());
+			} 
+			else if (type == PNG_TYPE) { return loadPNG(); } 
+			else if (type == JPEG_TYPE) { return loadJPEG(); }
+		} 
+		catch (Exception e) 
+		{
+			Mobile.log(Mobile.LOG_ERROR, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Exception: " + e.getMessage());
 			e.printStackTrace();
 		}
 
 		Object3D[] obj = new Object3D[objs.size()];
-		for (int i = 0; i < objs.size(); i++) {
-			obj[i] = (Object3D) objs.elementAt(i);
-		}
+		for (int i = 0; i < objs.size(); i++) { obj[i] = (Object3D) objs.elementAt(i); }
 		return obj;
 	}
 
@@ -922,45 +1002,45 @@ public class Loader
 		int i = 0;
 		for (int c = readByte(); c != 0; c = readByte()) 
 		{
-			if ((c & 0x80) == 0)
-				result.append((char)(c & 0x00FF));
-			else if ((c & 0xE0) == 0xC0) {
+			if ((c & 0x80) == 0) { result.append((char)(c & 0x00FF)); }
+			else if ((c & 0xE0) == 0xC0) 
+			{
 				int c2 = readByte();
-				if ((c2 & 0xC0) != 0x80)
-					throw new IOException("Invalid UTF-8 string.");
-				else
-					result.append((char)(((c & 0x1F) << 6) | (c2 & 0x3F)));
+				if ((c2 & 0xC0) != 0x80) { throw new IOException("Invalid UTF-8 string."); }
+				else { result.append((char)(((c & 0x1F) << 6) | (c2 & 0x3F))); }
 			}
-			else if ((c & 0xF0) == 0xE0) {
+			else if ((c & 0xF0) == 0xE0) 
+			{
 				int c2 = readByte();
 				int c3 = readByte();
-				if (((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80))
-					throw new IOException("Invalid UTF-8 string.");
-				else
-					result.append((char)(((c & 0x0F) << 12) | ((c2 & 0x3F) <<6) | (c3 & 0x3F)));
+				if (((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80)) { throw new IOException("Invalid UTF-8 string."); }
+				else { result.append((char)(((c & 0x0F) << 12) | ((c2 & 0x3F) <<6) | (c3 & 0x3F))); }
 			}
-			else
-				throw new IOException("Invalid UTF-8 string.");
+			else { throw new IOException("Invalid UTF-8 string."); }
 	    }
 
 		String ret = result.toString();
-		Mobile.log(Mobile.LOG_DEBUG, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "String: " + ret);
-	        return ret;
+		Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "String: " + ret);
+	    return ret;
 	}
 
 	private float[] readMatrix() throws IOException 
 	{
 		float[] m = new float[16];
-		for (int i = 0; i < 16; ++i)
-			m[i] = readFloat();
+		for (int i = 0; i < 16; ++i) { m[i] = readFloat(); }
 		return m;
 	}
 
 	private Object getObject(int index) 
 	{
-		if (index == 0)
-			return null;
-		return objs.elementAt(index - 2);
+		// getObject is pretty much only used to get a reference for the object that's currently at the last index of objs, so we don't need to track each object's index
+		if(index-2 > objs.size()) // Since we don't add objects for indices 0 (null) and 1 (header), index has to be decreased by 2 here.
+		{
+			Mobile.log(Mobile.LOG_ERROR, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "App tried to get and Object3D array that's higher than the currently parsed Object3D's index. Idx:" + index + " maxIdx:" + objs.size());
+			throw new IllegalArgumentException("Cannot get an M3G Object3D index that's higher than the current object's index"); 
+		}
+		if(index == 0 || index == 1) { return null; }
+		else { return objs.elementAt(index-2); }
 	}
 
 	private void loadObject3D(Object3D object) throws IOException 
@@ -968,10 +1048,10 @@ public class Loader
 		object.setUserID(readInt());
 
 		int animationTracks = readInt();
-		for (int i = 0; i < animationTracks; ++i)
-			object.addAnimationTrack((AnimationTrack)getObject(readInt()));
+		for (int i = 0; i < animationTracks; ++i) { object.addAnimationTrack((AnimationTrack)getObject(readInt())); }
 
 		int userParams = readInt();
+
 		if (userParams != 0) 
 		{
 			Hashtable<Integer, byte[]> hashtable = new Hashtable<Integer, byte[]>();
@@ -986,7 +1066,7 @@ public class Loader
 				hashtable.put(parameterID, parameterBytes);
 			}
 			object.setUserObject(hashtable);
-			Mobile.log(Mobile.LOG_DEBUG, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Loaded " + userParams + " user objects");
+			Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loaded " + userParams + " user objects");
 		}
 	}
 
@@ -1017,7 +1097,8 @@ public class Loader
 		}
 	}
 
-	private void loadNode(Node node) throws IOException {
+	private void loadNode(Node node) throws IOException 
+	{
 		loadTransformable(node);
 		node.setRenderingEnable(readBoolean());
 		node.setPickingEnable(readBoolean());
@@ -1034,10 +1115,10 @@ public class Loader
 		}
 	}
 
-	private void loadGroup(Group group) throws IOException {
+	private void loadGroup(Group group) throws IOException 
+	{
 		loadNode(group);
 		int count = readInt();
-		for (int i = 0; i < count; ++i)
-			group.addChild((Node) getObject(readInt()));
+		for (int i = 0; i < count; ++i) { group.addChild((Node) getObject(readInt())); }
 	}
 }
