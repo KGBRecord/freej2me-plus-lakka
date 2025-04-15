@@ -380,7 +380,6 @@ public class Graphics3D
 		//    Mesh, MorphingMesh, SkinnedMesh, VertexBuffer, or IndexBuffer
 		//    throw new java.lang.IllegalStateException();
 
-		// TODO implement Graphics3D.render(Node, Transform)
 		if (node instanceof Mesh) 
 		{
 			Mesh mesh = (Mesh) node;
@@ -388,7 +387,7 @@ public class Graphics3D
 			VertexBuffer vertices = mesh.getVertexBuffer();
 			for (int i = 0; i < subMeshes; i++) 
 			{
-				if (mesh.getAppearance(i) != null) { render(vertices, mesh.getIndexBuffer(i), mesh.getAppearance(i), transform); }
+				if (mesh.getAppearance(i) != null) { render(vertices, mesh.getIndexBuffer(i), mesh.getAppearance(i), transform, node.getScope()); }
 			}
 		}
 		else if (node instanceof Sprite3D) 
@@ -404,10 +403,13 @@ public class Graphics3D
 				{
 					if (child != (Object3D) node) 
 					{
-						Transform t = new Transform();
-						child.getCompositeTransform(t);
-						t.preMultiply(transform);
-						if(child instanceof Sprite3D || child instanceof Mesh || child instanceof Group) { render(child, t); }
+						if(child instanceof Sprite3D || child instanceof Mesh || child instanceof Group) 
+						{
+							Transform t = new Transform();
+							child.getCompositeTransform(t);
+							t.preMultiply(transform);
+							render(child, t); 
+						}
 					}
 					child = child.right;
 				} while (child != ((Group) node).firstChild);
