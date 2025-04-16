@@ -14,24 +14,22 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.siemens.mp.io;
+package javax.microedition.content;
 
-import org.recompile.mobile.Mobile;
-
-public class Connection 
+public interface ContentHandlerServer extends ContentHandler 
 {
-    String connectTo;
-    ConnectionListener listener;
 
-    public Connection(String connectTo) { this.connectTo = connectTo; }
+    public int accessAllowedCount();
 
-    public void send(byte[] data) 
-    { 
-        Mobile.log(Mobile.LOG_WARNING, Connection.class.getPackage().getName() + "." + Connection.class.getSimpleName() + ": " + "send(byte[]) untested");
-        if (listener != null) { listener.receiveData(data); }
-    }
+    public void cancelGetRequest();
 
-    public void setListener(ConnectionListener listener) { this.listener = listener; }
+    public boolean finish(Invocation invocation, int status);
 
-    public ConnectionListener getListener() { return listener; }
+    public String getAccessAllowed(int index);
+
+    public Invocation getRequest(boolean wait);
+
+    public boolean isAccessAllowed(String ID);
+
+    public void setListener(RequestListener listener);
 }

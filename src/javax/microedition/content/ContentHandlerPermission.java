@@ -14,24 +14,23 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.siemens.mp.io;
+package javax.microedition.content;
 
-import org.recompile.mobile.Mobile;
-
-public class Connection 
+public class ContentHandlerPermission extends java.security.Permission 
 {
-    String connectTo;
-    ConnectionListener listener;
 
-    public Connection(String connectTo) { this.connectTo = connectTo; }
+    String actions;
 
-    public void send(byte[] data) 
-    { 
-        Mobile.log(Mobile.LOG_WARNING, Connection.class.getPackage().getName() + "." + Connection.class.getSimpleName() + ": " + "send(byte[]) untested");
-        if (listener != null) { listener.receiveData(data); }
-    }
+    public ContentHandlerPermission(String actions) { super(actions); this.actions = actions; }
 
-    public void setListener(ConnectionListener listener) { this.listener = listener; }
+    public boolean equals(Object obj) { return false; }
 
-    public ConnectionListener getListener() { return listener; }
+    public String getActions() { return actions; }
+
+    public int hashCode() { return this.hashCode(); }
+
+    public boolean implies(java.security.Permission p) { return false; }
+
+    @Override
+    public java.security.PermissionCollection newPermissionCollection() { return super.newPermissionCollection(); }
 }
