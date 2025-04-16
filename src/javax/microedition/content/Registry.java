@@ -16,11 +16,27 @@
 */
 package javax.microedition.content;
 
+import java.util.ArrayList;
+import java.util.List;
+
+// TODO: Finish implementing this, if needed
 public class Registry 
 {
 
+    private static List<Registry> registries = new ArrayList<>();
+    String registryName;
+    String ID;
+    String[] actions, suffixes, types;
+    ActionNameMap[] actionNames;
+    ContentHandlerServer server;
     ResponseListener listener;
     Invocation invocation;
+
+    public Registry(String classname) 
+    { 
+        this.registryName = classname;
+        registries.add(this);
+    }
 
     public void cancelGetResponse() { }
 
@@ -34,21 +50,31 @@ public class Registry
 
     public ContentHandler[] forType(String type) { return null; }
 
-    public String[] getActions() { return null; }
+    public String[] getActions() { return actions; }
 
-    public String getID() { return ""; }
+    public String getID() { return ID; }
 
     public String[] getIDs() { return null; }
 
-    public static Registry getRegistry(String classname) { return null; }
+    public static Registry getRegistry(String classname) 
+    {
+        for(Registry registry : registries) 
+        {
+            if(registry.registryName.equals(classname)) { return registry; }
+        }
+        return null; 
+    }
 
     public Invocation getResponse(boolean wait) { return null; }
 
-    public static ContentHandlerServer getServer(String classname) { return null; }
+    public static ContentHandlerServer getServer(String classname) 
+    { 
+        return null; 
+    }
 
-    public String[] getSuffixes() { return null; }
+    public String[] getSuffixes() { return suffixes; }
 
-    public String[] getTypes() { return null; }
+    public String[] getTypes() { return types; }
 
     public boolean invoke(Invocation invocation) 
     {
@@ -71,6 +97,21 @@ public class Registry
 
     public ContentHandlerServer register(String classname, String[] types, String[] suffixes, String[] actions, ActionNameMap[] actionnames, String ID, String[] accessAllowed) 
     {
+        for(int i = 0; i < registries.size(); i++) 
+        {
+            if(registries.get(i).registryName == classname) { registries.remove(i); }
+        }
+
+        this.registryName = classname;
+
+        this.ID = ID;
+        this.actions = actions;
+        this.suffixes = suffixes;
+        this.types = types;
+        this.actionNames = actionnames;
+
+        registries.add(this);
+
         return null;
     }
 

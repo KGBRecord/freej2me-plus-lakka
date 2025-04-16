@@ -51,6 +51,7 @@ import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import javax.microedition.content.Registry;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 
@@ -64,6 +65,8 @@ public class MIDletLoader extends URLClassLoader
 
 	private Class<?> mainClass;
 	private MIDlet mainInst;
+	
+	private Registry reg;
 
 	private HashMap<String, String> properties = new HashMap<String, String>(32);
 
@@ -336,6 +339,8 @@ public class MIDletLoader extends URLClassLoader
 			}
 
 			Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + suitename +" | Main Class: " + className);
+
+			reg = new Registry(className);
 		}
 	}
 
