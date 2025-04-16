@@ -264,11 +264,13 @@ public class Graphics3D
 			else if (this.target instanceof PlatformGraphics)
 			{
 				PlatformGraphics grp = (PlatformGraphics) this.target;
+
+				// Fill the background with the background color
 				grp.getGraphics2D().setColor(new Color(color));
 				grp.getGraphics2D().fillRect(x, y, w, h);
 
-				// Draw the background's image
-				if(background.getImage() != null) 
+				// Draw the background's image if any (and there's a background)
+				if(background != null && background.getImage() != null) 
 				{
 					Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Clear with Background Image Untested");
 					for(; y < h; y++) 
