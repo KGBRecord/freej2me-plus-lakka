@@ -82,7 +82,7 @@ public class MobilePlatform
 	public volatile static int keyState = 0;
 
 	// MobilePlatform will handle the input repeats as well
-	public static boolean[] pressedKeys = new boolean[128];
+	public static boolean[] pressedKeys = new boolean[20];
 
 	public Runnable painter;
 

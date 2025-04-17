@@ -119,7 +119,7 @@ public class Mobile
 	 * private static final int[] libretroKeycodes = {0,  1,    2,     3,    4, 5, 6,  7,     8,          9,     10, 11, 12, 13, 14, 15, 16, 17, 18}; // Doesn't need to be explicitly defined, it's the default array
 	 */
 	private static final int[] awtguiKeycodes      = {9,  8,    0,     2,    7, 3, 1, 10,    14,         11,     15, 18, 16,  5, 17,  4, 12,  6, 13};
-	private static final int[] sdlguiKeycodes      = {7,  5,    4,    13,    9, 6, 8, 18,    99,         10,     11,  0,  1,  2,  3, 14, 15, 16, 17};
+	private static final int[] sdlguiKeycodes      = {7,  5,    4,    13,    9, 6, 8, 18,    19,         10,     11,  0,  1,  2,  3, 14, 15, 16, 17};
 	private static final String[] keyArray = {"Up", "Down", "Left", "Right", "9", "7", "0", "Fire", "RightSoft", "LeftSoft", "1", "3", "*", "#", "2", "4", "6", "8", "5"};
 
 	// Set whether audio should be enabled or not. Can work around jars that crash FreeJ2ME due to audio

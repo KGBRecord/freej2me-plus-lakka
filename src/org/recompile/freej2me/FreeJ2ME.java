@@ -134,7 +134,6 @@ public class FreeJ2ME
 				{
 					int keycode = e.getKeyCode();
 					int mobikey = getMobileKey(keycode);
-					int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
 					
 					switch(keycode) // Handle emulator control keys
 					{
@@ -164,15 +163,15 @@ public class FreeJ2ME
 						return; 
 					}
 
-					if (MobilePlatform.pressedKeys[mobikeyN] == false)
+					if (MobilePlatform.pressedKeys[mobikey] == false)
  					{
+						MobilePlatform.pressedKeys[mobikey] = true;
 						MobilePlatform.keyPressed(Mobile.getMobileKey(mobikey));
  					}
  					else
  					{
 						MobilePlatform.keyRepeated(Mobile.getMobileKey(mobikey));
  					}
-					MobilePlatform.pressedKeys[mobikeyN] = true;
 				}
 			}
 
@@ -181,16 +180,14 @@ public class FreeJ2ME
 				if(awtGUI.hasLoadedFile()) 
 				{
 					int mobikey = getMobileKey(e.getKeyCode());
-					int mobikeyN = (mobikey + 64) & 0x7F; //Normalized value for indexing the pressedKeys array
 					
 					if (mobikey == Integer.MIN_VALUE) // Ignore events from keys not mapped to a phone keypad key (AWTGUI does use 0, so this can't mirror libretro)
 					{
 						return; 
 					}
 					
+					MobilePlatform.pressedKeys[mobikey] = false;
 					MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
-
-					MobilePlatform.pressedKeys[mobikeyN] = false;
 				}
 			}
 

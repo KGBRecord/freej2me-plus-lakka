@@ -525,29 +525,23 @@ public class Anbu
 
 		private void keyDown(int key)
 		{
-			if (key == Integer.MIN_VALUE)
-			{
-				return;
-			}
+			if (key == Integer.MIN_VALUE) { return; }
 
 			if(MobilePlatform.pressedKeys[key] = true) { MobilePlatform.keyRepeated(key); }
 			else 
 			{
-				MobilePlatform.keyPressed(key);
 				MobilePlatform.pressedKeys[key] = true;
+				MobilePlatform.keyPressed(key);
 			}
 			
 		}
 
 		private void keyUp(int key)
 		{
-			if (key == Integer.MIN_VALUE)
-			{
-				return;
-			}
+			if (key == Integer.MIN_VALUE) { return; }
 
-			MobilePlatform.keyReleased(key);
 			MobilePlatform.pressedKeys[key] = false;
+			MobilePlatform.keyReleased(key);
 		}
 
 		private int getMobileKey(int keycode)
