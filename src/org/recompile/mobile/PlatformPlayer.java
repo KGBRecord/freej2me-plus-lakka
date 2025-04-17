@@ -79,6 +79,7 @@ public class PlatformPlayer implements Player
 	private SoundListener nokiaListener;
 	private Sound nokiaSound;
 
+	protected boolean disableControls = false; // For when a given audio format is not supported
 	protected Control[] controls;
 
 	public PlatformPlayer(InputStream stream, String type)
@@ -115,6 +116,7 @@ public class PlatformPlayer implements Player
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is Qualcomm PureVoice! (not supported yet)");
 						player = new audioplayer();
 						contentType = "audio/qcp";
+						disableControls = true;
 					}
 					else if(data.length >= 4 && data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F') 
 					{
@@ -133,29 +135,34 @@ public class PlatformPlayer implements Player
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is SMAF/MMF! (not supported yet)");
 						player = new audioplayer();
 						contentType = "audio/mmf";
+						disableControls = true;
 					}
 					else if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MFi! (not supported yet)");
 						player = new audioplayer();
 						contentType = "audio/mfi";
+						disableControls = true;
 					}
 					else if(data.length >= 6 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '\n') 
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is AMR-NB! (not supported yet)");
 						player = new audioplayer();
 						contentType = "audio/amr";
+						disableControls = true;
 					} 
 					else if(data.length >= 9 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '-' && data[6] == 'W' && data[7] == 'B' && data[8] == '\n') 
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is AMR-WB! (not supported yet)");
 						player = new audioplayer();
 						contentType = "audio/amr-wb";
+						disableControls = true;
 					}
 					else /* If none of the formats match, we don't know what this is */
 					{
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "None of the known formats match the received stream, it won't play!");
 						player = new audioplayer();
+						disableControls = true;
 					}
 				}
 				catch (IOException e)
@@ -371,6 +378,7 @@ public class PlatformPlayer implements Player
 
 	public Control getControl(String controlType)
 	{
+		if(disableControls) { return controls[0]; }
 		if(getState() == Player.CLOSED || getState() == Player.UNREALIZED) { throw new IllegalStateException("Cannot call getControl(), as the player is either CLOSED or UNREALIZED."); }
 
 		if(controlType.contains("VolumeControl")) { return controls[0]; }
@@ -382,7 +390,8 @@ public class PlatformPlayer implements Player
 	}
 
 	public Control[] getControls() 
-	{ 
+	{
+		if(disableControls) { return controls; }
 		if(getState() == Player.CLOSED || getState() == Player.UNREALIZED) { throw new IllegalStateException("Cannot call getControls(), as the player is either CLOSED or UNREALIZED."); }
 
 		return controls; 
