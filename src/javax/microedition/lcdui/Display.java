@@ -22,7 +22,6 @@ import javax.microedition.midlet.MIDlet;
 
 import javax.microedition.lcdui.Image;
 
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -180,8 +179,13 @@ public class Display
 	public void setCurrent(Displayable next)
 	{
 		setCurrentRequest = (() -> 
-		{			
-			if (next == null || current == next) { return; }
+		{
+			if (next == null) { return; } // This can be interpreted as a request of the MIDlet to be put on the background, but FreeJ2ME has no understanding of this
+			else if (current == next) // Similarly, this can be interpreted as a request of the MIDlet to be put on the foreground, but we can just notify the current displayable again.
+			{ 
+				if(current instanceof Canvas) { current.showNotify(); }
+				current.notifySetCurrent();
+			}
 
 			try 
 			{		
