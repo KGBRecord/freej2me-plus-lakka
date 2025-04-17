@@ -641,6 +641,12 @@ public class MIDletLoader extends URLClassLoader
 				Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "MIDlet tried to override Java's Thread method: " + name + "... patched!");
 				name = "_" + name; 
 			}
+
+			if (desc.equals("()V") && name.equals("startRealApp") && access == Opcodes.ACC_PRIVATE) 
+			{
+				Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "MIDlet uses an ALW1 ad/demo wrapper... trying to patch...");
+				access = Opcodes.ACC_PUBLIC;
+			}
 			
 			return new ASMMethodVisitor(super.visitMethod(access, name, desc, signature, exceptions));
 		}
