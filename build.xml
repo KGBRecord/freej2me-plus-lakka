@@ -31,6 +31,7 @@
     <exclude name="src/org/objectweb/**"/>
 	<compilerarg value="-Xlint:unchecked"/>
 	<compilerarg value="-Xlint:deprecation"/>
+	<compilerarg line="-encoding utf-8"/>
 	</javac>
 
 
