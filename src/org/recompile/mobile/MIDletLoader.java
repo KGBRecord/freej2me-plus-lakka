@@ -327,7 +327,19 @@ public class MIDletLoader extends URLClassLoader
 		{
 			String val = properties.get("MIDlet-1");
 			String[] parts = val.split("[,/]"); // Mephisto also uses a '/' char as a MIDlet-1 separator
-			if (parts.length == 3) 
+			int argLength = parts.length; // No need for an int here, at max we have 3 arguments
+
+			// Remove any empty positions, as they aren't allowed and will break MIDlet loading
+			for(int i = 0; i < argLength; i++) 
+			{
+				if(parts[i].equals("")) 
+				{
+					for(int j = i; j < argLength; j++) { if(j+1 < argLength) { parts[j] = parts[j+1]; } }
+					argLength -= 1;
+				}
+			}
+
+			if (argLength == 3) 
 			{
 				name = parts[0].trim();
 				icon = parts[1].trim();
