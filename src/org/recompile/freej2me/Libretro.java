@@ -34,6 +34,7 @@ public class Libretro
 {
 	private int lcdWidth;
 	private int lcdHeight;
+	int[] lcdData;
 
 	private boolean soundEnabled = true;
 
@@ -130,6 +131,7 @@ public class Libretro
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
 		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight));
+		lcdData = ((DataBufferInt) Mobile.getPlatform().getLCD().getRaster().getDataBuffer()).getData();
 
 		Mobile.config = new Config();
 		Mobile.config.onChange = new Runnable() { public void run() { settingsChanged(); } };
@@ -398,16 +400,15 @@ public class Libretro
 										/* Vibration duration should be set to zero to prevent constant sends of the same data, so update it here */
 										Mobile.vibrationDuration = 0;
 
-										final int[] data = ((DataBufferInt) Mobile.getPlatform().getLCD().getRaster().getDataBuffer()).getData();
-
-										for(int i=0; i<data.length; i++)
+										/* Send display data to libretro */
+										for(int i=0; i<lcdData.length; i++)
 										{
-											frameBuffer[3*i]   = (byte)((data[i]>>16)&0xFF);
-											frameBuffer[3*i+1] = (byte)((data[i]>>8)&0xFF);
-											frameBuffer[3*i+2] = (byte)((data[i])&0xFF);
+											frameBuffer[3*i]   = (byte)((lcdData[i]>>16)&0xFF);
+											frameBuffer[3*i+1] = (byte)((lcdData[i]>>8)&0xFF);
+											frameBuffer[3*i+2] = (byte)((lcdData[i])&0xFF);
 										}
 
-										System.out.write(frameBuffer, 0, data.length*3);
+										System.out.write(frameBuffer, 0, lcdData.length*3);
 										System.out.flush();
 									}
 									catch (Exception e)
@@ -453,6 +454,7 @@ public class Libretro
 			lcdWidth = Mobile.lcdWidth;
 			lcdHeight = Mobile.lcdHeight;
 			Mobile.getPlatform().resizeLCD(Mobile.lcdWidth, Mobile.lcdHeight);
+			lcdData = ((DataBufferInt) Mobile.getPlatform().getLCD().getRaster().getDataBuffer()).getData();
 		}
 	}
 

@@ -38,6 +38,8 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	protected BufferedImage canvas;
 	protected Graphics2D gc;
 	protected int[] canvasData;
+	protected int[] imgPixels;
+	protected Image lastImage;
 
 	protected Color awtColor;
 
@@ -238,8 +240,14 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			final int canvasWidth = canvas.getWidth();
 			final int canvasHeight = canvas.getHeight();
 			final int imageWidth = image.getWidth();
-			final int[] pixels = ((DataBufferInt) image.platformImage.getCanvas().getRaster().getDataBuffer()).getData();
 			int[] overlayData = null;
+
+			// Only spend time reallocating this if we really are drawing from a different image than the last (speeds things up a bit)
+			if(image != lastImage)
+			{
+				imgPixels = ((DataBufferInt) image.platformImage.getCanvas().getRaster().getDataBuffer()).getData();
+				lastImage = image;
+			}
 
 			// This one is rather costly, as it has to draw overlays on the corners of the screen with gaussian filtering applied.
 			if(Mobile.funLightsEnabled)
@@ -260,7 +268,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 					int srcIndex = j * imageWidth + i;
 
 					// Only apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
-					canvasData[destIndex] = pixels[srcIndex] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
+					canvasData[destIndex] = imgPixels[srcIndex] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
 
 					// If funLights overlay is requested by the game, apply its pixels to the screen area
 					if(Mobile.funLightsEnabled) 
@@ -366,13 +374,14 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		{
 			if ((y + j) < 0 || (y + j) >= canvasHeight) { continue; }
 			int rowOffset = offset + (j * scanlength); // Calculate the starting index for the current row
+			int destRow = (y + j) * canvasWidth;
 	
 			for (int i = startX; i < endX; i++)
 			{
 				if ((x + i) < 0 || (x + i) >= canvasWidth) { continue; }
 
 				int pixelIndex = rowOffset + i; // Source index in rgbData
-				int destIndex = (y + j) * canvasWidth + (x + i);
+				int destIndex = destRow + (x + i);
 
 				int pixel = rgbData[pixelIndex];
 				if (!processAlpha) 

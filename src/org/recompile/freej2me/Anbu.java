@@ -104,6 +104,7 @@ public class Anbu
 
 	private int lcdWidth;
 	private int lcdHeight;
+	private int[] lcdData;
 	private int scaleFactor = 1;
 	private boolean isFullscreen = false;
 	private boolean SDLInitialized = false;
@@ -147,6 +148,7 @@ public class Anbu
 		if(args.length>=4) { scaleFactor = Integer.parseInt(args[3]); }
 
 		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight));
+		lcdData = ((DataBufferInt) Mobile.getPlatform().getLCD().getRaster().getDataBuffer()).getData();
 
 		/* TODO: Anbu/SDL has no way of enabling any settings outside of cmd args yet, a UI and code overhaul might be in order */
 
@@ -278,8 +280,7 @@ public class Anbu
 			 * Like on libretro, access the image's DataBuffer directly instead of using BufferedImage's getRGB() method,
 			 * which is slower.
 			 */
-			final int[] data = ((DataBufferInt) Mobile.getPlatform().getLCD().getRaster().getDataBuffer()).getData();
-            pixels.write(0, data, 0, data.length);
+            pixels.write(0, lcdData, 0, lcdData.length);
 
 			//SDL_RenderClear(renderer); // We don't need RenderClear since we always repaint the whole screen.
 			SDL_UpdateTexture(texture, null, pixels, lcdWidth * 4);
@@ -641,6 +642,7 @@ public class Anbu
 		if(Mobile.lcdWidth != lcdWidth || Mobile.lcdHeight != lcdHeight || hasRotated) 
 		{
 			Mobile.getPlatform().resizeLCD(Mobile.lcdWidth, Mobile.lcdHeight);
+			lcdData = ((DataBufferInt) Mobile.getPlatform().getLCD().getRaster().getDataBuffer()).getData();
 			if(!Mobile.rotateDisplay) 
 			{
 				lcdWidth = Mobile.lcdWidth;
