@@ -233,7 +233,12 @@ public class MIDletLoader extends URLClassLoader
 			{
 				try
 				{
-					start = mainClass.getDeclaredMethod("startApp");
+					if (mainClass.getName().endsWith("ALW1")) 
+					{ 
+						Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "ALW1 wrapper class detected! Attempting to bypass...");
+						start = mainClass.getDeclaredMethod("startRealApp");
+					}
+					else { start = mainClass.getDeclaredMethod("startApp"); }
 					start.setAccessible(true);
 				}
 				catch (NoSuchMethodException e)
