@@ -69,7 +69,6 @@ public class RecordStore
 
 		records.add(new byte[]{}); // dummy record (record ids start at 1)
 
-		int count = 0;
 		int offset = 0;
 		int reclen;
 
@@ -104,10 +103,8 @@ public class RecordStore
 				Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Creating New Record Store "+appname+"/"+recordStoreName);
 				file.createNewFile();
 				version = 1;
-				nextid = 1;
-				count = 0;
+				nextid = records.size(); // Since records always receives a dummy record on start, this will safely be 1 as it should.
 				save();
-				nextid = 1;
 			}
 			catch (Exception e)
 			{
@@ -125,9 +122,9 @@ public class RecordStore
 			{
 				version = getUInt16(data, offset); offset+=2;
 				nextid = getUInt16(data, offset); offset+=2;
-				count = getUInt16(data, offset); offset+=2;
-				Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Record count in "+rmsFile + ": " + count);
-				for(int i=0; i<count; i++)
+				int recordcount = getUInt16(data, offset); offset+=2;
+				Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Record count in "+rmsFile + ": " + recordcount);
+				for(int i=0; i<recordcount; i++)
 				{
 					reclen = getUInt16(data, offset);
 					offset+=2;
@@ -263,14 +260,15 @@ public class RecordStore
 
 			records.addElement(rec);
 
+			for(int i=0; i<listeners.size(); i++) { listeners.get(i).recordAdded(this, nextid); }
+
 			lastModified = System.currentTimeMillis();
 			version++;
+			nextid++;
 			
 			save();
 
-			for(int i=0; i<listeners.size(); i++) { listeners.get(i).recordAdded(this, nextid); }
-
-			return nextid++;
+			return nextid;
 		}
 		catch (Exception e) { throw(new RecordStoreException("Can't Add RMS Record: " + e.getMessage())); }
 	}
@@ -523,6 +521,7 @@ public class RecordStore
 			e.printStackTrace();
 		}
 		lastModified = System.currentTimeMillis();
+		version++;
 		save();
 		for(int i=0; i<listeners.size(); i++)
 		{
