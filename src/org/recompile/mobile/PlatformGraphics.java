@@ -527,6 +527,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 	public void setFont(Font font)
 	{
+		if(font == null) { font = Font.getDefaultFont(); }
 		super.setFont(font);
 		gc.setFont(font.platformFont.awtFont);
 	}
@@ -882,6 +883,13 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		int r = 0;
 		int g = 0;
 		int b = 0;
+
+		/* 
+		 * Here we cast to USHORT_4444_ARGB if the game just tries sending the pixels with the 
+		 * "default" short pixel format FreeJ2ME "accepts" (it doesn't expose any of the valid ones
+		 * as a way to try and make the game send pixels in their native format. Works for karma studios games.) 
+		 */
+		if(format == 0) { format = DirectGraphics.TYPE_USHORT_4444_ARGB; }
 	
 		switch (format) 
 		{
@@ -939,6 +947,13 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	{
 		int a, r, g, b;
 		int out = 0;
+
+		/* 
+		 * Here we cast to USHORT_4444_ARGB if the game just tries sending the pixels with the 
+		 * "default" short pixel format FreeJ2ME "accepts" (it doesn't expose any of the valid ones
+		 * as a way to try and make the game send pixels in their native format. Works for karma studios games.) 
+		 */
+		if(format == 0) { format = DirectGraphics.TYPE_USHORT_4444_ARGB; }
 	
 		switch (format) 
 		{
