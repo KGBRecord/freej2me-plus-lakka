@@ -326,7 +326,7 @@ public class MIDletLoader extends URLClassLoader
 		if (properties.containsKey("MIDlet-1")) 
 		{
 			String val = properties.get("MIDlet-1");
-			String[] parts = val.split(",");
+			String[] parts = val.split("[,/]"); // Mephisto also uses a '/' char as a MIDlet-1 separator
 			if (parts.length == 3) 
 			{
 				name = parts[0].trim();
