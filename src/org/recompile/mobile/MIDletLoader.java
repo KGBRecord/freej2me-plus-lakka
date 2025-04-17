@@ -331,18 +331,8 @@ public class MIDletLoader extends URLClassLoader
 		if (properties.containsKey("MIDlet-1")) 
 		{
 			String val = properties.get("MIDlet-1");
-			String[] parts = val.split("[,/]"); // Mephisto also uses a '/' char as a MIDlet-1 separator
+			String[] parts = val.split(",");
 			int argLength = parts.length; // No need for an int here, at max we have 3 arguments
-
-			// Remove any empty positions, as they aren't allowed and will break MIDlet loading
-			for(int i = 0; i < argLength; i++) 
-			{
-				if(parts[i].equals("")) 
-				{
-					for(int j = i; j < argLength; j++) { if(j+1 < argLength) { parts[j] = parts[j+1]; } }
-					argLength -= 1;
-				}
-			}
 
 			if (argLength == 3) 
 			{
@@ -353,6 +343,15 @@ public class MIDletLoader extends URLClassLoader
 				
 				suitename = name;
 				suitename = suitename.replace(":","");
+			}
+			else if(argLength == 2) // A comma is missing, MUST be between the midlet name and icon path, otherwise there's no way to fix here (manifest has to be edited manually)
+			{
+				String[] newParts = parts[0].split("/", 2); // Split ONLY at the first occurrence of "/"
+
+				name = newParts[0].trim();
+				icon = "/" + newParts[1].trim();
+
+				if (className == null) { className = parts[1].trim(); }
 			}
 
 			Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + suitename +" | Main Class: " + className);
