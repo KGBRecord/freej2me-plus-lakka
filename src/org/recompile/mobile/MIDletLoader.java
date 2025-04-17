@@ -620,6 +620,8 @@ public class MIDletLoader extends URLClassLoader
 
 	private class ASMVisitor extends ClassAdapter
 	{
+		private String superName;
+
 		public ASMVisitor(ClassVisitor visitor)
 		{
 			super(visitor);
@@ -627,11 +629,19 @@ public class MIDletLoader extends URLClassLoader
 
 		public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaces)
 		{
+			this.superName = superName;
+
 			super.visit(version, access, name, signature, superName, interfaces);
 		}
 
-		public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions)
+		public MethodVisitor visitMethod(int access, String name, final String desc, final String signature, final String[] exceptions)
 		{
+			if ("java/lang/Thread".equals(superName) && ("suspend".equals(name) || "stop".equals(name) || "resume".equals(name))) 
+			{ 
+				Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "MIDlet tried to override Java's Thread method: " + name + "... patched!");
+				name = "_" + name; 
+			}
+			
 			return new ASMMethodVisitor(super.visitMethod(access, name, desc, signature, exceptions));
 		}
 
