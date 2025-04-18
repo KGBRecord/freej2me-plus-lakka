@@ -513,7 +513,19 @@ public class MIDletLoader extends URLClassLoader
 
 	public InputStream getMIDletResourceAsStream(String resource)
 	{
-		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource: "+resource);
+		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource As Stream: "+resource + " path:" + className[selectedMidlet]);
+
+		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
+		{
+			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
+			String resourcePath = className[selectedMidlet].replace(".", "/");
+    
+			// Remove the class name from the resolved path
+			resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
+			
+			// And there we have it, just append the resource at the end of it.
+			resource = resourcePath + resource;
+		}
 
 		URL url = getResource(resource);
 
@@ -542,6 +554,17 @@ public class MIDletLoader extends URLClassLoader
 
 	public byte[] getMIDletResourceAsByteArray(String resource)
 	{
+		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource as Byte Array: "+resource);
+
+		if(!resource.startsWith("/")) // Same step done in getMIDletResourceAsStream()
+		{
+			String resourcePath = className[selectedMidlet].replace(".", "/");
+    
+			resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
+			
+			resource = resourcePath + resource;
+		}
+
 		URL url = getResource(resource);
 
 		try
