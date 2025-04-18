@@ -31,11 +31,12 @@ public class Clip
 	private int priority;
 	private int vibration;
 	private byte[] stream;
-	private String locator;
 
 	public Clip(String locator, String contentType, int priority, int vibration) throws IOException 
     {
-		this.locator = locator;
+		if(locator.contains(":")) { locator = locator.split(":")[1]; }
+		if(!locator.startsWith("/")) { locator = "/" + locator; }
+		this.stream = Mobile.getMIDletResourceAsByteArray(locator);
 		this.contentType = contentType;
 		this.priority = priority;
 		this.vibration = vibration;
@@ -56,18 +57,7 @@ public class Clip
 	protected Player getPlayer() throws MediaException
     {
 		Player player = null;
-		try 
-        {
-			if (stream != null) { player = Manager.createPlayer(new ByteArrayInputStream(stream), contentType); } 
-            else 
-            {
-                if(locator.contains(":")) { locator = locator.split(":")[1]; }
-
-				if(!locator.startsWith("/")) { locator = "/" + locator; }
-                    
-                return Manager.createPlayer(Mobile.getMIDletResourceAsStream(locator), contentType); 
-		    }
-        }
+		try  { player = Manager.createPlayer(new ByteArrayInputStream(stream), contentType); }
         catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Clip.class.getPackage().getName() + "." + Clip.class.getSimpleName() + ": " + "failed to getPlayer: " + e.getMessage()); } 
         
 		return player;
