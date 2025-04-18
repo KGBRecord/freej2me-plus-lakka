@@ -756,6 +756,7 @@ public class PlatformPlayer implements Player
 		private byte[] tmpStream;
 		private MPEGPlayer mp3Player;
 		private Thread playerThread = null;
+		private volatile boolean mp3PlayerRunning = false;
 
 		public MP3Player(InputStream stream)
 		{
@@ -785,37 +786,37 @@ public class PlatformPlayer implements Player
 
 		public void start()
 		{
-			/*
-			 * The fact these null checks have to be littered on MP3Player gives me a bad feeling...
-			 * Maybe it's because it doesn't at all work like wav and midi players, which are
-			 * integrated into Java Sound and don't need a thread object to play non-blocking.
-			 */
-			if(mp3Player == null) { return; }
-
 			try 
 			{
 				playerThread = new Thread(() -> 
 				{
 					try 
 					{
-						if(getMediaTime() >= getDuration()) { setMediaTime(0); }
-						mp3Player.play(); // This is thread-blocking, so the code below only executes after this has finished.
-
-						/* 
-						 * Check if mp3Player is still valid and exit early, since this thread can be 
-						 * interrupted and the player can also be closed abruptly. 
-						 */ 
-						if (mp3Player == null) { return; }
-
-						if (!Thread.currentThread().isInterrupted()) 
+						mp3PlayerRunning = true;
+						while(mp3PlayerRunning) 
 						{
-							state = Player.PREFETCHED;
-							notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
-							if(mp3Player.getLoopCount() != 0) 
+							if(getMediaTime() >= getDuration()) { setMediaTime(0); }
+							else { setMediaTime(getMediaTime()); } // Resume from when last stopped
+							mp3Player.play(); // This is thread-blocking, so the code below only executes after this has finished.
+
+							/* 
+							* Check if mp3Player is still valid and exit early, since this thread can be 
+							* interrupted and the player can also be closed abruptly. 
+							*/
+							if (mp3Player == null || !mp3PlayerRunning)  { return; }
+
+							if (!Thread.currentThread().isInterrupted()) 
 							{
-								if(mp3Player.getLoopCount() > 0) { mp3Player.decreaseLoopCount(); } // If getLoopCount() = -1, we're looping indefinitely
+								state = Player.PREFETCHED;
+								notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
+								if(mp3Player.getLoopCount() != 0) 
+								{
+									if(mp3Player.getLoopCount() > 0) { mp3Player.decreaseLoopCount(); } // If getLoopCount() = -1, we're looping indefinitely
+									mp3Player.reset();
+									mp3Player.play();
+								}
 								mp3Player.reset();
-								mp3Player.play();
+								mp3PlayerRunning = false;
 							}
 						}
 					}
@@ -831,10 +832,8 @@ public class PlatformPlayer implements Player
 
 		public void stop()
 		{
-			if(mp3Player == null) { return; }
+			mp3PlayerRunning = false;
 			mp3Player.stop();
-			if (playerThread != null && playerThread.isAlive()) { playerThread.interrupt(); }
-
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
@@ -843,6 +842,7 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
+			mp3Player.close();
 			mp3Player = null;
 			tmpStream = null;
 			playerThread = null;
@@ -850,7 +850,6 @@ public class PlatformPlayer implements Player
 
 		public void setLoopCount(int count)
 		{
-			if(mp3Player == null) { return; }
 			/* 
 			 * Treat cases where an app wants this stream to loop continuously.
 			 * Here, count = 1 means it should loop one time, whereas in j2me
@@ -863,8 +862,6 @@ public class PlatformPlayer implements Player
 
 		public long setMediaTime(long now)
 		{
-			if(mp3Player == null) { return 0; }
-
 			if(now >= getDuration()) { mp3Player.setMicrosecondPosition(getDuration()); }
 			else if(now < 0) { mp3Player.setMicrosecondPosition(0); }
 			else { mp3Player.setMicrosecondPosition(now); }
@@ -876,23 +873,11 @@ public class PlatformPlayer implements Player
 			return getMediaTime();
 		}
 
-		public long getMediaTime() 
-		{ 
-			if(mp3Player != null) { return mp3Player.getMicrosecondPosition(); } 
-			return 0; 
-		}
+		public long getMediaTime() { return mp3Player.getMicrosecondPosition(); }
 
-		public long getDuration() 
-		{ 
-			if(mp3Player != null) { return mp3Player.getDuration(); } 
-			return Player.TIME_UNKNOWN; 
-		}
+		public long getDuration() { return mp3Player.getDuration(); }
 
-		public boolean isRunning() 
-		{ 
-			if(mp3Player != null) { return mp3Player.isRunning(); } 
-			return false; 
-		}
+		public boolean isRunning() { return mp3Player.isRunning(); }
 	}
 
 	// Controls //

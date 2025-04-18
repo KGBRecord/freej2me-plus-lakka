@@ -407,7 +407,7 @@
 		{
 			Header hdr = bitstream.readFrame();
 			reset();
-			skip((int) (position / 1000L), hdr);
+			skip((int) (position / 1000L), hdr); // Has to be converted to milliseconds
 		} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, MPEGPlayer.class.getPackage().getName() + "." + MPEGPlayer.class.getSimpleName() + ": " + "MPEGPlayer: Failed to set microsecond position:" + e.getMessage());}
 	}
 
@@ -418,7 +418,7 @@
 	{ 
 		double duration = 0;
 
-		try { duration = (double) ((data.length * 8 * 1_000D) / getBitrate()); } 
+		try { duration = (double) ((data.length * 8 * 1_000_000D) / getBitrate()); } 
 		catch (Exception e){ Mobile.log(Mobile.LOG_ERROR, MPEGPlayer.class.getPackage().getName() + "." + MPEGPlayer.class.getSimpleName() + ": " + "Couldn't get duration:" + e.getMessage()); return Player.TIME_UNKNOWN;}
 		
 		return (long) duration; 
