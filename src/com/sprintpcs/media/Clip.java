@@ -61,16 +61,14 @@ public class Clip
 			if (stream != null) { player = Manager.createPlayer(new ByteArrayInputStream(stream), contentType); } 
             else 
             {
-                // JAMDAT's Solitaire Deluxe prepends "resource:" before the actual resource location, also is the only sprint jar i've seen do this (and load data with locators)
-                if(locator.contains(":"))
-                {
-                    int lastIndex = locator.lastIndexOf(":");
+                if(locator.contains(":")) { locator = locator.split(":")[1]; }
+
+				if(!locator.startsWith("/")) { locator = "/" + locator; }
                     
-                    return Manager.createPlayer(Mobile.getResourceAsStream(null, locator.substring(lastIndex + 1)), contentType); 
-                }
+                return Manager.createPlayer(Mobile.getMIDletResourceAsStream(locator), contentType); 
 		    }
         }
-        catch (IOException e) { Mobile.log(Mobile.LOG_WARNING, Clip.class.getPackage().getName() + "." + Clip.class.getSimpleName() + ": " + "failed to getPlayer: " + e.getMessage()); } 
+        catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Clip.class.getPackage().getName() + "." + Clip.class.getSimpleName() + ": " + "failed to getPlayer: " + e.getMessage()); } 
         
 		return player;
 	}
