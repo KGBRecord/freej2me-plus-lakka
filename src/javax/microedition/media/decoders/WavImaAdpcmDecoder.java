@@ -14,7 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package org.recompile.mobile;
+package javax.microedition.media.decoders;
 
 import java.io.InputStream;
 import java.io.IOException;

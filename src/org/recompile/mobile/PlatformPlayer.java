@@ -61,6 +61,9 @@ import javax.microedition.media.Control;
 import javax.microedition.media.Controllable;
 import javax.microedition.media.Manager;
 
+/* IMA ADPCM WAV support */
+import javax.microedition.media.decoders.WavImaAdpcmDecoder;
+
 /* audio/mpeg support */
 import javazoom.jl.player.MPEGPlayer;
 
