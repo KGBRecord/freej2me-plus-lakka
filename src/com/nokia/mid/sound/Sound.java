@@ -83,7 +83,9 @@ public class Sound
 	public static int getConcurrentSoundCount(int type) { return 1; }
 
 	public int getState() 
-	{ 
+	{
+		if(player == null) { return SOUND_UNINITIALIZED; }
+		
 		int state = player.getState();
 
 		switch (state)
