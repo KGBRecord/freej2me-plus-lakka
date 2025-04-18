@@ -47,8 +47,8 @@ public abstract class Canvas extends Displayable
 	public static final int KEY_STAR = 42;
 	public static final int KEY_POUND = 35;
 
-	public static final int KEY_SOFT_LEFT = Mobile.NOKIA_SOFT1;
-	public static final int KEY_SOFT_RIGHT = Mobile.NOKIA_SOFT2;
+	public static final int KEY_SOFT_LEFT = 126;
+	public static final int KEY_SOFT_RIGHT = 127;
 
 	private int barHeight;
 	private boolean fullscreen = false;
