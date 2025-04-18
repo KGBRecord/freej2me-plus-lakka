@@ -55,21 +55,31 @@ import javax.microedition.content.Registry;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 
+import javax.microedition.lcdui.Font;
+import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.Canvas;
+
 public class MIDletLoader extends URLClassLoader
 {
-	public String name;
+
 	public String icon;
-	private String className;
+	public static String[] name = new String[9];
+	private String[] className = new String[9];
 
 	public String suitename;
 
 	private Class<?> mainClass;
-	private MIDlet mainInst;
+	private MIDlet midletInst;
 	
 	private Registry reg;
 
 	private HashMap<String, String> properties = new HashMap<String, String>(32);
 
+	// For the multi-midlet selection screen
+	private PlatformImage platformImage;
+	private PlatformGraphics graphics;
+	private static byte selectedMidlet = 0;
+	public static boolean MIDletSelected = false;
 
 	public MIDletLoader(URL urls[], Map<String, String> descriptorProperties)
 	{
@@ -138,7 +148,7 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("supports.video.capture", "false");
 		properties.put("supports.recording", "false");
 
-		if (className == null) { className = findMainClassInJars(urls); }
+		if (className[0] == null) { className[0] = findMainClassInJars(urls); }
 	}
 
 	public static String findMainClassInJars(URL[] urls) 
@@ -210,14 +220,29 @@ public class MIDletLoader extends URLClassLoader
 
 		try
 		{
-			mainClass = loadClass(className);
+			if(className[1] != null) // More than one element, bring up the selection menu
+			{
+				platformImage = new PlatformImage(Mobile.lcdWidth, Mobile.lcdHeight);
+				graphics = platformImage.getGraphics();
 
-			Constructor constructor;
-			constructor = mainClass.getConstructor();
-			constructor.setAccessible(true);
+				while(!MIDletSelected) { render(); }
+				// keyPress() will run until MIDletSelected becomes true
+			}
 
-			MIDlet.initAppProperties(properties);
-			mainInst = (MIDlet)constructor.newInstance();
+			// If there's only one midlet, load it straight away
+			MIDletSelected = true;
+			if(className[selectedMidlet] != null) 
+			{
+				mainClass = loadClass(className[selectedMidlet]);
+
+				Constructor constructor;
+				constructor = mainClass.getConstructor();
+				constructor.setAccessible(true);
+
+				MIDlet.initAppProperties(properties);
+				midletInst = (MIDlet)constructor.newInstance();
+			}
+			
 		}
 		catch (Exception e)
 		{
@@ -249,22 +274,14 @@ public class MIDletLoader extends URLClassLoader
 					mainClass = loadClass(mainClass.getName(), true);
 				}
 			}
+
+			start.invoke(midletInst);
 		}
 		catch (Exception e)
 		{
-			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Find startApp Method: " + e.getMessage());
+			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't invoke startApp Method: " + e.getMessage());
 			e.printStackTrace();
 			return;
-		}
-
-		try
-		{
-			start.invoke(mainInst);
-		}
-		catch (Exception e)
-		{
-			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Failed to invoke startApp: " + e.getMessage());
-			e.printStackTrace();
 		}
 	}
 
@@ -328,36 +345,55 @@ public class MIDletLoader extends URLClassLoader
 			e.printStackTrace();
 		}
 
-		if (properties.containsKey("MIDlet-1")) 
+		for(int i = 0; i < 9; i++) // Support loading up to 9 midlets, though i doubt any jar will have more than a few.
 		{
-			String val = properties.get("MIDlet-1");
-			String[] parts = val.split(",");
-			int argLength = parts.length; // No need for an int here, at max we have 3 arguments
-
-			if (argLength == 3) 
+			if (properties.containsKey("MIDlet-" + (i+1) )) // Starts from MIDlet-1
 			{
-				name = parts[0].trim();
-				icon = parts[1].trim();
-				
-				if (className == null) { className = parts[2].trim(); }
-				
-				suitename = name;
-				suitename = suitename.replace(":","");
+				String val = properties.get("MIDlet-" + (i+1) );
+				String[] parts = val.split(",");
+				int argLength = parts.length; // No need for an int here, at max we have 3 arguments
+
+				if (argLength == 3) 
+				{
+					name[i] = parts[0].trim();
+					if(i == 0) { icon = parts[1].trim(); }
+					
+					if (className[i] == null) { className[i] = parts[2].trim(); }
+					
+					if(i == 0) 
+					{ 
+						suitename = name[i];
+						suitename = suitename.replace(":","");
+					} 
+					
+				}
+				else if(argLength == 2) // A comma is missing, MUST be between the midlet name and icon path, otherwise there's no way to fix here (manifest has to be edited manually)
+				{
+					String[] newParts = parts[0].split("/", 2); // Split ONLY at the first occurrence of "/"
+
+					name[i] = newParts[0].trim();
+					if(i == 0) { icon = "/" + newParts[1].trim(); }
+
+					if (className[i] == null) { className[i] = parts[1].trim(); }
+
+					if(i == 0) 
+					{ 
+						suitename = name[i];
+						suitename = suitename.replace(":","");
+					} 
+				}
+
+				Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + name[i] +" | Main Class: " + className[i]);
+
+				reg = new Registry(className[i]);
 			}
-			else if(argLength == 2) // A comma is missing, MUST be between the midlet name and icon path, otherwise there's no way to fix here (manifest has to be edited manually)
-			{
-				String[] newParts = parts[0].split("/", 2); // Split ONLY at the first occurrence of "/"
-
-				name = newParts[0].trim();
-				icon = "/" + newParts[1].trim();
-
-				if (className == null) { className = parts[1].trim(); }
+			else 
+			{ 
+				name[i] = null;
+				className[i] = null;
 			}
-
-			Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + suitename +" | Main Class: " + className);
-
-			reg = new Registry(className);
 		}
+		
 	}
 
 
@@ -686,5 +722,99 @@ public class MIDletLoader extends URLClassLoader
 				}
 			}
 		}
+	}
+
+
+	/* ************************************************************** 
+	* Multi-Midlet selection menu
+	* ************************************************************** */
+	public static void keyPress(int key)
+	{
+
+		if (key == Canvas.UP || key == Canvas.KEY_NUM2) 
+		{ 
+			selectedMidlet--;
+			if(selectedMidlet < 0) { selectedMidlet++; }
+		} 
+		else if (key == Canvas.DOWN || key == Canvas.KEY_NUM8) 
+		{ 
+			selectedMidlet++;
+			if(selectedMidlet > name.length || name[selectedMidlet] == null) { selectedMidlet--; }
+		}
+		else if (key == Canvas.FIRE || key == Canvas.KEY_NUM5) { MIDletSelected = true; }
+	}
+
+	protected void render() 
+	{
+		int numMidlets = 0;
+		
+		for(int i = 0; i < name.length; i++) 
+		{
+			if(name[i] != null) { numMidlets++; } // Check how many actual midlets we currently have
+		}
+
+		graphics.setFont(Font.getDefaultFont());
+	
+		// Draw Background
+		graphics.setColor(Mobile.lcduiBGColor);
+		graphics.fillRect(0, 0, Mobile.lcdWidth, Mobile.lcdHeight);
+		graphics.setColor(Mobile.lcduiTextColor);
+	
+		// Render top bar with the indicator text
+		String currentTitle = "Select the MIDlet to run";
+		int titlePadding = Font.fontPadding[Font.screenType];
+		int titleHeight = Font.getDefaultFont().getHeight() + titlePadding;
+		graphics.drawString(currentTitle, Mobile.lcdWidth / 2, 0, Graphics.HCENTER);
+		graphics.drawLine(0, titleHeight, Mobile.lcdWidth, titleHeight);
+	
+		// Render bottom bar with the function hint
+		int bottomBarHeight = titleHeight - titlePadding;
+		graphics.drawLine(0, Mobile.lcdHeight - bottomBarHeight + titlePadding, Mobile.lcdWidth, Mobile.lcdHeight - bottomBarHeight + titlePadding);
+		graphics.drawString("5/OK = Sel.|v^ = Move", Mobile.lcdWidth / 2, Mobile.lcdHeight + (2 * titlePadding) - titleHeight, Graphics.HCENTER);
+	
+		// Render items in the middle
+		int currentY = titleHeight + (2 * titlePadding);
+		int itemHeight = Font.getDefaultFont().getHeight() - titlePadding;
+	
+		// Calculate the number of visible items
+		int visibleItems = (Mobile.lcdHeight - titleHeight - (2 * titlePadding) - bottomBarHeight) / itemHeight;
+		int firstVisibleItem = Math.max(0, selectedMidlet - visibleItems / 2);
+		int lastVisibleItem = Math.min(numMidlets - 1, firstVisibleItem + visibleItems - 1);
+	
+		// Render MIDlet items
+		for (int i = firstVisibleItem; i <= lastVisibleItem; i++) 
+		{
+			if (name[i] != null) 
+			{
+				// Highlight the selected MIDlet
+				if (i == selectedMidlet) 
+				{
+					graphics.setColor(Mobile.lcduiTextColor);
+					graphics.fillRect(0, currentY, Mobile.lcdWidth, itemHeight);
+					graphics.setColor(Mobile.lcduiBGColor);
+				} 
+				else { graphics.setColor(Mobile.lcduiTextColor); }
+	
+				graphics.drawString(name[i], Mobile.lcdWidth / 2, currentY, Graphics.HCENTER);
+				currentY += itemHeight;
+			}
+		}
+	
+		// Draw scrollbar if necessary
+		if (numMidlets > visibleItems) 
+		{
+			int scrollbarWidth = 3+titlePadding;
+			int scrollableHeight = Mobile.lcdHeight - titleHeight - bottomBarHeight;
+			int scrollbarHeight = (int) ((double) visibleItems / numMidlets * scrollableHeight);
+			int scrollbarY = (int) (((double) firstVisibleItem / (numMidlets - visibleItems)) * (scrollableHeight - scrollbarHeight));
+	
+			// Ensure scrollbar is within the scrollable area's bounds
+			scrollbarY = Math.min(scrollbarY, scrollableHeight - scrollbarHeight);
+	
+			graphics.setColor(Mobile.lcduiStrokeColor); // Scrollbar color
+			graphics.fillRect(Mobile.lcdWidth - scrollbarWidth, titleHeight + (2 * titlePadding) + scrollbarY, scrollbarWidth, scrollbarHeight);
+		}
+	
+		Mobile.getPlatform().flushGraphics(platformImage, 0, 0, Mobile.lcdWidth, Mobile.lcdHeight);
 	}
 }
