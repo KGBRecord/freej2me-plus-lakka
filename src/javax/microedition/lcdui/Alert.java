@@ -96,9 +96,9 @@ public class Alert extends Screen
 
 	public String getString() { return message; }
 
+	// Tested, works.
 	public void setString(String text)
 	{
-		Mobile.log(Mobile.LOG_WARNING, Alert.class.getPackage().getName() + "." + Alert.class.getSimpleName() + ": " + text);
 		message = text;
 		needsLayout = true;
 	}
