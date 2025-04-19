@@ -520,12 +520,18 @@ public class MIDletLoader extends URLClassLoader
 			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
 			String resourcePath = className[selectedMidlet].replace(".", "/");
     
-			// Remove the class name from the resolved path
-			resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
+			// If we really are in a subdir
+			if(resourcePath.contains("/")) 
+			{
+				// Remove the class name from the resolved path
+				resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
 			
-			// And there we have it, just append the resource at the end of it.
-			resource = resourcePath + resource;
+				// And there we have it, just append the resource at the end of it.
+				resource = resourcePath + resource;
+			}
+			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
+		
 
 		URL url = getResource(resource);
 
@@ -556,13 +562,21 @@ public class MIDletLoader extends URLClassLoader
 	{
 		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource as Byte Array: "+resource);
 
-		if(!resource.startsWith("/")) // Same step done in getMIDletResourceAsStream()
+		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
+			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
 			String resourcePath = className[selectedMidlet].replace(".", "/");
     
-			resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
+			// If we really are in a subdir
+			if(resourcePath.contains("/")) 
+			{
+				// Remove the class name from the resolved path
+				resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
 			
-			resource = resourcePath + resource;
+				// And there we have it, just append the resource at the end of it.
+				resource = resourcePath + resource;
+			}
+			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
 
 		URL url = getResource(resource);
