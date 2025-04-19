@@ -196,6 +196,7 @@ public abstract class Canvas extends Displayable
 
 		// serviceRepaints has to force pending repaints to happen
 		Mobile.getDisplay().processPaintsNow();
+		Mobile.getPlatform().flushGraphics(platformImage, 0, 0, width, height);
 	}
 
 	public void setFullScreenMode(boolean mode)
