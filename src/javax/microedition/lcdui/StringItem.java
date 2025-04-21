@@ -83,23 +83,23 @@ public class StringItem extends Item
 	
 		for (String line : lines) 
 		{
-			String[] words = line.split(" ");
-			String wrappedLine = "";
+			StringBuilder wrappedLine = new StringBuilder();
 	
-			for (String word : words) 
+			for (int i = 0; i < line.length(); i++) 
 			{
-				String candidate = wrappedLine.isEmpty() ? word : wrappedLine + " " + word;
-				int candidateWidth = font.stringWidth(candidate);
+				String word = String.valueOf(line.charAt(i));
+				String wrapCandidate = wrappedLine.length() == 0 ? word : wrappedLine + word;
+				int wrapCandidateWidth = font.stringWidth(wrapCandidate);
 	
-				if (candidateWidth > width) 
+				if (wrapCandidateWidth > width) 
 				{
-					wrappedLines.add(wrappedLine);
-					wrappedLine = word;
-				}
-				else { wrappedLine = candidate; }
+					if (wrappedLine.length() > 0) { wrappedLines.add(wrappedLine.toString()); }
+					wrappedLine = new StringBuilder(word);
+				} 
+				else { wrappedLine.append(word); }
 			}
 	
-			wrappedLines.add(wrappedLine);
+			if (wrappedLine.length() > 0) { wrappedLines.add(wrappedLine.toString()); }
 		}
 	
 		return wrappedLines;
