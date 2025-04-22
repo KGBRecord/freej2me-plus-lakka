@@ -56,8 +56,8 @@ public class PlatformFont
 		String[] fontfiles = textfontDir.list(new FilenameFilter()
 		{
 			@Override
-			public boolean accept(File f, String soundfont) {
-				String lowerCaseFont = soundfont.toLowerCase();
+			public boolean accept(File f, String textfont) {
+				String lowerCaseFont = textfont.toLowerCase();
 				return lowerCaseFont.endsWith(".ttf") || 
 						lowerCaseFont.endsWith(".otf") || 
 						lowerCaseFont.endsWith(".ttc");
