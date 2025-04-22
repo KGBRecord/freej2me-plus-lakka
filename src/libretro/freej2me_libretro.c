@@ -584,7 +584,7 @@ void retro_init(void)
 	}
 
 	/* Allocate memory for launch arguments */
-	params = (char**)malloc(sizeof(char*) * 17);
+	params = (char**)malloc(sizeof(char*) * 18);
 	params[0] = strdup("java");
 	params[1] = strdup("-jar");
 	params[2] = strdup("freej2me-lr.jar");

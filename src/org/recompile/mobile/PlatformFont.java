@@ -56,7 +56,12 @@ public class PlatformFont
 		String[] fontfiles = textfontDir.list(new FilenameFilter()
 		{
 			@Override
-			public boolean accept(File f, String soundfont ) { return soundfont.toLowerCase().endsWith(".ttf"); }
+			public boolean accept(File f, String soundfont) {
+				String lowerCaseFont = soundfont.toLowerCase();
+				return lowerCaseFont.endsWith(".ttf") || 
+						lowerCaseFont.endsWith(".otf") || 
+						lowerCaseFont.endsWith(".ttc");
+			}
 		});
 
 		if (Mobile.useCustomTextFont && fontfiles != null && fontfiles.length > 0) // Load a custom font if enabled, and there is one
