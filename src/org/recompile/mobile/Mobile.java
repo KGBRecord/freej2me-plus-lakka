@@ -58,6 +58,9 @@ public class Mobile
 	// Support for loading custom MIDI soundfonts
 	public static boolean useCustomMidi = false;
 
+	// Support for loading custom text fonts
+	public static boolean useCustomTextFont = false;
+
 	// Enable/Disable audio dumping
 	public static boolean dumpAudioStreams = false;
 
@@ -793,6 +796,10 @@ public class Mobile
 		String clipRectOnGfxReset = config.settings.get("compatcliprectongfxreset");
 		if(clipRectOnGfxReset.equals("on"))        { compatClipRectOnGfxReset = true; }
 		else if (clipRectOnGfxReset.equals("off")) { compatClipRectOnGfxReset = false; };
+
+		String textFont = config.settings.get("textfont");
+		if(textFont.equals("Custom"))       { useCustomTextFont = true; }
+		else if(textFont.equals("Default")) { useCustomTextFont = false; }
 
 
 		// Rotation is left at the end since it governs this method's return value

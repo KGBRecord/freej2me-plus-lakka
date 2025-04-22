@@ -97,6 +97,7 @@ public class Config
 				settings.put("rotate", "off");
 				settings.put("fps", "0");
 				settings.put("soundfont", "Default");
+				settings.put("textfont", "Default");
 				settings.put("spdhacknoalpha", "off");
 				settings.put("compatnonfatalnullimage", "off");
 				settings.put("compatcliprectongfxreset", "off");
@@ -137,6 +138,7 @@ public class Config
 			if(!settings.containsKey("rotate")) { settings.put("rotate", "off"); }
 			if(!settings.containsKey("fps")) { settings.put("fps", "0"); }
 			if(!settings.containsKey("soundfont")) { settings.put("soundfont", "Default"); }
+			if(!settings.containsKey("textfont")) { settings.put("textfont", "Default"); }
 			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
 			if(!settings.containsKey("compatnonfatalnullimage")) { settings.put("compatnonfatalnullimage", "off"); }
 			if(!settings.containsKey("compatcliprectongfxreset")) { settings.put("compatcliprectongfxreset", "off"); }
@@ -216,6 +218,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: soundfont "+value);
 		settings.put("soundfont", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateTextFont(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: textfont "+value);
+		settings.put("textfont", value);
 		saveConfig();
 		onChange.run();
 	}

@@ -127,6 +127,8 @@ public class Libretro
 		if(Integer.parseInt(args[12]) == 0) { Mobile.compatClipRectOnGfxReset = false; }
 		else { Mobile.compatClipRectOnGfxReset = true; }
 
+		if(Integer.parseInt(args[13]) == 1) { Mobile.useCustomTextFont = true; }
+
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
@@ -293,6 +295,9 @@ public class Libretro
 										if(!Mobile.compatClipRectOnGfxReset) { Mobile.config.settings.put("compatcliprectongfxreset", "off"); }
 										else                                 { Mobile.config.settings.put("compatcliprectongfxreset", "on"); }
 
+										if(!Mobile.useCustomTextFont)  { Mobile.config.settings.put("textfont", "Default"); }
+										else                           { Mobile.config.settings.put("textfont", "Custom");  }
+
 										Mobile.config.saveConfig();
 										settingsChanged();
 
@@ -371,6 +376,9 @@ public class Libretro
 
 									if(Integer.parseInt(cfgtokens[13])==0) { Mobile.config.settings.put("compatcliprectongfxreset", "off");  }
 									else { Mobile.config.settings.put("compatcliprectongfxreset", "on"); }
+
+									if(Integer.parseInt(cfgtokens[14])==0) { Mobile.config.settings.put("textfont", "Default"); }
+									if(Integer.parseInt(cfgtokens[14])==1) { Mobile.config.settings.put("textfont", "Custom");  }
 
 									Mobile.config.saveConfig();
 									settingsChanged();

@@ -166,6 +166,7 @@ public final class AWTGUI
 	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("Enable Audio", false);
 	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("Rotate Screen", false);
 	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("Use custom midi soundfont", false);
+	final CheckboxMenuItem useCustomFont = new CheckboxMenuItem("Use custom text font", false);
 
 	final CheckboxMenuItem[] layoutOptions = 
 	{
@@ -462,6 +463,18 @@ public final class AWTGUI
 			}
 		});
 
+		useCustomFont.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(useCustomFont.getState()){ config.updateTextFont("Custom"); hasPendingChange = true; }
+				else{ config.updateTextFont("Default"); hasPendingChange = true; }
+
+				awtDialogs[3].setLocationRelativeTo(main);
+				awtDialogs[3].setVisible(true);
+			}
+		});
+
 		// Speedhacks
 		noAlphaOnBlankImages.addItemListener(new ItemListener() 
 		{
@@ -649,6 +662,7 @@ public final class AWTGUI
 		optionMenu.add(enableAudio);
 		optionMenu.add(enableRotation);
 		optionMenu.add(useCustomMidi);
+		optionMenu.add(useCustomFont);
 		optionMenu.add(resChangeMenuItem);
 		optionMenu.add(showFPS);
 		optionMenu.add(phoneType);
@@ -692,6 +706,7 @@ public final class AWTGUI
 			enableAudio.setState(config.settings.get("sound").equals("on"));
 			enableRotation.setState(config.settings.get("rotate").equals("on"));
 			useCustomMidi.setState(config.settings.get("soundfont").equals("Custom"));
+			useCustomFont.setState(config.settings.get("textfont").equals("Custom"));
 
 			for(int i = 0; i < fpsOptions.length; i++) { fpsOptions[i].setState(config.settings.get("fps").equals(fpsValues[i])); }
 

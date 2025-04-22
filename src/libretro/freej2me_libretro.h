@@ -254,6 +254,20 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_textfont",
+        "System > Text Font",
+        "Text Font",
+        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes.",
+        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes.",
+        "system_settings",
+        {
+            { "off", "Default" },
+            { "on",  "Custom" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_analogasentirekeypad",
         "System > Use Analog As Entire Keypad",
         "Use Analog As Entire Keypad",
@@ -579,6 +593,17 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
+        "freej2me_textfont",
+        "Text Font",
+        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes.",
+        {
+            { "off", "Default" },
+            { "on",  "Custom" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_analogasentirekeypad",
         "Use Analog As Entire Keypad",
         "A few games like Time Crisis Elite and Rayman Raving Rabbids can benefit from having the analog serve as the entire keypad for smoother gameplay (in TC Elite's case, with num 5 as pressing the analog too). If you have a game that appears to benefit from this by using the diagonal keypad keys instead of allowing for num2 and num4 to be pressed simultaneously for the same effect for example, try enabling it.",
@@ -772,6 +797,10 @@ static const struct retro_variable vars[] =
     { /* MIDI Soundfont */
         "freej2me_midifont",
         "MIDI Soundfont; off|on"
+    },
+    { /* Custom Text Font */
+        "freej2me_textfont",
+        "Text Font; off|on"
     },
     { /* Use Analog As Entire Keypad */
         "freej2me_analogasentirekeypad",
