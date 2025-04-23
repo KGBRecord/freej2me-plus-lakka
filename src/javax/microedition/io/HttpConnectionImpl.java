@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
@@ -101,15 +102,11 @@ class HttpConnectionImpl implements HttpConnection
 
 	public long getLength() { return 0; }
 
-	public DataInputStream openDataInputStream() { return null; }
+	public DataInputStream openDataInputStream() { return new DataInputStream(this.openInputStream()); }
 
-	public InputStream openInputStream() 
-    { 
-        if(url.contains("vserv") || url.contains("adapi")) { return new ByteArrayInputStream("resource://!blank".getBytes(StandardCharsets.UTF_8)); }
-        return null; 
-    }
+	public InputStream openInputStream() { return new ByteArrayInputStream("resource://!blank".getBytes(StandardCharsets.UTF_8)); }
 
-	public DataOutputStream openDataOutputStream() { return null; }
+	public DataOutputStream openDataOutputStream() { return new DataOutputStream(this.openOutputStream()); }
 
-	public OutputStream openOutputStream() { return null; }
+	public OutputStream openOutputStream() { return new ByteArrayOutputStream(); }
 }
