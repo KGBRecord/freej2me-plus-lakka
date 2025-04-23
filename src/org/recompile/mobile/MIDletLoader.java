@@ -611,6 +611,8 @@ public class MIDletLoader extends URLClassLoader
 
 		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Load Class "+name);
 
+		checkAPIUsage(name);
+
 		// zb3: this needs to be improved as this won't transform games
 		// like hypothetical com.nokia.tictactoe
 		if(
@@ -639,6 +641,13 @@ public class MIDletLoader extends URLClassLoader
 			return null;
 		}
 
+	}
+
+	// TODO: This should be fleshed out to parse more classes that can affect the type of Connector returned, etc.
+	public void checkAPIUsage(String name) 
+	{
+		// We need to discern these messaging packages in order to return valid "Connection" classes for SMS
+		if (name.contains("javax.wireless.messaging")) { Mobile.usingMessagingAPI = true; }
 	}
 
 

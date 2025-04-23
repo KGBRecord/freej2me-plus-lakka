@@ -43,6 +43,9 @@ public class Mobile
 
 	private static Display display;
 
+	// These flags are used for general compatibility adjustments within FreeJ2ME
+	public static boolean usingMessagingAPI = false;
+
 	// Mobile should contain flags to any and all "speedhacks" present in FreeJ2ME
 	public static boolean noAlphaOnBlankImages = true;
 
