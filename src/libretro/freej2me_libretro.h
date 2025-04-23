@@ -257,8 +257,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_textfont",
         "System > Text Font",
         "Text Font",
-        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes.",
-        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes.",
+        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
+        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
         "system_settings",
         {
             { "off", "Default" },
@@ -266,6 +266,27 @@ struct retro_core_option_v2_definition core_options[] =
             { NULL, NULL },
         },
         "off"
+    },
+    {
+        "freej2me_fontoffset",
+        "System > Font Size Offset",
+        "Font Size Offset",
+        "Adjust the offset used for font sizing in order to make text bigger or smaller. Also helps with custom fonts that might be too big or small by default.",
+        "Adjust the offset used for font sizing in order to make text bigger or smaller. Also helps with custom fonts that might be too big or small by default.",
+        "system_settings",
+        {
+            { "-4", "-4 pt" },
+            { "-3", "-3 pt" },
+            { "-2", "-2 pt" },
+            { "-1", "-1 pt" },
+            { "0", " 0 pt (Default)" },
+            { "1", " 1 pt" },
+            { "2", " 2 pt" },
+            { "3", " 3 pt" },
+            { "4", " 4 pt" },
+            { NULL, NULL },
+        },
+        "0"
     },
     {
         "freej2me_analogasentirekeypad",
@@ -595,13 +616,31 @@ struct retro_core_option_definition core_options_v1 [] =
     {
         "freej2me_textfont",
         "Text Font",
-        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes.",
+        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
         {
             { "off", "Default" },
             { "on",  "Custom" },
             { NULL, NULL },
         },
         "off"
+    },
+    {
+        "freej2me_fontoffset",
+        "Font Size Offset",
+        "Adjust the offset used for font sizing in order to make text bigger or smaller. Also helps with custom fonts that might be too big or small by default.",
+        {
+            { "-4", "-4 pt" },
+            { "-3", "-3 pt" },
+            { "-2", "-2 pt" },
+            { "-1", "-1 pt" },
+            { "0", " 0 pt (Default)" },
+            { "1", " 1 pt" },
+            { "2", " 2 pt" },
+            { "3", " 3 pt" },
+            { "4", " 4 pt" },
+            { NULL, NULL },
+        },
+        "0"
     },
     {
         "freej2me_analogasentirekeypad",
@@ -801,6 +840,10 @@ static const struct retro_variable vars[] =
     { /* Custom Text Font */
         "freej2me_textfont",
         "Text Font; off|on"
+    },
+    { /* Custom Text Font */
+        "freej2me_fontoffset",
+        "Font Size Offset; 0|-4|-3|-2|-1|1|2|3|4"
     },
     { /* Use Analog As Entire Keypad */
         "freej2me_analogasentirekeypad",

@@ -63,6 +63,7 @@ public class Mobile
 
 	// Support for loading custom text fonts
 	public static boolean useCustomTextFont = false;
+	public static byte fontSizeOffset = 0; // Size offset to tweak font sizing
 
 	// Enable/Disable audio dumping
 	public static boolean dumpAudioStreams = false;
@@ -803,6 +804,9 @@ public class Mobile
 		String textFont = config.settings.get("textfont");
 		if(textFont.equals("Custom"))       { useCustomTextFont = true; }
 		else if(textFont.equals("Default")) { useCustomTextFont = false; }
+
+		String fontOffset = config.settings.get("fontoffset");
+		fontSizeOffset = (byte) Integer.parseInt(fontOffset);
 
 
 		// Rotation is left at the end since it governs this method's return value

@@ -167,10 +167,10 @@ public final class Font
 	{
 		switch(size)
 		{
-			case SIZE_LARGE  : return fontSizes[3*screenType + 2];
-			case SIZE_MEDIUM : return fontSizes[3*screenType + 1];
+			case SIZE_LARGE  : return fontSizes[3*screenType + 2]+Mobile.fontSizeOffset;
+			case SIZE_MEDIUM : return fontSizes[3*screenType + 1]+Mobile.fontSizeOffset;
 			case SIZE_SMALL  :
-			default          : return fontSizes[3*screenType];
+			default          : return fontSizes[3*screenType]+Mobile.fontSizeOffset;
 		}
 	}
 }

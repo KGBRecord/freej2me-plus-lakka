@@ -129,6 +129,8 @@ public class Libretro
 
 		if(Integer.parseInt(args[13]) == 1) { Mobile.useCustomTextFont = true; }
 
+		Mobile.fontSizeOffset = (byte) Integer.parseInt(args[14]);
+
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
@@ -298,6 +300,8 @@ public class Libretro
 										if(!Mobile.useCustomTextFont)  { Mobile.config.settings.put("textfont", "Default"); }
 										else                           { Mobile.config.settings.put("textfont", "Custom");  }
 
+										Mobile.config.settings.put("fontoffset", "" + Mobile.fontSizeOffset);
+
 										Mobile.config.saveConfig();
 										settingsChanged();
 
@@ -379,6 +383,8 @@ public class Libretro
 
 									if(Integer.parseInt(cfgtokens[14])==0) { Mobile.config.settings.put("textfont", "Default"); }
 									if(Integer.parseInt(cfgtokens[14])==1) { Mobile.config.settings.put("textfont", "Custom");  }
+
+									Mobile.config.settings.put("fontoffset", "" + Integer.parseInt(cfgtokens[15]));
 
 									Mobile.config.saveConfig();
 									settingsChanged();

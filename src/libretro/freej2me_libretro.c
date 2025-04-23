@@ -153,6 +153,7 @@ int gameFPS; /* Auto(0), 60, 30, 15 */
 int soundEnabled; /* also acts as a boolean */
 int customMidi; /* Also acts as a boolean */
 int customFont; /* Also acts as a boolean */
+int fontOffset = 0; /* -4, -3, -2, -1, 0 (Default), 1, 2, 3, 4 */
 int dumpAudioStreams;
 int loggingLevel;
 /* Variables used to manage the pointer speed when controlled from an analog stick */
@@ -375,6 +376,20 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "on")) { customFont = 1; }
 	}
 
+	var.key = "freej2me_fontoffset";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		if (!strcmp(var.value, "-4"))      { fontOffset = -4; }
+		else if (!strcmp(var.value, "-3")) { fontOffset = -3; }
+		else if (!strcmp(var.value, "-2")) { fontOffset = -2; }
+		else if (!strcmp(var.value, "-1")) { fontOffset = -1; }
+		else if (!strcmp(var.value, "0")) { fontOffset = 0; }
+		else if (!strcmp(var.value, "1")) { fontOffset = 1; }
+		else if (!strcmp(var.value, "2")) { fontOffset = 2; }
+		else if (!strcmp(var.value, "3")) { fontOffset = 3; }
+		else if (!strcmp(var.value, "4")) { fontOffset = 4; }
+	}
+
 	var.key = "freej2me_analogasentirekeypad";
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
 	{
@@ -501,7 +516,7 @@ static void check_variables(bool first_time_startup)
 	/* Prepare a string to pass those core options to the Java app */
 	options_update = malloc(sizeof(char) * PIPE_MAX_LEN);
 
-	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatNonFatalNullImages, compatClipRectOnGfxReset, customFont);
+	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatNonFatalNullImages, compatClipRectOnGfxReset, customFont, fontOffset);
 	optstrlen = strlen(options_update);
 
 	/* 0xD = 13, which is the special case where the java app will receive the updated configs */
@@ -551,7 +566,7 @@ void retro_init(void)
 
 	/* Check variables and set parameters */
 	check_variables(true);
-	char resArg[2][4], rotateArg[2], phoneArg[2], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2], compatNonFatalNullImagesArg[2], compatClipRectOnGfxResetArg[2], fontArg[2];
+	char resArg[2][4], rotateArg[2], phoneArg[2], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2], compatNonFatalNullImagesArg[2], compatClipRectOnGfxResetArg[2], fontArg[2], offsetArg[3];
 	sprintf(resArg[0], "%lu", screenRes[0]);
 	sprintf(resArg[1], "%lu", screenRes[1]);
 	sprintf(rotateArg, "%d", rotateScreen);
@@ -566,6 +581,7 @@ void retro_init(void)
 	sprintf(compatNonFatalNullImagesArg, "%d", compatNonFatalNullImages);
 	sprintf(compatClipRectOnGfxResetArg, "%d", compatClipRectOnGfxReset);
 	sprintf(fontArg, "%d", customFont);
+	sprintf(offsetArg, "%d", fontOffset);
 
 	/* We need to clean up any argument memory from the previous launch arguments in order to load up updated ones */
 	if (restarting)
@@ -584,7 +600,7 @@ void retro_init(void)
 	}
 
 	/* Allocate memory for launch arguments */
-	params = (char**)malloc(sizeof(char*) * 18);
+	params = (char**)malloc(sizeof(char*) * 19);
 	params[0] = strdup("java");
 	params[1] = strdup("-jar");
 	params[2] = strdup("freej2me-lr.jar");
@@ -602,7 +618,8 @@ void retro_init(void)
 	params[14] = strdup(compatNonFatalNullImagesArg);
 	params[15] = strdup(compatClipRectOnGfxResetArg);
 	params[16] = strdup(fontArg);
-	params[17] = NULL; // Null-terminate the array
+	params[17] = strdup(offsetArg);
+	params[18] = NULL; // Null-terminate the array
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
 
@@ -1195,8 +1212,8 @@ int javaOpen(char *cmd, char **params)
 		log_fn(RETRO_LOG_INFO, "Setting up java app's process and pipes...\n");
 
 		log_fn(RETRO_LOG_INFO, "Opening: %s %s %s ...\n", *(params+0), *(params+1), *(params+2));
-		log_fn(RETRO_LOG_INFO, "Params: %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s\n", *(params+3),
-			*(params+4), *(params+5), *(params+6), *(params+7), *(params+8), *(params+9), *(params+10), *(params+11), *(params+12), *(params+13), *(params+14), *(params+15), *(params+16));
+		log_fn(RETRO_LOG_INFO, "Params: %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s\n", *(params+3),
+			*(params+4), *(params+5), *(params+6), *(params+7), *(params+8), *(params+9), *(params+10), *(params+11), *(params+12), *(params+13), *(params+14), *(params+15), *(params+16), *(params+17));
 	}
 	else { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME.\n"); restarting = false; }
 
@@ -1306,7 +1323,7 @@ int javaOpen(char *cmd, char **params)
 	sprintf(cmdWin, "javaw -jar %s", cmd);
 
 	log_fn(RETRO_LOG_INFO, "Opening: %s \n", cmdWin);
-	for (int i = 3; i < 17; i++)
+	for (int i = 3; i < 18; i++)
 	{
 		//log_fn(RETRO_LOG_INFO, "Processing arg %d: %s \n", i, *(params+i));
 		sprintf(cmdWin, "%s %s", cmdWin, *(params+i));
@@ -1319,8 +1336,8 @@ int javaOpen(char *cmd, char **params)
 		log_fn(RETRO_LOG_INFO, "Setting up java app's process and pipes...\n");
 
 		log_fn(RETRO_LOG_INFO, "Opening: %s ...\n", cmdWin);
-		log_fn(RETRO_LOG_INFO, "Params: %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s\n", *(params+3),
-			*(params+4), *(params+5), *(params+6), *(params+7), *(params+8), *(params+9), *(params+10), *(params+11), *(params+12), *(params+13), *(params+14), *(params+15), *(params+16));
+		log_fn(RETRO_LOG_INFO, "Params: %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s\n", *(params+3),
+			*(params+4), *(params+5), *(params+6), *(params+7), *(params+8), *(params+9), *(params+10), *(params+11), *(params+12), *(params+13), *(params+14), *(params+15), *(params+16), *(params+17));
 	}
 	else { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME.\n"); restarting = false; }
 

@@ -72,17 +72,18 @@ public final class AWTGUI
 	final MenuBar menuBar = new MenuBar();
 
 	/* MenuBar's menus */
-	Menu fileMenu = new Menu("File");
-	Menu optionMenu = new Menu("Settings");
-	Menu speedHackMenu = new Menu("SpeedHacks"); 
-	Menu compatSettingsMenu = new Menu("Compatibility Settings"); 
-	Menu debugMenu = new Menu("Debug");
+	final Menu fileMenu = new Menu("File");
+	final Menu optionMenu = new Menu("Settings");
+	final Menu speedHackMenu = new Menu("SpeedHacks"); 
+	final Menu compatSettingsMenu = new Menu("Compatibility Settings"); 
+	final Menu debugMenu = new Menu("Debug");
 
 	/* Sub menus (for now, all of them are located in "Settings") */
 	final Menu fpsCap = new Menu("FPS Limit");
 	final Menu showFPS = new Menu("Show FPS Counter");
 	final Menu phoneType = new Menu("Phone Key Layout");
 	final Menu backlightColor = new Menu("Backlight Color");
+	final Menu fontOffset = new Menu("Font Size Offset");
 
 	/* Dialogs for resolution changes, restart notifications, MemStats and info about FreeJ2ME */
 	final Dialog[] awtDialogs = 
@@ -211,6 +212,20 @@ public final class AWTGUI
 		new CheckboxMenuItem("Bottom Right", false)
 	};
 	final String[] showFPSValues = {"Off", "TopLeft", "TopRight", "BottomLeft", "BottomRight"};
+
+	final CheckboxMenuItem[] fontOffsets = 
+	{
+		new CheckboxMenuItem("-4pt", false),
+		new CheckboxMenuItem("-3pt", false),
+		new CheckboxMenuItem("-2pt", false),
+		new CheckboxMenuItem("-1pt", false),
+		new CheckboxMenuItem(" 0pt (Default)", true),
+		new CheckboxMenuItem(" 1pt", false),
+		new CheckboxMenuItem(" 2pt", false),
+		new CheckboxMenuItem(" 3pt", false),
+		new CheckboxMenuItem(" 4pt", false)
+	};
+	final String[] fontOffsetValues = {"-4", "-3", "-2", "-1", "0", "1", "2", "3", "4"};
 
 	final CheckboxMenuItem[] logLevels = 
 	{
@@ -598,6 +613,26 @@ public final class AWTGUI
 			});
 		}
 
+		for(byte i = 0; i < fontOffsets.length; i++) 
+		{
+			final byte index = i;
+			fontOffsets[i].addItemListener(new ItemListener() 
+			{
+				public void itemStateChanged(ItemEvent e) 
+				{
+					if(!fontOffsets[index].getState()){ fontOffsets[index].setState(true); }
+					if(fontOffsets[index].getState())
+					{ 
+						config.updateFontOffset(fontOffsetValues[index]);
+						for(int j = 0; j < fontOffsets.length; j++) 
+						{
+							if(j != index) { fontOffsets[j].setState(false); }
+						}
+					}
+				}
+			});
+		}
+
 		for(byte i = 0; i < logLevels.length; i++) 
 		{
 			final byte index = i;
@@ -668,6 +703,7 @@ public final class AWTGUI
 		optionMenu.add(phoneType);
 		optionMenu.add(backlightColor);
 		optionMenu.add(fpsCap);
+		optionMenu.add(fontOffset);
 		optionMenu.add(mapInputs);
 		optionMenu.add(speedHackMenu);
 		optionMenu.add(compatSettingsMenu);
@@ -689,6 +725,7 @@ public final class AWTGUI
 		for(int i = 0; i < backlightOptions.length; i++) { backlightColor.add(backlightOptions[i]); }
 		for(int i = 0; i < fpsOptions.length; i++) { fpsCap.add(fpsOptions[i]); }
 		for(int i = 0; i < fpsCounterPos.length; i++) { showFPS.add(fpsCounterPos[i]); }
+		for(int i = 0; i < fontOffsets.length; i++) { fontOffset.add(fontOffsets[i]); }
 
 		speedHackMenu.add(noAlphaOnBlankImages);
 
@@ -709,6 +746,8 @@ public final class AWTGUI
 			useCustomFont.setState(config.settings.get("textfont").equals("Custom"));
 
 			for(int i = 0; i < fpsOptions.length; i++) { fpsOptions[i].setState(config.settings.get("fps").equals(fpsValues[i])); }
+
+			for(int i = 0; i < fontOffsets.length; i++) { fontOffsets[i].setState(config.settings.get("fontoffset").equals(fontOffsetValues[i])); }
 
 			for(int i = 0; i < layoutOptions.length; i++) 
 			{
