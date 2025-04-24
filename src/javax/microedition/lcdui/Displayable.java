@@ -58,14 +58,17 @@ public abstract class Displayable
 	}
 
 	public void addCommand(Command cmd)
-	{ 
-		commands.add(cmd);
+	{
+		if(commands.contains(cmd)) { return; }
+		if(cmd == null) { throw new NullPointerException("Cannot insert a null command"); }
+		synchronized(commands) { commands.add(cmd); }
 		_invalidate();
 	}
 
 	public void removeCommand(Command cmd) 
-	{ 
-		commands.remove(cmd);
+	{
+		if(cmd == null) { return; }
+		synchronized(commands) { commands.remove(cmd); }
 		_invalidate(); 
 	}
 	
@@ -340,7 +343,7 @@ public abstract class Displayable
 
 	protected void doRightCommand()
 	{
-		if(commands.size()>0 && commands.size()<=2)
+		if(commands.size()>1 && commands.size()<=2)
 		{
 			doCommand(1);
 		}
@@ -352,4 +355,5 @@ public abstract class Displayable
 
 		Mobile.getDisplay().postPaintRequest(() -> { render(); });
 	}
+
 }
