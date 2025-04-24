@@ -216,7 +216,10 @@ public abstract class Canvas extends Displayable
 		height = h;
 	}
 
-	public int getHeight() { return height; }
+	public int getHeight() 
+	{ 
+		return height - (!fullscreen ? barHeight : 0);
+	}
 
 	private void paintCommandsBar() 
 	{
