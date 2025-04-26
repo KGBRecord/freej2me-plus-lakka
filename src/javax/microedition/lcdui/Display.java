@@ -132,6 +132,35 @@ public class Display
 		return true;
 	}
 
+	public boolean vodafoneFlashBacklight(int duration, int offDuration, int reps) 
+	{
+		try 
+		{
+			if (flashThread != null && flashThread.isAlive()) 
+			{
+				flashThread.interrupt();
+				Mobile.renderLCDMask = false;
+			}
+			flashThread = new Thread(() -> 
+			{
+				for(int i = 0; i < reps; i++) 
+				{
+					Mobile.renderLCDMask = true;
+					try { Thread.sleep(duration);}
+					catch(Exception e) {}
+
+					Mobile.renderLCDMask = false;
+					try { Thread.sleep(offDuration); }
+					catch(Exception e) {}
+				}
+				
+			});
+			flashThread.start();
+		}
+		catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Failed to flash Backlight: "+ e.getMessage()); }
+		return true;
+	}
+
 	public int getBestImageHeight(int imageType)
 	{
 		switch(imageType)

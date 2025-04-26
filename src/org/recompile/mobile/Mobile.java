@@ -132,15 +132,18 @@ public class Mobile
 	// Set whether audio should be enabled or not. Can work around jars that crash FreeJ2ME due to audio
 	public static boolean sound = true;
 
+	// Support for explicit FPS limit on jars that require it to work properly
+	public static int limitFPS = 0;
+
+	// Vodafone has a use for this, but maybe this can be made into an actual viewport AA toggle
+	public static boolean isAAEnabled = false;
+
 	// Var to track any changes to current Displayable, otherwise the SDL interface won't render new frames
 	public static boolean displayUpdated;
 
 	// Vibration support for Libretro and SDL
 	public static int vibrationDuration = 0;
 	public static int vibrationStrength = 0xFFFF;
-
-	// Support for explicit FPS limit on jars that require it to work properly
-	public static int limitFPS = 0;
 
 	//MIDP Canvas keycodes (A.K.A the standard set provided by MIDP)
 	public static final int KEY_NUM0  = Canvas.KEY_NUM0;  // 48
