@@ -515,6 +515,9 @@ public class MIDletLoader extends URLClassLoader
 	{
 		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource As Stream: "+resource + " path:" + className[selectedMidlet]);
 
+		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
+		while (resource.startsWith("//")) { resource = resource.substring(1); }
+
 		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
 			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
@@ -561,6 +564,9 @@ public class MIDletLoader extends URLClassLoader
 	public byte[] getMIDletResourceAsByteArray(String resource)
 	{
 		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource as Byte Array: "+resource);
+
+		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
+		while (resource.startsWith("//")) { resource = resource.substring(1); }
 
 		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
