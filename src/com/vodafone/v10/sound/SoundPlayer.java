@@ -31,7 +31,6 @@ public class SoundPlayer
 				tracks[i] = new SoundTrack();
 				return tracks[i];
 			}
-            throw new IllegalStateException("There are no available tracks to return");
 		}
         return null;
 	}
