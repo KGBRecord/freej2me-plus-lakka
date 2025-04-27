@@ -61,6 +61,8 @@ import javax.microedition.media.Control;
 import javax.microedition.media.Controllable;
 import javax.microedition.media.Manager;
 
+/* SMAF decoding support */
+import javax.microedition.media.decoders.SMAFDecoder;
 /* IMA ADPCM WAV support */
 import javax.microedition.media.decoders.WavImaAdpcmDecoder;
 
@@ -135,10 +137,19 @@ public class PlatformPlayer implements Player
 					}
 					else if(data.length >= 4 && data[0] == 'M' && data[1] == 'M' && data[2] == 'M' && data[3] == 'D')
 					{
-						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is SMAF/MMF! (not supported yet)");
-						player = new audioplayer();
+						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is SMAF/MMF! (not fully supported yet)");
+						byte[] SMAFData = SMAFDecoder.convertSMAFToMidi(data);
 						contentType = "audio/mmf";
-						disableControls = true;
+						if(SMAFData != null) 
+						{
+							InputStream SMAFStream = new ByteArrayInputStream(SMAFData);
+							if(Mobile.dumpAudioStreams) { SMAFStream = Manager.dumpAudioStream(SMAFStream, contentType); }
+							if(SMAFDecoder.isPCM) { player = new wavPlayer(SMAFStream); }
+							else { player = new midiPlayer(SMAFStream); }
+							SMAFData = null;
+						}
+						else { player = new audioplayer(); disableControls = true; } // Somehow the SMAF decoder failed, so retrieve a stub player
+						
 					}
 					else if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
 					{

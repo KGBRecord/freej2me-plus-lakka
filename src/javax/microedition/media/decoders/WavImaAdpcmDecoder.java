@@ -25,7 +25,7 @@ import java.util.Arrays;
 
 import org.recompile.mobile.Mobile;
 
-public final class WavImaAdpcmDecoder
+public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 {
 
 	/* Information about this audio format: https://wiki.multimedia.cx/index.php/IMA_ADPCM */
@@ -392,15 +392,15 @@ public final class WavImaAdpcmDecoder
 	 * Builds a WAV header that describes the decoded ADPCM file on the first 44 bytes. 
 	 * Data: little-endian, 16-bit, signed, same sample rate and channels as source IMA ADPCM.
 	 */
-	private static final void buildHeader(byte[] buffer, final short numChannels, final int sampleRate) 
+	private static final void buildHeader(byte[] buffer, final short numChannels, final int sampleRate, final short numBits) 
 	{ 
-		final short bitsPerSample = 16;   /* 16-bit PCM */
-		final short audioFormat = 1;      /* WAV linear PCM */
-		final int subChunkSize = 16;      /* Fixed size for Wav Linear PCM */
-		final int chunk = 0x52494646;     /* 'RIFF' */ 
-		final int format = 0x57415645;    /* 'WAVE' */ 
-		final int subChunk1 = 0x666d7420; /* 'fmt ' */ 
-		final int subChunk2 = 0x64617461; /* 'data' */ 
+		final short bitsPerSample = numBits;   /* 16-bit or 8-bit PCM */
+		final short audioFormat = 1;           /* WAV linear PCM */
+		final int subChunkSize = 16;           /* Fixed size for Wav Linear PCM */
+		final int chunk = 0x52494646;          /* 'RIFF' */ 
+		final int format = 0x57415645;         /* 'WAVE' */ 
+		final int subChunk1 = 0x666d7420;      /* 'fmt ' */ 
+		final int subChunk2 = 0x64617461;      /* 'data' */ 
 
 		/* 
 		 * We'll have 16 bits per sample, so each sample has 2 bytes, with that we just divide
@@ -468,8 +468,135 @@ public final class WavImaAdpcmDecoder
 		readInputStreamData(stream, input, 0, stream.available());
 
 		final byte[] output = decodeADPCM(input, input.length, (short) wavHeaderData[2], wavHeaderData[3]);
-		buildHeader(output, (short) wavHeaderData[2], wavHeaderData[1]); /* Builds a new header for the decoded stream. */
+		buildHeader(output, (short) wavHeaderData[2], wavHeaderData[1], (short) 16); /* Builds a new header for the decoded stream. */
 
 		return output;
+	}
+
+
+
+
+
+
+	
+	/* ------------------------------- NON-ADPCM SECTION -------------------------------*/
+
+
+
+
+
+
+	// These will convert from different PCM formats to either 8 or 16-bit Signed PCM:
+	public static final byte[] convert4BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
+	{
+		byte[] convertedWav = new byte[2*input.length + PCMHEADERSIZE];
+
+		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 8); /* Builds a new header for the converted stream. */
+		
+		if(numChannels == 2) // Stereo (Might be incorrect, but yamaha's MidRadio and mmftool seem to decode all parsed "Stereo" down to mono too)
+		{
+			// We don't need to check for stereo or mono here, both will convert in the same way
+			for (int i = 0; i < input.length; i++) 
+			{
+				if (is2Complement) // If it's already 2's complement, just map values accordingly
+				{
+					convertedWav[PCMHEADERSIZE + i*2] = (byte) input[i];
+					convertedWav[PCMHEADERSIZE + i*2+1] = (byte) input[i];
+				} 
+				else // Otherwise decrement the expected value by 128 (as we're going from [0...255] to [-128...127])
+				{
+					convertedWav[PCMHEADERSIZE + i] = (byte) (input[i] - 128);
+					convertedWav[PCMHEADERSIZE + i*2+1] = (byte) (input[i] - 128);
+				}
+			}
+		}
+		else // Mono
+		{
+			for (int i = 0; i < input.length; i++) 
+			{
+				// Get the upper 4 bits (MSB) and lower 4 bits (LSB), since we have 2 samples per byte on the original 4-bit wav
+				int upperNibble = (input[i] >> 4) & 0x0F;
+				int lowerNibble = input[i] & 0x0F;
+
+				if (is2Complement) // If it's already 2's complement, just expand and map values accordingly
+				{
+					convertedWav[PCMHEADERSIZE + i * 2] = (byte) (upperNibble < 8 ? upperNibble * 17 : (upperNibble - 16) * 17);
+					convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) (lowerNibble < 8 ? lowerNibble * 17 : (lowerNibble - 16) * 17);
+				} 
+				else // Otherwise, expand to 8-bit and to 2's Complement which is required to achieve Java's SIGNED Little-Endian format.
+				{
+					convertedWav[PCMHEADERSIZE + i * 2] = (byte) ((upperNibble - 8) * 17);
+					convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) ((lowerNibble - 8) * 17);
+				}
+			}
+		}
+		return convertedWav;
+	}
+
+	// This one pretty much just converts from binary offset to 2's complement if needed, and builds a header
+	public static final byte[] convert8BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
+	{
+		byte[] convertedWav = new byte[input.length + PCMHEADERSIZE];
+
+		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 8);
+
+		for (int i = 0; i < input.length; i++) 
+		{
+			if (is2Complement) { convertedWav[PCMHEADERSIZE + i * 2] = (byte) (input[i]); } 
+			else { convertedWav[PCMHEADERSIZE + i] = (byte) (input[i] - 128); }
+		}
+		return convertedWav;
+	}
+
+	public static final byte[] convert12BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
+	{
+		byte[] convertedWav = new byte[(int)(1.5 * input.length) + PCMHEADERSIZE + 1]; // Add an extra byte for safety
+
+		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 16);
+
+		for (int i = 0; i < input.length / 3; i++) 
+		{
+			int sampleIndex = i * 3;
+
+			int sample = ((input[sampleIndex] & 0xFF) << 4) | ((input[sampleIndex + 1] & 0xFF) >> 4);
+
+			if (is2Complement) 
+			{
+				convertedWav[PCMHEADERSIZE + i * 2] = (byte) (sample & 0xFF);
+				convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
+			} 
+			else 
+			{
+				sample -= 2048;
+				convertedWav[PCMHEADERSIZE + i * 2] = (byte) (sample & 0xFF);
+				convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
+			}
+		}
+		return convertedWav;
+	}
+
+	public static final byte[] convert16BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
+	{
+		byte[] convertedWav = new byte[input.length + PCMHEADERSIZE]; 
+		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 16);
+
+		for (int i = 0; i < input.length / 2; i++) 
+		{
+			int sampleIndex = i * 2;
+			int sample = (input[sampleIndex] & 0xFF) | (input[sampleIndex + 1] << 8);
+
+			if (is2Complement)
+			{
+				
+				convertedWav[PCMHEADERSIZE + i * 2] = (byte) (sample & 0xFF);
+				convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
+			} 
+			else
+			{
+				convertedWav[PCMHEADERSIZE + i * 2] = (byte) ((sample - 32768) & 0xFF);
+				convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) (((sample - 32768) >> 8) & 0xFF);
+			}
+		}
+		return convertedWav;
 	}
 }

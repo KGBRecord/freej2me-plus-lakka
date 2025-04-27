@@ -34,6 +34,7 @@ public class AudioClip
 	public static final int TYPE_MP3 = 2;
 	public static final int TYPE_MIDI = 3;
 
+	// NOTE: MMF/SMAF is converted by Manager->PlatformPlayer when it receives the data
 	public static final String[] formatMIMEType = {"audio/mmf", "audio/mp3", "audio/midi"};
 
 	private Player player;
@@ -52,27 +53,12 @@ public class AudioClip
 		else if(audioData[audioOffset+0] == 'M' && audioData[audioOffset+1] == 'T' && audioData[audioOffset+2] == 'h' && audioData[audioOffset+3] == 'd') { clipType = TYPE_MIDI; }
 		else if(audioData[audioOffset+0] == 'I' && audioData[audioOffset+1] == 'D' && audioData[audioOffset+2] == '3' || ((audioData[audioOffset+0] == (byte) 0xFF) && (audioData[audioOffset+1] & 0xE0) == 0xE0)) { clipType = TYPE_MP3; }
 
-		Mobile.log(Mobile.LOG_WARNING, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "Samsung AudioClip (ByteArray)");
-
-		if(clipType == TYPE_MMF) 
-		{
-			try 
-			{
-				// TODO: Either convert MMF to MIDI (easier), or try to playback MMF directly (MUCH harder)
-
-				//byte[] midiDat = convertMMFToMIDI(audioData);
-				//audioData = midiDat;
-				//clipType = TYPE_MIDI;
-			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Could not convert MMF file to MIDI:" + e.getMessage());}
-			
-		}
-
 		try 
 		{ 
 			player = Manager.createPlayer(new ByteArrayInputStream(audioData, audioOffset, audioLength), formatMIMEType[clipType-1]);
 			player.prefetch();
 		}
-		catch (Exception e) {Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Failed to create player:" + e.getMessage()); }
+		catch (Exception e) {Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Failed to create player:" + e.getMessage()); e.printStackTrace(); }
 	}
 
 	public AudioClip(int clipType, String filename)
@@ -89,7 +75,7 @@ public class AudioClip
 			player = Manager.createPlayer(stream, formatMIMEType[clipType-1]);
 			player.prefetch();
 		}
-		catch (Exception e) {Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Failed to create player:" + e.getMessage()); }
+		catch (Exception e) {Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Failed to create player:" + e.getMessage()); e.printStackTrace(); }
 	}
 
 	public static boolean isSupported() { return true; }
@@ -97,7 +83,7 @@ public class AudioClip
 	public void pause() { player.stop(); }
 
 	public void play(int loop, int volume) 
-	{  
+	{
 		if(loop < 0 || loop > 255 || volume < 0 || volume > 5) { throw new IllegalArgumentException("AudioClip: Cannot play() media, invalid argument provided"); }
 
 		try

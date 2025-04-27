@@ -150,7 +150,7 @@ public class Manager
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Get Supported Media Content Types");
 		return new String[]{"audio/midi", "audio/x-wav", 
-		"audio/amr", "audio/mpeg", "audio/x-tone-seq" };
+		"audio/amr", "audio/mpeg", "audio/x-tone-seq", "audio/mmf" };
 	}
 	
 	public static String[] getSupportedProtocols(String content_type)
@@ -242,14 +242,25 @@ public class Manager
 			if(type.toLowerCase().contains("mid") )     { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".mid"); }
 			else if(type.toLowerCase().contains("wav")) { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".wav"); }
 			else if(type.toLowerCase().contains("mp"))  { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".mp3"); }
-			else if(type.equalsIgnoreCase("audio/x-tone-seq")) 
+			else if(type.toLowerCase().contains("mmf")) 
 			{
 				stream.mark(4);
 				byte[] data = new byte[4]; 
 				stream.read(data);
-				if((data[0] == 'M' && data[1] == 'T' && data[2] == 'h' && data[3] == 'd') ) { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + "_Decoded.mid"); } // Tone Seq is converted to midi, save it as "decoded"
-				else { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".ota"); } // Only nokia OTA tones are going to be dumped in their original form right now. Dual Tone and MelodyComposer have no format of their own.
 				stream.reset();
+				if((data[0] == 'M' && data[1] == 'T' && data[2] == 'h' && data[3] == 'd') ) { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + "_Decoded.mid"); } // It's a sequence SMAF, converted to MIDI
+				else if((data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F') ) { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + "_Decoded.wav"); } // It's a PCM SMAF, converted to WAV
+				else { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".mmf"); } // Original Yamaha SMAF file
+			}
+			else
+			{
+				stream.mark(4);
+				byte[] data = new byte[4]; 
+				stream.read(data);
+				stream.reset();
+				if((data[0] == 'M' && data[1] == 'T' && data[2] == 'h' && data[3] == 'd') ) { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + "_Decoded.mid"); } // Tones are converted to midi, save them as "decoded"
+				else if(data.length >= 4 && data[0] == 'M' && data[1] == 'M' && data[2] == 'M' && data[3] == 'D') { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".mmf"); } // Yamaha SMAF
+				else { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".ota"); } // Nokia OTA
 			}
 
 			outStream = new FileOutputStream(dumpFile);
