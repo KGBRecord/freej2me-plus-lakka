@@ -18,13 +18,19 @@ package com.vodafone.v10.sound;
 
 public class SoundPlayer 
 {
-	private SoundTrack[] tracks = new SoundTrack[16];
+	private SoundTrack[] tracks = new SoundTrack[] // 16 tracks 
+	{
+		new SoundTrack(), new SoundTrack(), new SoundTrack(), new SoundTrack(),
+		new SoundTrack(), new SoundTrack(), new SoundTrack(), new SoundTrack(), 
+		new SoundTrack(), new SoundTrack(), new SoundTrack(), new SoundTrack(),
+		new SoundTrack(), new SoundTrack(), new SoundTrack(), new SoundTrack()
+	};
 
 	public static SoundPlayer getPlayer() { return new SoundPlayer(); }
 
 	public SoundTrack getTrack() 
     {
-		for (int i = 0; i < 16; i++) 
+		for (int i = 0; i < tracks.length; i++) 
         {
 			if (tracks[i] == null) 
             {
@@ -37,7 +43,7 @@ public class SoundPlayer
 
     public SoundTrack getTrack(int track)
     {
-        if(track < 0 || track > 15) { throw new IllegalArgumentException("invalid track index"); }
+        if(track < 0 || track > tracks.length-1) { throw new IllegalArgumentException("invalid track index"); }
         return tracks[track];
 	}
 
@@ -46,7 +52,7 @@ public class SoundPlayer
     public void disposeTrack(SoundTrack t) 
     { 
         if(t == null) { throw new NullPointerException("disposeTrack received a null argument"); }
-        for (int i = 0; i < 16; i++) 
+        for (int i = 0; i < tracks.length; i++) 
         {
 			if (tracks[i] == t) 
             {
@@ -56,9 +62,36 @@ public class SoundPlayer
 		}
     }
 
-    public void kill() { }
+    public void kill() 
+	{ 
+		for (int i = 0; i < tracks.length; i++) 
+        {
+			if (tracks[i] != null) 
+            {
+				tracks[i].stop();
+			}
+		}
+	}
 
-    public void pause() { }
+    public void pause() 
+	{ 
+		for (int i = 0; i < tracks.length; i++) 
+        {
+			if (tracks[i] != null) 
+            {
+				tracks[i].pause();
+			}
+		}
+	}
 
-    public void resume() { }
+    public void resume() 
+	{ 
+		for (int i = 0; i < tracks.length; i++) 
+        {
+			if (tracks[i] != null) 
+            {
+				tracks[i].resume();
+			}
+		}
+	}
 }

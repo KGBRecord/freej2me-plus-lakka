@@ -29,6 +29,7 @@ public class Sound
 {
 	private Player player;
     byte[] data;
+	String dataLoc;
 
 	public Sound(byte[] data) throws IOException 
     {
@@ -39,6 +40,20 @@ public class Sound
         try 
         {
             player = Manager.createPlayer(new ByteArrayInputStream(data), "audio/vodafone");
+            player.realize();
+        } 
+        catch (MediaException e) { Mobile.log(Mobile.LOG_ERROR, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Failed to create player: " + e.getMessage()); }
+	}
+
+	public Sound(String data) throws IOException 
+    {
+		if (data == null) { throw new NullPointerException("sound data cannot be null."); }
+
+        this.dataLoc = data;
+        // Vodafone's Sound API doesn't stipulate any specific formats, neat.
+        try 
+        {
+            player = Manager.createPlayer(Mobile.getMIDletResourceAsStream(dataLoc), "audio/vodafone");
             player.realize();
         } 
         catch (MediaException e) { Mobile.log(Mobile.LOG_ERROR, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Failed to create player: " + e.getMessage()); }
