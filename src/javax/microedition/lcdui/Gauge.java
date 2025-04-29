@@ -43,8 +43,6 @@ public class Gauge extends Item
 		if(!isInteractive && maxvalue == INDEFINITE && initialvalue != INCREMENTAL_IDLE && initialvalue != CONTINUOUS_RUNNING && initialvalue !=  INCREMENTAL_UPDATING)
 			{ throw new IllegalArgumentException("Cannot create non-interactive gauge with indefinite range and a special value " + initialvalue + " that isn't in the range 0-3."); }
 
-
-		Mobile.log(Mobile.LOG_WARNING, Gauge.class.getPackage().getName() + "." + Gauge.class.getSimpleName() + ": " + "Create Gauge");
 		setLabel(label);
 		interactive = isInteractive;
 		maxValue = maxvalue;
