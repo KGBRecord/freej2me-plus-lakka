@@ -29,6 +29,7 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -38,7 +39,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -48,11 +48,13 @@ import javax.imageio.ImageIO;
 public class FreeJ2ME
 {
 
-	private static FreeJ2ME app;
+	public static FreeJ2ME app;
 	private Frame main;
 	private int lcdWidth;
 	private int lcdHeight;
 	private int scaleFactor = 1;
+
+	public static boolean isFullscreen = false;
 
 	private LCD lcd;
 
@@ -65,30 +67,11 @@ public class FreeJ2ME
 	public static void main(String args[])
 	{
 		Mobile.clearOldLog();
-		FreeJ2ME app = new FreeJ2ME(args);
+		FreeJ2ME.app = new FreeJ2ME(args);
 	}
 
 	public FreeJ2ME(String args[])
 	{
-		main = new Frame("FreeJ2ME-Plus");
-		main.setSize(350,450);
-		/* Set a minimum allowed width and height so the menu bar is visible at all times */
-		main.setMinimumSize(new Dimension(240, 240));
-		main.setBackground(new Color(0,0,64));
-		try
-		{
-			main.setIconImage(ImageIO.read(main.getClass().getResourceAsStream("/org/recompile/icon.png")));	
-		}
-		catch (Exception e) { }
-
-		main.addWindowListener(new WindowAdapter()
-		{
-			public void windowClosing(WindowEvent e)
-			{
-				System.exit(0);
-			}
-		});
-
 		// Setup Device //
 
 		if(args.length>=3)
@@ -112,13 +95,9 @@ public class FreeJ2ME
 		Mobile.config = new Config();
 		Mobile.config.onChange = new Runnable() { public void run() { settingsChanged(); } };
 
-		/* Add LCD screen to FreeJ2ME's AWT frame */
-		main.add(lcd);
-
 		awtGUI = new AWTGUI(Mobile.config);
-		awtGUI.setMainFrame(main);
-		/* Append the awt menu bar into FreeJ2ME's frame */
-		main.setMenuBar(awtGUI.getMenuBar());
+
+		constructFreeJ2MEGUI();
 
 		if(args.length>=1) // Only now we can load the jar passed as argument
 		{
@@ -139,12 +118,15 @@ public class FreeJ2ME
 					{
 						case KeyEvent.VK_PLUS:
 						case KeyEvent.VK_ADD:
-							scaleFactor++;
-							main.setSize(lcdWidth * scaleFactor + xborder, lcdHeight * scaleFactor + yborder);
+							if(!isFullscreen) 
+							{
+								scaleFactor++;
+								main.setSize(lcdWidth * scaleFactor + xborder, lcdHeight * scaleFactor + yborder);
+							}
 						break;
 						case KeyEvent.VK_MINUS:
 						case KeyEvent.VK_SUBTRACT:
-							if( scaleFactor > 1 )
+							if(scaleFactor > 1 && !isFullscreen)
 							{
 								scaleFactor--;
 								main.setSize(lcdWidth * scaleFactor + xborder, lcdHeight * scaleFactor + yborder);
@@ -160,6 +142,12 @@ public class FreeJ2ME
 							if(e.isControlDown())
 							{
 								MobilePlatform.pauseResumeApp();
+							}
+						break;
+						case KeyEvent.VK_F:
+							if(e.isControlDown())
+							{
+								toggleFullscreen();
 							}
 						break;
 					}
@@ -265,19 +253,7 @@ public class FreeJ2ME
 			}
 		});
 
-		main.addComponentListener(new ComponentAdapter()
-		{
-			public void componentResized(ComponentEvent e)
-			{
-				resize();
-			}
-		});
-
-		main.setVisible(true);
-		main.pack();
-
-		resize();
-		main.setSize(lcdWidth*scaleFactor+xborder, lcdHeight*scaleFactor+yborder);
+		displayGUI();
 
 		// Set painter right before the jar is loaded
 		Mobile.getPlatform().setPainter(new Runnable()
@@ -354,7 +330,7 @@ public class FreeJ2ME
 		{
 			Mobile.getPlatform().resizeLCD(Mobile.lcdWidth, Mobile.lcdHeight);
 
-			if(!Mobile.rotateDisplay) 
+			if(!Mobile.rotateDisplay)
 			{
 				lcdWidth = Mobile.lcdWidth;
 				lcdHeight = Mobile.lcdHeight;
@@ -365,7 +341,8 @@ public class FreeJ2ME
 				lcdHeight = Mobile.lcdWidth;
 			}
 			resize();
-			main.setSize(lcdWidth*scaleFactor+xborder , lcdHeight*scaleFactor+yborder);
+			if(!isFullscreen) { main.setSize(lcdWidth*scaleFactor+xborder , lcdHeight*scaleFactor+yborder); }
+			lcd.clearScreen();
 		}
 		
 	}
@@ -402,6 +379,70 @@ public class FreeJ2ME
 		lcd.updateScale((int)nw, (int)nh);
 	}
 
+	public void toggleFullscreen() 
+	{
+        isFullscreen = !isFullscreen;
+		main.dispose();
+		constructFreeJ2MEGUI();
+		displayGUI();
+    }
+
+	private void constructFreeJ2MEGUI()
+	{
+		main = new Frame("FreeJ2ME-Plus");
+
+		if (isFullscreen) 
+		{
+            main.setUndecorated(true);
+            main.setSize(Toolkit.getDefaultToolkit().getScreenSize());
+        } 
+		else 
+		{
+            main.setSize(350, 450);
+            main.setMinimumSize(new Dimension(240, 240));
+			main.setLocationRelativeTo(null); // Center window on screen
+        }
+
+		main.setBackground(new Color(0,0,64));
+		
+		try
+		{
+			main.setIconImage(ImageIO.read(main.getClass().getResourceAsStream("/org/recompile/icon.png")));	
+		}
+		catch (Exception e) { }
+
+		main.addWindowListener(new WindowAdapter()
+		{
+			public void windowClosing(WindowEvent e)
+			{
+				System.exit(0);
+			}
+		});
+
+		/* Add LCD screen to FreeJ2ME's AWT frame */
+		main.add(lcd);
+
+		awtGUI.setMainFrame(main);
+		/* Append the awt menu bar into FreeJ2ME's frame */
+		if(!isFullscreen) { main.setMenuBar(awtGUI.getMenuBar()); }
+	}
+
+	private void displayGUI() 
+	{
+		main.addComponentListener(new ComponentAdapter()
+		{
+			public void componentResized(ComponentEvent e)
+			{
+				resize();
+			}
+		});
+
+		main.setVisible(true);
+		main.pack();
+		resize();
+		if(!isFullscreen) { main.setSize(lcdWidth*scaleFactor+xborder, lcdHeight*scaleFactor+yborder); }
+	}
+
 	private class LCD extends Canvas
 	{
 		public int cx=0;
@@ -427,6 +468,13 @@ public class FreeJ2ME
             // Use paint method directly to avoid flicker
             paint(g);
         }
+
+		// Used to clear the entire framebuffer when rotated in fullscreen to remove garbage pixels
+		public void clearScreen() 
+		{
+			Graphics2D cgc = (Graphics2D) this.getGraphics();
+			cgc.clearRect(0, 0, getWidth(), getHeight());
+		}
 
 		public void paint(Graphics g)
 		{

@@ -166,6 +166,7 @@ public final class AWTGUI
 	final MenuItem exitMenuItem = new MenuItem("Exit FreeJ2ME");
 	final MenuItem mapInputs = new MenuItem("Manage Inputs");
 
+	final CheckboxMenuItem fullScreen = new CheckboxMenuItem("Toggle Fullscreen (Ctrl+F)");
 	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("Enable Audio", false);
 	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("Rotate Screen", false);
 	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("Use custom midi soundfont", false);
@@ -453,6 +454,15 @@ public final class AWTGUI
 
 	private void setActionListeners() 
 	{
+		fullScreen.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(hasLoadedFile()) { FreeJ2ME.app.toggleFullscreen(); }
+				else { fullScreen.setState(FreeJ2ME.isFullscreen); }
+			}
+		});
+
 		enableAudio.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
@@ -667,6 +677,7 @@ public final class AWTGUI
 				else{ Mobile.deleteTemporaryKJXFiles = false; }
 			}
 		});
+		
 
 		dumpAudioData.addItemListener(new ItemListener() 
 		{
@@ -709,6 +720,7 @@ public final class AWTGUI
 		fileMenu.add(aboutMenuItem);
 		fileMenu.add(exitMenuItem);
 
+		optionMenu.add(fullScreen);
 		optionMenu.add(enableAudio);
 		optionMenu.add(enableRotation);
 		optionMenu.add(useCustomMidi);
@@ -758,6 +770,7 @@ public final class AWTGUI
 
 	public void updateOptions() 
 	{
+			fullScreen.setState(FreeJ2ME.isFullscreen);
 			enableAudio.setState(config.settings.get("sound").equals("on"));
 			enableRotation.setState(config.settings.get("rotate").equals("on"));
 			useCustomMidi.setState(config.settings.get("soundfont").equals("Custom"));
