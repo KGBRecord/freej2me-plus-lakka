@@ -17,6 +17,7 @@
 package com.vodafone.v10.system.device;
 
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 
 public class DeviceControl 
 {
@@ -53,7 +54,7 @@ public class DeviceControl
 			case FIELD_INTENSITY:
 				return 100;
 			case KEY_STATE:
-				return 0; // TODO: Maybe implement this? Doesn't seem all that useful really.
+				return MobilePlatform.vodafoneKeyState;
 			default:
 				throw new IllegalStateException("Invalid device No for getDeviceState");
 		}

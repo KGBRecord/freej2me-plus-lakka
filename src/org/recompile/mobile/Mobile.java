@@ -68,6 +68,9 @@ public class Mobile
 	// Enable/Disable audio dumping
 	public static boolean dumpAudioStreams = false;
 
+	// Enable/Disable graphics data dumping (unused for now)
+	public static boolean dumpGraphicsData = false;
+
 	// Enable/disable logging to the console and optionally to a file
 	public static boolean logging = true; 
 	private static final String LOG_FILE = "freej2me_system" + File.separatorChar + "FreeJ2ME.log";
@@ -81,6 +84,9 @@ public class Mobile
     public static final byte LOG_ERROR = 3;
     public static final byte LOG_FATAL = 4;
 
+	// KDDI/KJX variables
+	public static final String tempKJXDir = "." + File.separatorChar + "FreeJ2MEDumps" + File.separatorChar + "KDDI" + File.separatorChar;
+	public static boolean deleteTemporaryKJXFiles = true; // Maybe turn this into a toggle later?
 
 	//LCDUI colors
 	public static int lcduiBGColor = 0xFFFFFF;

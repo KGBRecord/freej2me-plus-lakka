@@ -328,6 +328,32 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		}
 	}
 
+	public void drawRegion(Image image, int subx, int suby, int subw, int subh, int transform, int x, int y, int width_dest, int height_dest, int anchor, int stretch_quality) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawRegion B is untested!");
+
+		try
+		{
+			if(transform == 0)
+			{
+				x = AnchorX(x, subw, anchor);
+				y = AnchorY(y, subh, anchor);
+				gc.drawImage(image.platformImage.getCanvas().getSubimage(subx, suby, subw, subh), x, y, x + width_dest, y + height_dest, subx, suby, subx + subw, suby + subh, null);
+			}
+			else
+			{
+				PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
+				x = AnchorX(x, sub.width, anchor);
+				y = AnchorY(y, sub.height, anchor);
+				gc.drawImage(sub.getCanvas(), x, y, x + width_dest, y + height_dest, subx, suby, subx + subw, suby + subh, null);
+			}
+		}
+		catch (Exception e)
+		{
+			Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawRegion B failed:"+e.getMessage());
+		}
+	}
+
 	public void drawRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height, boolean processAlpha) 
 	{
 		if (width <= 0 || height <= 0) { return; }

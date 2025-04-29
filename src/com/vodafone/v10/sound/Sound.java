@@ -40,7 +40,7 @@ public class Sound
         try 
         {
             player = Manager.createPlayer(new ByteArrayInputStream(data), "audio/vodafone");
-            player.realize();
+            player.prefetch();
         } 
         catch (MediaException e) { Mobile.log(Mobile.LOG_ERROR, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Failed to create player: " + e.getMessage()); }
 	}
@@ -54,7 +54,7 @@ public class Sound
         try 
         {
             player = Manager.createPlayer(Mobile.getMIDletResourceAsStream(dataLoc), "audio/vodafone");
-            player.realize();
+            player.prefetch();
         } 
         catch (MediaException e) { Mobile.log(Mobile.LOG_ERROR, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Failed to create player: " + e.getMessage()); }
 	}

@@ -80,7 +80,8 @@ public class Libretro
 		lcdWidth =  Integer.parseInt(args[0]);
 		lcdHeight = Integer.parseInt(args[1]);
 
-		if(Integer.parseInt(args[2]) == 1) { Mobile.rotateDisplay = true; }
+		if(Integer.parseInt(args[2]) == 0) { Mobile.rotateDisplay = false; }
+		else { Mobile.rotateDisplay = true; }
 
 		Mobile.lg = false;
 		Mobile.motorola = false;
@@ -103,11 +104,14 @@ public class Libretro
 		Mobile.limitFPS = Integer.parseInt(args[4]);
 
 		if(Integer.parseInt(args[5]) == 0) { soundEnabled = false; }
+		else { soundEnabled = true; }
 
-		if(Integer.parseInt(args[6]) == 1) { Mobile.useCustomMidi = true; }
+		if(Integer.parseInt(args[6]) == 0) { Mobile.useCustomMidi = false; }
+		else { Mobile.useCustomMidi = true; }
 
 		/* Dump Audio Streams will not be a per-game FreeJ2ME config, so it will have to be set every time for now */
-		if(Integer.parseInt(args[7]) == 1) { Mobile.dumpAudioStreams = true; }
+		if(Integer.parseInt(args[7]) == 0) { Mobile.dumpAudioStreams = false; }
+		else { Mobile.dumpAudioStreams = true; }
 
 		/* Same for Logging Level */
 		if(Integer.parseInt(args[8]) == 0) { Mobile.logging = false; }
@@ -127,9 +131,16 @@ public class Libretro
 		if(Integer.parseInt(args[12]) == 0) { Mobile.compatClipRectOnGfxReset = false; }
 		else { Mobile.compatClipRectOnGfxReset = true; }
 
-		if(Integer.parseInt(args[13]) == 1) { Mobile.useCustomTextFont = true; }
+		if(Integer.parseInt(args[13]) == 0) { Mobile.useCustomTextFont = false; }
+		else { Mobile.useCustomTextFont = true; }
 
 		Mobile.fontSizeOffset = (byte) Integer.parseInt(args[14]);
+
+		if(Integer.parseInt(args[15]) == 0) { Mobile.dumpGraphicsData = false; }
+		else { Mobile.dumpGraphicsData = true; }
+
+		if(Integer.parseInt(args[16]) == 0) { Mobile.deleteTemporaryKJXFiles = false; }
+		else { Mobile.deleteTemporaryKJXFiles = true; }
 
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
@@ -385,6 +396,12 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[14])==1) { Mobile.config.settings.put("textfont", "Custom");  }
 
 									Mobile.config.settings.put("fontoffset", "" + Integer.parseInt(cfgtokens[15]));
+
+									if(Integer.parseInt(cfgtokens[16])==1) { Mobile.dumpGraphicsData = true;  }
+									if(Integer.parseInt(cfgtokens[16])==0) { Mobile.dumpGraphicsData = false; }
+
+									if(Integer.parseInt(cfgtokens[17])==1) { Mobile.deleteTemporaryKJXFiles = true;  }
+									if(Integer.parseInt(cfgtokens[17])==0) { Mobile.deleteTemporaryKJXFiles = false; }
 
 									Mobile.config.saveConfig();
 									settingsChanged();

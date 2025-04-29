@@ -35,7 +35,7 @@ public class FunLight
 	public static int WHITE = 0x00FFFFFF;
 	public static int YELLOW = 0x00FFFF00;
 
-    private static DeviceRegion[] deviceRegions = 
+    protected static DeviceRegion[] deviceRegions = 
     {
         new DeviceRegion(0), // Blank Region
         new DeviceRegion(1), // Display Region
@@ -72,7 +72,7 @@ public class FunLight
 		return QUEUED;
 	}
 
-	static class DeviceRegion implements Region 
+	protected static class DeviceRegion implements Region 
     {
         
         private int ID;

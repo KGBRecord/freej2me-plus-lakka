@@ -16,7 +16,6 @@
 */
 package org.recompile.mobile;
 
-
 import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -515,6 +514,9 @@ public class MIDletLoader extends URLClassLoader
 	{
 		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource As Stream: "+resource + " path:" + className[selectedMidlet]);
 
+		// Remove the "resource:" token that some jars pass into this method. FreeJ2ME doesn't need it.
+		if(resource.contains("resource:")) { resource = resource.replaceAll("resource:", ""); }
+
 		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
 		while (resource.startsWith("//")) { resource = resource.substring(1); }
 
@@ -564,6 +566,9 @@ public class MIDletLoader extends URLClassLoader
 	public byte[] getMIDletResourceAsByteArray(String resource)
 	{
 		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource as Byte Array: "+resource);
+
+		// Remove the "resource:" token that some jars pass into this method. FreeJ2ME doesn't need it.
+		if(resource.contains("resource:")) { resource = resource.replaceAll("resource:", ""); }
 
 		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
 		while (resource.startsWith("//")) { resource = resource.substring(1); }
@@ -626,7 +631,9 @@ public class MIDletLoader extends URLClassLoader
 			name.startsWith("com.mascotcapsule") || name.startsWith("com.samsung") || name.startsWith("sun.") ||
 			name.startsWith("com.siemens") || name.startsWith("org.recompile") || name.startsWith("jdk.") ||
 			name.startsWith("com.vodafone.") || name.startsWith("com.jblend.") || name.startsWith("com.motorola.") ||
-			name.startsWith("com.sprintpcs.") || name.startsWith("com.bmc.") || name.startsWith("com.immersion.")
+			name.startsWith("com.sprintpcs.") || name.startsWith("com.bmc.") || name.startsWith("com.immersion.") || 
+			name.startsWith("com.j_phone.") || name.startsWith("com.kddi.") || name.startsWith("com.pantech.") ||
+			name.startsWith("mmpp.") || name.startsWith("com.velox.")
 			)
 		{
 			return loadClass(name, true);

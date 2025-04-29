@@ -334,6 +334,34 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_dumpgraphicsdata",
+        "Advanced Settings > Dump Graphics Data (Stub)",
+        "Dump Graphics Data (Stub)",
+        "This option allows FreeJ2ME to dump incoming Graphics Data into $SYSTEM/FreeJ2MEDumps/Graphics/appname/*, mostly useful for debugging",
+        "This option allows FreeJ2ME to dump incoming Graphics Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
+        "advanced_settings",
+        {
+            { "off",  "Disable"            },
+            { "on",  "Enable"              },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_deletetempkjxfiles",
+        "Advanced Settings > Delete KJX files' temporary JAR/JAD",
+        "Delete KJX files' temporary JAR/JAD",
+        "Disabling this option allows FreeJ2ME to keep the decompiled JAR and JAD files from a KDDI KJX container in $SYSTEM/FreeJ2MEDumps/KDDI/, useful if you want to archive those files outside their KJX container or try running them somewhere that doesn't handle KJX files",
+        "Disabling this option allows FreeJ2ME to keep the decompiled JAR and JAD files from a KDDI KJX container in $SYSTEM/FreeJ2MEDumps/KDDI/, useful if you want to archive those files outside their KJX container or try running them somewhere that doesn't handle KJX files",
+        "advanced_settings",
+        {
+            { "off",  "Disable"            },
+            { "on",  "Enable"              },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
         "freej2me_pointertype",
         "Advanced Settings > Pointer Type",
         "Pointer Type",
@@ -679,6 +707,28 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
+        "freej2me_dumpgraphicsdata",
+        "Dump Graphics Data (Stub)",
+        "This option allows FreeJ2ME to dump incoming Graphics Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
+        {
+            { "off",  "Disable"            },
+            { "on",  "Enable"              },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_deletetempkjxfiles",
+        "Delete KJX files' temporary JAR/JAD",
+        "Disabling this option allows FreeJ2ME to keep the decompiled JAR and JAD files from a KDDI KJX container in $SYSTEM/FreeJ2MEDumps/KDDI/, useful if you want to archive those files outside their KJX container or try running them somewhere that doesn't handle KJX files",
+        {
+            { "off",  "Disable"            },
+            { "on",  "Enable"              },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
         "freej2me_pointertype",
         "Pointer Type",
         "This option sets the type of pointer used by FreeJ2ME, can be set to use a Mouse, a Touchscreen or neither. Please note that only Mouse supports drag and drop motions",
@@ -856,6 +906,14 @@ static const struct retro_variable vars[] =
     { /* Dump Audio Streams */
         "freej2me_dumpaudiostreams",
         "Dump Audio Streams; off|on"
+    },
+    { /* Dump Graphics Streams */
+        "freej2me_dumpgraphicsdata",
+        "Dump Graphics Data (Stub); off|on",
+    },
+    { /* Dump KJX files' temporary JAR/JAD */
+        "freej2me_deletetempkjxfiles",
+        "Delete KJX files' temporary JAR/JAD; on|off",
     },
     { /* Pointer Type */
         "freej2me_pointertype",

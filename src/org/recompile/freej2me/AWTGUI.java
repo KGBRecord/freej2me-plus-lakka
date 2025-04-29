@@ -158,7 +158,7 @@ public final class AWTGUI
 	final MenuItem aboutMenuItem = new MenuItem("About FreeJ2ME");
 	final MenuItem resChangeMenuItem = new MenuItem("Change Phone Resolution");
 
-	final MenuItem openMenuItem = new MenuItem("Open JAR/JAD File");
+	final MenuItem openMenuItem = new MenuItem("Open JAR / JAD / KJX File");
 	final MenuItem closeMenuItem = new MenuItem("Close Jar (Stub)");
 	final MenuItem scrShot = new MenuItem("Take Screenshot");
 	final MenuItem exitMenuItem = new MenuItem("Exit FreeJ2ME");
@@ -243,6 +243,7 @@ public final class AWTGUI
 	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("Don't throw Exception on null images");
 	final CheckboxMenuItem doClipRectOnGfxReset = new CheckboxMenuItem("Do clipRect instead of setClip on gfx reset");
 
+	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("Delete KJX files' temporary JAR/JAD");
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
 	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump Graphics Objects");
 	final CheckboxMenuItem showMemoryUsage = new CheckboxMenuItem("Show VM Memory Usage");
@@ -654,6 +655,15 @@ public final class AWTGUI
 			});
 		}
 		
+		deleteTemporaryKJXFiles.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(deleteTemporaryKJXFiles.getState()){ Mobile.deleteTemporaryKJXFiles = true; }
+				else{ Mobile.deleteTemporaryKJXFiles = false; }
+			}
+		});
+
 		dumpAudioData.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
@@ -708,10 +718,13 @@ public final class AWTGUI
 		optionMenu.add(speedHackMenu);
 		optionMenu.add(compatSettingsMenu);
 
+		debugMenu.add(deleteTemporaryKJXFiles);
 		debugMenu.add(dumpAudioData);
 		debugMenu.add(dumpGraphicsData);
 		debugMenu.add(showMemoryUsage);
 		debugMenu.add(logLevel);
+
+		deleteTemporaryKJXFiles.setState(true);
 
 		for(int i = 0; i < logLevels.length; i++) { logLevel.add(logLevels[i]); }
 		logLevels[0].setState(false);
@@ -786,12 +799,12 @@ public final class AWTGUI
 
 			if(a.getActionCommand() == "Open") 
 			{
-				FileDialog filePicker = new FileDialog(main, "Open JAR/JAD File", FileDialog.LOAD);
+				FileDialog filePicker = new FileDialog(main, "Open JAR / JAD / KJX File", FileDialog.LOAD);
 				String filename;
 				filePicker.setFilenameFilter(new FilenameFilter()
 				{
 					public boolean accept(File dir, String name) 
-					{ return name.toLowerCase().endsWith(".jar") || name.toLowerCase().endsWith(".jad"); }
+					{ return name.toLowerCase().endsWith(".jar") || name.toLowerCase().endsWith(".jad") || name.toLowerCase().endsWith(".kjx"); }
 				});
 				filePicker.setVisible(true);
 

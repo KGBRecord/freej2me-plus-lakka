@@ -18,6 +18,8 @@ package com.vodafone.system;
 
 import javax.microedition.midlet.MIDlet;
 
+import org.recompile.mobile.MobilePlatform;
+
 public class DeviceControl 
 {
 	public static final int BATTERY = 1;
@@ -42,7 +44,7 @@ public class DeviceControl
 			case FIELD_INTENSITY:
 				return 100;
 			case com.vodafone.v10.system.device.DeviceControl.KEY_STATE:
-				return 0;
+				return MobilePlatform.vodafoneKeyState;
 			default:
 				return 0;
 		}

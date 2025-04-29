@@ -181,6 +181,8 @@ public class TextField extends Item
 
 	public void setConstraints(int Constraints) { constraints = Constraints; }
 
+	public void setInputMode(int mode) { charSetIdx = (byte) mode; }
+
 	public void setInitialInputMode(String characterSubset) 
 	{ 
 		mode = characterSubset;

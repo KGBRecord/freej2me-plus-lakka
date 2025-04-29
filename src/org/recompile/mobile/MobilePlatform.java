@@ -21,14 +21,17 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -80,6 +83,7 @@ public class MobilePlatform
 	public String dataPath = "";
 
 	public volatile static int keyState = 0;
+	public volatile static int vodafoneKeyState = 0;
 
 	// MobilePlatform will handle the input repeats as well
 	public static boolean[] pressedKeys = new boolean[20];
@@ -149,6 +153,7 @@ public class MobilePlatform
 		else
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 1);
+			updateVodafoneKeyState(Mobile.getGameAction(keycode), 1);
 			if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyPressed(keycode); }
 		}
 		
@@ -159,6 +164,7 @@ public class MobilePlatform
 		if(MIDletLoader.MIDletSelected) 
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 0);
+			updateVodafoneKeyState(Mobile.getGameAction(keycode), 0);
 			if ((displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
 		}
 		
@@ -209,6 +215,80 @@ public class MobilePlatform
 		if(val==1) { keyState |= mask; }
 	}
 
+	// Original implementation by Yury Kharchenko (J2ME-Loader)
+	private static void updateVodafoneKeyState(int key, int val)
+	{
+		int mask=0;
+		switch (key) 
+		{
+			case Canvas.UP:
+				mask = 1 << 12; // 12 Up
+				break;
+			case Canvas.LEFT:
+				mask = 1 << 13; // 13 Left
+				break;
+			case Canvas.RIGHT:
+				mask = 1 << 14; // 14 Right
+				break;
+			case Canvas.DOWN:
+				mask = 1 << 15; // 15 Down
+				break;
+			case Canvas.FIRE:
+				mask = 1 << 16; // 16 Select
+				break;
+			case Canvas.GAME_C:
+				mask = 1 << 19; // 19 Softkey 3
+				break;
+			case Canvas.KEY_NUM0:
+				mask = 1; //  0 0
+				break;
+			case Canvas.KEY_NUM1:
+				mask = 1 << 1; //  1 1
+				break;
+			case Canvas.KEY_NUM2:
+				mask = 1 << 2; //  2 2
+				break;
+			case Canvas.KEY_NUM3:
+				mask = 1 << 3; //  3 3
+				break;
+			case Canvas.KEY_NUM4:
+				mask = 1 << 4; //  4 4
+				break;
+			case Canvas.KEY_NUM5:
+				mask = 1 << 5; //  5 5
+				break;
+			case Canvas.KEY_NUM6:
+				mask = 1 << 6; //  6 6
+				break;
+			case Canvas.KEY_NUM7:
+				mask = 1 << 7; //  7 7
+				break;
+			case Canvas.KEY_NUM8:
+				mask = 1 << 8; //  8 8
+				break;
+			case Canvas.KEY_NUM9:
+				mask = 1 << 9; //  9 9
+				break;
+			case Canvas.KEY_STAR:
+				mask = 1 << 10; // 10 *
+				break;
+			case Canvas.KEY_POUND:
+				mask = 1 << 11; // 11 #
+				break;
+			case Canvas.KEY_SOFT_LEFT:
+				mask = 1 << 17; // 17 Softkey 1
+				break;
+			case Canvas.KEY_SOFT_RIGHT:
+				mask = 1 << 18; // 18 Softkey 2
+				break;
+			default:
+				mask = 0;
+		}
+		vodafoneKeyState |= mask;
+		vodafoneKeyState ^= mask;
+		if(val==1) { vodafoneKeyState |= mask; }
+	}
+
 /*
 	******** Jar/Jad Loading ********
 */
@@ -223,62 +303,153 @@ public class MobilePlatform
 		 */
 		fileName = fileName.replaceAll("!", "%21");
 
-		/*
-		 * If loading a jar directly, check if an accompanying jad with the same name 
-		 * is present in the directory, to load any platform properties from there.
-		 */
-		if(fileName.toLowerCase().contains(".jar")) 
+		if(fileName.toLowerCase().contains(".kjx")) // KDDI KJX parser, originally from J2ME-Loader by @ohayoyogi
 		{
+			System.out.println("filenamePre:" + fileName);
+			try
+			{
+				File testDir = new File(Mobile.tempKJXDir);
+				if(!testDir.isDirectory()) 
+				{
+					try 
+					{
+						testDir.mkdirs();
+					}
+					catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to create KDDI temp dir:" + e.getMessage()); }
+				}
+
+				File kjxFile = new File(new URI(fileName));
+				File tmpfile = null;
+
+				InputStream inputStream = new FileInputStream(kjxFile);
+				DataInputStream dis = new DataInputStream(inputStream);
+				byte[] magic = new byte[3];
+				dis.read(magic, 0, 3);
+				if (!Arrays.equals(magic, "KJX".getBytes())) 
+				{
+					throw new Exception("KJX Header string does not match: " + new String(magic));
+				}
+	
+				byte startJadPos = dis.readByte();
+				byte lenKjxFileName = dis.readByte();
+				dis.skipBytes(lenKjxFileName);
+				int lenJadFileContent = dis.readUnsignedShort();
+				byte lenJadFileName = dis.readByte();
+				byte[] jadFileName = new byte[lenJadFileName];
+				dis.read(jadFileName, 0, lenJadFileName);
+				String strJadFileName = new String(jadFileName);
+	
+				int bufSize = 2048;
+				byte[] buf = new byte[bufSize];
+	
+				// Write jad and parse its descriptors
+				tmpfile = new File(Mobile.tempKJXDir, strJadFileName);
+				try (FileOutputStream fos = new FileOutputStream(tmpfile)) 
+				{
+					int restSize = lenJadFileContent;
+					while(restSize > 0) 
+					{
+						int readSize = dis.read(buf, 0, Math.min(restSize, bufSize));
+						fos.write(buf, 0, readSize);
+						restSize -= readSize;
+					}
+				}
+
+				try (InputStream targetStream = new FileInputStream(tmpfile)) { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); } 
+				catch (IOException e) 
+				{
+					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jad data: " + e.getMessage());
+					return false;
+				}
+	
+				// Write jar
+				tmpfile = new File(Mobile.tempKJXDir, strJadFileName.substring(0, strJadFileName.length() -4) + ".jar");
+				try (FileOutputStream fos = new FileOutputStream(tmpfile)) {
+					int length = 0;
+					while((length = dis.read(buf)) > 0) {
+						fos.write(buf, 0, length);
+					}
+				}
+
+				// Send dumped jar path to loader
+				fileName = "file:" + tmpfile.getAbsolutePath().replace("./", "");
+
+				URL jar = new URL(fileName);
+				loader = new MIDletLoader(new URL[]{jar}, descriptorProperties);
+
+				if(Mobile.deleteTemporaryKJXFiles) 
+				{
+					tmpfile.delete(); // Delete the temporary jad file
+					tmpfile = new File(Mobile.tempKJXDir, strJadFileName);
+					tmpfile.delete(); // Delete the temporary jar file
+				}
+				
+				return true;
+			} 
+			catch (Exception e) { Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Couldn't load KJX file:" + e.getMessage()); return false; }
+		}
+		else // If it's not KJX, it's JAD or JAR
+		{
+			/*
+			 * If loading a jar directly, check if an accompanying jad with the same name 
+			 * is present in the directory, to load any platform properties from there.
+			 */
+			if(fileName.toLowerCase().contains(".jar")) 
+			{
+				try 
+				{
+					File checkJad = new File(new URI(fileName.replace(".jar", ".jad")));
+					if(checkJad.exists() && !checkJad.isDirectory()) 
+					{
+						Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Accompanying JAD found! Parsing additional MIDlet properties.");
+						fileName = fileName.replace(".jar", ".jad"); 
+					}
+				} catch (Exception e) { Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Couldn't check for accompanying JAD:" + e.getMessage()); }
+			}
+			
+			boolean isJad = fileName.toLowerCase().endsWith(".jad");
+
+			if (isJad) 
+			{
+				String preparedFileName = fileName.substring(fileName.lastIndexOf(":") + 1).trim();
+				try { preparedFileName = URLDecoder.decode(preparedFileName, StandardCharsets.UTF_8.name()); } 
+				catch (Exception e) 
+				{
+					System.err.println("Error decoding file name: " + e.getMessage());
+					return false;
+				}
+
+				try (InputStream targetStream = new FileInputStream(preparedFileName)) { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); } 
+				catch (IOException e) 
+				{
+					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jad data: " + e.getMessage());
+					return false;
+				}
+
+				// JAD file was parsed, so get the jar path and load it next
+
+				String jarUrl = descriptorProperties.getOrDefault("MIDlet-Jar-URL", preparedFileName.replace(".jad", ".jar"));
+
+				// We will not support downloading jars from the internet on the fly, unless there is a very good reason to do so. Also, unless the jad has a URI for loading the jar, ignore the path as well
+				if (jarUrl.toLowerCase().contains("http:") || jarUrl.toLowerCase().contains("https:") || !jarUrl.toLowerCase().contains("file:")) 
+					{ jarUrl = fileName.replace(".jad", ".jar"); } // Just try getting the jar in the same directory as the jad in those cases.
+
+				fileName = jarUrl;
+			}
+
 			try 
 			{
-				File checkJad = new File(new URI(fileName.replace(".jar", ".jad")));
-				if(checkJad.exists() && !checkJad.isDirectory()) 
-				{
-					Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Accompanying JAD found! Parsing additional MIDlet properties.");
-					fileName = fileName.replace(".jar", ".jad"); 
-				}
-			} catch (Exception e) { Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Couldn't check for accompanying JAD:" + e.getMessage()); }
-		}
-		
-        boolean isJad = fileName.toLowerCase().endsWith(".jad");
-
-        if (isJad) 
-		{
-            String preparedFileName = fileName.substring(fileName.lastIndexOf(":") + 1).trim();
-            try { preparedFileName = URLDecoder.decode(preparedFileName, StandardCharsets.UTF_8.name()); } 
+				URL jar = new URL(fileName);
+				loader = new MIDletLoader(new URL[]{jar}, descriptorProperties);
+				return true;
+			} 
 			catch (Exception e) 
 			{
-                System.err.println("Error decoding file name: " + e.getMessage());
-                return false;
-            }
-
-            try (InputStream targetStream = new FileInputStream(preparedFileName)) { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); } 
-			catch (IOException e) 
-			{
-                Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jad: " + e.getMessage());
-                return false;
-            }
-
-            String jarUrl = descriptorProperties.getOrDefault("MIDlet-Jar-URL", preparedFileName.replace(".jad", ".jar"));
-
-            // We will not support downloading jars from the internet on the fly, unless there is a very good reason to do so. Also, unless the jad has a URI for loading the jar, ignore the path as well
-            if (jarUrl.toLowerCase().contains("http:") || jarUrl.toLowerCase().contains("https:") || !jarUrl.toLowerCase().contains("file:")) 
-				{ jarUrl = fileName.replace(".jad", ".jar"); } // Just try getting the jar in the same directory as the jad in those cases.
-
-            fileName = jarUrl;
-        }
-
-        try 
-		{
-            URL jar = new URL(fileName);
-            loader = new MIDletLoader(new URL[]{jar}, descriptorProperties);
-            return true;
-        } 
-		catch (Exception e) 
-		{
-            Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jar: " + e.getMessage());
-            return false;
-        }
+				Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jar: " + e.getMessage());
+				e.printStackTrace();
+				return false;
+			}
+		}
     }
 
 	public void runJar()
