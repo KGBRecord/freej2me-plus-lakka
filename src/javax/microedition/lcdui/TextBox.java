@@ -334,6 +334,7 @@ public class TextBox extends Screen
 					}
 				}
 			}
+			else { handled = false; }
 
 			if (handled) { _invalidate(); }
 			return handled;

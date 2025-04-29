@@ -35,15 +35,15 @@ public abstract class Displayable
 	
 	protected String title = "";
 
-	protected ArrayList<Command> commands = new ArrayList<Command>();
+	public ArrayList<Command> commands = new ArrayList<Command>();
 
 	protected ArrayList<Item> items = new ArrayList<Item>();
 
 	protected CommandListener commandlistener;
 
-	protected boolean listCommands = false;
+	public boolean listCommands = false;
 	
-	protected int currentCommand = 0;
+	public int currentCommand = 0;
 
 	protected int currentItem = -1;
 
@@ -102,26 +102,7 @@ public abstract class Displayable
 	public ArrayList<Command> getCommands() { return commands; }
 
 
-	public void keyPressed(int key) 
-	{ 
-		if (listCommands) { keyPressedCommands(Mobile.getCanvasAction(key)); } 
-		else 
-		{
-			boolean handled = screenKeyPressed(Mobile.getCanvasAction(key));
-			if (!handled)
-			{
-				if (Mobile.getCanvasAction(key) == Canvas.KEY_SOFT_LEFT || Mobile.getCanvasAction(key) == Canvas.FIRE 
-				|| Mobile.getCanvasAction(key) == Canvas.KEY_NUM5) 
-				{
-					doLeftCommand();
-				} 
-				else if (Mobile.getCanvasAction(key) == Canvas.KEY_SOFT_RIGHT) 
-				{
-					doRightCommand();
-				}
-			}
-		}
-	}
+	public void keyPressed(int key) { }
 
 	public boolean screenKeyPressed(int key) { return false; } // Ignore, classes like Form and List inherit this, and do their own thing with it.
 	public void screenKeyReleased(int key) { }
@@ -280,35 +261,6 @@ public abstract class Displayable
 
 	protected String renderScreen(int x, int y, int width, int height) { return null; } // Also inherited by Form, List, etc.
 
-	protected void keyPressedCommands(int key)
-	{
-		if(key == Canvas.KEY_NUM2 || key == Canvas.UP) 
-		{
-			currentCommand--;
-			if(currentCommand<0) { currentCommand = commands.size()-1; }
-		}
-		else if(key == Canvas.KEY_NUM8 || key == Canvas.DOWN) 
-		{
-			currentCommand++;
-			if(currentCommand>=commands.size()) { currentCommand = 0; }
-		}
-		else if (key == Canvas.KEY_NUM5 || key == Canvas.FIRE || key == Canvas.KEY_SOFT_LEFT) 
-		{
-			doLeftCommand();
-			currentCommand = 0;
-			listCommands = false;
-		}
-		else if (key == Canvas.KEY_SOFT_RIGHT) 
-		{
-			listCommands = false;
-			doRightCommand();
-			currentCommand = 0;
-		}
-		else { return; }
-
-		_invalidate(); 
-	}
-
 	protected void doCommand(int index)
 	{
 		if(index>=0 && commands.size()>index)
@@ -320,7 +272,7 @@ public abstract class Displayable
 		}
 	}
 
-	protected void doLeftCommand()
+	public void doLeftCommand()
 	{
 		if(commands.size()>2 && !listCommands)
 		{
@@ -341,7 +293,7 @@ public abstract class Displayable
 		}
 	}
 
-	protected void doRightCommand()
+	public void doRightCommand()
 	{
 		if(commands.size()>1 && commands.size()<=2)
 		{
@@ -349,7 +301,7 @@ public abstract class Displayable
 		}
 	}
 
-	protected void _invalidate() 
+	public void _invalidate() 
 	{
 		if (!isShown()) { return; }
 

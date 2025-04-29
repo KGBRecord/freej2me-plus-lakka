@@ -187,7 +187,11 @@ public class MobilePlatform
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 1);
 			updateVodafoneKeyState(Mobile.getGameAction(keycode), 1);
-			if (Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyPressed(keycode); }
+			if (Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) 
+			{ 
+				displayable.keyPressed(keycode); 
+				handleCommands(Mobile.getCanvasAction(keycode));
+			}
 		}
 		
 	}
@@ -243,9 +247,8 @@ public class MobilePlatform
 			case Canvas.DOWN:     mask = GameCanvas.DOWN_PRESSED;   break;
 			case Canvas.FIRE:     mask = GameCanvas.FIRE_PRESSED;   break;
 		}
-		keyState |= mask;
-		keyState ^= mask;
-		if(val==1) { keyState |= mask; }
+		if(val == 1) { keyState |= mask; }
+		else { keyState ^= mask; }
 	}
 
 	// Original implementation by Yury Kharchenko (J2ME-Loader)
@@ -317,9 +320,61 @@ public class MobilePlatform
 			default:
 				mask = 0;
 		}
-		vodafoneKeyState |= mask;
-		vodafoneKeyState ^= mask;
-		if(val==1) { vodafoneKeyState |= mask; }
+		if(val == 1) { vodafoneKeyState |= mask; }
+		else { vodafoneKeyState ^= mask; }
+	}
+
+	private static void handleCommands(int key) 
+	{
+		boolean canvasFullscreen = false; // Default to false, as all other displayables can show commands at all times
+		if(displayable instanceof Canvas) { canvasFullscreen = ((Canvas)displayable).getFullScreen(); }
+
+		if(!canvasFullscreen) 
+		{
+			if (displayable.listCommands) 
+			{ 
+				if(key == Canvas.KEY_NUM2 || key == Canvas.UP) 
+				{
+					displayable.currentCommand--;
+					if(displayable.currentCommand<0) { displayable.currentCommand = displayable.commands.size()-1; }
+				}
+				else if(key == Canvas.KEY_NUM8 || key == Canvas.DOWN) 
+				{
+					displayable.currentCommand++;
+					if(displayable.currentCommand>=displayable.commands.size()) { displayable.currentCommand = 0; }
+				}
+				else if (key == Canvas.KEY_SOFT_LEFT) 
+				{
+					displayable.doLeftCommand();
+					displayable.currentCommand = 0;
+				}
+				else if (key == Canvas.KEY_SOFT_RIGHT) 
+				{
+					displayable.listCommands = false;
+					displayable.doRightCommand();
+					displayable.currentCommand = 0;
+				}
+
+				displayable._invalidate(); 
+			}
+			else 
+			{
+				boolean handled = displayable.screenKeyPressed(key);
+				if (!handled)
+				{
+					if (key == Canvas.KEY_SOFT_LEFT) 
+					{
+						displayable.doLeftCommand();
+					} 
+					else if (key == Canvas.KEY_SOFT_RIGHT) 
+					{
+						displayable.doRightCommand();
+					}
+				}
+			}
+		}
+		
+		
 	}
 
 /*

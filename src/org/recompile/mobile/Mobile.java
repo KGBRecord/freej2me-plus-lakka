@@ -577,6 +577,7 @@ public class Mobile
 		return 0;
 	}
 
+	// The difference between this and getGameAction is that the num keys and arrow keys are separated here.
 	public static final int getCanvasAction(int keycode) 
 	{
 		// NOTE: Canvas doesn't support SOFT keys by default. Those cases are all returning NOKIA softkeys to abstract lcdui's menu navigation

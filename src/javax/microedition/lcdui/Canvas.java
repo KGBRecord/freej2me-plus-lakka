@@ -60,24 +60,7 @@ public abstract class Canvas extends Displayable
 		barHeight = Font.getDefaultFont().getHeight();
 	}
 
-	public int getGameAction(int keyCode) 
-	{ 
-		int castKey = Mobile.getGameAction(keyCode);
-
-		// We should send those soft keys to handle commands if not fullscreen. As it means the command bar is visible
-		if(castKey == KEY_SOFT_LEFT && !fullscreen) 
-		{
-			// This pressedKeys array position is commonized on all frontends, it always means the soft left key
-			if(MobilePlatform.pressedKeys[9]) { keyPressedCommands(castKey); } // Make sure keyReleases aren't registered here
-		}
-		else if(castKey == KEY_SOFT_RIGHT && !fullscreen) 
-		{
-			// Same here, this array position always means the right soft key
-			if(MobilePlatform.pressedKeys[8]) { keyPressedCommands(castKey); } 
-		}
-
-		return castKey;
-	}
+	public int getGameAction(int keyCode) { return Mobile.getGameAction(keyCode); }
 
 	public int getKeyCode(int gameAction)
 	{
@@ -220,6 +203,8 @@ public abstract class Canvas extends Displayable
 	{ 
 		return height - (!fullscreen ? barHeight : 0);
 	}
+
+	public boolean getFullScreen() { return fullscreen; }
 
 	private void paintCommandsBar() 
 	{
