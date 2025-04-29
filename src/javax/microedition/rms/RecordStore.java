@@ -322,7 +322,7 @@ public class RecordStore
 			
 			save();
 
-			return nextid;
+			return nextid-1; // Return the new record's id, not the next one's.
 		}
 		catch (Exception e) { throw(new RecordStoreException("Can't Add RMS Record: " + e.getMessage())); }
 	}
