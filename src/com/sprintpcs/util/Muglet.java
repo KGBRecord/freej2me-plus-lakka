@@ -20,9 +20,9 @@ public class Muglet
 {
 	public static Muglet getMuglet() { return new Muglet(); }
 
-	public String getMediaType() { return null; }
+	public String getMediaType() { return ""; }
 
-	public String getURI() { return null; }
+	public String getURI() { return "pcs_name=FreeJ2ME"; }
 
-	public String getReferringURI() { return null; }
+	public String getReferringURI() { return "J2ME"; }
 }
