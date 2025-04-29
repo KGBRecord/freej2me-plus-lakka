@@ -43,6 +43,8 @@ public class Mobile
 
 	private static Display display;
 
+	public static MIDlet midlet;
+
 	// These flags are used for general compatibility adjustments within FreeJ2ME
 	public static boolean usingMessagingAPI = false;
 

@@ -32,6 +32,7 @@ public abstract class MIDlet
 	protected MIDlet()
 	{
 		Mobile.log(Mobile.LOG_INFO, MIDlet.class.getPackage().getName() + "." + MIDlet.class.getSimpleName() + ": " + "Create MIDlet");
+		Mobile.midlet = this;
 	}
 
 
@@ -63,6 +64,11 @@ public abstract class MIDlet
 	public final void notifyPaused() { }
 
 	protected abstract void pauseApp();
+
+	public void callPauseApp() 
+	{
+		pauseApp();
+	}
 
 	public final boolean platformRequest(String URL) { return false; }
 

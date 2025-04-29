@@ -156,6 +156,12 @@ public class FreeJ2ME
 								ScreenShot.takeScreenshot(false);
 							}
 						break;
+						case KeyEvent.VK_X:
+							if(e.isControlDown())
+							{
+								MobilePlatform.pauseResumeApp();
+							}
+						break;
 					}
 					
 					if (mobikey == Integer.MIN_VALUE) // Ignore events from keys not mapped to a phone keypad key (AWTGUI does use 0, so this can't mirror libretro)

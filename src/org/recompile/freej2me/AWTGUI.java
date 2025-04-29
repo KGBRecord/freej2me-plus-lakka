@@ -48,6 +48,7 @@ import java.util.Arrays;
 import javax.microedition.media.Manager;
 
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 
 public final class AWTGUI 
 {
@@ -160,7 +161,8 @@ public final class AWTGUI
 
 	final MenuItem openMenuItem = new MenuItem("Open JAR / JAD / KJX File");
 	final MenuItem closeMenuItem = new MenuItem("Close Jar (Stub)");
-	final MenuItem scrShot = new MenuItem("Take Screenshot");
+	final MenuItem scrShot = new MenuItem("Take Screenshot (Ctrl+C)");
+	final MenuItem pauseRes = new MenuItem("Pause / Resume (Ctrl+X)");
 	final MenuItem exitMenuItem = new MenuItem("Exit FreeJ2ME");
 	final MenuItem mapInputs = new MenuItem("Manage Inputs");
 
@@ -373,6 +375,7 @@ public final class AWTGUI
 		openMenuItem.setActionCommand("Open");
 		closeMenuItem.setActionCommand("Close");
 		scrShot.setActionCommand("Screenshot");
+		pauseRes.setActionCommand("PauseResume");
 		exitMenuItem.setActionCommand("Exit");
 		aboutMenuItem.setActionCommand("AboutMenu");
 		resChangeMenuItem.setActionCommand("ChangeResolution");
@@ -387,6 +390,7 @@ public final class AWTGUI
 		openMenuItem.addActionListener(menuItemListener);
 		closeMenuItem.addActionListener(menuItemListener);
 		scrShot.addActionListener(menuItemListener);
+		pauseRes.addActionListener(menuItemListener);
 		exitMenuItem.addActionListener(menuItemListener);
 		aboutMenuItem.addActionListener(menuItemListener);
 		resChangeMenuItem.addActionListener(menuItemListener);
@@ -700,6 +704,7 @@ public final class AWTGUI
 		fileMenu.add(closeMenuItem);
 		fileMenu.addSeparator();
 		fileMenu.add(scrShot);
+		fileMenu.add(pauseRes);
 		fileMenu.addSeparator();
 		fileMenu.add(aboutMenuItem);
 		fileMenu.add(exitMenuItem);
@@ -832,6 +837,8 @@ public final class AWTGUI
 			}
 
 			else if(a.getActionCommand() == "Screenshot") { ScreenShot.takeScreenshot(false); }
+
+			else if(a.getActionCommand() == "PauseResume") { MobilePlatform.pauseResumeApp(); }
 
 			else if(a.getActionCommand() == "Exit") { System.exit(0); }
 

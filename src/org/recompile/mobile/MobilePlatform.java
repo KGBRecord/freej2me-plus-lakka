@@ -80,6 +80,8 @@ public class MobilePlatform
 	public MIDletLoader loader;
 	public static Displayable displayable;
 
+	public static boolean isPaused = false;
+
 	public String dataPath = "";
 
 	public volatile static int keyState = 0;
@@ -146,6 +148,32 @@ public class MobilePlatform
 	public BufferedImage getLCD() { return lcd.getCanvas(); }
 
 	public void setPainter(Runnable r) { painter = r; }
+
+	public static void pauseResumeApp() 
+	{
+		displayable = Mobile.getDisplay().getCurrent();
+		if (!(displayable instanceof Canvas)) { return; }
+		
+		if(!isPaused) 
+		{
+			((Canvas) displayable).hideNotify();
+			
+			try { Mobile.midlet.callPauseApp(); } 
+			catch (Exception e) { e.printStackTrace(); }
+
+			isPaused = true;
+		}
+		else 
+		{
+			((Canvas) displayable).showNotify();
+			
+			try { Mobile.midlet.resumeRequest(); } 
+			catch (Exception e) { e.printStackTrace(); }			
+
+			isPaused = false;
+		}
+		
+	}
 
 	public static void keyPressed(int keycode)
 	{
