@@ -487,6 +487,11 @@ public class FreeJ2ME
 				// Draw the rotated FB with adjusted cy and cx values
 				cgc.drawImage(Mobile.getPlatform().getLCD(), 0, cx, ch, cw, null);
 			}
+			if(MobilePlatform.isPaused) 
+			{ 
+				g.setColor(new Color(0, 0, 0, 128));
+				g.fillRect(0, 0, getWidth(), getHeight()); 
+			}
 		}
 	}
 }

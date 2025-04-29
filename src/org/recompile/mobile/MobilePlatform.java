@@ -161,23 +161,21 @@ public class MobilePlatform
 			try { Mobile.midlet.callPauseApp(); } 
 			catch (Exception e) { e.printStackTrace(); }
 
-			lcd.getGraphics().fillTriangle(-lcdWidth*3, -lcdHeight*3, lcdWidth*3, -lcdHeight*3, lcdWidth/2, lcdHeight*3, 0x99000000);
-
-			lcd.getGraphics().flushGraphics((Image) lcd, 0, 0, lcdWidth, lcdHeight);
-			painter.run();
-
 			isPaused = true;
+
+			painter.run();
 		}
 		else 
 		{
+			isPaused = false;
+			
 			((Canvas) displayable).showNotify();
 			
 			try { Mobile.midlet.resumeRequest(); } 
-			catch (Exception e) { e.printStackTrace(); }			
+			catch (Exception e) { e.printStackTrace(); }
 
-			isPaused = false;
+			painter.run();
 		}
-		
 	}
 
 	public static void keyPressed(int keycode)
@@ -193,7 +191,6 @@ public class MobilePlatform
 				handleCommands(Mobile.getCanvasAction(keycode));
 			}
 		}
-		
 	}
 
 	public static void keyReleased(int keycode)
@@ -204,7 +201,6 @@ public class MobilePlatform
 			updateVodafoneKeyState(Mobile.getGameAction(keycode), 0);
 			if (Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
 		}
-		
 	}
 
 	public static void keyRepeated(int keycode)
@@ -563,7 +559,6 @@ public class MobilePlatform
 			if(!showFPS.equals("Off")) { showFPS();}
 			painter.run(); // Update the frontend's painter first to then process inputs
 		}
-		
 	}
 
 	public void limitFps() 
