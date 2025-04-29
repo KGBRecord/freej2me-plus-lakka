@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 
 public class Display
 {
@@ -174,18 +175,22 @@ public class Display
 
 	public int getBestImageWidth(int imageType) { return Mobile.getPlatform().lcdWidth; }
 
-	public int getBorderStyle(boolean highlighted) { return 0; }
+	public int getBorderStyle(boolean highlighted) 
+	{ 
+		if(highlighted) { return Graphics.SOLID; }
+		else { return Graphics.DOTTED; }
+	}
 
 	public int getColor(int colorSpecifier)
 	{
 		switch(colorSpecifier)
 		{
-			case COLOR_BACKGROUND: return 0;
-			case COLOR_FOREGROUND: return 0xFFFFFF;
-			case COLOR_HIGHLIGHTED_BACKGROUND: return 0xFFFFFF;
-			case COLOR_HIGHLIGHTED_FOREGROUND: return 0;
-			case COLOR_BORDER: return 0x808080;
-			case COLOR_HIGHLIGHTED_BORDER: return 0xFFFFFF;
+			case COLOR_BACKGROUND: return Mobile.lcduiBGColor;
+			case COLOR_FOREGROUND: return Mobile.lcduiTextColor;
+			case COLOR_HIGHLIGHTED_BACKGROUND: return Mobile.lcduiTextColor;
+			case COLOR_HIGHLIGHTED_FOREGROUND: return Mobile.lcduiBGColor;
+			case COLOR_BORDER: return Mobile.lcduiStrokeColor;
+			case COLOR_HIGHLIGHTED_BORDER: return Mobile.lcduiBGColor;
 		}
 		return 0;
 	}
@@ -209,11 +214,18 @@ public class Display
 	{
 		setCurrentRequest = (() -> 
 		{
-			if (next == null) { return; } // This can be interpreted as a request of the MIDlet to be put on the background, but FreeJ2ME has no understanding of this
-			else if (current == next) // Similarly, this can be interpreted as a request of the MIDlet to be put on the foreground, but we can just notify the current displayable again.
+			if (next == null) // This can be interpreted as a request of the MIDlet to be put on the background and/or paused.
 			{ 
-				if(current instanceof Canvas) { current.showNotify(); }
+				if(!MobilePlatform.isPaused) { MobilePlatform.pauseResumeApp(); }
+				return; 
+			}
+			else if (current == next) // Similarly, this can be interpreted as a request of the MIDlet to be put on the foreground and/or resumed.
+			{
+				if(MobilePlatform.isPaused) { MobilePlatform.pauseResumeApp(); }
+				else { if(current instanceof Canvas) { current.showNotify(); } }
 				current.notifySetCurrent();
+
+				return;
 			}
 
 			try 
