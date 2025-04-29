@@ -56,10 +56,10 @@ import java.awt.image.BufferedImage;
 public class MobilePlatform
 {
 
-	private PlatformImage lcd;
+	private static PlatformImage lcd;
 	private PlatformGraphics gc;
-	public int lcdWidth;
-	public int lcdHeight;
+	public static int lcdWidth;
+	public static int lcdHeight;
 
 	// Frame Limit Variables
 	private long lastRenderTime = System.nanoTime();
@@ -90,7 +90,7 @@ public class MobilePlatform
 	// MobilePlatform will handle the input repeats as well
 	public static boolean[] pressedKeys = new boolean[20];
 
-	public Runnable painter;
+	public static Runnable painter;
 
 	public MobilePlatform(int width, int height)
 	{
@@ -161,6 +161,11 @@ public class MobilePlatform
 			try { Mobile.midlet.callPauseApp(); } 
 			catch (Exception e) { e.printStackTrace(); }
 
+			lcd.getGraphics().fillTriangle(-lcdWidth*3, -lcdHeight*3, lcdWidth*3, -lcdHeight*3, lcdWidth/2, lcdHeight*3, 0x99000000);
+
+			lcd.getGraphics().flushGraphics((Image) lcd, 0, 0, lcdWidth, lcdHeight);
+			painter.run();
+
 			isPaused = true;
 		}
 		else 
@@ -178,7 +183,7 @@ public class MobilePlatform
 	public static void keyPressed(int keycode)
 	{
 		if(!MIDletLoader.MIDletSelected) { MIDletLoader.keyPress(Mobile.getGameAction(keycode)); }
-		else
+		else if (!isPaused)
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 1);
 			updateVodafoneKeyState(Mobile.getGameAction(keycode), 1);
@@ -189,7 +194,7 @@ public class MobilePlatform
 
 	public static void keyReleased(int keycode)
 	{
-		if(MIDletLoader.MIDletSelected) 
+		if(!isPaused && MIDletLoader.MIDletSelected) 
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 0);
 			updateVodafoneKeyState(Mobile.getGameAction(keycode), 0);
@@ -200,22 +205,22 @@ public class MobilePlatform
 
 	public static void keyRepeated(int keycode)
 	{
-		if (MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
+		if (!isPaused && MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
 	}
 
 	public static void pointerDragged(int x, int y)
 	{
-		if (MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
+		if (!isPaused && MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
 	}
 
 	public static void pointerPressed(int x, int y)
 	{
-		if (MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
+		if (!isPaused && MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
 	}
 
 	public static void pointerReleased(int x, int y)
 	{
-		if (MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
+		if (!isPaused && MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
 	}
 
 	private static void updateKeyState(int key, int val)
@@ -496,10 +501,14 @@ public class MobilePlatform
 
 	public final void flushGraphics(Image img, int x, int y, int width, int height)
 	{
-		gc.flushGraphics(img, x, y, width, height);
+		if(!isPaused) 
+		{
+			gc.flushGraphics(img, x, y, width, height);
 		
-		if(!showFPS.equals("Off")) { showFPS();}
-		painter.run(); // Update the frontend's painter first to then process inputs
+			if(!showFPS.equals("Off")) { showFPS();}
+			painter.run(); // Update the frontend's painter first to then process inputs
+		}
+		
 	}
 
 	public void limitFps() 
