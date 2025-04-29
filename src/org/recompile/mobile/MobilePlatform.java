@@ -154,7 +154,7 @@ public class MobilePlatform
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 1);
 			updateVodafoneKeyState(Mobile.getGameAction(keycode), 1);
-			if ((displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyPressed(keycode); }
+			if (Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) { displayable.keyPressed(keycode); }
 		}
 		
 	}
@@ -165,29 +165,29 @@ public class MobilePlatform
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 0);
 			updateVodafoneKeyState(Mobile.getGameAction(keycode), 0);
-			if ((displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
+			if (Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
 		}
 		
 	}
 
 	public static void keyRepeated(int keycode)
 	{
-		if (MIDletLoader.MIDletSelected && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
+		if (MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
 	}
 
 	public static void pointerDragged(int x, int y)
 	{
-		if (MIDletLoader.MIDletSelected && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
+		if (MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
 	}
 
 	public static void pointerPressed(int x, int y)
 	{
-		if (MIDletLoader.MIDletSelected && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
+		if (MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
 	}
 
 	public static void pointerReleased(int x, int y)
 	{
-		if (MIDletLoader.MIDletSelected && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
+		if (MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
 	}
 
 	private static void updateKeyState(int key, int val)
