@@ -31,11 +31,10 @@ public class Mesh extends Node
 	{
 		super.duplicate((Node) copy);
 		copy.vertices = vertices;
-		copy.submeshes = submeshes;
-		/*copy.appearances = new Appearance[appearances.length];
-		for (int i = 0; i < appearances.length; ++i)
-			copy.appearances[i] = appearances[i];*/
-		copy.appearances = appearances;
+		copy.submeshes = new IndexBuffer[submeshes.length];
+		copy.appearances = new Appearance[appearances.length];
+		System.arraycopy(submeshes, 0, copy.submeshes, 0, submeshes.length);
+		System.arraycopy(appearances, 0, copy.appearances, 0, appearances.length);
 	}
 
 	Object3D duplicateImpl() 

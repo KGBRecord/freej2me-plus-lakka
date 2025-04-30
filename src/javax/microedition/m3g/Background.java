@@ -72,10 +72,17 @@ public class Background extends Object3D
 		copy.depthclear = depthclear;
 		copy.colorclear = colorclear;
 		copy.texture = texture;
-		copy.vertexBuffer = vertexBuffer;
-		copy.textureBuffer = textureBuffer;
+		copy.vertexBuffer = ByteBuffer.allocateDirect(4 * 3 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+		copy.textureBuffer =  ByteBuffer.allocateDirect(4 * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+		
 		System.arraycopy(this.vertexArray, 0, copy.vertexArray, 0, vertexArray.length);
+
+		copy.vertexBuffer.put(copy.vertexArray);
+		copy.vertexBuffer.flip();
+
+		textureArray = new float[4 * 2];
 		System.arraycopy(this.textureArray, 0, copy.textureArray, 0, textureArray.length);
+
 		return copy;
 	}
 

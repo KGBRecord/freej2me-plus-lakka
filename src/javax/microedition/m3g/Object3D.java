@@ -19,7 +19,8 @@ package javax.microedition.m3g;
 import java.util.Vector;
 import java.lang.Object;
 
-public abstract class Object3D {
+public abstract class Object3D
+{
 
 	protected int userID = 0;
 	protected Object userObject = null;
@@ -76,8 +77,9 @@ public abstract class Object3D {
 		Object3D copy = duplicateImpl();
 		copy.userID = userID;
 		copy.userObject = userObject;
-		for (int i = 0; i < animationTracks.size(); i++)
-			copy.animationTracks.add(animationTracks.elementAt(i));
+		copy.animationTracks = new Vector<AnimationTrack>();
+		for (int i = 0; i < animationTracks.size(); i++) { copy.animationTracks.add((AnimationTrack) animationTracks.elementAt(i).duplicateImpl()); }
+		
 		return copy;
 	}
 

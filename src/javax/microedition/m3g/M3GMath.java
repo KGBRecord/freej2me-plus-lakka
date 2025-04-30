@@ -276,7 +276,9 @@ public class M3GMath
 			orig[1] = s0 * q0[1] + s1 * q1[1];
 			orig[2] = s0 * q0[2] + s1 * q1[2];
 			orig[3] = s0 * q0[3] + s1 * q1[3];
-		} else {
+		} 
+		else 
+		{
 			orig[0] = -q0[1];
 			orig[1] = q0[0];
 			orig[2] = -q0[3];
@@ -292,4 +294,33 @@ public class M3GMath
 	}
 
 	public static float[] identityQuat() { return new float[] { 0.0f, 0.0f, 0.0f, 1.0f }; }
+
+	public static float[] setQuatRotation(float[] srcAxis, float[] targetAxis) 
+	{
+		float[] rot = new float[4];
+		float[] cross = new float[3];
+		float dot = srcAxis[0] * targetAxis[0] + srcAxis[1] * targetAxis[1] + srcAxis[2] * targetAxis[2];
+	
+		cross[0] = srcAxis[1] * targetAxis[2] - srcAxis[2] * targetAxis[1];
+		cross[1] = srcAxis[2] * targetAxis[0] - srcAxis[0] * targetAxis[2];
+		cross[2] = srcAxis[0] * targetAxis[1] - srcAxis[1] * targetAxis[0];
+	
+		float angle = (float) Math.acos(dot);
+		float sinHalfAngle = (float) Math.sin(angle / 2);
+	
+		rot[0] = cross[0] * sinHalfAngle; // x
+		rot[1] = cross[1] * sinHalfAngle; // y
+		rot[2] = cross[2] * sinHalfAngle; // z
+		rot[3] = (float) Math.cos(angle / 2); // w
+	
+		return rot;
+	}
+
+	public static void mulQuat(float[] q1, float[] q2, float[] result) 
+	{
+		result[0] = q1[3] * q2[0] + q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1]; // x
+		result[1] = q1[3] * q2[1] + q1[1] * q2[3] + q1[2] * q2[0] - q1[0] * q2[2]; // y
+		result[2] = q1[3] * q2[2] + q1[2] * q2[3] + q1[0] * q2[1] - q1[1] * q2[0]; // z
+		result[3] = q1[3] * q2[3] - q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2]; // w
+	}
 }

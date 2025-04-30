@@ -43,12 +43,13 @@ public abstract class Node extends Transformable
 	boolean hasBones = false;
 	boolean[] dirtyBits = new boolean[2]; // {renderablesBit, BonesBit}, used mostly to track for animation changes
 
-	void duplicate(Node copy) 
+	protected void duplicate(Node copy) 
 	{
 		super.duplicate((Transformable) copy);
+		
 		copy.parent = null;
-		copy.left = null;
-		copy.right = null;
+		copy.left = left;
+		copy.right = right;
 		copy.scope = scope;
 		copy.zRef = zRef;
 		copy.yRef = yRef;
@@ -57,6 +58,8 @@ public abstract class Node extends Transformable
 		copy.yTarget = yTarget;
 		copy.picking = picking;
 		copy.rendering = rendering;
+		copy.scope = scope;
+		System.arraycopy(dirtyBits, 0, copy.dirtyBits, 0, dirtyBits.length);
 		copy.hasRenderables = hasRenderables;
 		copy.hasBones = hasBones;
 	}
@@ -169,12 +172,12 @@ public abstract class Node extends Transformable
 			}
 		}
 
-		float[] rot = setQuatRotation(srcAxis, targetAxis);
+		float[] rot = M3GMath.setQuatRotation(srcAxis, targetAxis);
 	
 		if (constraint != NONE) 
 		{
 			float[] newOrientation = new float[4];
-			mulQuat(orientation, rot, newOrientation);
+			M3GMath.mulQuat(orientation, rot, newOrientation);
 			System.arraycopy(newOrientation, 0, orientation, 0, 4);
 		} 
 		else { System.arraycopy(rot, 0, orientation, 0, 4); }
@@ -452,33 +455,5 @@ public abstract class Node extends Transformable
 			default:
 				return super.animTrackCompatible(track);
 		}
-	}
-
-	float[] setQuatRotation(float[] srcAxis, float[] targetAxis) {
-		float[] rot = new float[4];
-		float[] cross = new float[3];
-		float dot = srcAxis[0] * targetAxis[0] + srcAxis[1] * targetAxis[1] + srcAxis[2] * targetAxis[2];
-	
-		cross[0] = srcAxis[1] * targetAxis[2] - srcAxis[2] * targetAxis[1];
-		cross[1] = srcAxis[2] * targetAxis[0] - srcAxis[0] * targetAxis[2];
-		cross[2] = srcAxis[0] * targetAxis[1] - srcAxis[1] * targetAxis[0];
-	
-		float angle = (float) Math.acos(dot);
-		float sinHalfAngle = (float) Math.sin(angle / 2);
-	
-		rot[0] = cross[0] * sinHalfAngle; // x
-		rot[1] = cross[1] * sinHalfAngle; // y
-		rot[2] = cross[2] * sinHalfAngle; // z
-		rot[3] = (float) Math.cos(angle / 2); // w
-	
-		return rot;
-	}
-
-	void mulQuat(float[] q1, float[] q2, float[] result) {
-		// Assuming q1 and q2 are the quaternions to multiply, and result is where the output will be stored
-		result[0] = q1[3] * q2[0] + q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1]; // x
-		result[1] = q1[3] * q2[1] + q1[1] * q2[3] + q1[2] * q2[0] - q1[0] * q2[2]; // y
-		result[2] = q1[3] * q2[2] + q1[2] * q2[3] + q1[0] * q2[1] - q1[1] * q2[0]; // z
-		result[3] = q1[3] * q2[3] - q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2]; // w
 	}
 }

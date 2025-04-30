@@ -34,12 +34,14 @@ public class Group extends Node
 	void duplicate(Group copy) 
 	{
 		super.duplicate((Node) copy);
-		Node child = firstChild;
+		Node child = (Node) firstChild.duplicate();
+		copy.numNonCullables = numNonCullables;
+		copy.numRenderables = numRenderables;
 		if (child != null) 
 		{
 			do 
 			{
-				Node temp = (Node) ((Object3D) child).duplicate();
+				Node temp = (Node) child.duplicate();
 				copy.addChild(temp);
 				child = child.right;
 			} while (child != firstChild);

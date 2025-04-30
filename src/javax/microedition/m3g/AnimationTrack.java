@@ -57,8 +57,8 @@ public class AnimationTrack extends Object3D
 
 	Object3D duplicateImpl() 
 	{
-		AnimationTrack copy = new AnimationTrack(sequence, property);
-		copy.controller = controller;
+		AnimationTrack copy = new AnimationTrack((KeyframeSequence) sequence.duplicate(), property);
+		copy.controller = (AnimationController) controller.duplicateImpl();
 		return copy;
 	}
 

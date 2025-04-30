@@ -38,10 +38,15 @@ public abstract class Transformable extends Object3D
 
 	void duplicate(Transformable copy) 
 	{
-		copy.matrix = matrix;
-		copy.scale = scale;
-		copy.rotate = rotate;
-		copy.translate = translate;
+		copy.matrix = new Transform();
+		copy.scale = new Transform();
+		copy.rotate = new Transform();
+		copy.translate = new Transform();
+
+		copy.matrix.set(matrix);
+		copy.scale.set(scale);
+		copy.rotate.set(rotate);
+		copy.translate.set(translate);
 	}
 
 	public void getOrientation(float[] angleAxis)

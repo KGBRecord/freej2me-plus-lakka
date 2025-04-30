@@ -28,8 +28,8 @@ public class World extends Group
 	{
 		World copy = new World();
 		super.duplicate((Group) copy);
-		copy.activeCamera = activeCamera;
-		copy.background = background;
+		copy.activeCamera = (Camera) activeCamera.duplicate();
+		copy.background = (Background) background.duplicate();
 		return copy;
 	}
 
