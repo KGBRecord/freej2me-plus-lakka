@@ -57,7 +57,7 @@
 	<echo message="Building JAR - Libretro" />
 	<jar
 		destfile="build/freej2me-lr.jar">
-		<fileset dir="build/classes" excludes="**/AWTGUI*.class, **/FreeJ2ME*.class, **/Anbu*.class"/> <!-- Exclude AWT and SDL classes (FreeJ2ME.class is part of the AWT standalone) -->
+		<fileset dir="build/classes" excludes="**/AWTGUI*.class, **/FreeJ2ME*.class, **/Anbu*.class, **/ProgressBar*.class, **/ScreenShot*.class"/> <!-- Exclude AWT and SDL classes (FreeJ2ME.class is part of the AWT standalone) -->
 		<fileset dir="resources" />
 		<metainf dir="META-INF" />
 		<manifest>
@@ -70,7 +70,7 @@
 	<echo message="Building JAR - SDL" />
 	<jar
 		destfile="build/freej2me-sdl.jar">
-		<fileset dir="build/classes" excludes="**/AWTGUI*.class, **/FreeJ2ME*.class, **/Libretro*.class"/> <!-- Exclude AWT and SDL classes (FreeJ2ME.class is part of the AWT standalone) -->
+		<fileset dir="build/classes" excludes="**/AWTGUI*.class, **/FreeJ2ME*.class, **/Libretro*.class, **/ProgressBar*.class, , **/ScreenShot*.class"/> <!-- Exclude AWT and SDL classes (FreeJ2ME.class is part of the AWT standalone) -->
 		<fileset dir="resources" />
 		<zipgroupfileset dir="lib" excludes="META-INF/**" includes="*.jar"/>
 		<metainf dir="META-INF" />
