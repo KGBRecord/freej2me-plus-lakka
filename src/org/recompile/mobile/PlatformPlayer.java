@@ -73,7 +73,7 @@ public class PlatformPlayer implements Player
 {
 	private final byte NUM_CONTROLS = 4;
 
-	private String contentType = "";
+	public String contentType = "";
 
 	private audioplayer player;
 
@@ -118,7 +118,7 @@ public class PlatformPlayer implements Player
 					{
 						// This is for Qualcomm's QCP format, it has to be checked before wav, because Qualcomm's PureVoice also has RIFF as its first bytes
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is Qualcomm PureVoice! (not supported yet)");
-						contentType = "audio/qcp";
+						contentType = "audio/qcp (beta)";
 						player = new audioplayer();
 						disableControls = true;
 					}
@@ -138,7 +138,7 @@ public class PlatformPlayer implements Player
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is SMAF/MMF! (not fully supported yet)");
 						byte[] SMAFData = SMAFDecoder.convertSMAFToMidi(data);
-						contentType = "audio/mmf";
+						contentType = "audio/mmf (beta)";
 						if(SMAFData != null) 
 						{
 							InputStream SMAFStream = new ByteArrayInputStream(SMAFData);
@@ -153,21 +153,21 @@ public class PlatformPlayer implements Player
 					else if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
 					{
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MFi! (not supported yet)");
-						contentType = "audio/mfi";
+						contentType = "audio/mfi (stub)";
 						player = new audioplayer();
 						disableControls = true;
 					}
 					else if(data.length >= 6 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '\n') 
 					{
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is AMR-NB! (not supported yet)");
-						contentType = "audio/amr";
+						contentType = "audio/amr (stub)";
 						player = new audioplayer();
 						disableControls = true;
 					} 
 					else if(data.length >= 9 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '-' && data[6] == 'W' && data[7] == 'B' && data[8] == '\n') 
 					{
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is AMR-WB! (not supported yet)");
-						contentType = "audio/amr-wb";
+						contentType = "audio/amr-wb (stub)";
 						player = new audioplayer();
 						disableControls = true;
 					}
@@ -175,6 +175,7 @@ public class PlatformPlayer implements Player
 					{
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "None of the known formats match the received stream, it won't play!");
 						player = new audioplayer();
+						contentType = "unknown";
 						disableControls = true;
 					}
 				}

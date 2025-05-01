@@ -26,10 +26,15 @@ import org.recompile.mobile.MobilePlatform;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Toolkit;
+import java.awt.datatransfer.*;
+import java.awt.dnd.*;
+import java.awt.event.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -53,6 +58,9 @@ public class FreeJ2ME
 	private int lcdWidth;
 	private int lcdHeight;
 	private int scaleFactor = 1;
+
+	public static Color freeJ2MEBGColor = new Color(0,0,64);
+	public static Color freeJ2MEDragColor = new Color(55, 55, 125);
 
 	public static boolean isFullscreen = false;
 
@@ -403,7 +411,7 @@ public class FreeJ2ME
 			main.setLocationRelativeTo(null); // Center window on screen
         }
 
-		main.setBackground(new Color(0,0,64));
+		main.setBackground(freeJ2MEBGColor);
 		
 		try
 		{
@@ -445,6 +453,7 @@ public class FreeJ2ME
 
 	private class LCD extends Canvas
 	{
+		private boolean showDragMessage = false, fileSupported = true;
 		public int cx=0;
 		public int cy=0;
 		public int cw=240;
@@ -452,6 +461,8 @@ public class FreeJ2ME
 
 		public double scalex=1;
 		public double scaley=1;
+
+		public LCD() { setDropTarget(); }
 
 		public void updateScale(int vw, int vh)
 		{
@@ -478,20 +489,126 @@ public class FreeJ2ME
 
 		public void paint(Graphics g)
 		{
-			if(!Mobile.rotateDisplay) { g.drawImage(Mobile.getPlatform().getLCD(), cx, cy, cw, ch, null); }
-			else
+			if(!showDragMessage) 
 			{
-				final Graphics2D cgc = (Graphics2D)this.getGraphics();
-				// Rotate the FB 90 degrees counterclockwise with an adjusted pivot
-				cgc.rotate(Math.toRadians(-90), ch/2, ch/2);
-				// Draw the rotated FB with adjusted cy and cx values
-				cgc.drawImage(Mobile.getPlatform().getLCD(), 0, cx, ch, cw, null);
+				if(!Mobile.rotateDisplay) { g.drawImage(Mobile.getPlatform().getLCD(), cx, cy, cw, ch, null); }
+				else
+				{
+					final Graphics2D cgc = (Graphics2D)this.getGraphics();
+					// Rotate the FB 90 degrees counterclockwise with an adjusted pivot
+					cgc.rotate(Math.toRadians(-90), ch/2, ch/2);
+					// Draw the rotated FB with adjusted cy and cx values
+					cgc.drawImage(Mobile.getPlatform().getLCD(), 0, cx, ch, cw, null);
+				}
+				if(MobilePlatform.isPaused) 
+				{ 
+					g.setColor(new Color(0, 0, 0, 160));
+					g.fillRect(0, 0, getWidth(), getHeight());
+					g.setFont(new Font("Dialog", Font.BOLD, cw/5));
+					g.setColor(Color.WHITE);
+					String message = "PAUSED!";
+					FontMetrics metrics = g.getFontMetrics();
+					int x = (getWidth() - metrics.stringWidth(message)) / 2;
+					int y = (getHeight() + metrics.getAscent()) / 2;
+					g.drawString(message, x, y);
+				}
 			}
-			if(MobilePlatform.isPaused) 
-			{ 
-				g.setColor(new Color(0, 0, 0, 128));
-				g.fillRect(0, 0, getWidth(), getHeight()); 
+			else 
+			{
+				super.paint(g);
+				g.setColor(freeJ2MEDragColor);
+				g.fillRect(cx, cy, cw, ch);
+				g.setFont(new Font("Dialog", Font.BOLD, 20));
+				g.setColor(fileSupported ? Color.WHITE : Color.RED);
+				String message = fileSupported ? ">> DROP HERE <<" : "INVALID FILE TYPE!!!";
+				FontMetrics metrics = g.getFontMetrics();
+				int x = (getWidth() - metrics.stringWidth(message)) / 2;
+				int y = (getHeight() / 2);
+				g.drawString(message, x, y);
 			}
+		}
+
+		private void setDropTarget() 
+		{
+			new DropTarget(this, new DropTargetListener() 
+			{
+				@Override
+				@SuppressWarnings("unchecked")
+				public void dragEnter(DropTargetDragEvent dtde) 
+				{
+					if(!awtGUI.hasLoadedFile()) 
+					{
+						try 
+						{
+							if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) 
+							{
+								// Get the files being dragged
+								Transferable transferable = dtde.getTransferable();
+								java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+								
+								// Check if the file is supported
+								boolean supported = files.stream().anyMatch(file -> isSupportedFile(file.getName()));
+								if (supported) { fileSupported = true; } 
+								else { fileSupported = false; }
+							}
+						} catch (Exception e) { e.printStackTrace(); }
+
+						showDragMessage = true;
+						repaint();
+					}
+				}
+	
+				@Override
+				public void dragOver(DropTargetDragEvent dtde) { }
+	
+				@Override
+				public void dropActionChanged(DropTargetDragEvent dtde) { }
+	
+				@Override
+				public void dragExit(DropTargetEvent dte) 
+				{
+					showDragMessage = false;
+					repaint();
+				}
+	
+				@Override
+				@SuppressWarnings("unchecked")
+				public void drop(DropTargetDropEvent dtde) 
+				{
+					try 
+					{
+						dtde.acceptDrop(DnDConstants.ACTION_COPY);
+						Transferable transferable = dtde.getTransferable();
+						if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+							java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+							if (!files.isEmpty() && !awtGUI.hasLoadedFile() && fileSupported) 
+							{
+								// Load the dropped file
+								awtGUI.loadJarFile(files.get(0).toURI().toString(), true);
+							}
+						}
+						dtde.dropComplete(true);
+					} 
+					catch (Exception e) 
+					{
+						e.printStackTrace();
+						dtde.dropComplete(false);
+					} 
+					finally 
+					{
+						showDragMessage = false;
+						repaint();
+					}
+				}
+			});
+		}
+
+		private boolean isSupportedFile(String fileName) 
+		{
+			// Check for supported extensions with drag and drop
+			return fileName.toLowerCase().endsWith(".jar") ||
+				   fileName.toLowerCase().endsWith(".jad") ||
+				   fileName.toLowerCase().endsWith(".kjx");
 		}
 	}
 }

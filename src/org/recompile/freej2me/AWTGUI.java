@@ -45,8 +45,6 @@ import java.io.FilenameFilter;
 
 import java.util.Arrays;
 
-import javax.microedition.media.Manager;
-
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
 
@@ -165,6 +163,8 @@ public final class AWTGUI
 	final MenuItem pauseRes = new MenuItem("Pause / Resume (Ctrl+X)");
 	final MenuItem exitMenuItem = new MenuItem("Exit FreeJ2ME");
 	final MenuItem mapInputs = new MenuItem("Manage Inputs");
+
+	final MenuItem showPlayer = new MenuItem("J2ME Media Player");
 
 	final CheckboxMenuItem fullScreen = new CheckboxMenuItem("Toggle Fullscreen (Ctrl+F)");
 	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("Enable Audio", false);
@@ -387,6 +387,8 @@ public final class AWTGUI
 		awtButtons[4].setActionCommand("RestartLater");
 		mapInputs.setActionCommand("MapInputs");
 		awtButtons[5].setActionCommand("ApplyInputs");
+
+		showPlayer.setActionCommand("ShowPlayer");
 		
 		openMenuItem.addActionListener(menuItemListener);
 		closeMenuItem.addActionListener(menuItemListener);
@@ -402,6 +404,8 @@ public final class AWTGUI
 		awtButtons[4].addActionListener(menuItemListener);
 		mapInputs.addActionListener(menuItemListener);
 		awtButtons[5].addActionListener(menuItemListener);
+
+		showPlayer.addActionListener(menuItemListener);
 
 		addInputButtonListeners();
 
@@ -735,12 +739,14 @@ public final class AWTGUI
 		optionMenu.add(speedHackMenu);
 		optionMenu.add(compatSettingsMenu);
 
+		debugMenu.add(showPlayer);
+		debugMenu.addSeparator();
 		debugMenu.add(deleteTemporaryKJXFiles);
 		debugMenu.add(dumpAudioData);
 		debugMenu.add(dumpGraphicsData);
 		debugMenu.add(showMemoryUsage);
 		debugMenu.add(logLevel);
-
+		
 		deleteTemporaryKJXFiles.setState(true);
 
 		for(int i = 0; i < logLevels.length; i++) { logLevel.add(logLevels[i]); }
@@ -888,6 +894,12 @@ public final class AWTGUI
 				awtDialogs[4].setVisible(false); 
 			}
 
+			else if(a.getActionCommand() == "ShowPlayer") 
+			{ 
+				// Create FreeJ2MEPlayer Dialog instance and show it;
+				FreeJ2MEPlayer playerDialog = new FreeJ2MEPlayer(main);
+				playerDialog.setVisible(true);
+			}
 		}
 	}
 
