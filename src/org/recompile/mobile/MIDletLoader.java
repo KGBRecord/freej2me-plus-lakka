@@ -41,6 +41,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -65,6 +66,9 @@ public class MIDletLoader extends URLClassLoader
 	public static String[] name = new String[9];
 	private String[] className = new String[9];
 
+	private static JarFile jarFile;
+	private static List<JarEntry> jarEntries = new ArrayList<>();
+
 	public String suitename;
 
 	private Class<?> mainClass;
@@ -80,16 +84,19 @@ public class MIDletLoader extends URLClassLoader
 	private static byte selectedMidlet = 0;
 	public static boolean MIDletSelected = false;
 
-	public MIDletLoader(URL urls[], Map<String, String> descriptorProperties)
+	public MIDletLoader(URL url, Map<String, String> descriptorProperties)
 	{
-		super(urls);
+		super(new URL[] {url} );
 
 		try 
 		{
-			String jarName = Paths.get(urls[0].toURI()).getFileName().toString().replace('.', '_');
+			String jarName = Paths.get(url.toURI()).getFileName().toString().replace('.', '_');
 			suitename = jarName;
+			File file = new File(url.toURI());
+            jarFile = new JarFile(file);
+			loadJarEntries();
 		} 
-		catch (URISyntaxException e) 
+		catch (URISyntaxException | IOException e) 
 		{
 			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Failed to parse jar:" + e.getMessage());
 			e.printStackTrace();
@@ -147,37 +154,37 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("supports.video.capture", "false");
 		properties.put("supports.recording", "false");
 
-		if (className[0] == null) { className[0] = findMainClassInJars(urls); }
+		if (className[0] == null) { className[0] = findMainClassInJar(url); }
 	}
 
-	public static String findMainClassInJars(URL[] urls) 
+	public static String findMainClassInJar(URL url) 
 	{
 		// we search for a class file containing "startApp" 
 		// note this is just an approximation, but it often works
 		// the class might be abstract though..
-
-        for (URL url : urls) 
+		for (JarEntry entry : jarEntries) 
 		{
-			File file;
-			try { file = new File(url.toURI()); } 
-			catch (URISyntaxException e) { return null; }
-
-            try (JarFile jarFile = new JarFile(file)) 
+            if (entry.getName().endsWith(".class")) 
 			{
-                Enumeration<JarEntry> entries = jarFile.entries();
-                while (entries.hasMoreElements()) 
+                String className = entry.getName().replace('/', '.').replace(".class", "");
+				try 
 				{
-                    JarEntry entry = entries.nextElement();
-                    if (entry.getName().endsWith(".class")) 
-					{
-                        String className = entry.getName().replace('/', '.').replace(".class", "");
-                        if (hasStartApp(className, jarFile.getInputStream(entry))) { return className; }
-                    }
-                }
-            } 
-			catch (IOException e) { e.printStackTrace(); }
-        }
+					if (hasStartApp(className, jarFile.getInputStream(entry))) { return className; }
+				}
+                catch (IOException e) { e.printStackTrace(); }
+            }
+        }		
         return null;
+    }
+
+	private void loadJarEntries() 
+	{
+		Enumeration<JarEntry> entries = jarFile.entries();
+		while (entries.hasMoreElements()) 
+		{
+			JarEntry entry = entries.nextElement();
+			jarEntries.add(entry);
+		}
     }
 
 	private static boolean hasStartApp(String className, InputStream is) 
@@ -479,27 +486,19 @@ public class MIDletLoader extends URLClassLoader
 
     private URL findResourceInJar(URL jarUrl, String resourceName) 
 	{
-        if (jarUrl.getProtocol().equals("file") && jarUrl.getPath().endsWith(".jar")) 
+		for (JarEntry entry : jarEntries)
 		{
-            try (JarFile jarFile = new JarFile(new File(jarUrl.toURI()))) 
+			String entryName = entry.getName();
+			if (entryName.equalsIgnoreCase(resourceName)) 
 			{
-                Enumeration<JarEntry> entries = jarFile.entries();
-                while (entries.hasMoreElements()) 
-				{
-                    JarEntry entry = entries.nextElement();
-                    String entryName = entry.getName();
-                    if (entryName.equalsIgnoreCase(resourceName)) 
-					{
-                        // Construct the URL for the found resource
-                        String jarEntryUrl = "jar:" + jarUrl.toExternalForm() + "!/" + entryName;
-                        return new URL(jarEntryUrl);
-                    }
-                }
-            } catch (URISyntaxException | IOException e) {
-				Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Couldn't find resource in jar: "+ e.getMessage());
-				e.printStackTrace();
-            }
-        }
+				// Construct the URL for the found resource
+				String jarEntryUrl = "jar:" + jarUrl.toExternalForm() + "!/" + entryName;
+				try { return new URL(jarEntryUrl); }
+				catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Couldn't load resource from jar: " + e.getMessage()); e.printStackTrace(); }
+			}
+		}
+		
+		Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Couldn't find resource '" + resourceName + "' in jar: " + jarUrl);
         return null;
     }
 

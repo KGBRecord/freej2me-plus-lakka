@@ -459,7 +459,7 @@ public class MobilePlatform
 				fileName = "file:" + tmpfile.getAbsolutePath().replace("./", "");
 
 				URL jar = new URL(fileName);
-				loader = new MIDletLoader(new URL[]{jar}, descriptorProperties);
+				loader = new MIDletLoader(jar, descriptorProperties);
 
 				if(Mobile.deleteTemporaryKJXFiles) 
 				{
@@ -524,7 +524,7 @@ public class MobilePlatform
 			try 
 			{
 				URL jar = new URL(fileName);
-				loader = new MIDletLoader(new URL[]{jar}, descriptorProperties);
+				loader = new MIDletLoader(jar, descriptorProperties);
 				return true;
 			} 
 			catch (Exception e) 
