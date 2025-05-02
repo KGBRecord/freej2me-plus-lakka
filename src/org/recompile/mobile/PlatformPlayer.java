@@ -71,6 +71,10 @@ import javazoom.jl.player.MPEGPlayer;
 
 public class PlatformPlayer implements Player
 {
+
+	private static final midiPlayer[] midiPlayers = new midiPlayer[16];
+	private static final Synthesizer[] synthesizers = new Synthesizer[midiPlayers.length/4];
+
 	private final byte NUM_CONTROLS = 4;
 
 	public String contentType = "";
@@ -86,6 +90,25 @@ public class PlatformPlayer implements Player
 
 	protected boolean disableControls = false; // For when a given audio format is not supported
 	protected Control[] controls;
+
+	static // Load synthesizers as soon as this class is loaded by the jar
+	{
+		try 
+		{
+			if(synthesizers[0] == null) // If synths are not open yet, prepare them
+			{
+				for(int i = 0; i < synthesizers.length; i++) 
+				{
+					synthesizers[i] = MidiSystem.getSynthesizer();
+					synthesizers[i].open();
+					if(Mobile.useCustomMidi) 
+					{
+						synthesizers[i].loadAllInstruments(Manager.customSoundfont);
+					}
+				}
+			}
+		} catch (Exception e) { }
+	}
 
 	public PlatformPlayer(InputStream stream, String type)
 	{
@@ -411,6 +434,60 @@ public class PlatformPlayer implements Player
 		return controls; 
 	}
 
+	public static int addPlayerToStack(midiPlayer midplayer, wavPlayer wavplayer, MP3Player mpegPlayer)
+	{
+		if(midplayer != null) 
+		{
+			for(int i = 0; i < midiPlayers.length; i++) 
+			{
+				if(midiPlayers[i] == null || midiPlayers[i].getSequence() == null) 
+				{
+					if(midiPlayers[i] != null)
+					{
+						try // To restore the volume of the synth that's bound to this player
+						{
+							MidiChannel channels[] = midiPlayers[i].synthesizer.getChannels();
+							// Set volume for all channels through Control Change command 7 (volume)
+							for (int channel = 0; channel < channels.length; channel++) 
+							{
+								channels[channel].controlChange(7, 127);
+							}
+						} catch (Exception e) { }
+					}
+					
+					midiPlayers[i] = midplayer;
+					return i%4; // Return the synth for that midiPlayer position
+				}
+			}
+			// All players are occupied, find the first stopped one to be replaced
+			for(int i = 0; i < midiPlayers.length; i++) 
+			{
+				if(midiPlayers[i] != null && !midiPlayers[i].isRunning()) 
+				{
+					try // To restore the volume of the synth that's bound to this player
+					{
+						MidiChannel channels[] = midiPlayers[i].synthesizer.getChannels();
+						// Set volume for all channels through Control Change command 7 (volume)
+						for (int channel = 0; channel < channels.length; channel++) 
+						{
+							channels[channel].controlChange(7, 127);
+						}
+					} catch (Exception e) { }
+					midiPlayers[i].close();
+					midiPlayers[i] = midplayer;
+					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Overriding a previously allocated midi player. Either the jar requires more than " + midiPlayers.length + " midi at the same time, or it's not closing media properly.");
+					return i%4;
+				}
+			}
+		}
+		else if(wavplayer != null)
+		{
+			return 0;
+		}
+
+		return 0;
+	}
+
 
 	// Players //
 
@@ -435,7 +512,7 @@ public class PlatformPlayer implements Player
 		private Sequence midiSequence;
 		public Synthesizer synthesizer;
 		public Receiver receiver;
-		private int numLoops = 0;
+		private int numLoops = 0, synthIndex = 0;
 		private MetaEventListener metaListener = null;
 
 		public midiPlayer() // For when a Locator call (usually for tones) is issued
@@ -449,6 +526,7 @@ public class PlatformPlayer implements Player
 				midiSequence = new Sequence(Sequence.PPQ, 24); 
 			} 
 			catch (Exception e) {  Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load midi file:" + e.getMessage()); }
+			synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(this, null, null)];
 		}
 
 		public midiPlayer(InputStream stream) 
@@ -458,18 +536,13 @@ public class PlatformPlayer implements Player
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load MIDI file: " + e.getMessage());
 			}
+			synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(this, null, null)];
 		}
 
 		public void realize() 
 		{
 			try 
 			{
-				synthesizer = MidiSystem.getSynthesizer();
-				synthesizer.open();
-				if(Mobile.useCustomMidi) 
-				{
-					synthesizer.loadAllInstruments(Manager.customSoundfont);
-				}
 				receiver = synthesizer.getReceiver();
 				midi = MidiSystem.getSequencer(false);
 				midi.getTransmitter().setReceiver(receiver);
@@ -545,7 +618,6 @@ public class PlatformPlayer implements Player
 				midi.removeMetaEventListener(metaListener);
 				metaListener = null;
 			}
-			synthesizer.close();
 			receiver = null;
 			midi.close();
 		}
@@ -557,7 +629,7 @@ public class PlatformPlayer implements Player
 				midi.removeMetaEventListener(metaListener);
 				metaListener = null;
 			}
-			synthesizer.close();
+			//synthesizer.close();
 			receiver = null;
 			midi.close();
 			midiSequence = null;
