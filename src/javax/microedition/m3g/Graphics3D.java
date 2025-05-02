@@ -673,7 +673,8 @@ public class Graphics3D
 				}
 				
 
-				if (tex == null || texCoords == null) // If there's no texture coords or a texture image, we should try rendering with vertex colors.
+				// If there's no texture coords or a texture image, we should try rendering with vertex colors. (also used for debug render modes)
+				if (tex == null || texCoords == null || Mobile.M3GRenderUntexturedPolygons || Mobile.M3GRenderWireframe) 
 				{
 					coXr[0] = Math.round(trisScreen[tri_id].xA());
 					coXr[1] = Math.round(trisScreen[tri_id].xB());
@@ -688,9 +689,8 @@ public class Graphics3D
 					{ 
 						grp.setColor(new Color(vertices.getDefaultColor()));
 
-						grp.fillPolygon(coXr, coYr, 3);
-						//grp.setColor(colorDraw);
-						//grp.drawPolygon(coXr, coYr, 3); // TODO: Maybe use this for debugging, like a Wireframe mode?
+						if(Mobile.M3GRenderWireframe) { grp.drawPolygon(coXr, coYr, 3); }
+						else { grp.fillPolygon(coXr, coYr, 3); }
 					} 
 					else // If we have vertex colors, good. Read them to color up the triangles properly.
 					{
@@ -757,7 +757,10 @@ public class Graphics3D
 							coXr[1], coYr[1], colors[1]
 						);
 						grp.setPaint(gradient);
-						grp.fillPolygon(coXr, coYr, 3);
+						
+						if(Mobile.M3GRenderWireframe) { grp.drawPolygon(coXr, coYr, 3); }
+						else { grp.fillPolygon(coXr, coYr, 3); }
+						
 
 						// Draw second gradient from color2 to color3
 						gradient = new GradientPaint(
@@ -765,7 +768,9 @@ public class Graphics3D
 							coXr[2], coYr[2], colors[2]
 						);
 						grp.setPaint(gradient);
-						grp.fillPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, new int[]{coYr[1], coYr[2], coYr[0]}, 3 );
+
+						if(Mobile.M3GRenderWireframe) { grp.drawPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, new int[]{coYr[1], coYr[2], coYr[0]}, 3 ); }
+						else { grp.fillPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, new int[]{coYr[1], coYr[2], coYr[0]}, 3 ); }
 
 						grp.setPaint(originalPaint);
 					}

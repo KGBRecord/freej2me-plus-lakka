@@ -117,6 +117,10 @@ public class Mobile
 	public static boolean compatNonFatalNullImages = false; // Fixes some version of House M.D
 	public static boolean compatClipRectOnGfxReset = false; // Fixes Fantasy Zone 128x128
 
+	// M3G Debug Rendering settings
+	public static boolean M3GRenderUntexturedPolygons = false;
+	public static boolean M3GRenderWireframe = false;
+
 	// Keycode modifiers
 	public static boolean lg = false;
 	public static boolean motorola = false;

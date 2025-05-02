@@ -145,6 +145,12 @@ public class Libretro
 		if(Integer.parseInt(args[16]) == 0) { Mobile.deleteTemporaryKJXFiles = false; }
 		else { Mobile.deleteTemporaryKJXFiles = true; }
 
+		if(Integer.parseInt(args[17]) == 0) { Mobile.M3GRenderUntexturedPolygons = false; }
+		else { Mobile.M3GRenderUntexturedPolygons = true; }
+
+		if(Integer.parseInt(args[18]) == 0) { Mobile.M3GRenderWireframe = false; }
+		else { Mobile.M3GRenderWireframe = true; }
+
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
@@ -421,6 +427,12 @@ public class Libretro
 
 									if(Integer.parseInt(cfgtokens[17])==1) { Mobile.deleteTemporaryKJXFiles = true;  }
 									if(Integer.parseInt(cfgtokens[17])==0) { Mobile.deleteTemporaryKJXFiles = false; }
+
+									if(Integer.parseInt(cfgtokens[18])==1) { Mobile.M3GRenderUntexturedPolygons = true;  }
+									if(Integer.parseInt(cfgtokens[18])==0) { Mobile.M3GRenderUntexturedPolygons = false; }
+
+									if(Integer.parseInt(cfgtokens[19])==1) { Mobile.M3GRenderWireframe = true;  }
+									if(Integer.parseInt(cfgtokens[19])==0) { Mobile.M3GRenderWireframe = false; }
 
 									Mobile.config.saveConfig();
 									settingsChanged();

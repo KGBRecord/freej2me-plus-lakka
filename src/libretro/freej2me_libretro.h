@@ -112,6 +112,11 @@ struct retro_core_option_v2_category option_categories[] =
         "Compatibility Settings",
         "Options that help some specific games run, but that may break others."
     },
+    {
+        "m3g_debug",
+        "M3G Debug Settings",
+        "Debug settings related to FreeJ2ME's M3G rendering implementation."
+    },
 };
 
 /* Core config options if running on a frontend with support for config version 2 */
@@ -510,6 +515,34 @@ struct retro_core_option_v2_definition core_options[] =
         },
         "off"
     },
+    {
+        "freej2me_m3grenderuntextured",
+        "M3G Debug Settings > Draw only vertex colors",
+        "Draw only vertex colors",
+        "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
+        "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
+        "m3g_debug",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_m3grenderwireframe",
+        "M3G Debug Settings > Draw Wireframe",
+        "Draw Wireframe",
+        "Enabling this makes M3G render only wireframes. Useful for debugging triangle clipping and culling.",
+        "Enabling this makes M3G render only wireframes. Useful for debugging triangle clipping and culling.",
+        "m3g_debug",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
     { NULL, NULL, NULL, NULL, NULL, NULL, {{0}}, NULL },
 };
 
@@ -850,6 +883,28 @@ struct retro_core_option_definition core_options_v1 [] =
         },
         "off"
     },
+    {
+        "freej2me_m3grenderuntextured",
+        "Draw only vertex colors",
+        "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_m3grenderwireframe",
+        "Draw Wireframe",
+        "Enabling this makes M3G render only wireframes. Useful for debugging triangle clipping and culling.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
     { NULL, NULL, NULL, {{0}}, NULL },
 };
 
@@ -943,13 +998,21 @@ static const struct retro_variable vars[] =
         "freej2me_spdhacknoalpha",
         "No Alpha on Blank Images(SpeedHack); off|on",
     },
-    { /* No Alpha on Blank Images compat setting */
+    { /* Don't throw Exception on null images setting */
         "freej2me_compatnonfatalnullimages",
         "Don't throw Exception on null images; off|on",
     },
-    { /* No Alpha on Blank Images compat setting */
+    { /* Do clipRect instead of setClip on gfx reset setting */
         "freej2me_compatcliprectongfxreset",
         "Do clipRect instead of setClip on gfx reset; off|on",
+    },
+    { /* M3G draw only vertex colors */
+        "freej2me_m3grenderuntextured",
+        "Draw only vertex colors; off|on",
+    },
+    { /* M3G draw wireframe */
+        "freej2me_m3grenderwireframe",
+        "Draw Wireframe; off|on",
     },
     { NULL, NULL },
 };

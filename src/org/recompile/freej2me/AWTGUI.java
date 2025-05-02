@@ -105,8 +105,11 @@ public final class AWTGUI
 	};
 	
 
-	/* Log Level menu */
+	/* Log Level submenu */
 	Menu logLevel = new Menu("Log Level");
+
+	/* M3G Debug submenu */
+	Menu M3GDebug = new Menu("M3G Debugging");
 
 	/* Input mapping keys */
 	final Button inputButtons[] = new Button[] 
@@ -250,7 +253,11 @@ public final class AWTGUI
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
 	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump Graphics Objects");
 	final CheckboxMenuItem showMemoryUsage = new CheckboxMenuItem("Show VM Memory Usage");
-	 
+	
+	// M3G Debugging
+	final CheckboxMenuItem M3GUntextured = new CheckboxMenuItem("Draw Only Vertex Colors");
+	final CheckboxMenuItem M3GWireframe = new CheckboxMenuItem("Wireframe Mode");
+
 
 	public AWTGUI(Config config)
 	{
@@ -710,6 +717,24 @@ public final class AWTGUI
 				else{ awtDialogs[2].setVisible(false); }
 			}
 		});
+
+		M3GUntextured.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(M3GUntextured.getState()){ Mobile.M3GRenderUntexturedPolygons = true; }
+				else{ Mobile.M3GRenderUntexturedPolygons = false; }
+			}
+		});
+
+		M3GWireframe.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(M3GWireframe.getState()){ Mobile.M3GRenderWireframe = true; }
+				else{ Mobile.M3GRenderWireframe = false; }
+			}
+		});
 	}
 
 	private void buildMenuBar() 
@@ -746,6 +771,7 @@ public final class AWTGUI
 		debugMenu.add(dumpGraphicsData);
 		debugMenu.add(showMemoryUsage);
 		debugMenu.add(logLevel);
+		debugMenu.add(M3GDebug);
 		
 		deleteTemporaryKJXFiles.setState(true);
 
@@ -755,6 +781,9 @@ public final class AWTGUI
 		logLevels[2].setState(true);
 		logLevels[3].setState(false);
 		logLevels[4].setState(false);
+
+		M3GDebug.add(M3GUntextured);
+		M3GDebug.add(M3GWireframe);
 
 		for(int i = 0; i < config.supportedResolutions.length; i++) { resChoice.add(config.supportedResolutions[i]); }
 		for(int i = 0; i < layoutOptions.length; i++) { phoneType.add(layoutOptions[i]); }
