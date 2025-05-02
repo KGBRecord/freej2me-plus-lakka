@@ -108,14 +108,10 @@ class Triangle
 			boolean sharesVertices = (result[tri_id].bufIndex[0] == result[tri_id - 1].bufIndex[1] &&
 									  result[tri_id].bufIndex[1] == result[tri_id - 1].bufIndex[2]) ||
 									 (result[tri_id].bufIndex[1] == result[tri_id - 1].bufIndex[0] &&
-									  result[tri_id].bufIndex[2] == result[tri_id - 1].bufIndex[1]) ||
-									 (result[tri_id].bufIndex[0] == result[tri_id - 1].bufIndex[0] &&
-									  result[tri_id].bufIndex[1] == result[tri_id - 1].bufIndex[1] &&
-									  result[tri_id].bufIndex[2] == result[tri_id - 1].bufIndex[2]);
+									  result[tri_id].bufIndex[2] == result[tri_id - 1].bufIndex[1]);
 	
-			if (sharesVertices) {
-				result[tri_id].orientation = -result[tri_id - 1].orientation; // Invert orientation based on the previous triangle's
-			}
+			// Invert orientation based on the previous triangle's
+			if (sharesVertices) { result[tri_id].orientation = -result[tri_id - 1].orientation; }
 		}
 
 		return result;
@@ -238,15 +234,25 @@ class Triangle
 				Triangle[] newTriangles = new Triangle[1];
 				float[][] n1 = M3GMath.intersectTriangle(p, pn, vert[vin[0]], vert[vout[0]], tex[vin[0]], tex[vout[0]]);
 				float[][] n2 = M3GMath.intersectTriangle(p, pn, vert[vin[0]], vert[vout[1]], tex[vin[0]], tex[vout[1]]);
-				float[] v1 = { vert[vin[0]][0], vert[vin[0]][1], vert[vin[0]][2], vert[vin[0]][3],
-							   n1[0][0], n1[0][1], n1[0][2], n1[0][3],
-							   n2[0][0], n2[0][1], n2[0][2], n2[0][3] };
-	
-				float[] t1 = { tex[vin[0]][0], tex[vin[0]][1], tex[vin[0]][2], tex[vin[0]][3],
-							   n1[1][0], n1[1][1], n1[1][2], n1[1][3],
-							   n2[1][0], n2[1][1], n2[1][2], n2[1][3] };
-	
-				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[0]+1, bufIndex[0]+2 });
+				
+				// Create new vertex array
+				float[] v1 = { 
+					vert[vin[0]][0], vert[vin[0]][1], vert[vin[0]][2], vert[vin[0]][3],
+					n1[0][0], n1[0][1], n1[0][2], n1[0][3],
+					n2[0][0], n2[0][1], n2[0][2], n2[0][3] 
+				};
+			
+				float[] t1 = { 
+					tex[vin[0]][0], tex[vin[0]][1], tex[vin[0]][2], tex[vin[0]][3],
+					n1[1][0], n1[1][1], n1[1][2], n1[1][3],
+					n2[1][0], n2[1][1], n2[1][2], n2[1][3] 
+				};
+			
+				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[1], bufIndex[2] } );
+				if (newTriangles[0].isCounterClockwise() != this.isCounterClockwise())
+				{
+					newTriangles[0].orientation = -this.orientation;
+				}
 				return newTriangles;
 			}
 			case 2: // Two vertices on screen, clip will result in a quad, so it has to be re-triangulated (which is why we return two triangles here)
@@ -254,27 +260,46 @@ class Triangle
 				Triangle[] newTriangles = new Triangle[2];
 				float[][] n1 = M3GMath.intersectTriangle(p, pn, vert[vin[0]], vert[vout[0]], tex[vin[0]], tex[vout[0]]);
 				float[][] n2 = M3GMath.intersectTriangle(p, pn, vert[vin[1]], vert[vout[0]], tex[vin[1]], tex[vout[0]]);
-	
-				// First triangle A, B, A'
-				float[] v1 = { vert[vin[0]][0], vert[vin[0]][1], vert[vin[0]][2], vert[vin[0]][3],
-							   vert[vin[1]][0], vert[vin[1]][1], vert[vin[1]][2], vert[vin[1]][3],
-							   n1[0][0], n1[0][1], n1[0][2], n1[0][3] };
-	
-				float[] t1 = { tex[vin[0]][0], tex[vin[0]][1], tex[vin[0]][2], tex[vin[0]][3],
-							   tex[vin[1]][0], tex[vin[1]][1], tex[vin[1]][2], tex[vin[1]][3],
-							   n1[1][0], n1[1][1], n1[1][2], n1[1][3] };
-	
-				// Second triangle A', B, B'
-				float[] v2 = { n1[0][0], n1[0][1], n1[0][2], n1[0][3],
-							   vert[vin[1]][0], vert[vin[1]][1], vert[vin[1]][2], vert[vin[1]][3],
-							   n2[0][0], n2[0][1], n2[0][2], n2[0][3] };
-	
-				float[] t2 = { n1[1][0], n1[1][1], n1[1][2], n1[1][3],
-							   tex[vin[1]][0], tex[vin[1]][1], tex[vin[1]][2], tex[vin[1]][3],
-							   n2[1][0], n2[1][1], n2[1][2], n2[1][3] };
-	
-				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[1], bufIndex[1]+1});
-				newTriangles[1] = new Triangle(v2, t2, new int[] { bufIndex[1]-1, bufIndex[1], bufIndex[1]+1});
+				
+				float[] v1 = 
+				{ 
+					vert[vin[0]][0], vert[vin[0]][1], vert[vin[0]][2], vert[vin[0]][3],
+					vert[vin[1]][0], vert[vin[1]][1], vert[vin[1]][2], vert[vin[1]][3],
+					n1[0][0], n1[0][1], n1[0][2], n1[0][3] 
+				};
+
+				float[] t1 = 
+				{ 
+					tex[vin[0]][0], tex[vin[0]][1], tex[vin[0]][2], tex[vin[0]][3],
+					tex[vin[1]][0], tex[vin[1]][1], tex[vin[1]][2], tex[vin[1]][3],
+					n1[1][0], n1[1][1], n1[1][2], n1[1][3] 
+				};
+
+				float[] v2 = 
+				{ 
+					n1[0][0], n1[0][1], n1[0][2], n1[0][3],
+					vert[vin[1]][0], vert[vin[1]][1], vert[vin[1]][2], vert[vin[1]][3],
+					n2[0][0], n2[0][1], n2[0][2], n2[0][3] 
+				};
+
+				float[] t2 = 
+				{ 
+					n1[1][0], n1[1][1], n1[1][2], n1[1][3],
+					tex[vin[1]][0], tex[vin[1]][1], tex[vin[1]][2], tex[vin[1]][3],
+					n2[1][0], n2[1][1], n2[1][2], n2[1][3] 
+				};
+
+				// Update indices for both triangles
+				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[1], bufIndex[2] });
+				newTriangles[1] = new Triangle(v2, t2, new int[] { bufIndex[2], bufIndex[1], bufIndex[0] });
+				if (newTriangles[0].isCounterClockwise() != this.isCounterClockwise())
+				{
+					newTriangles[0].orientation = -this.orientation;
+				}
+				if (newTriangles[1].isCounterClockwise() != this.isCounterClockwise())
+				{
+					newTriangles[1].orientation = -this.orientation;
+				}
 				return newTriangles;
 			}
 			case 3:

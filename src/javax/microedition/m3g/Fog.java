@@ -63,10 +63,19 @@ public class Fog extends Object3D
 		density = value; 
 	}
 
-	public void setLinear(float Near, float Far) 
-	{ 
-		near = Math.min(Math.max(Near, 0.0f), 1.0f); 
-		far = Math.min(Math.max(Far, 0.0f), 1.0f); 
+	public void setLinear(float Near, float Far)
+	{
+		// Convert values into the [0, 1] interval (if both are equal, the result is expected to be undefined)
+		if(Far > Near)
+		{
+			near = Near/Far;
+			far = Far/Far; 
+		}
+		else 
+		{
+			near = Near/Near;
+			far = Far/Near; 
+		}
 	}
 
 	public void setMode(int value) 

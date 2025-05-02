@@ -723,9 +723,11 @@ public class Graphics3D
 						{
 							if (fog.getMode() == Fog.LINEAR) 
 							{
-								fogFactor[0] = Math.max(0, Math.min(1, (fog.getFarDistance() - trisScreen[tri_id].zA()) / (fog.getFarDistance() - fog.getNearDistance())));
-								fogFactor[1] = Math.max(0, Math.min(1, (fog.getFarDistance() - trisScreen[tri_id].zB()) / (fog.getFarDistance() - fog.getNearDistance())));
-								fogFactor[2] = Math.max(0, Math.min(1, (fog.getFarDistance() - trisScreen[tri_id].zC()) / (fog.getFarDistance() - fog.getNearDistance())));
+								float nearDistance = fog.getNearDistance();
+								float farDistance = fog.getFarDistance();
+								fogFactor[0] = Math.max(0, Math.min(1, (farDistance - trisScreen[tri_id].zA()) / (farDistance - nearDistance)));
+								fogFactor[1] = Math.max(0, Math.min(1, (farDistance - trisScreen[tri_id].zB()) / (farDistance - nearDistance)));
+								fogFactor[2] = Math.max(0, Math.min(1, (farDistance - trisScreen[tri_id].zC()) / (farDistance - nearDistance)));
 							} 
 							else 
 							{
@@ -904,20 +906,89 @@ public class Graphics3D
 								int backgroundPixel = rasterData[(y+viewy) * canvasWidth + (x+viewx)];
 								int blendedPixel = texPixel;
 
+								if (vertColors != null) // We have to do texture blending, as we have vertex colors and the texture goes on top of them
+								{
+									// Get vertex indices
+									int[] indices = { trisScreen[tri_id].bufIndex[0], trisScreen[tri_id].bufIndex[1], trisScreen[tri_id].bufIndex[2] };
+									int[] colors = new int[3];
+									byte[] color_vertex = new byte[4];
+
+									for (int i = 0; i < 3; i++) 
+									{
+										vertColors.get(indices[i], 1, color_vertex);
+										if (vertColors.getComponentCount() == 3) // RGB
+										{ 
+											colors[i] = (255 << 24) | (Byte.toUnsignedInt(color_vertex[0]) << 16) |
+														(Byte.toUnsignedInt(color_vertex[1]) << 8) |
+														Byte.toUnsignedInt(color_vertex[2]);
+										} 
+										else // RGBA
+										{ 
+											colors[i] = (Byte.toUnsignedInt(color_vertex[3]) << 24) |
+														(Byte.toUnsignedInt(color_vertex[0]) << 16) |
+														(Byte.toUnsignedInt(color_vertex[1]) << 8) |
+														Byte.toUnsignedInt(color_vertex[2]);
+										}
+									}
+
+									// Clipped triangles tend to have two vertices sharing the exact same x or y coordinate, which is a problem
+									// for area calculations. We could use barycentric coordinates, but they don't seem to work at all in this context
+									// and result in about half of the screen triangles having invalid weights and blending improperly.
+
+									// The best approach so far is making sure that none of the areas below result in zero, which is why these small shifts are present.
+									// Hacky, but it's what works best for now
+									final float epsilon = 0.001f;
+
+									// Ensure distinct x and y values
+									if (Math.abs(xTop - xBot) < epsilon)  { xTop += epsilon; }
+									if (Math.abs(xMidL - xBot) < epsilon) { xMidL += epsilon; }
+									if (Math.abs(yBot - yTop) < epsilon)  { yTop += epsilon; }
+									if (Math.abs(yMid - yTop) < epsilon)  { yMid += epsilon; }
+									if (Math.abs(yMid - yBot) < epsilon)  { yMid += epsilon; }
+
+									// Calculate weights based on pixel position
+									float totalArea = Math.abs((xBot - xTop) * (yMid - yTop) - (xBot - xMidL) * (yBot - yTop));
+									float areaA = Math.abs((xBot - xTop) * (y - yTop) - (x - xTop) * (yBot - yTop));
+									float areaB = Math.abs((xMidL - xTop) * (y - yTop) - (x - xTop) * (yMid - yTop));
+									float areaC = Math.abs((x - xBot) * (yMid - yTop) - (xBot - xMidL) * (y - yTop));
+
+									float weightA = areaA / totalArea;
+									float weightB = areaB / totalArea;
+									float weightC = areaC / totalArea;
+
+									// Normalize weights
+									float totalWeight = weightA + weightB + weightC;
+									if (totalWeight > 0) 
+									{
+										weightA /= totalWeight;
+										weightB /= totalWeight;
+										weightC /= totalWeight;
+									}
+
+									// Interpolate color based on weights
+									int r = (int) ((weightA * ((colors[0] >> 16) & 0xFF)) + (weightB * ((colors[1] >> 16) & 0xFF)) + (weightC * ((colors[2] >> 16) & 0xFF)));
+									int g = (int) ((weightA * ((colors[0] >> 8) & 0xFF)) + (weightB * ((colors[1] >> 8) & 0xFF)) + (weightC * ((colors[2] >> 8) & 0xFF)));
+									int b = (int) ((weightA * (colors[0] & 0xFF)) + (weightB * (colors[1] & 0xFF)) + (weightC * (colors[2] & 0xFF)));
+
+									int interpolatedColor = (alpha << 24) | (r << 16) | (g << 8) | b; // ARGB
+
+									// Blend with texture pixel
+									blendedPixel = blendTexPixels(interpolatedColor, texPixel, alpha, tex.getBlending());
+								}
+
 								// To blend the fog value here, we have to take the current pixel's z value into consideration
 								if(fog != null) 
 								{
-									float nearDistance = Math.max(fog.getNearDistance(), getDepthRangeNear());
-									float farDistance = Math.min(fog.getFarDistance(), getDepthRangeFar());
-
 									if (fog.getMode() == Fog.LINEAR) 
 									{
+										float nearDistance = fog.getNearDistance();
+										float farDistance = fog.getFarDistance();
 										fogFactor[0] = Math.max(0, Math.min(1, (farDistance - z) / (farDistance - nearDistance)));
 									} 
 									else 
 									{
 										fogFactor[0] = (float) Math.abs(Math.exp(-fog.getDensity() * z));
-										fogFactor[0] = Math.max(0, Math.min(1, fogFactor[0])); // Clamp to the [0, 1] interval
+										fogFactor[0] = Math.max(0, Math.min(1, fogFactor[0]));
 									}
 
 									blendedPixel = blendFog(blendedPixel, fog.getColor(), fogFactor[0]);
@@ -931,10 +1002,10 @@ public class Graphics3D
 								// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
 								if(compositingMode.isDepthWriteEnabled() && isDepthBufferEnabled()) 
 								{ 
-									this.depthBuffer[this.vieww * y + x] = z; 
+									this.depthBuffer[this.vieww * y + x] = z;
 								}
 
-							} catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); }
+							} catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); e.printStackTrace(); }
 						}
 					}
 				}
@@ -1028,7 +1099,7 @@ public class Graphics3D
 
 	/* Helper Methods */
 
-	// This one is used for alpha pixel blending, supports both CompositingMode and Texture2D Blending modes
+	// This one is used for pixel blending when rendering to the screen
 	private int blendPixels(int background, int foreground, int alpha, int blendMode) 
 	{
 		int bgA = (background >> 24) & 0xFF;
@@ -1036,107 +1107,167 @@ public class Graphics3D
 		int bgG = (background >> 8) & 0xFF;
 		int bgB = background & 0xFF;
 
+		int fgA = (foreground >> 24) & 0xFF;
 		int fgR = (foreground >> 16) & 0xFF;
 		int fgG = (foreground >> 8) & 0xFF;
 		int fgB = foreground & 0xFF;
 
 		int outR, outG, outB, outA;
 
-		int fgAlpha, fgColor;
-
-		float alphaNorm;
+		float alphaNorm = alpha / 255f;
 
 		switch (blendMode)
 		{
-			// CompositingMode.REPLACE isn't handled in here, as the result will just be one of the Texture2D modes.
 			case CompositingMode.REPLACE:
-				// If the foreground has transparency, we have to blend with the background
-				 fgAlpha = (foreground >> 24) & 0xFF; // Extract alpha from the foreground
-				 fgColor = foreground & 0x00FFFFFF;    // Extract color from the foreground
-
-				// Replace the background color with the foreground color
-				// Use the foreground alpha directly
-				return (fgAlpha << 24) | fgColor; // Combine alpha and color
+				outA = (int) (fgA + (bgA * (1 - (fgA / 255f))));
+				outR = (int) (fgR * (fgA / 255f) + bgR * (1 - (fgA / 255f)));
+				outG = (int) (fgG * (fgA / 255f) + bgG * (1 - (fgA / 255f)));
+				outB = (int) (fgB * (fgA / 255f) + bgB * (1 - (fgA / 255f)));
+				return (Math.max(0, Math.min(outA, 255)) << 24) | 
+					(Math.max(0, Math.min(outR, 255)) << 16) | 
+					(Math.max(0, Math.min(outG, 255)) << 8) | 
+					Math.max(0, Math.min(outB, 255));
 
 			case CompositingMode.ALPHA_ADD:
-				alphaNorm = alpha / 255f;
-				outR = (int) (fgR * alphaNorm);
-				outG = (int) (fgG * alphaNorm);
-				outB = (int) (fgB * alphaNorm);
-
-				// Add to the background color
-				outR = Math.min(255, outR + bgR);
-				outG = Math.min(255, outG + bgG);
-				outB = Math.min(255, outB + bgB);
-				outA = bgA + (int)(alpha * (1 - (bgA / 255f)));
-				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
+				outR = (int) Math.min(255, (fgR * alphaNorm) + bgR);
+				outG = (int) Math.min(255, (fgG * alphaNorm) + bgG);
+				outB = (int) Math.min(255, (fgB * alphaNorm) + bgB);
+				outA = (int) Math.min(255, bgA + (int)(alpha * (1 - (bgA / 255f))));
+				return (outA << 24) | (outR << 16) | (outG << 8) | outB;
 
 			case CompositingMode.ALPHA:
-				alphaNorm = alpha / 255f;
-				outR = (int) (((fgR * alphaNorm) + (bgR * (1 - alphaNorm))));
-				outG = (int) (((fgG * alphaNorm) + (bgG * (1 - alphaNorm))));
-				outB = (int) ((((fgB * alphaNorm) + (bgB * (1 - alphaNorm)))));
-				outA = (int) ((bgA * (1 - alphaNorm) + alpha)); 
-				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
-
-			case CompositingMode.MODULATE:
-				// Multiply the source color by the destination color TODO: UNTESTED
-				outR = (int) ((fgR * bgR) / 255);
-				outG = (int) ((fgG * bgG) / 255);
-				outB = (int) ((fgB * bgB) / 255);
-				outA = (foreground >> 24) & 0xFF; // Keep alpha from the foreground
-				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
-
-			case CompositingMode.MODULATE_X2:
-				// Multiply the source color by the destination color and double the source color TODO: UNTESTED
-				outR = (int) (((2 * fgR) * bgR) / 255);
-				outG = (int) (((2 * fgG) * bgG) / 255);
-				outB = (int) (((2 * fgB) * bgB) / 255);
-				outA = (foreground >> 24) & 0xFF; // Keep alpha from the foreground
-				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
-
-			// Texture blend modes
-			case Texture2D.FUNC_REPLACE:
-				// If the foreground has transparency, we have to blend with the background.
-				 fgAlpha = (foreground >> 24) & 0xFF; // Extract alpha from the foreground
-				 fgColor = foreground & 0x00FFFFFF;    // Extract color from the foreground
-
-				// Replace the background color with the foreground color
-				// Use the foreground alpha directly
-				return (fgAlpha << 24) | fgColor; // Combine alpha and color
-
-
-			case Texture2D.FUNC_MODULATE:
-				// Multiply color components TODO: UNTESTED
-				return ((fgR * bgR / 255) << 16) | ((fgG * bgG / 255) << 8) | (fgB * bgB / 255);
-
-			case Texture2D.FUNC_DECAL:
-				// TODO: Implement according to the Decal blending mode
-				break;
-
-			case Texture2D.FUNC_BLEND:
-				alphaNorm = alpha / 255f;
 				outR = (int) ((fgR * alphaNorm) + (bgR * (1 - alphaNorm)));
 				outG = (int) ((fgG * alphaNorm) + (bgG * (1 - alphaNorm)));
 				outB = (int) ((fgB * alphaNorm) + (bgB * (1 - alphaNorm)));
-				outA = (int) ((alpha * alphaNorm) + (bgA * (1 - alphaNorm)));
-				return (Math.min(Math.max(outA, 0), 255) << 24) | (Math.min(Math.max(outR, 0), 255) << 16) | (Math.min(Math.max(outG, 0), 255) << 8) | Math.min(Math.max(outB, 0), 255);
+				outA = (int) (bgA * (1 - alphaNorm) + fgA * alphaNorm);
+				return (Math.max(0, Math.min(outA, 255)) << 24) | 
+					(Math.max(0, Math.min(outR, 255)) << 16) | 
+					(Math.max(0, Math.min(outG, 255)) << 8) | 
+					Math.max(0, Math.min(outB, 255));
 
-			case Texture2D.FUNC_ADD:
-				// Extract color components from background and foreground. TODO: UNTESTED
-	
-				// Add the colors and clamp to [0, 255]
-				outR = Math.min(Math.max((bgR + fgR), 0), 255);
-				outG = Math.min(Math.max((bgG + fgG), 0), 255);
-				outB = Math.min(Math.max((bgB + fgB), 0), 255);
-	
-				// Return the resulting color with full opacity
-				return (255 << 24) | (outR << 16) | (outG << 8) | outB;
+			case CompositingMode.MODULATE:
+				outR = (int) ((fgR * bgR) / 255);
+				outG = (int) ((fgG * bgG) / 255);
+				outB = (int) ((fgB * bgB) / 255);
+				outA = Math.max(bgA, fgA);
+				return (Math.max(0, Math.min(outA, 255)) << 24) | 
+					(Math.max(0, Math.min(outR, 255)) << 16) | 
+					(Math.max(0, Math.min(outG, 255)) << 8) | 
+					Math.max(0, Math.min(outB, 255));
+
+			case CompositingMode.MODULATE_X2:
+				outR = (int) (((2 * fgR) * bgR) / 255);
+				outG = (int) (((2 * fgG) * bgG) / 255);
+				outB = (int) (((2 * fgB) * bgB) / 255);
+				outA = Math.max(bgA, fgA);
+				return (Math.max(0, Math.min(outA, 255)) << 24) | 
+					(Math.max(0, Math.min(outR, 255)) << 16) | 
+					(Math.max(0, Math.min(outG, 255)) << 8) | 
+					Math.max(0, Math.min(outB, 255));
 
 			default:
 				return background; // Fallback
 		}
-		return background; // Default return
+	}
+
+	// Similar to blendPixels, however, this blends texture colors (foreground) with the geometry's vertex color (background)
+	private int blendTexPixels(int background, int foreground, int alpha, int blendMode) 
+	{
+		int bgA = (background >> 24) & 0xFF;
+		int bgR = (background >> 16) & 0xFF;
+		int bgG = (background >> 8) & 0xFF;
+		int bgB = background & 0xFF;
+
+		int fgA = (foreground >> 24) & 0xFF; // Extract alpha from the foreground
+		int fgR = (foreground >> 16) & 0xFF;
+		int fgG = (foreground >> 8) & 0xFF;
+		int fgB = foreground & 0xFF;
+
+		int outR, outG, outB, outA;
+
+		float alphaNorm = alpha / 255f; // Normalize alpha for blending
+
+		switch (blendMode)
+		{
+			case Texture2D.FUNC_REPLACE:
+				// Blend foreground and background based on the foreground alpha
+				outA = (int) (fgA + (bgA * (1 - fgA / 255f)));
+				outR = (int) ((fgR * fgA / 255) + (bgR * (1 - fgA / 255)));
+				outG = (int) ((fgG * fgA / 255) + (bgG * (1 - fgA / 255)));
+				outB = (int) ((fgB * fgA / 255) + (bgB * (1 - fgA / 255)));
+				return (Math.min(Math.max(outA, 0), 255) << 24) | 
+					(Math.min(Math.max(outR, 0), 255) << 16) | 
+					(Math.min(Math.max(outG, 0), 255) << 8) | 
+					Math.min(Math.max(outB, 0), 255);
+
+			case Texture2D.FUNC_MODULATE:
+				outR = (fgR * bgR) / 255;
+				outG = (fgG * bgG) / 255;
+				outB = (fgB * bgB) / 255;
+				outA = Math.max(bgA, fgA); // Take maximum alpha
+				return (Math.min(Math.max(outA, 0), 255) << 24) | 
+					(Math.min(Math.max(outR, 0), 255) << 16) | 
+					(Math.min(Math.max(outG, 0), 255) << 8) | 
+					Math.min(Math.max(outB, 0), 255);
+
+			case Texture2D.FUNC_DECAL:
+				outR = (fgR * fgA / 255) + (bgR * (255 - fgA) / 255);
+				outG = (fgG * fgA / 255) + (bgG * (255 - fgA) / 255);
+				outB = (fgB * fgA / 255) + (bgB * (255 - fgA) / 255);
+				outA = fgA; // Use foreground's alpha
+				return (Math.min(Math.max(outA, 0), 255) << 24) | 
+					(Math.min(Math.max(outR, 0), 255) << 16) | 
+					(Math.min(Math.max(outG, 0), 255) << 8) | 
+					Math.min(Math.max(outB, 0), 255);
+
+			case Texture2D.FUNC_BLEND:
+				outR = (int) ((fgR * alphaNorm) + (bgR * (1 - alphaNorm)));
+				outG = (int) ((fgG * alphaNorm) + (bgG * (1 - alphaNorm)));
+				outB = (int) ((fgB * alphaNorm) + (bgB * (1 - alphaNorm)));
+				outA = (int) (alpha * alphaNorm + bgA * (1 - alphaNorm));
+				return (Math.min(Math.max(outA, 0), 255) << 24) | 
+					(Math.min(Math.max(outR, 0), 255) << 16) | 
+					(Math.min(Math.max(outG, 0), 255) << 8) | 
+					Math.min(Math.max(outB, 0), 255);
+
+			case Texture2D.FUNC_ADD:
+				outR = Math.min(bgR + fgR, 255);
+				outG = Math.min(bgG + fgG, 255);
+				outB = Math.min(bgB + fgB, 255);
+				outA = Math.max(bgA, fgA); // Use maximum alpha
+				return (Math.min(Math.max(outA, 0), 255) << 24) | 
+					(outR << 16) | 
+					(outG << 8) | 
+					outB;
+
+			default:
+				return background; // Fallback
+		}
+	}
+
+	private int interpolateTexColors(int color0, int color1, int color2, float alpha, float beta, float gamma) 
+	{
+		int a0 = (color0 >> 24) & 0xFF;
+		int r0 = (color0 >> 16) & 0xFF;
+		int g0 = (color0 >> 8) & 0xFF;
+		int b0 = color0 & 0xFF;
+	
+		int a1 = (color1 >> 24) & 0xFF;
+		int r1 = (color1 >> 16) & 0xFF;
+		int g1 = (color1 >> 8) & 0xFF;
+		int b1 = color1 & 0xFF;
+	
+		int a2 = (color2 >> 24) & 0xFF;
+		int r2 = (color2 >> 16) & 0xFF;
+		int g2 = (color2 >> 8) & 0xFF;
+		int b2 = color2 & 0xFF;
+	
+		int r = Math.round(r0 * alpha + r1 * beta + r2 * gamma);
+		int g = Math.round(g0 * alpha + g1 * beta + g2 * gamma);
+		int b = Math.round(b0 * alpha + b1 * beta + b2 * gamma);
+		int a = Math.round(a0 * alpha + a1 * beta + a2 * gamma);
+	
+		return (a << 24) | (r << 16) | (g << 8) | b;
 	}
 
 	private int blendFog(int pixelColor, int fogColor, float fogFactor) 
@@ -1155,9 +1286,9 @@ public class Graphics3D
 		 * that the fog's contribution to the resulting color should be
 		 * 1 - fogFactor;
 		 */
-		int blendedR = (int) (r * fogFactor + fogR * (1 - fogFactor));
-		int blendedG = (int) (g * fogFactor + fogG * (1 - fogFactor));
-		int blendedB = (int) (b * fogFactor + fogB * (1 - fogFactor));
+		int blendedR = (int) (r * (1 - fogFactor) + fogR * fogFactor);
+		int blendedG = (int) (g * (1 - fogFactor) + fogG * fogFactor);
+		int blendedB = (int) (b * (1 - fogFactor) + fogB * fogFactor);
 	
 		// Fog only has RGB channels, so it's always fully opaque
 		return (255 << 24) | (blendedR << 16) | (blendedG << 8) | blendedB;
