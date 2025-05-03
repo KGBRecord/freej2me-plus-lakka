@@ -31,6 +31,8 @@
 #include <file/file_path.h>
 #include <retro_miscellaneous.h>
 
+#define NUM_ARGUMENTS 23
+
 const char *slash = path_default_slash();
 
 retro_environment_t Environ;
@@ -640,7 +642,7 @@ void retro_init(void)
 	}
 
 	/* Allocate memory for launch arguments */
-	params = (char**)malloc(sizeof(char*) * 23);
+	params = (char**)malloc(sizeof(char*) * NUM_ARGUMENTS);
 	params[0] = strdup("java");
 	params[1] = strdup("-jar");
 	params[2] = strdup("freej2me-lr.jar");
@@ -1340,7 +1342,7 @@ int javaOpen(char *cmd, char **params)
 	sprintf(cmdWin, "javaw -jar %s", cmd);
 
 	log_fn(RETRO_LOG_INFO, "Opening: %s \n", cmdWin);
-	for (int i = 3; i < 20; i++)
+	for (int i = 3; i < NUM_ARGUMENTS-1; i++)
 	{
 		//log_fn(RETRO_LOG_INFO, "Processing arg %d: %s \n", i, *(params+i));
 		sprintf(cmdWin, "%s %s", cmdWin, *(params+i));
