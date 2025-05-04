@@ -259,31 +259,38 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			// Render the resulting image
 			for (int j = startY + y; j < endY + y; j++) 
 			{
-				if (j < 0 || j >= canvasHeight) { continue; }
-
-				for (int i = startX + x; i < endX + x; i++) 
+				// If there's no masking or overlay needed, we can copy a whole row at once, which is faster
+				if(!Mobile.renderLCDMask && Mobile.maskIndex != 0 && !Mobile.funLightsEnabled)
 				{
-					if (i < 0 || i >= canvasWidth) { continue; }
-					int destIndex = j * canvasWidth + i;
-					int srcIndex = j * imageWidth + i;
-
-					// Only apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
-					canvasData[destIndex] = imgPixels[srcIndex] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
-
-					// If funLights overlay is requested by the game, apply its pixels to the screen area
-					if(Mobile.funLightsEnabled) 
+					int destRowIndex = j * canvasWidth + startX + x;
+            		int srcRowIndex = j * imageWidth + startX;
+					System.arraycopy(imgPixels, srcRowIndex, canvasData, destRowIndex, endX - startX);
+				}
+				else
+				{
+					for (int i = startX + x; i < endX + x; i++) 
 					{
-						int srcAlpha = (overlayData[srcIndex] >> 24) & 0xFF; // Source alpha
-						int existingPixel = canvasData[destIndex]; // Current pixel in the canvas
-						int destAlpha = (existingPixel >> 24) & 0xFF;
-	
-						// Blend alpha and color values using the srcOver alpha compositing method
-						int newAlpha = Math.min(255, srcAlpha + destAlpha);
-						int newRed = (((overlayData[srcIndex] >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-						int newGreen = (((overlayData[srcIndex] >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-						int newBlue = ((overlayData[srcIndex] & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
+						int destIndex = j * canvasWidth + i;
+						int srcIndex = j * imageWidth + i;
 
-						canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
+						// Only apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
+						canvasData[destIndex] = imgPixels[srcIndex] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
+
+						// If funLights overlay is requested by the game, apply its pixels to the screen area
+						if(Mobile.funLightsEnabled) 
+						{
+							int srcAlpha = (overlayData[srcIndex] >> 24) & 0xFF; // Source alpha
+							int existingPixel = canvasData[destIndex]; // Current pixel in the canvas
+							int destAlpha = (existingPixel >> 24) & 0xFF;
+		
+							// Blend alpha and color values using the srcOver alpha compositing method
+							int newAlpha = Math.min(255, srcAlpha + destAlpha);
+							int newRed = (((overlayData[srcIndex] >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+							int newGreen = (((overlayData[srcIndex] >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+							int newBlue = ((overlayData[srcIndex] & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
+
+							canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
+						}
 					}
 				}
 			}
@@ -412,7 +419,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 				int pixel = rgbData[pixelIndex];
 				if (!processAlpha) 
 				{
-					canvasData[destIndex] = ((pixel & 0x00FFFFFF) | 0xFF000000); // Set alpha to 255
+					canvasData[destIndex] = pixel | 0xFF000000; // Set alpha to 255
 				} 
 				else // Handle alpha blending
 				{
@@ -724,7 +731,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			for (int col = 0; col < width; col++) 
 			{
 				int pixel = pixels[srcIndex + col];
-				if (!transparency) { pixel = (pixel & 0x00FFFFFF) | 0xFF000000; } // Set alpha to 255
+				if (!transparency) { pixel |= 0xFF000000; } // Set alpha to 255
 				data[row * width + col] = pixel;
 			}
 		}
