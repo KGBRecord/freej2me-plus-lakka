@@ -72,8 +72,8 @@ import javazoom.jl.player.MPEGPlayer;
 public class PlatformPlayer implements Player
 {
 
-	private static final midiPlayer[] midiPlayers = new midiPlayer[16];
-	private static final Synthesizer[] synthesizers = new Synthesizer[midiPlayers.length/4];
+	private static final midiPlayer[] midiPlayers = new midiPlayer[32];
+	private static final Synthesizer[] synthesizers = new Synthesizer[midiPlayers.length/8];
 
 	private final byte NUM_CONTROLS = 4;
 
@@ -456,7 +456,7 @@ public class PlatformPlayer implements Player
 					}
 					
 					midiPlayers[i] = midplayer;
-					return i%4; // Return the synth for that midiPlayer position
+					return i%synthesizers.length; // Return the synth for that midiPlayer position
 				}
 			}
 			// All players are occupied, find the first stopped one to be replaced
@@ -476,7 +476,7 @@ public class PlatformPlayer implements Player
 					midiPlayers[i].close();
 					midiPlayers[i] = midplayer;
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Overriding a previously allocated midi player. Either the jar requires more than " + midiPlayers.length + " midi at the same time, or it's not closing media properly.");
-					return i%4;
+					return i%synthesizers.length;
 				}
 			}
 		}
