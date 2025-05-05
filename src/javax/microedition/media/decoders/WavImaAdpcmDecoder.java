@@ -392,7 +392,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 	 * Builds a WAV header that describes the decoded ADPCM file on the first 44 bytes. 
 	 * Data: little-endian, 16-bit, signed, same sample rate and channels as source IMA ADPCM.
 	 */
-	private static final void buildHeader(byte[] buffer, final short numChannels, final int sampleRate, final short numBits) 
+	public static final void buildHeader(byte[] buffer, final short numChannels, final int sampleRate, final short numBits) 
 	{ 
 		final short bitsPerSample = numBits;   /* 16-bit or 8-bit PCM */
 		final short audioFormat = 1;           /* WAV linear PCM */

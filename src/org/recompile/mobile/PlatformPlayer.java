@@ -969,12 +969,16 @@ public class PlatformPlayer implements Player
 				wavHeaderData = WavImaAdpcmDecoder.readHeader(stream);
 				stream.reset();
 
-				if(wavHeaderData[0] != 17) /* If it's not IMA ADPCM we don't need to do anything to the stream. Just pass it to a local copy */
+				if(wavHeaderData[0] == 1) // standard PCM WAV
 				{
 					tmpStream = new byte[stream.available()];
 					stream.read(tmpStream, 0, stream.available());
 				}
-				else /* But if it is IMA ADPCM, we have to decode it manually. */
+				if(wavHeaderData[0] == 7) // Microsoft GSM
+				{
+					Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MS GSM! (unsupported)");
+				}
+				else if(wavHeaderData[0] == 17) // IMA ADPCM
 				{
 					tmpStream = WavImaAdpcmDecoder.decodeImaAdpcm(stream, wavHeaderData);
 
@@ -984,6 +988,13 @@ public class PlatformPlayer implements Player
 						WavImaAdpcmDecoder.readHeader(headerRead);
 						headerRead = null;
 					}
+				}
+				else /* Assume it's a normal WAV and try to load it. */
+				{
+					tmpStream = new byte[stream.available()];
+					stream.read(tmpStream, 0, stream.available());
+					WavImaAdpcmDecoder.buildHeader(tmpStream, (short) wavHeaderData[2], wavHeaderData[1], (short) 16); // Force it to the PCM wav type
+					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "WAV Format is " + wavHeaderData[0] + " Trying to load as PCM WAV.");
 				}
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prepare wav stream:" + e.getMessage());}
 		}
@@ -1024,7 +1035,7 @@ public class PlatformPlayer implements Player
 			catch (Exception e) 
 			{ 
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't realize wav stream: " + e.getMessage());
-				wavClip.close();
+				e.printStackTrace();
 			} 
 		}
 
