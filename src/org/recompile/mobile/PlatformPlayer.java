@@ -23,6 +23,10 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.sound.midi.Instrument;
@@ -160,15 +164,22 @@ public class PlatformPlayer implements Player
 					else if(data.length >= 4 && data[0] == 'M' && data[1] == 'M' && data[2] == 'M' && data[3] == 'D')
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is SMAF/MMF! (not fully supported yet)");
-						byte[] SMAFData = SMAFDecoder.convertSMAFToMidi(data);
 						contentType = "audio/mmf (beta)";
-						if(SMAFData != null) 
+						SMAFDecoder.decodeSMAF(data);
+						if(SMAFDecoder.SequenceData != null || SMAFDecoder.pcmData != null) 
 						{
-							InputStream SMAFStream = new ByteArrayInputStream(SMAFData);
-							if(Mobile.dumpAudioStreams) { SMAFStream = Manager.dumpAudioStream(SMAFStream, contentType); }
-							if(SMAFDecoder.isPCM) { player = new wavPlayer(SMAFStream); }
-							else { player = new midiPlayer(SMAFStream); }
-							SMAFData = null;
+							if(Mobile.dumpAudioStreams) 
+							{ 
+								if(SMAFDecoder.SequenceData != null) { SMAFDecoder.SequenceData = Manager.dumpAudioStream(SMAFDecoder.SequenceData, contentType); }
+								if(SMAFDecoder.pcmData != null) 
+								{
+									for(int i = 0; i < SMAFDecoder.pcmData.size(); i++) 
+									{
+										SMAFDecoder.SequenceData = Manager.dumpAudioStream(SMAFDecoder.SequenceData, contentType);
+									}
+								}
+							}
+							player = new SMAFPlayer(SMAFDecoder.SequenceData, SMAFDecoder.pcmData.toArray(new InputStream[0]), new HashMap<>(SMAFDecoder.pcmDataPositions));
 						}
 						else { player = new audioplayer(); disableControls = true; } // Somehow the SMAF decoder failed, so retrieve a stub player
 						
@@ -213,7 +224,7 @@ public class PlatformPlayer implements Player
 		controls[0] = new volumeControl(this.player); // Midi Player with Tones might not use this
 
 		/* Midi Player has a few additional controls */
-		if(player instanceof midiPlayer) 
+		if(player instanceof midiPlayer)
 		{
 			/* If we're using midiPlayer to play tones, only set it up with ToneControl. */
 			if(contentType.equalsIgnoreCase("audio/x-tone-seq")) { controls[3] = new toneControl((midiPlayer) this.player); }
@@ -434,9 +445,9 @@ public class PlatformPlayer implements Player
 		return controls; 
 	}
 
-	public static int addPlayerToStack(midiPlayer midplayer, wavPlayer wavplayer, MP3Player mpegPlayer)
+	public static int addPlayerToStack(midiPlayer midplayer, wavPlayer wavplayer, MP3Player mpegPlayer, SMAFPlayer smafPlayer)
 	{
-		if(midplayer != null) 
+		if(midplayer != null || smafPlayer != null) 
 		{
 			for(int i = 0; i < midiPlayers.length; i++) 
 			{
@@ -455,7 +466,7 @@ public class PlatformPlayer implements Player
 						} catch (Exception e) { }
 					}
 					
-					midiPlayers[i] = midplayer;
+					midiPlayers[i] = midplayer; // TODO: SMAF here too, in case a jar that never releases players for it is found
 					return i%synthesizers.length; // Return the synth for that midiPlayer position
 				}
 			}
@@ -526,7 +537,7 @@ public class PlatformPlayer implements Player
 				midiSequence = new Sequence(Sequence.PPQ, 24); 
 			} 
 			catch (Exception e) {  Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load midi file:" + e.getMessage()); }
-			synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(this, null, null)];
+			synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(this, null, null, null)];
 		}
 
 		public midiPlayer(InputStream stream) 
@@ -536,7 +547,7 @@ public class PlatformPlayer implements Player
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load MIDI file: " + e.getMessage());
 			}
-			synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(this, null, null)];
+			synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(this, null, null, null)];
 		}
 
 		public void realize() 
@@ -633,6 +644,259 @@ public class PlatformPlayer implements Player
 			receiver = null;
 			midi.close();
 			midiSequence = null;
+		}
+
+		public void setLoopCount(int count)
+		{
+			/* 
+			 * Treat cases where an app wants this stream to loop continuously.
+			 * Here, count = 1 means it should loop one time, whereas in j2me
+			 * it appears that count = 1 means no loop at all, at least based
+			 * on Gameloft games that set effects and some music with count = 1
+			 */
+			if(count == Clip.LOOP_CONTINUOUSLY) { numLoops = count; }
+			else { numLoops = count-1; }
+		}
+
+		public long setMediaTime(long now)
+		{
+			try 
+			{
+				if(now >= getDuration()) { midi.setMicrosecondPosition(getDuration()); }
+				else if(now < 0) { midi.setMicrosecondPosition(0); }
+				else { midi.setMicrosecondPosition(now);  }
+			}
+			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set MIDI position:" + e.getMessage()); }
+			
+			/* 
+			 * MicrosecondPosition doesn't guarantee perfect precision, so return the new
+			 * effective position according to the stream.
+			 */
+			return getMediaTime();
+		}
+
+		public long getMediaTime() { return midi.getMicrosecondPosition(); }
+
+		public long getDuration() { return midi.getMicrosecondLength(); }
+
+		public boolean isRunning() { return midi.isRunning(); }
+
+		public Sequence getSequence() { return midiSequence; }
+
+		public void setSequence(InputStream sequence) 
+		{ 
+			try { midiSequence = MidiSystem.getSequence(sequence); }
+			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set MIDI sequence:" + e.getMessage());  }
+		}
+
+		public Sequencer getSequencer() { return midi; }
+	}
+
+	private class SMAFPlayer extends audioplayer
+	{
+		// For SMAF, the Sequenced data will dictate player events
+		private Sequencer midi;
+		private Sequence midiSequence;
+		public Synthesizer synthesizer;
+		public Receiver receiver;
+		private int numLoops = 0, synthIndex = 0;
+		private MetaEventListener metaListener = null;
+
+		// Meanwhile, sampled data will be treated like "additional" instruments
+		private boolean isPlaying = false;
+		private AudioInputStream[] wavStreams = null;
+		private Clip[] wavClips = null;
+		private Map<Integer, Integer> pcmPositions;
+
+		public SMAFPlayer(InputStream midiStream, InputStream[] wavStreams, Map<Integer, Integer> pcmPositions)
+		{
+			try 
+			{
+				midiSequence = MidiSystem.getSequence(midiStream);
+				if(wavStreams.length > 0) 
+				{
+					this.wavStreams = new AudioInputStream[wavStreams.length];
+					this.pcmPositions = pcmPositions;
+					wavClips = new Clip[wavStreams.length];
+					for(int i = 0; i < wavStreams.length; i++) 
+					{
+						this.wavStreams[i] = AudioSystem.getAudioInputStream(wavStreams[i]);
+					} 
+				}
+			} 
+			catch (Exception e) 
+			{
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load SMAF data: " + e.getMessage());
+			}
+			//synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(null, null, null, this)];
+		}
+
+		public void realize() 
+		{
+			try 
+			{
+				synthesizer = MidiSystem.getSynthesizer();
+				synthesizer.open();
+				if(Mobile.useCustomMidi) 
+				{
+					synthesizer.loadAllInstruments(Manager.customSoundfont);
+				}
+				receiver = synthesizer.getReceiver();
+				midi = MidiSystem.getSequencer(false);
+				midi.getTransmitter().setReceiver(receiver);
+				midi.open();
+				midi.setSequence(midiSequence);
+
+				if(wavStreams != null) 
+				{
+					for(int i = 0; i < wavStreams.length; i++) 
+					{
+						wavClips[i] = AudioSystem.getClip();
+						wavClips[i].open(wavStreams[i]);
+					} 
+				}
+
+				/* 
+				 * We have to listen for END_OF_MEDIA events for SMAF as well, even
+				 * if jars don't seem to rely on it as much.
+				 */
+				if (metaListener == null) 
+				{
+					metaListener = new MetaEventListener() 
+					{
+						@Override
+						public void meta(MetaMessage meta) 
+						{
+							if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
+							{
+								state = Player.PREFETCHED;
+								notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
+								if(numLoops != 0) 
+								{
+									if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
+									setMediaTime(0);
+									start();
+								}
+							}
+						}
+					};
+					midi.addMetaEventListener(metaListener);
+				}
+
+				state = Player.REALIZED;
+			}
+			catch (Exception e) 
+			{
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not realize midi stream:" + e.getMessage());
+				state = Player.UNREALIZED;
+				e.printStackTrace();
+			}
+		}
+
+		public void prefetch() { state = Player.PREFETCHED; }
+
+		public void start()
+		{
+			try 
+			{
+				// Reload the sequence into the sequencer to prevent MIDI property carryovers
+				final long time = getMediaTime(); // We'll reload the sequence, so save it's current position to restore later.
+				midi.setSequence(midiSequence);
+				if(time >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
+				else { setMediaTime(time); } // Else, resume from where it stopped
+
+				isPlaying = true;
+
+				// Start a separate thread to handle SMAF's sequence + PCM playback
+				new Thread(this::handleSmafPlayback).start();				
+				
+				state = Player.STARTED;
+				notifyListeners(PlayerListener.STARTED, getMediaTime());
+			}
+			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to clean MIDI sequencer and start playback:" + e.getMessage()); }
+		}
+
+		private void handleSmafPlayback() 
+		{	
+			Set<Integer> playedPositions = new HashSet<>();
+
+			midi.start();
+			while (isPlaying && wavClips != null) 
+			{
+				int mediaTime = (int) (getMediaTime() / 1000);
+		
+				// Check for PCM files with playback positions lower than mediaTime
+				for (Integer position : pcmPositions.keySet()) 
+				{
+					if (position < mediaTime && !playedPositions.contains(position)) 
+					{
+						int pcmIndex = pcmPositions.get(position);
+						playPcmStream(pcmIndex);
+						playedPositions.add(position); // Mark this position as played, otherwise it'll repeat when it shouldn't
+					}
+				}
+		
+				// Sleep for 5ms to not hammer the CPU too hard with constant checks (this can cause issues if the sequence has sub-5ms pcm requests, but that would be egregious)
+				try { Thread.sleep(5); }
+				catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+			}
+		}
+
+		private void playPcmStream(int pcmIndex) 
+		{
+			if (wavClips[pcmIndex] != null) 
+			{
+				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); }
+				wavClips[pcmIndex].setFramePosition(0);
+				wavClips[pcmIndex].start();
+			}
+		}
+
+		public void stop()
+		{
+			midi.stop();
+			isPlaying = false;
+			state = Player.PREFETCHED;
+			notifyListeners(PlayerListener.STOPPED, getMediaTime());
+		}
+
+		public void deallocate() 
+		{ 
+			if(metaListener != null) 
+			{
+				midi.removeMetaEventListener(metaListener);
+				metaListener = null;
+			}
+			receiver = null;
+			midi.close();
+			
+			if(wavClips != null) 
+			{
+				for(int i = 0; i < wavClips.length; i++) { wavClips[i].close(); }
+			}
+			isPlaying = false;
+		}
+
+		public void close() 
+		{
+			if (metaListener != null) 
+			{
+				midi.removeMetaEventListener(metaListener);
+				metaListener = null;
+			}
+			receiver = null;
+			midi.close();
+			midiSequence = null;
+
+			if(wavClips != null) 
+			{
+				for(int i = 0; i < wavClips.length; i++) 
+				{
+					wavClips[i].close();
+					wavStreams[i] = null;
+				}
+			}
+			isPlaying = false;
 		}
 
 		public void setLoopCount(int count)

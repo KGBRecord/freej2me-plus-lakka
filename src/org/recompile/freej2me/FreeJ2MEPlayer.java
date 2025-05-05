@@ -261,6 +261,12 @@ public final class FreeJ2MEPlayer extends Dialog
 
     private void openFile(String filePath) 
     {
+        if(mediaPlayer != null) 
+        { 
+            mediaPlayer.stop();
+            mediaPlayer.close();
+            mediaPlayer = null;
+        }
         if(filePath == "") 
         {
             FileDialog fileDialog = new FileDialog(this, "Select a Media File", FileDialog.LOAD);
@@ -269,8 +275,7 @@ public final class FreeJ2MEPlayer extends Dialog
             fileNameField.setText(fileDialog.getFile());
             
             try 
-            {
-                mediaPlayer = null;
+            {   
                 if(filePath.contains(".ota") || filePath.contains(".ott")) // Nokia's OTT has no real header to parse, we can only work with ott/ota as the file extension
                 {
                     FileInputStream fileData = new FileInputStream(filePath);

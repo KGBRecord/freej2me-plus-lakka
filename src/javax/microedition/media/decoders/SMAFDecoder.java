@@ -56,7 +56,7 @@ public final class SMAFDecoder
     private static byte formatType = 0;
     private static byte handyChannelIdx = 0;
 
-    private static byte defaultVelocity = 127;
+    private static byte defaultVelocity = 64;
 
     private static byte TimeBase_D;
     private static byte TimeBase_G;
@@ -146,7 +146,13 @@ public final class SMAFDecoder
     private static String[] pcmDataFormats = {"2's complement PCM", "Offset Binary PCM", "YAMAHA ADPCM"};
     private static String[] pcmBaseBits = {"4 bits", "8 bits", "12 bits", "16 bits", "Reserved", "Reserved", "Reserved", "Reserved"};
 
-    public static synchronized byte[] convertSMAFToMidi(byte[] data)
+    // Structures that hold decoded SMAF data
+
+    public static List<InputStream> pcmData = null;
+    public static InputStream SequenceData = null;
+    public static Map<Integer, Integer> pcmDataPositions = new HashMap<>();
+
+    public static synchronized void decodeSMAF(byte[] data)
 	{
         // Reset any and all static variables to their defaults
         isPCM = false;
@@ -159,8 +165,14 @@ public final class SMAFDecoder
         channelData = new ChannelData[16];
         for (int j = 0; j < channelData.length; j++) { channelData[j] = new ChannelData(); }
         huffmanTree = new HuffmanTree();
-        sequence = null; // Clear the previous sequence
-        byte[] pcmData = null;
+        sequence = null; // Clear the previous MIDI sequence
+
+        // Clear previous decoded data objects
+        if(pcmData != null) { pcmData.clear(); }
+        pcmData = null;
+        SequenceData = null;
+        pcmData = new ArrayList<>();
+        pcmDataPositions.clear();
 
         input = data;
     
@@ -216,7 +228,7 @@ public final class SMAFDecoder
             else if ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 'w' && (char) data[decodePos+2] == 'a') 
             {
                 Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF PCM Chunk found. PCM support not complete yet. ");
-                pcmData = scoreTrackWaveData(); // Mwa
+                pcmData.add(new ByteArrayInputStream(scoreTrackWaveData())); // Mwa
             }
 
 
@@ -235,49 +247,38 @@ public final class SMAFDecoder
         // Warn if the parser is somehow exiting earlier than the file's expected byte data size.
         if(decodePos < data.length - CRCSize) 
         { 
-            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " Early exit: Parsed " + decodePos + " of " + (data.length - CRCSize) + " bytes. Dropping decoded data..."); 
-            return null;
+            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " Early exit: Parsed " + decodePos + " of " + (data.length - CRCSize) + " bytes. Decoded file might be missing data..."); 
+        }
+
+        // If there was no early exit, check the file's CRC for good measure. If that's fine, any and all inaccuracies with the decoding lie in the decoder itself.
+        if(SmafCRC.verifySmafCRC(input)) 
+        {
+            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF file passed CRC check! ");
         }
         else 
         {
-            // If there was no early exit, check the file's CRC for good measure. If that's fine, any and all inaccuracies with the decoding lie in the decoder itself.
-            if(SmafCRC.verifySmafCRC(input)) 
-            {
-                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF file passed CRC check! ");
-            }
-            else 
-            {
-                Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF file did not pass CRC check. There might be corruption or incorrect data on the decoded file as a result. ");
-            }
+            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF file did not pass CRC check. There might be corruption or incorrect data on the decoded file as a result. ");
         }
         
 
         // TODO: Decode more of SMAF
 
         // Convert the resulting sequence to byte array and send to the player.
-        if(isPCM) 
+        try
         {
-            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF parsing and conversion finished, returning PCM data to the player. ");
-            return pcmData;
-        }
-        else 
-        {
-            try
-            {
-                ByteArrayOutputStream output = new ByteArrayOutputStream();
-                MidiSystem.write(sequence, 1, output);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            MidiSystem.write(sequence, 1, output);
+            SequenceData = new ByteArrayInputStream(output.toByteArray());
 
-                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF parsing and conversion finished, returning Sequence data to the player. Seq size:" + output.size());
-                return output.toByteArray();
-            }
-            catch (IOException e) 
-            { 
-                Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " couldn't write converted SMAF Sequence:" + e.getMessage()); 
-                e.printStackTrace();
-                return null;
-            }
+            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF parsing and conversion finished, Sequence data size:" + output.size() + " | number of PCM streams:" + pcmData.size());
         }
-        
+        catch (IOException e) 
+        { 
+            Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " couldn't write converted SMAF Data:" + e.getMessage()); 
+            e.printStackTrace();
+            SequenceData = null;
+            pcmData = null;
+        }
 	}
 
     public static void decodeHeader() 
@@ -483,7 +484,7 @@ public final class SMAFDecoder
         { 
             try 
             {
-                sequence = new Sequence(Sequence.PPQ, 480, 16); // TODO: Maybe revise this? We shouldn't rely on a fixed PPQ value, i think. (though there are separate timebases for duration and gateTime, so who knows, maybe it's correct)
+                sequence = new Sequence(Sequence.PPQ, 500, 16); // TODO: Maybe revise this? We shouldn't rely on a fixed PPQ value, i think. (though there are separate timebases for duration and gateTime, so who knows, maybe it's correct)
                 channels = sequence.getTracks();
             } catch(InvalidMidiDataException ie) { Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " couldn't create MIDI Sequence to convert:" + ie.getMessage()); }
         }
@@ -504,7 +505,7 @@ public final class SMAFDecoder
         if(seekAndPhrase != "")
         {
             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- '" + seekAndPhrase +"' SECTION --------------------------");
-            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"startAndStopPoints: " + startAndStopPoints);
+            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"startAndStopPoints parsed ");
         }
     }
 
@@ -999,7 +1000,18 @@ public final class SMAFDecoder
                                 return;
                             }
 
-                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + channel);
+                            
+                            
+                            // TODO: This might be incorrect as the SMAF documentation doesn't detail how the chip differentiates between PCM data and Sequence Data to play
+                            // All it notes is that a piano has 88 notes and in midi it goes all the way up to 108 (which is where this "20" value comes from, as anything lower supposedly is a PCM file)
+                            if(noteNumber < 20)
+                            {
+                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request value " + noteNumber + " to channel " + channel + " at duration " + totalDuration);
+                                pcmDataPositions.put(totalDuration, (int) noteNumber);
+                            }
+                            else { Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + channel); }
+                            
+                            // We still add the notes no matter, just so that the sequencer can actually reach the PCM request time
                             midiEvent = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, channel, noteNumber, channelData[channel].velocity), totalDuration);
                             channels[channel].add(midiEvent);
                             midiEvent = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, channel, noteNumber, 0), totalDuration+(gateTime * timeBasetoMs(TimeBase_G)));
@@ -1029,7 +1041,13 @@ public final class SMAFDecoder
                                 return;
                             }
 
-                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " with new velocity to channel " + channel);
+                            
+                            if(noteNumber < 20)
+                            {
+                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request value " + noteNumber + " with new velocity to channel " + channel + " at duration " + totalDuration);
+                                pcmDataPositions.put(totalDuration, (int) noteNumber);
+                            }
+                            else { Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " with new velocity to channel " + channel); }
                             midiEvent = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, channel, noteNumber, channelData[channel].velocity), totalDuration);
                             channels[channel].add(midiEvent);
                             midiEvent = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, channel, noteNumber, 0), totalDuration+(gateTime * timeBasetoMs(TimeBase_G)));
@@ -1089,19 +1107,19 @@ public final class SMAFDecoder
 
     private static int timeBasetoMs(byte timeBase) 
     {
-    switch (timeBase) 
-    {
-        case 0x00: return 1;   // 1 ms
-        case 0x01: return 2;   // 2 ms
-        case 0x02: return 4;   // 4 ms
-        case 0x03: return 5;   // 5 ms
-        case 0x10: return 10;  // 10 ms
-        case 0x11: return 20;  // 20 ms
-        case 0x12: return 40;  // 40 ms
-        case 0x13: return 50;  // 50 ms
-        default: return 4;     // Default to 4 ms
+        switch (timeBase) 
+        {
+            case 0x00: return 1;   // 1 ms
+            case 0x01: return 2;   // 2 ms
+            case 0x02: return 4;   // 4 ms
+            case 0x03: return 5;   // 5 ms
+            case 0x10: return 10;  // 10 ms
+            case 0x11: return 20;  // 20 ms
+            case 0x12: return 40;  // 40 ms
+            case 0x13: return 50;  // 50 ms
+            default: return 4;     // Default to 4 ms
+        }
     }
-}
 
     private static byte[] decodeHuffman(byte[] seqBytes) 
     {
