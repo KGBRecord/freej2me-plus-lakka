@@ -175,7 +175,7 @@ public class PlatformPlayer implements Player
 								{
 									for(int i = 0; i < SMAFDecoder.pcmData.size(); i++) 
 									{
-										SMAFDecoder.SequenceData = Manager.dumpAudioStream(SMAFDecoder.SequenceData, contentType);
+										SMAFDecoder.pcmData.set(i, Manager.dumpAudioStream(SMAFDecoder.pcmData.get(i), contentType));
 									}
 								}
 							}
