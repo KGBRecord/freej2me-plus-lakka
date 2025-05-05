@@ -513,8 +513,9 @@ public class MIDletLoader extends URLClassLoader
 	{
 		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get Resource As Stream: "+resource + " path:" + className[selectedMidlet]);
 
+		boolean isSiemens = false;
 		// Remove the "resource:" token that some jars pass into this method. FreeJ2ME doesn't need it.
-		if(resource.contains("resource:")) { resource = resource.replaceAll("resource:", ""); }
+		if(resource.contains("resource:")) { resource = resource.replaceAll("resource:", ""); isSiemens = true; }
 
 		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
 		while (resource.startsWith("//")) { resource = resource.substring(1); }
@@ -554,7 +555,8 @@ public class MIDletLoader extends URLClassLoader
 				count = stream.read(data);
 				if(count!=-1) { buffer.write(data, 0, count); }
 			}
-			return new ByteArrayInputStream(buffer.toByteArray());
+			if(!isSiemens) { return new ByteArrayInputStream(buffer.toByteArray()); }
+			else { return new SiemensInputStream(buffer.toByteArray()); }
 		}
 		catch (Exception e)
 		{
@@ -666,30 +668,6 @@ public class MIDletLoader extends URLClassLoader
 /* **************************************************************
  * Special Siemens Stuff
  * ************************************************************** */
-
-	public InputStream getMIDletResourceAsSiemensStream(String resource)
-	{
-		URL url = getResource(resource);
-
-		try
-		{
-			InputStream stream = url.openStream();
-
-			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			int count=0;
-			byte[] data = new byte[4096];
-			while (count!=-1)
-			{
-				count = stream.read(data);
-				if(count!=-1) { buffer.write(data, 0, count); }
-			}
-			return new SiemensInputStream(buffer.toByteArray());
-		}
-		catch (Exception e)
-		{
-			return super.getResourceAsStream(resource);
-		}
-	}
 
 	private class SiemensInputStream extends InputStream
 	{

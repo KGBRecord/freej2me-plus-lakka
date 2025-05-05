@@ -35,12 +35,12 @@ public class Connector
 	
 	public static InputStream openInputStream(String name)
 	{
-		return new InputConnectionImpl(name.substring(9).replaceAll("\\\\", "/")).openInputStream();
+		return new InputConnectionImpl(name).openInputStream();
 	}
 
 	public static DataInputStream openDataInputStream(String name)
 	{
-		return new InputConnectionImpl(name.substring(9).replaceAll("\\\\", "/")).openDataInputStream();
+		return new InputConnectionImpl(name).openDataInputStream();
 	}
 
 	public static Connection open(String name) { return open(name, 3, false); }
@@ -51,7 +51,7 @@ public class Connector
 	{
 		if (name.startsWith("resource:")) // older Siemens phones?
 		{
-			return new InputConnectionImpl(name.substring(9).replaceAll("\\\\", "/"));
+			return new InputConnectionImpl(name);
 		}
 
 		if (name.startsWith("http://") || name.startsWith("https://")) { return new HttpConnectionImpl(name); }
