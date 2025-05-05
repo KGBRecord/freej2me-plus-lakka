@@ -568,7 +568,6 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public void setClip(int x, int y, int width, int height)
 	{
 		gc.setClip(x, y, width, height);
-		gc.clipRect(x, y, width, height);
 		gc.getClipBounds(rect);
 	}
 
