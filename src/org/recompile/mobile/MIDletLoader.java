@@ -66,6 +66,7 @@ public class MIDletLoader extends URLClassLoader
 	public static String[] name = new String[9];
 	private String[] className = new String[9];
 
+	private static URL baseUrl;
 	private static JarFile jarFile;
 	private static List<JarEntry> jarEntries = new ArrayList<>();
 
@@ -95,6 +96,7 @@ public class MIDletLoader extends URLClassLoader
 			File file = new File(url.toURI());
             jarFile = new JarFile(file);
 			loadJarEntries();
+			baseUrl = url;
 		} 
 		catch (URISyntaxException | IOException e) 
 		{
@@ -333,6 +335,89 @@ public class MIDletLoader extends URLClassLoader
         }
     }
 
+	// TODO: Convert to Jam descriptor parsing
+	public static void parseJamDescriptorInto(InputStream is, Map<String, String> keyValueMap) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Parsing .JAM...");
+		String currentKey = null;
+		StringBuilder currentValue = new StringBuilder();
+		String appName = "";
+		String appIcon = "";
+		String appClass = "";
+	
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) 
+		{
+			String line;
+			while ((line = br.readLine()) != null) 
+			{
+				if (line.trim().isEmpty()) { continue; }
+	
+				if (line.startsWith(" ")) { currentValue.append(line.trim()); } 
+				else 
+				{
+					// If there's a current valid key, store the value
+					if (currentKey != null) 
+					{
+						// Store specific values for converted MIDlet-1 construction
+						if ("AppName".equals(currentKey)) { appName = currentValue.toString().trim(); } 
+						else if ("AppIcon".equals(currentKey)) { appIcon = currentValue.toString().split(",")[0].trim(); } 
+						else if ("AppClass".equals(currentKey)) { appClass = currentValue.toString().trim(); }
+
+						keyValueMap.put(convertJamKeyToJar(currentKey), currentValue.toString().trim());
+						Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + convertJamKeyToJar(currentKey) + ") val:" + currentValue.toString().trim());
+						currentValue.setLength(0);
+
+						
+					}
+	
+					// Split on '=' to get the key and value (standard MIDlet manifests use ":" as the separator)
+					int equalsIndex = line.indexOf('=');
+					if (equalsIndex != -1) 
+					{
+						currentKey = line.substring(0, equalsIndex).trim();
+						currentValue.append(line.substring(equalsIndex + 1).trim());
+					}
+				}
+			}
+	
+			// Store the last key-value pair if it exists
+			if (currentKey != null) 
+			{
+				keyValueMap.put(convertJamKeyToJar(currentKey), currentValue.toString().trim());
+
+				Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + convertJamKeyToJar(currentKey) + ") val:" + currentValue.toString().trim());
+			}
+
+			System.out.println("vars: " + appName + " " + appIcon + " " + appClass);
+			// Update the converted MIDlet-1 key to match a default jar manifest
+			String midlet1Value = String.format("%s, %s, %s", appName, appIcon, appClass);
+			keyValueMap.put("MIDlet-1", midlet1Value);
+			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Final MIDlet-1:" + currentKey + " val:" + midlet1Value);
+		} 
+		catch (IOException e) { Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Failed to parse descriptor:" + e.getMessage()); }
+	}
+
+	private static String convertJamKeyToJar(String jamKey) 
+	{
+		switch (jamKey) 
+		{
+			case "AppClass":
+				return "MIDlet-1";
+			case "AppName":
+				return "MIDlet-Name";
+			case "AppVer":
+				return "MIDlet-Version";
+			case "AppParam":
+				return "MIDlet-Vendor";
+			case "AppSize":
+				return "MIDlet-Jar-Size";
+			case "UseNetwork":
+			case "LastModified":
+			default:
+				return jamKey; // Return as it has no match as of yet
+		}
+	}
+
 	private void loadManifest()
 	{
 		String resource = "META-INF/MANIFEST.MF";
@@ -341,14 +426,37 @@ public class MIDletLoader extends URLClassLoader
 		{
 			resource = "META-INF/MANIFEST.FM";
 			url = findResource(resource);
-			if (url == null) { return; }
 		}
 
-		try { parseDescriptorInto(url.openStream(), properties); } 
-		catch (Exception e) 
+		if(url != null) // Standard MIDlet file (at least i assume so)
 		{
-			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Jar Manifest!");
-			e.printStackTrace();
+			try { parseDescriptorInto(url.openStream(), properties); } 
+			catch (Exception e) 
+			{
+				Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Jar Manifest!");
+				e.printStackTrace();
+			}
+		}
+		else // No manifest found in the jar, maybe it's a DoJa file that has an accompanying .jam?
+		{
+			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "No Manifest file found! Checking if it's a DoJa File");
+			
+			String jamURLString = baseUrl.toString().replace(".jar", ".jam");
+			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Path:" + jamURLString);
+
+			try 
+			{
+				URL jamURL = new URL(jamURLString);
+				File jamFile = new File(jamURL.toURI());
+				if(jamFile.exists()) 
+				{
+					Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found!");
+					parseJamDescriptorInto(jamURL.openStream(), properties);
+				}
+			} catch (Exception e) 
+			{
+				Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Could not parse .jam file:" + e.getMessage());
+			}
 		}
 
 		for(int i = 0; i < 9; i++) // Support loading up to 9 midlets, though i doubt any jar will have more than a few.
@@ -399,6 +507,7 @@ public class MIDletLoader extends URLClassLoader
 				className[i] = null;
 			}
 		}
+		
 		
 	}
 
@@ -634,7 +743,7 @@ public class MIDletLoader extends URLClassLoader
 			name.startsWith("com.vodafone.") || name.startsWith("com.jblend.") || name.startsWith("com.motorola.") ||
 			name.startsWith("com.sprintpcs.") || name.startsWith("com.bmc.") || name.startsWith("com.immersion.") || 
 			name.startsWith("com.j_phone.") || name.startsWith("com.kddi.") || name.startsWith("com.pantech.") ||
-			name.startsWith("mmpp.") || name.startsWith("com.velox.")
+			name.startsWith("mmpp.") || name.startsWith("com.velox.") || name.startsWith("com.nttdocomo.")
 			)
 		{
 			return loadClass(name, true);
