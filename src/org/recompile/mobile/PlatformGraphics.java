@@ -1178,4 +1178,52 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		}
 		System.arraycopy(result, 0, pixels, 0, pixels.length);
 	}
+
+	/*
+		****************************
+			DoJa Graphics
+		****************************
+	*/
+
+	public void setOrigin(int x, int y) 
+	{
+		translateX += x;
+		translateY += y;
+		gc.translate(x, y);
+		gc.getClipBounds(rect);
+	}
+
+	public void setFont(com.nttdocomo.ui.Font dojaFont) 
+	{
+		if(dojaFont == null) { dojaFont = com.nttdocomo.ui.Font.getDefaultFont(); }
+		super.setDoJaFont(dojaFont);
+		gc.setFont(dojaFont.platformFont.awtFont);
+	}
+
+	public void lock() { dojaLockCount++; }
+
+    public void unlock(boolean forced)
+	{		
+        if (dojaLockCount > 0) 
+		{
+            dojaLockCount--;
+            if (dojaLockCount == 0 || forced) 
+			{ 
+				flushGraphics(lastImage, 0, 0, lastImage.getWidth(), lastImage.getHeight()); // TODO: Maybe incorrect
+				dojaLockCount = 0;
+			}
+        }
+    }
+
+	public static int getColorOfRGB(int r, int g, int b) 
+	{
+		if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) { throw new IllegalArgumentException("RGB values must be between 0 and 255"); }
+
+		return (r << 16) | (g << 8) | b;
+	}
+
+	public void clearClip() 
+	{
+		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
+	}
 }

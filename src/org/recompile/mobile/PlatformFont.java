@@ -100,6 +100,68 @@ public class PlatformFont
 		gc.setFont(awtFont);
 	}
 
+	// DoJa Font
+	public PlatformFont(com.nttdocomo.ui.Font font)
+	{
+		if(!textfontDir.isDirectory()) 
+		{
+			try 
+			{
+				textfontDir.mkdirs();
+				File dummyFile = new File(textfontDir.getPath() + File.separatorChar + "Put your ttf font here");
+				dummyFile.createNewFile();
+			}
+			catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformFont.class.getPackage().getName() + "." + PlatformFont.class.getSimpleName() + ": " + "Failed to create custom font dir:" + e.getMessage()); }
+		}
+
+		/* Get the first ttf font in the directory, if there's any */
+		String[] fontfiles = textfontDir.list(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File f, String textfont) {
+				String lowerCaseFont = textfont.toLowerCase();
+				return lowerCaseFont.endsWith(".ttf") || 
+						lowerCaseFont.endsWith(".otf") || 
+						lowerCaseFont.endsWith(".ttc");
+			}
+		});
+
+		if (Mobile.useCustomTextFont && fontfiles != null && fontfiles.length > 0) // Load a custom font if enabled, and there is one
+		{
+            try 
+			{
+                awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, fontfiles[0])).deriveFont(font.getStyle(), font.getPointSize());
+            } 
+			catch (Exception e) // If there's an issue loading it, we can still fallback to the default
+			{
+				Mobile.log(Mobile.LOG_ERROR, PlatformFont.class.getPackage().getName() + "." + PlatformFont.class.getSimpleName() + ": " + "Failed to load custom font:" + e.getMessage());
+                awtFont = new java.awt.Font((font.getFace() == com.nttdocomo.ui.Font.FACE_MONOSPACE) ? java.awt.Font.MONOSPACED : java.awt.Font.SANS_SERIF, font.getStyle(), font.getPointSize());
+            }
+        }
+		else if(!Mobile.useCustomTextFont) // If the user is not going to use custom fonts, or there are no custom fonts in the directory, load the defaults
+		{
+			// We'll use SansSerif for both SYSTEM and PROPORTIONAL
+			String fontFace = java.awt.Font.SANS_SERIF;
+			if(font.getFace() == com.nttdocomo.ui.Font.FACE_MONOSPACE) { fontFace = java.awt.Font.MONOSPACED; }
+
+			awtFont = new java.awt.Font(fontFace, font.getStyle(), font.getPointSize());
+		}
+		
+		// This section is font independent
+
+		// Standard java doesn't handle underlining the same way, so do it here
+		if((font.getStyle() & Font.STYLE_UNDERLINED) > 0)
+		{
+			Map<TextAttribute, Object> map = new Hashtable<TextAttribute, Object>(1);
+			map.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+
+			awtFont = awtFont.deriveFont(map);
+		}
+
+		gc = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics();
+		gc.setFont(awtFont);
+	}
+
 	public int stringWidth(String str)
 	{
 		return gc.getFontMetrics().stringWidth(str);

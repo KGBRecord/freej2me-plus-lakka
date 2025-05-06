@@ -51,6 +51,8 @@ import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import com.nttdocomo.ui.IApplication;
+
 import javax.microedition.content.Registry;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
@@ -74,6 +76,7 @@ public class MIDletLoader extends URLClassLoader
 
 	private Class<?> mainClass;
 	private MIDlet midletInst;
+	private IApplication IAppliInst;
 	
 	private Registry reg;
 
@@ -247,8 +250,17 @@ public class MIDletLoader extends URLClassLoader
 				constructor = mainClass.getConstructor();
 				constructor.setAccessible(true);
 
-				MIDlet.initAppProperties(properties);
-				midletInst = (MIDlet)constructor.newInstance();
+				if(!Mobile.isDoJa) 
+				{
+					MIDlet.initAppProperties(properties);
+					midletInst = (MIDlet)constructor.newInstance();
+				}
+				else 
+				{
+					IApplication.initAppProperties(properties);
+					IAppliInst = (IApplication) constructor.newInstance();
+				}
+				
 			}
 			
 		}
@@ -271,19 +283,18 @@ public class MIDletLoader extends URLClassLoader
 						Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "ALW1 wrapper class detected! Attempting to bypass...");
 						start = mainClass.getDeclaredMethod("startRealApp");
 					}
-					else { start = mainClass.getDeclaredMethod("startApp"); }
+					else { start = Mobile.isDoJa ? mainClass.getDeclaredMethod("start") : mainClass.getDeclaredMethod("startApp"); }
 					start.setAccessible(true);
 				}
 				catch (NoSuchMethodException e)
 				{
 					mainClass = mainClass.getSuperclass();
-					if (mainClass == null || mainClass == MIDlet.class) { throw e; }
+					if (mainClass == null || mainClass == MIDlet.class || mainClass == IApplication.class) { throw e; }
 
 					mainClass = loadClass(mainClass.getName(), true);
 				}
 			}
-
-			start.invoke(midletInst);
+			start.invoke(Mobile.isDoJa ? IAppliInst : midletInst);
 		}
 		catch (Exception e)
 		{
@@ -364,7 +375,7 @@ public class MIDletLoader extends URLClassLoader
 						else if ("AppClass".equals(currentKey)) { appClass = currentValue.toString().trim(); }
 
 						keyValueMap.put(convertJamKeyToJar(currentKey), currentValue.toString().trim());
-						Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + convertJamKeyToJar(currentKey) + ") val:" + currentValue.toString().trim());
+						Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + convertJamKeyToJar(currentKey) + ") val:" + currentValue.toString().trim());
 						currentValue.setLength(0);
 
 						
@@ -392,7 +403,7 @@ public class MIDletLoader extends URLClassLoader
 			// Update the converted MIDlet-1 key to match a default jar manifest
 			String midlet1Value = String.format("%s, %s, %s", appName, appIcon, appClass);
 			keyValueMap.put("MIDlet-1", midlet1Value);
-			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Final MIDlet-1:" + currentKey + " val:" + midlet1Value);
+			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Final MIDlet-1:" + currentKey + " val:" + midlet1Value);
 		} 
 		catch (IOException e) { Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Failed to parse descriptor:" + e.getMessage()); }
 	}
@@ -436,6 +447,7 @@ public class MIDletLoader extends URLClassLoader
 				Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Jar Manifest!");
 				e.printStackTrace();
 			}
+			Mobile.isDoJa = false;
 		}
 		else // No manifest found in the jar, maybe it's a DoJa file that has an accompanying .jam?
 		{
@@ -457,6 +469,7 @@ public class MIDletLoader extends URLClassLoader
 			{
 				Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Could not parse .jam file:" + e.getMessage());
 			}
+			Mobile.isDoJa = true;
 		}
 
 		for(int i = 0; i < 9; i++) // Support loading up to 9 midlets, though i doubt any jar will have more than a few.
@@ -497,7 +510,8 @@ public class MIDletLoader extends URLClassLoader
 					} 
 				}
 
-				Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + name[i] +" | Main Class: " + className[i]);
+				if(Mobile.isDoJa) { Mobile.log(Mobile.LOG_INFO, "Loading I-Appli: " + name[i] +" | Main Class: " + className[i]); }
+				else { Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + name[i] +" | Main Class: " + className[i]); }
 
 				reg = new Registry(className[i]);
 			}

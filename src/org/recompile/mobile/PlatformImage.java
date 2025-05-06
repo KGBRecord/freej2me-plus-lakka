@@ -41,6 +41,7 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 {
 	protected BufferedImage canvas;
 	protected PlatformGraphics gc;
+	protected com.nttdocomo.ui.Graphics djgc;
 
 	private boolean isMutable = false;
 
@@ -48,11 +49,21 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 
 	public PlatformGraphics getGraphics() { return gc; }
 
+	public com.nttdocomo.ui.Graphics getDoJaGraphics() { return djgc; }
+
+
 	protected void createGraphics()
 	{
 		gc = new PlatformGraphics(this);
 		
 		gc.setColor(0x000000);
+	}
+
+	protected void createDoJaGraphics()
+	{
+		djgc = new com.nttdocomo.ui.Graphics(this);
+		
+		djgc.setColor(0x000000);
 	}
 
 	public PlatformImage(int Width, int Height)
@@ -275,6 +286,51 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		platformImage = this;
 	}
 
+	// DoJa's image class uses these
+	public PlatformImage(com.nttdocomo.ui.Image source) 
+	{
+        // Create Image from DoJa Image
+		if(source == null) 
+		{ 
+			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image, it is null."); }
+			else 
+			{
+				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image is NULL, ignoring due to Non Fatal Null Images being enabled.");
+			}
+		}
+
+		width = source.platformImage.width;
+		height = source.platformImage.height;
+
+		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		createGraphics();
+
+		djgc.drawImage2(source.platformImage.getCanvas(), 0, 0);
+
+		platformImage = this;
+    }
+
+	public PlatformImage(int Width, int Height, com.nttdocomo.ui.Image source) // Just to differentiate from the other constructor above
+	{
+		// Create blank DoJa Image
+		width = Width;
+		height = Height;
+
+		if(Mobile.noAlphaOnBlankImages) { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_RGB); }
+		else { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB); }
+		
+		createDoJaGraphics();
+
+		djgc.setColor(0xFFFFFF);
+		djgc.fillRect(0, 0, width, height);
+		djgc.setColor(0x000000);
+
+		isMutable = true;
+
+		platformImage = this;
+    }
+
+	// Common methods
 	public void getRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height) 
 	{
 		if (rgbData == null) 

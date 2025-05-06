@@ -19,7 +19,7 @@ package javax.microedition.lcdui;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformFont;
 
-public final class Font
+public class Font
 {
 	public static final int FACE_MONOSPACE = 32;
 	public static final int FACE_PROPORTIONAL = 64;
@@ -37,7 +37,7 @@ public final class Font
 	public static final int STYLE_PLAIN = 0;
 	public static final int STYLE_UNDERLINED = 4;
 
-	private static final int[] fontSizes = 
+	protected static final int[] fontSizes = 
 	{
 		 8, 10, 12, // < 128 minimum px dimension
 		12, 14, 16, // < 176 minimum px dimension
@@ -55,15 +55,15 @@ public final class Font
 	};
 
 	public static int screenType = -4;
-	private int face;
-	private int style;
-	private int size;
+	protected int face;
+	protected int style;
+	protected int size;
 
-	private static Font defaultFont = null;
+	protected static Font defaultFont = null;
 
 	public PlatformFont platformFont;
 
-	private Font(int fontFace, int fontStyle, int fontSize)
+	protected Font(int face, int style, int size)
 	{
 		if(face != FACE_SYSTEM && face != FACE_PROPORTIONAL && face != FACE_MONOSPACE
 			&& style != STYLE_PLAIN && style != STYLE_ITALIC && style != STYLE_BOLD
@@ -72,9 +72,9 @@ public final class Font
 			throw new IllegalArgumentException("Cannot create a font with invalid face, style or size");
 		}
 
-		face = fontFace;
-		style = fontStyle;
-		size = fontSize;
+		this.face = face;
+		this.style = style;
+		this.size = size;
 		platformFont = new PlatformFont(this);
 	}
 

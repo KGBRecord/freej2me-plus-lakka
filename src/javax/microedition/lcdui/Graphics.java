@@ -39,8 +39,10 @@ public class Graphics
 
 	protected int color = 0xFFFFFF;
 	protected Font font = Font.getDefaultFont();
+	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
 	protected int strokeStyle = SOLID;
 
+	protected int dojaLockCount = 0;
 
 	public PlatformGraphics platformGraphics;
 
@@ -84,6 +86,8 @@ public class Graphics
 
 	public Font getFont() { return font; }
 
+	public void reset() { }
+
 	public int getGrayScale()
 	{
 		int r = (color>>16) & 0xFF;
@@ -124,6 +128,8 @@ public class Graphics
 	public void setColor(int red, int green, int blue) { color = (red<<16) + (green<<8) + blue; }
 
 	public void setFont(Font newfont) { font = newfont; }
+
+	public void setDoJaFont(com.nttdocomo.ui.Font newfont) { dojaFont = newfont; }
 
 	public void setGrayScale(int value)
 	{

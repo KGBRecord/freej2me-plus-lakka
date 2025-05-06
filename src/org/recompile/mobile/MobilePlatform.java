@@ -24,9 +24,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.io.DataInputStream;
 import java.io.File;
@@ -86,6 +83,7 @@ public class MobilePlatform
 
 	public volatile static int keyState = 0;
 	public volatile static int vodafoneKeyState = 0;
+	public volatile static int DoJaKeyState = 0;
 
 	// MobilePlatform will handle the input repeats as well
 	public static boolean[] pressedKeys = new boolean[20];
@@ -104,21 +102,6 @@ public class MobilePlatform
 			}
 		};
 
-		/*
-		 * If a jar only updates the screen after receiving an input (FreeJ2ME only sends inputs after the jar 
-		 * requests a screen update) force input updates to happen here so that the app doesn't get stuck.
-		 */
-		final ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-
-		service.scheduleAtFixedRate(() -> 
-		{
-			// If 16ms have passed and a new painter run did not happen, force it to happen
-			if(lastRenderTime - System.nanoTime() < -16_666_666)
-			{
-				lastRenderTime = System.nanoTime();
-			}
-		}, 16_666_666, 16_666_666, TimeUnit.NANOSECONDS);
-
 	}
 
 	public void resizeLCD(int width, int height)
@@ -129,6 +112,7 @@ public class MobilePlatform
 		lcdWidth = width;
 		lcdHeight = height;
 		Font.setScreenSize(width, height);
+		com.nttdocomo.ui.Font.setScreenSize(width, height);
 
 		lcd = new PlatformImage(width, height);
 		gc = lcd.getGraphics();
@@ -137,12 +121,18 @@ public class MobilePlatform
 		 * Try to have the jar scale as well. If this doesn't work,
 		 * a simple restart is all it takes, just like before.
 		 */
-		if(Mobile.getDisplay() != null) 
+
+		if(!Mobile.isDoJa && Mobile.getDisplay() != null) 
 		{ 
 			Mobile.getDisplay().getCurrent().doSizeChanged(width, height);
 			Mobile.getDisplay().getCurrent().platformImage = lcd; 
 			Mobile.getDisplay().getCurrent().graphics = gc; 
 		}
+		else 
+		{
+			// TODO: DoJa, let's leave that for later
+		}
+		
 	}
 
 	public BufferedImage getLCD() { return lcd.getCanvas(); }
@@ -151,30 +141,37 @@ public class MobilePlatform
 
 	public static void pauseResumeApp() 
 	{
-		displayable = Mobile.getDisplay().getCurrent();
-		if (!(displayable instanceof Canvas)) { return; }
-		
-		if(!isPaused) 
+		if(!Mobile.isDoJa) 
 		{
-			((Canvas) displayable).hideNotify();
+			displayable = Mobile.getDisplay().getCurrent();
+			if (!(displayable instanceof Canvas)) { return; }
 			
-			try { Mobile.midlet.callPauseApp(); } 
-			catch (Exception e) { e.printStackTrace(); }
+			if(!isPaused) 
+			{
+				((Canvas) displayable).hideNotify();
+				
+				try { Mobile.midlet.callPauseApp(); } 
+				catch (Exception e) { e.printStackTrace(); }
 
-			isPaused = true;
+				isPaused = true;
 
-			painter.run();
+				painter.run();
+			}
+			else 
+			{
+				isPaused = false;
+				
+				((Canvas) displayable).showNotify();
+				
+				try { Mobile.midlet.resumeRequest(); } 
+				catch (Exception e) { e.printStackTrace(); }
+
+				painter.run();
+			}
 		}
 		else 
 		{
-			isPaused = false;
-			
-			((Canvas) displayable).showNotify();
-			
-			try { Mobile.midlet.resumeRequest(); } 
-			catch (Exception e) { e.printStackTrace(); }
-
-			painter.run();
+			// TODO: DoJa pause/resume
 		}
 	}
 
@@ -185,7 +182,8 @@ public class MobilePlatform
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 1);
 			updateVodafoneKeyState(Mobile.getGameAction(keycode), 1);
-			if (Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) 
+			updateDoJaKeyState(Mobile.getGameAction(keycode), 1);
+			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) 
 			{ 
 				displayable.keyPressed(keycode); 
 				handleCommands(Mobile.getCanvasAction(keycode));
@@ -199,28 +197,33 @@ public class MobilePlatform
 		{
 			updateKeyState(Mobile.getGameAction(keycode), 0);
 			updateVodafoneKeyState(Mobile.getGameAction(keycode), 0);
-			if (Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
+			updateDoJaKeyState(Mobile.getGameAction(keycode), 0);
+			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
 		}
 	}
 
 	public static void keyRepeated(int keycode)
 	{
-		if (!isPaused && MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
+		if (!isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
+		// TODO: DoJa
 	}
 
 	public static void pointerDragged(int x, int y)
 	{
-		if (!isPaused && MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
+		if (!isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
+		// TODO: DoJa
 	}
 
 	public static void pointerPressed(int x, int y)
 	{
-		if (!isPaused && MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
+		if (!isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
+		// TODO: DoJa
 	}
 
 	public static void pointerReleased(int x, int y)
 	{
-		if (!isPaused && MIDletLoader.MIDletSelected && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
+		if (!isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
+		// TODO: DoJa
 	}
 
 	private static void updateKeyState(int key, int val)
@@ -318,6 +321,79 @@ public class MobilePlatform
 		}
 		if(val == 1) { vodafoneKeyState |= mask; }
 		else { vodafoneKeyState ^= mask; }
+	}
+
+	// For a reference of these shift values, look into com.nttdocomo.ui.Display
+	private static void updateDoJaKeyState(int key, int val)
+	{
+		int mask=0;
+		switch (key) 
+		{
+			case Canvas.UP:
+				mask = 1 << 0x11;
+				break;
+			case Canvas.LEFT:
+				mask = 1 << 0x10;
+				break;
+			case Canvas.RIGHT:
+				mask = 1 << 0x12; 
+				break;
+			case Canvas.DOWN:
+				mask = 1 << 0x13; 
+				break;
+			case Canvas.FIRE:
+				mask = 1 << 0x14;
+				break;
+			case Canvas.GAME_C:
+				mask = 1 << 19; 
+				break;
+			case Canvas.KEY_NUM0:
+				mask = 1; 
+				break;
+			case Canvas.KEY_NUM1:
+				mask = 1 << 1; 
+				break;
+			case Canvas.KEY_NUM2:
+				mask = 1 << 2; 
+				break;
+			case Canvas.KEY_NUM3:
+				mask = 1 << 3; 
+				break;
+			case Canvas.KEY_NUM4:
+				mask = 1 << 4;
+				break;
+			case Canvas.KEY_NUM5:
+				mask = 1 << 5; 
+				break;
+			case Canvas.KEY_NUM6:
+				mask = 1 << 6; 
+				break;
+			case Canvas.KEY_NUM7:
+				mask = 1 << 7; 
+				break;
+			case Canvas.KEY_NUM8:
+				mask = 1 << 8; 
+				break;
+			case Canvas.KEY_NUM9:
+				mask = 1 << 9; 
+				break;
+			case Canvas.KEY_STAR:
+				mask = 1 << 0x0a;
+				break;
+			case Canvas.KEY_POUND:
+				mask = 1 << 0x0b;
+				break;
+			case Canvas.KEY_SOFT_LEFT:
+				mask = 1 << 0x15;
+				break;
+			case Canvas.KEY_SOFT_RIGHT:
+				mask = 1 << 0x16;
+				break;
+			default:
+				mask = 0;
+		}
+		if(val == 1) { DoJaKeyState |= mask; }
+		else { DoJaKeyState ^= mask; }
 	}
 
 	private static void handleCommands(int key) 

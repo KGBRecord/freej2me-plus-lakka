@@ -29,6 +29,8 @@ import javax.microedition.midlet.MIDlet;
 
 import org.recompile.freej2me.Config;
 
+import com.nttdocomo.ui.IApplication;
+
 /*
 
 	Mobile
@@ -42,8 +44,13 @@ public class Mobile
 	private static MobilePlatform platform;
 
 	private static Display display;
+	private static com.nttdocomo.ui.Display DoJaDisplay;
 
 	public static MIDlet midlet;
+
+	public static IApplication iAppli;
+
+	public static boolean isDoJa = false;
 
 	// These flags are used for general compatibility adjustments within FreeJ2ME
 	public static boolean usingMessagingAPI = false;
@@ -273,6 +280,10 @@ public class Mobile
 	public static Display getDisplay() { return display; }
 
 	public static void setDisplay(Display d) { display = d; }
+
+	public static com.nttdocomo.ui.Display getDoJaDisplay() { return DoJaDisplay; }
+
+	public static void setDoJaDisplay(com.nttdocomo.ui.Display d) { DoJaDisplay = d; }
 
 	public static InputStream getResourceAsStream(Class c, String resource)
 	{
