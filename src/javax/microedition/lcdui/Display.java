@@ -214,19 +214,7 @@ public class Display
 	{
 		setCurrentRequest = (() -> 
 		{
-			if (next == null) // This can be interpreted as a request of the MIDlet to be put on the background and/or paused.
-			{ 
-				if(!MobilePlatform.isPaused) { MobilePlatform.pauseResumeApp(); }
-				return; 
-			}
-			else if (current == next) // Similarly, this can be interpreted as a request of the MIDlet to be put on the foreground and/or resumed.
-			{
-				if(MobilePlatform.isPaused) { MobilePlatform.pauseResumeApp(); }
-				else { if(current instanceof Canvas) { current.showNotify(); } }
-				current.notifySetCurrent();
-
-				return;
-			}
+			if (next == null || current == next) { return; }
 
 			try 
 			{		
