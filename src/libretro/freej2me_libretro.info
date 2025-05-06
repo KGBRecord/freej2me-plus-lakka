@@ -1,7 +1,7 @@
 # Software Information
 display_name = "Mobile - J2ME (FreeJ2ME-Plus)"
 authors = "Paulo Sousa(AShiningRay)|David Richardson(recompileorg)|Saket Dandawate(hex007)"
-supported_extensions = "jar"
+supported_extensions = "jar|kjx"
 corename = "FreeJ2ME-Plus"
 categories = "Emulator"
 license = "GPLv3"
