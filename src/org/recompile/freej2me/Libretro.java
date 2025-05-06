@@ -32,9 +32,6 @@ import javax.microedition.midlet.MIDlet;
 
 public class Libretro
 {
-	private static final long PAUSE_DELAY_MS = 250;
-	private static long lastCoreUpdateTime = System.currentTimeMillis(); // Tracks last core update for pause checks
-
 	private int lcdWidth;
 	private int lcdHeight;
 	int[] lcdData;
@@ -160,15 +157,6 @@ public class Libretro
 		Mobile.config = new Config();
 		Mobile.config.onChange = new Runnable() { public void run() { settingsChanged(); } };
 
-		// The painter here is only really used to check for frontend pauses
-		Mobile.getPlatform().setPainter(new Runnable()
-		{
-			public void run()
-			{
-				updatePauseTimer();
-			}
-		});
-
 		lio = new LibretroIO();
 
 		lio.start();
@@ -203,13 +191,6 @@ public class Libretro
 				{
 					while(true)
 					{
-						lastCoreUpdateTime = System.currentTimeMillis(); // Reset the timer to prevent pausing
-						if(MobilePlatform.isPaused) 
-						{ 
-							Mobile.log(Mobile.LOG_DEBUG, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "res! ");
-							MobilePlatform.pauseResumeApp(); 
-						} // Resume
-
 						bin = System.in.read();
 						if(bin==-1) { return; }
 						//System.out.print(" "+bin);
@@ -488,18 +469,6 @@ public class Libretro
 			}
 		} // timer
 	} // LibretroIO
-
-	private static void updatePauseTimer() 
-	{
-		long currentTime = System.currentTimeMillis();
-		
-		// Check if the timer has expired since the last core update, as anything beyond a 250ms delta 
-		// between core updates means the frontend is pretty much effectively paused as well)
-		if (!MobilePlatform.isPaused && (currentTime - lastCoreUpdateTime >= PAUSE_DELAY_MS)) 
-		{
-			MobilePlatform.pauseResumeApp(); // Call to pause the app
-		}
-	}
 
 	private static String getFormattedLocation(String loc)
 	{
