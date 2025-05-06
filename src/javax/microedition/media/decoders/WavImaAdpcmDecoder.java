@@ -23,6 +23,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Line;
+import javax.sound.sampled.Mixer;
+import javax.sound.sampled.SourceDataLine;
+
 import org.recompile.mobile.Mobile;
 
 public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
@@ -74,7 +80,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 	{
 		byte adpcmSample;
 		byte curChannel;
-		int inputIndex = 0, outputIndex = PCMHEADERSIZE; /* Give some space for the header by starting from byte 44. */
+		int inputIndex = 0, outputIndex = 0;
 		short decodedSample;
 		boolean hasMalformedBlock = false;
 
@@ -86,7 +92,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 		 * header it will have. In case of malformed headers or preamble reads, we'll just have to subtract its size based on the point 
 		 * that the outputIndex has stopped when doing the Arrays.copyOf() call, and a few extra adjustments.
 		 */
-		final byte[] output = new byte[inputSize * 4 + PCMHEADERSIZE];
+		final byte[] output = new byte[inputSize * 4];
 
 		/* Initialize the predictor's sample and step values. */
 		predictedSample[LEFTCHANNEL] = 0;
@@ -354,7 +360,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 		 * We need the audio format to check if it's ADPCM or PCM, and the file's 
 		 * dataSize, SampleRate and audioChannels to decode ADPCM and build a new header. 
 		 */
-		return new int[] {audioFormat, sampleRate, audioChannels, frameSize};
+		return new int[] {audioFormat, sampleRate, audioChannels, frameSize, bitsPerSample};
 	}
 
 	/* Read a 16-bit little-endian unsigned integer from input.*/
@@ -404,10 +410,9 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 
 		/* 
 		 * We'll have 16 bits per sample, so each sample has 2 bytes, with that we just divide
-		 * the size of the byte buffer (minus the header) by (bitsPerSample/8), then multiply by the amount 
-		 * of channels.
+		 * the size of the byte buffer (minus the header) by (bitsPerSample/8) times the amount of channels.
 		*/
-		final int samplesPerChannel = (buffer.length - 44) / ((bitsPerSample / 8) * numChannels);
+		final int samplesPerChannel = (buffer.length - PCMHEADERSIZE) / ((bitsPerSample / 8) * numChannels);
 
 		/* 
 		 * Frame size is fairly standard, and PCM's fixed sample size makes it so the frameSize is either 2 bytes 
@@ -468,9 +473,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 		readInputStreamData(stream, input, 0, stream.available());
 
 		final byte[] output = decodeADPCM(input, input.length, (short) wavHeaderData[2], wavHeaderData[3]);
-		buildHeader(output, (short) wavHeaderData[2], wavHeaderData[1], (short) 16); /* Builds a new header for the decoded stream. */
-
-		return output;
+		return upsample(output, wavHeaderData[1], getDefaultAudioSampleRate(), (short) wavHeaderData[2], (short) 16);
 	}
 
 
@@ -489,9 +492,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 	// These will convert from different PCM formats to either 8 or 16-bit Signed PCM:
 	public static final byte[] convert4BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
 	{
-		byte[] convertedWav = new byte[2*input.length + PCMHEADERSIZE];
-
-		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 8); /* Builds a new header for the converted stream. */
+		byte[] convertedWav = new byte[2*input.length];
 		
 		if(numChannels == 2) // Stereo (Might be incorrect, but yamaha's MidRadio and mmftool seem to decode all parsed "Stereo" down to mono too)
 		{
@@ -500,13 +501,13 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 			{
 				if (is2Complement) // If it's already 2's complement, just map values accordingly
 				{
-					convertedWav[PCMHEADERSIZE + i*2] = (byte) input[i];
-					convertedWav[PCMHEADERSIZE + i*2+1] = (byte) input[i];
+					convertedWav[i*2] = (byte) input[i];
+					convertedWav[i*2+1] = (byte) input[i];
 				} 
 				else // Otherwise decrement the expected value by 128 (as we're going from [0...255] to [-128...127])
 				{
-					convertedWav[PCMHEADERSIZE + i] = (byte) (input[i] - 128);
-					convertedWav[PCMHEADERSIZE + i*2+1] = (byte) (input[i] - 128);
+					convertedWav[i*2] = (byte) (input[i] - 128);
+					convertedWav[i*2+1] = (byte) (input[i] - 128);
 				}
 			}
 		}
@@ -520,37 +521,37 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 
 				if (is2Complement) // If it's already 2's complement, just expand and map values accordingly
 				{
-					convertedWav[PCMHEADERSIZE + i * 2] = (byte) (upperNibble < 8 ? upperNibble * 17 : (upperNibble - 16) * 17);
-					convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) (lowerNibble < 8 ? lowerNibble * 17 : (lowerNibble - 16) * 17);
+					convertedWav[i * 2] = (byte) (upperNibble < 8 ? upperNibble * 17 : (upperNibble - 16) * 17);
+					convertedWav[i * 2 + 1] = (byte) (lowerNibble < 8 ? lowerNibble * 17 : (lowerNibble - 16) * 17);
 				} 
 				else // Otherwise, expand to 8-bit and to 2's Complement which is required to achieve Java's SIGNED Little-Endian format.
 				{
-					convertedWav[PCMHEADERSIZE + i * 2] = (byte) ((upperNibble - 8) * 17);
-					convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) ((lowerNibble - 8) * 17);
+					convertedWav[i * 2] = (byte) (upperNibble * 17 - 128);
+					convertedWav[i * 2 + 1] = (byte) (lowerNibble * 17 - 128);
 				}
 			}
 		}
-		return convertedWav;
+		return upsample(convertedWav, sampleRate, getDefaultAudioSampleRate(), (short) numChannels, (short) 8);
 	}
 
 	// This one pretty much just converts from binary offset to 2's complement if needed, and builds a header
 	public static final byte[] convert8BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
 	{
-		byte[] convertedWav = new byte[input.length + PCMHEADERSIZE];
+		byte[] convertedWav = new byte[input.length];
 
 		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 8);
 
 		for (int i = 0; i < input.length; i++) 
 		{
-			if (is2Complement) { convertedWav[PCMHEADERSIZE + i * 2] = (byte) (input[i]); } 
-			else { convertedWav[PCMHEADERSIZE + i] = (byte) (input[i] - 128); }
+			if (is2Complement) { convertedWav[i * 2] = (byte) (input[i]); } 
+			else { convertedWav[i] = (byte) (input[i] - 128); }
 		}
-		return convertedWav;
+		return upsample(convertedWav, sampleRate, getDefaultAudioSampleRate(), (short) numChannels, (short) 8);
 	}
 
 	public static final byte[] convert12BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
 	{
-		byte[] convertedWav = new byte[(int)(1.5 * input.length) + PCMHEADERSIZE + 1]; // Add an extra byte for safety
+		byte[] convertedWav = new byte[(int)(1.5 * input.length) + 1]; // Add an extra byte for safety
 
 		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 16);
 
@@ -562,22 +563,22 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 
 			if (is2Complement) 
 			{
-				convertedWav[PCMHEADERSIZE + i * 2] = (byte) (sample & 0xFF);
-				convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
+				convertedWav[i * 2] = (byte) (sample & 0xFF);
+				convertedWav[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
 			} 
 			else 
 			{
 				sample -= 2048;
-				convertedWav[PCMHEADERSIZE + i * 2] = (byte) (sample & 0xFF);
-				convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
+				convertedWav[i * 2] = (byte) (sample & 0xFF);
+				convertedWav[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
 			}
 		}
-		return convertedWav;
+		return upsample(convertedWav, sampleRate, getDefaultAudioSampleRate(), (short) numChannels, (short) 16);
 	}
 
 	public static final byte[] convert16BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
 	{
-		byte[] convertedWav = new byte[input.length + PCMHEADERSIZE]; 
+		byte[] convertedWav = new byte[input.length]; 
 		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 16);
 
 		for (int i = 0; i < input.length / 2; i++) 
@@ -588,15 +589,90 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 			if (is2Complement)
 			{
 				
-				convertedWav[PCMHEADERSIZE + i * 2] = (byte) (sample & 0xFF);
-				convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
+				convertedWav[i * 2] = (byte) (sample & 0xFF);
+				convertedWav[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
 			} 
 			else
 			{
-				convertedWav[PCMHEADERSIZE + i * 2] = (byte) ((sample - 32768) & 0xFF);
-				convertedWav[PCMHEADERSIZE + i * 2 + 1] = (byte) (((sample - 32768) >> 8) & 0xFF);
+				convertedWav[i * 2] = (byte) ((sample - 32768) & 0xFF);
+				convertedWav[i * 2 + 1] = (byte) (((sample - 32768) >> 8) & 0xFF);
 			}
 		}
-		return convertedWav;
+		return upsample(convertedWav, sampleRate, getDefaultAudioSampleRate(), (short) numChannels, (short) 16);
+	}
+
+	public static byte[] upsample(byte[] input, int originalSampleRate, int newSampleRate, short numChannels, short numBits) 
+	{
+		int inputLength = input.length;
+		int newLength = (int) ((inputLength * (double) newSampleRate) / originalSampleRate);
+		byte[] upsampled = new byte[PCMHEADERSIZE + newLength]; // Allocate for header + upsampled audio data
+	
+		// Build the WAV header with the new updated sample rate
+		buildHeader(upsampled, numChannels, newSampleRate, numBits);
+	
+		// Upsample the audio data based on how many bits per sample it has
+		for (int i = 0; i < newLength; i++) 
+		{
+			double originalIndex = (i * (double) originalSampleRate) / newSampleRate;
+			int index = (int) originalIndex;
+			double fraction = originalIndex - index; // Fractional part for simple linear interpolation
+	
+			if (numBits == 8) // For 8-bit PCM WAV
+			{
+				int sample1 = (index < inputLength) ? (input[index] & 0xFF) : 0;
+				int sample2 = (index + 1 < inputLength) ? (input[index + 1] & 0xFF) : 0;
+	
+				// Apply linear interpolation on sample to reduce artifacts
+				int interpolatedValue = (int) (sample1 + (sample2 - sample1) * fraction);
+				interpolatedValue = Math.max(0, Math.min(255, interpolatedValue));
+				// Save upsampled data back to the byte array
+				upsampled[PCMHEADERSIZE + i] = (byte) interpolatedValue;
+	
+			} 
+			else if (numBits == 16) // For 16-bit PCM WAV
+			{
+				int sampleIndex = index * 2; // Each sample takes up 2 bytes (16 bit after all)
+				short sample1 = (short) ((input[sampleIndex] & 0xFF) | (input[sampleIndex + 1] << 8));
+				short sample2 = (short) ((sampleIndex + 2 < inputLength) ? (input[sampleIndex + 2] & 0xFF) | (input[sampleIndex + 3] << 8) : 0);
+	
+				// Linear interpolation
+				int interpolatedValue = (int) (sample1 + (sample2 - sample1) * fraction);
+				interpolatedValue = Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, interpolatedValue));
+
+				// Store the interpolated value back to byte representation
+				upsampled[PCMHEADERSIZE + i * 2] = (byte) (interpolatedValue & 0xFF); // Low byte
+				upsampled[PCMHEADERSIZE + i * 2 + 1] = (byte) ((interpolatedValue >> 8) & 0xFF); // High byte
+			}
+		}
+	
+		return upsampled;
+	}
+
+
+	public static int getDefaultAudioSampleRate() 
+	{
+		Mixer.Info[] mixers = AudioSystem.getMixerInfo();
+		for (Mixer.Info mixerInfo : mixers) 
+		{
+			Mixer mixer = AudioSystem.getMixer(mixerInfo);
+			Line.Info[] lineInfos = mixer.getSourceLineInfo();
+			for (Line.Info lineInfo : lineInfos) 
+			{
+				if (lineInfo instanceof Line.Info) 
+				{
+					Line line = null;
+					try 
+					{
+						line = mixer.getLine(lineInfo);
+						if (line instanceof SourceDataLine) 
+						{
+							return (int) ((SourceDataLine) line).getFormat().getSampleRate();
+						}
+					} catch (Exception e) { e.printStackTrace(); }
+				}
+			}
+		}
+		return 32000; // Default to 32KHz
 	}
 }
+
