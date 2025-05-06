@@ -122,10 +122,7 @@ public class Anbu
 
 	private static final int[] joypadKeycodes = {0x00, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0xFA, 0xFB, 0xFC, 0xFD};
 
-
 	SDL_Joystick joy = null;
-
-	private boolean[] pressedKeys = new boolean[128];
 
 	public Anbu(String args[])
 	{
@@ -527,11 +524,11 @@ public class Anbu
 		{
 			if (key == Integer.MIN_VALUE) { return; }
 
-			if(MobilePlatform.pressedKeys[key] = true) { MobilePlatform.keyRepeated(key); }
+			if(MobilePlatform.pressedKeys[key] == true) { MobilePlatform.keyRepeated(Mobile.getMobileKey(key)); }
 			else 
 			{
 				MobilePlatform.pressedKeys[key] = true;
-				MobilePlatform.keyPressed(key);
+				MobilePlatform.keyPressed(Mobile.getMobileKey(key));
 			}
 			
 		}
@@ -541,7 +538,7 @@ public class Anbu
 			if (key == Integer.MIN_VALUE) { return; }
 
 			MobilePlatform.pressedKeys[key] = false;
-			MobilePlatform.keyReleased(key);
+			MobilePlatform.keyReleased(Mobile.getMobileKey(key));
 		}
 
 		private int getMobileKey(int keycode)
