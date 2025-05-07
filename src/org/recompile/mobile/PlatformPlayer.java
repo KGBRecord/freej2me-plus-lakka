@@ -971,13 +971,12 @@ public class PlatformPlayer implements Player
 
 				if(wavHeaderData[0] == 1) // standard PCM WAV
 				{
-					wavHeaderData = WavImaAdpcmDecoder.readHeader(stream); // Remove header for upsampling
-					tmpStream = new byte[stream.available()];
-					stream.read(tmpStream, 0, stream.available());
-					tmpStream = WavImaAdpcmDecoder.upsample(tmpStream, wavHeaderData[1], WavImaAdpcmDecoder.getDefaultAudioSampleRate(), (short) wavHeaderData[2], (short) wavHeaderData[4]);
-					
+					wavHeaderData = WavImaAdpcmDecoder.readHeader(stream);
+					byte[] wavAudioData = new byte[stream.available()];
+					stream.read(wavAudioData, 0, stream.available());
+					tmpStream = WavImaAdpcmDecoder.upsample(wavAudioData, wavHeaderData[1], WavImaAdpcmDecoder.getDefaultAudioSampleRate(), (short) wavHeaderData[2], (short) wavHeaderData[4]);
 				}
-				if(wavHeaderData[0] == 7) // Microsoft GSM
+				else if(wavHeaderData[0] == 7) // Microsoft GSM
 				{
 					Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MS GSM! (unsupported)");
 				}
