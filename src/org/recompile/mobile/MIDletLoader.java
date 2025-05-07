@@ -661,6 +661,7 @@ public class MIDletLoader extends URLClassLoader
 			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
 		
+		resource = resource.replace("\\", "/");
 
 		URL url = getResource(resource);
 
@@ -715,6 +716,8 @@ public class MIDletLoader extends URLClassLoader
 			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
 
+		resource = resource.replace("\\", "/");
+
 		URL url = getResource(resource);
 
 		try
@@ -764,6 +767,8 @@ public class MIDletLoader extends URLClassLoader
 			}
 			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
+
+		resource = resource.replace("\\", "/");
 
 		// We basically ignore everything done above at the moment
 		resource = baseUrl.toString().replace(".jar", ".sp");
