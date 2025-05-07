@@ -241,6 +241,8 @@ public class TextBox extends Screen
 
 	public void setString(String value) 
 	{ 
+		if (value == null) { value = ""; }
+		
 		text = value;
 		caretPosition = text.length();
 		_invalidate();
