@@ -190,6 +190,11 @@ public class FreeJ2ME
 					
 					MobilePlatform.pressedKeys[mobikey] = false;
 					MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
+
+					for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
+					{
+						if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyPressed(Mobile.getMobileKey(i)); }
+					}
 				}
 			}
 

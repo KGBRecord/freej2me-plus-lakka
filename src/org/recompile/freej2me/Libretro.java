@@ -213,6 +213,10 @@ public class Libretro
 								case 2:	// joypad key up
 									MobilePlatform.pressedKeys[code] = false;
 									MobilePlatform.keyReleased(Mobile.getMobileKey(code));
+									for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
+									{
+										if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyPressed(Mobile.getMobileKey(i)); }
+									}
 								break;
 
 								case 3: // joypad key down					
