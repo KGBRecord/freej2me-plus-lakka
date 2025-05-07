@@ -35,11 +35,19 @@ public class Connector
 	
 	public static InputStream openInputStream(String name)
 	{
+		if (name.startsWith("scratchpad:"))
+		{
+			return new com.nttdocomo.util.ScratchPadConnection(name).openInputStream();
+		}
 		return new InputConnectionImpl(name).openInputStream();
 	}
 
 	public static DataInputStream openDataInputStream(String name)
 	{
+		if (name.startsWith("scratchpad:"))
+		{
+			return new com.nttdocomo.util.ScratchPadConnection(name).openDataInputStream();
+		}
 		return new InputConnectionImpl(name).openDataInputStream();
 	}
 
@@ -49,6 +57,11 @@ public class Connector
 
 	public static Connection open(String name, int mode, boolean timeouts) 
 	{
+		if (name.startsWith("scratchpad:"))
+		{
+			return new com.nttdocomo.util.ScratchPadConnection(name);
+		}
+
 		if (name.startsWith("resource:")) // older Siemens phones?
 		{
 			return new InputConnectionImpl(name);
@@ -64,8 +77,22 @@ public class Connector
 		return null; 
 	}
 
-	public static DataOutputStream openDataOutputStream(String name) { return new DataOutputStream(output); }
+	public static DataOutputStream openDataOutputStream(String name) 
+	{
+		if (name.startsWith("scratchpad:"))
+		{
+			return new com.nttdocomo.util.ScratchPadConnection(name).openDataOutputStream();
+		}
+		return new DataOutputStream(output); 
+	}
 
-	public static OutputStream openOutputStream(String name) { return output; }
+	public static OutputStream openOutputStream(String name) 
+	{
+		if (name.startsWith("scratchpad:"))
+		{
+			return new com.nttdocomo.util.ScratchPadConnection(name).openOutputStream();
+		}
+		return output; 
+	}
 
 }

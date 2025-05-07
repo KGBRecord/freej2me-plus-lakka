@@ -60,7 +60,7 @@ public class InputConnectionImpl implements InputConnection
 	}
 
 	public InputStream openInputStream() 
-	{ 
+	{
 		return Mobile.getMIDletResourceAsStream(name);
 	}
 }

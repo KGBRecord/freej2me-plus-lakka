@@ -16,6 +16,7 @@
 */
 package org.recompile.mobile;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -720,6 +721,62 @@ public class MIDletLoader extends URLClassLoader
 		{
 			InputStream stream = url.openStream();
 
+			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			int count=0;
+			byte[] data = new byte[4096];
+			while (count!=-1)
+			{
+				count = stream.read(data);
+				if(count!=-1) { buffer.write(data, 0, count); }
+			}
+			return buffer.toByteArray();
+		}
+		catch (Exception e)
+		{
+			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + resource + " Not Found");
+			return new byte[0];
+		}
+	}
+
+	public byte[] getIAppliScratchPadAsByteArray(String resource)
+	{
+		Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get ScratchPad As Byte Array: "+ resource);
+
+		// Remove the "resource:" token that some jars pass into this method. FreeJ2ME doesn't need it.
+		if(resource.contains("scratchpad:")) { resource = resource.replaceAll("scratchpad:", ""); }
+
+		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
+		while (resource.startsWith("//")) { resource = resource.substring(1); }
+
+		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
+		{
+			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
+			String resourcePath = className[selectedMidlet].replace(".", "/");
+    
+			// If we really are in a subdir
+			if(resourcePath.contains("/")) 
+			{
+				// Remove the class name from the resolved path
+				resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
+			
+				// And there we have it, just append the resource at the end of it.
+				resource = resourcePath + resource;
+			}
+			else { resource = "/" + resource; } // If not, just append the directory slash
+		}
+
+		// We basically ignore everything done above at the moment
+		resource = baseUrl.toString().replace(".jar", ".sp");
+		
+		// TODO: Improve ScratchPad parsing
+
+		// Read all bytes, return ByteArrayInputStream //
+		try
+		{
+			InputStream stream = new FileInputStream(new File(new URL(resource).toURI()));
+			
+			// zb3: why not return a stream? or a bufferedinputstream for marks?
+			
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 			int count=0;
 			byte[] data = new byte[4096];

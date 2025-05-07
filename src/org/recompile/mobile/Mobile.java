@@ -300,6 +300,11 @@ public class Mobile
 		return platform.loader.getMIDletResourceAsByteArray(resource);
 	}
 
+	public static byte[] getIAppliScratchPadAsByteArray(String resource)
+	{
+		return platform.loader.getIAppliScratchPadAsByteArray(resource);
+	}
+
 	public static final int convertSDLKeycode(int keycode) 
 	{
 		return sdlguiKeycodes[keycode]; // Cast the received sdl key to the correct value.
