@@ -57,6 +57,7 @@ public class Connector
 
 	public static Connection open(String name, int mode, boolean timeouts) 
 	{
+		
 		if (name.startsWith("scratchpad:"))
 		{
 			return new com.nttdocomo.util.ScratchPadConnection(name);
@@ -67,7 +68,7 @@ public class Connector
 			return new InputConnectionImpl(name);
 		}
 
-		if (name.startsWith("http://") || name.startsWith("https://")) { return new HttpConnectionImpl(name); }
+		if (name.startsWith("http://") || name.startsWith("https://") || name.startsWith("socket://")) { return new HttpConnectionImpl(name); }
 
 		if(Mobile.usingMessagingAPI) 
 		{
