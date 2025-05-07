@@ -113,7 +113,7 @@ public class Gauge extends Item
 
 	protected boolean keyPressed(int key) // Gauge extends Item, which receives a converted Canvas key
 	{ 
-		boolean handled = !interactive;
+		boolean handled = false;
 
 		if(interactive) 
 		{
