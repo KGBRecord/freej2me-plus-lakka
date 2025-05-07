@@ -401,7 +401,7 @@ public class MobilePlatform
 		boolean canvasFullscreen = false; // Default to false, as all other displayables can show commands at all times
 		if(displayable instanceof Canvas) { canvasFullscreen = ((Canvas)displayable).getFullScreen(); }
 
-		if(!canvasFullscreen && !displayable.commands.isEmpty())
+		if(!canvasFullscreen)
 		{
 			if (displayable.listCommands) 
 			{ 
