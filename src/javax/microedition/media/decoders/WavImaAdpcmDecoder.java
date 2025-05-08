@@ -472,8 +472,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 		final byte[] input = new byte[stream.available()];
 		readInputStreamData(stream, input, 0, stream.available());
 
-		final byte[] output = decodeADPCM(input, input.length, (short) wavHeaderData[2], wavHeaderData[3]);
-		return upsample(output, wavHeaderData[1], getDefaultAudioSampleRate(), (short) wavHeaderData[2], (short) 16);
+		return upsample(decodeADPCM(input, input.length, (short) wavHeaderData[2], wavHeaderData[3]), wavHeaderData[1], getDefaultAudioSampleRate(), (short) wavHeaderData[2], (short) 16);
 	}
 
 
@@ -632,6 +631,10 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 			else if (numBits == 16) // For 16-bit PCM WAV
 			{
 				int sampleIndex = index * 2; // Each sample takes up 2 bytes (16 bit after all)
+
+				// Check if we're not going out of bounds before doing any accesses (we need this here because we're not doing linear accesses).
+				if(PCMHEADERSIZE + i * 2 >= upsampled.length || sampleIndex + 2 >= inputLength) { break; }
+
 				short sample1 = (short) ((input[sampleIndex] & 0xFF) | (input[sampleIndex + 1] << 8));
 				short sample2 = (short) ((sampleIndex + 2 < inputLength) ? (input[sampleIndex + 2] & 0xFF) | (input[sampleIndex + 3] << 8) : 0);
 	
