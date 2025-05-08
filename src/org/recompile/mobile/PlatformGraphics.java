@@ -99,22 +99,22 @@ public abstract class PlatformGraphics implements DirectGraphics
 	/* 
 	 * DoJa Constants
 	*/
-	public static final int AQUA = Color.CYAN.getRGB();
-	public static final int BLACK = Color.BLACK.getRGB();
-	public static final int BLUE = Color.BLUE.getRGB();
-	public static final int FUCHSIA = Color.MAGENTA.getRGB();
-	public static final int GRAY = Color.GRAY.getRGB();
-	public static final int GREEN = Color.GREEN.getRGB();
-	public static final int LIME = Color.GREEN.brighter().getRGB();
-	public static final int MAROON = new Color(128, 0, 0).getRGB();
-	public static final int NAVY = new Color(0, 0, 128).getRGB();
-	public static final int OLIVE = new Color(128, 128, 0).getRGB();
-	public static final int PURPLE = new Color(128, 0, 128).getRGB();
-	public static final int RED = Color.RED.getRGB();
-	public static final int SILVER = Color.LIGHT_GRAY.getRGB();
-	public static final int TEAL = new Color(0, 128, 128).getRGB();
-	public static final int WHITE = Color.WHITE.getRGB();
-	public static final int YELLOW = Color.YELLOW.getRGB();
+	public static final int BLACK = 0;       // (0x00, 0x00, 0x00)
+	public static final int BLUE = 1;        // (0x00, 0x00, 0xff)
+	public static final int LIME = 2;        // (0x00, 0xff, 0x00)
+	public static final int AQUA = 3;        // (0x00, 0xff, 0xff)
+	public static final int RED = 4;         // (0xff, 0x00, 0x00)
+	public static final int FUCHSIA = 5;     // (0xff, 0x00, 0xff)
+	public static final int YELLOW = 6;       // (0xff, 0xff, 0x00)
+	public static final int WHITE = 7;        // (0xff, 0xff, 0xff)
+	public static final int GRAY = 8;         // (0x80, 0x80, 0x80)
+	public static final int NAVY = 9;         // (0x00, 0x00, 0x80)
+	public static final int GREEN = 10;       // (0x00, 0x80, 0x00)
+	public static final int TEAL = 11;        // (0x00, 0x80, 0x80)
+	public static final int MAROON = 12;      // (0x80, 0x00, 0x00)
+	public static final int PURPLE = 13;      // (0x80, 0x00, 0x80)
+	public static final int OLIVE = 14;       // (0x80, 0x80, 0x00)
+	public static final int SILVER = 15;      // (0xc0, 0xc0, 0xc0)
 
 
 	public PlatformGraphics(PlatformImage image)
@@ -1237,7 +1237,11 @@ public abstract class PlatformGraphics implements DirectGraphics
 		****************************
 	*/
 
-	public void setOrigin(int x, int y) { translate(x, y); }
+	public void setOrigin(int x, int y) 
+	{
+		translate(-getTranslateX(), -getTranslateY()); // Reset from previous translation
+		translate(x, y); // Set new origin for rendering operations
+	}
 
 	public void setFont(com.nttdocomo.ui.Font dojaFont) 
 	{
@@ -1246,26 +1250,51 @@ public abstract class PlatformGraphics implements DirectGraphics
 		gc.setFont(dojaFont.platformFont.awtFont);
 	}
 
-	public void lock() { dojaLockCount++; }
+	public void lock() 
+	{ 
+		synchronized (this) { dojaLockCount++; }
+	}
 
     public void unlock(boolean forced)
-	{		
-        if (dojaLockCount > 0) 
+	{
+		synchronized (this) { dojaLockCount = forced ? 0 : dojaLockCount-1; }
+		
+		if (dojaLockCount == 0) 
 		{
-            dojaLockCount--;
-            if (dojaLockCount == 0 || forced) 
-			{ 
-				flushGraphics(lastImage, 0, 0, lastImage.getWidth(), lastImage.getHeight()); // TODO: Maybe incorrect
-				dojaLockCount = 0;
-			}
-        }
+			flushGraphics(lastImage, 0, 0, lastImage.getWidth(), lastImage.getHeight()); // TODO: Maybe incorrect
+		}
     }
 
 	public static int getColorOfRGB(int r, int g, int b) 
 	{
 		if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) { throw new IllegalArgumentException("RGB values must be between 0 and 255"); }
 
-		return (r << 16) | (g << 8) | b;
+		return (0 << 24) | (r << 16) | (g << 8) | b;
+	}
+
+	public static int getColorOfName(int name) 
+	{
+		int alpha = 0x0000000;
+		switch (name) 
+		{
+			case BLACK:     return 0x000000 | alpha; // (0x00, 0x00, 0x00)
+			case BLUE:      return 0x0000FF | alpha; // (0x00, 0x00, 0xff)
+			case LIME:      return 0x00FF00 | alpha; // (0x00, 0xff, 0x00)
+			case AQUA:      return 0x00FFFF | alpha; // (0x00, 0xff, 0xff)
+			case RED:       return 0xFF0000 | alpha; // (0xff, 0x00, 0x00)
+			case FUCHSIA:   return 0xFF00FF | alpha; // (0xff, 0x00, 0xff)
+			case YELLOW:    return 0xFFFF00 | alpha; // (0xff, 0xff, 0x00)
+			case WHITE:     return 0xFFFFFF | alpha; // (0xff, 0xff, 0xff)
+			case GRAY:      return 0x808080 | alpha; // (0x80, 0x80, 0x80)
+			case NAVY:      return 0x000080 | alpha; // (0x00, 0x00, 0x80)
+			case GREEN:     return 0x008000 | alpha; // (0x00, 0x80, 0x00)
+			case TEAL:      return 0x008080 | alpha; // (0x00, 0x80, 0x80)
+			case MAROON:    return 0x800000 | alpha; // (0x80, 0x00, 0x00)
+			case PURPLE:    return 0x800080 | alpha; // (0x80, 0x00, 0x80)
+			case OLIVE:     return 0x808000 | alpha; // (0x80, 0x80, 0x00)
+			case SILVER:    return 0xC0C0C0 | alpha; // (0xc0, 0xc0, 0xc0)
+			default: throw new IllegalArgumentException("Illegal color name: " + name);
+		}
 	}
 
 	public void clearClip() { setClip(0, 0, canvas.getWidth(), canvas.getHeight()); }
