@@ -26,6 +26,7 @@ public abstract class Frame
 
     public PlatformImage platformImage;
 	public Graphics graphics = null;
+    public boolean labelVisible = false;
 
 	public int width = 0;
 	public int height = 0;
@@ -53,5 +54,10 @@ public abstract class Frame
     {
         if (key != SOFT_KEY_1 && key != SOFT_KEY_2) { throw new IllegalArgumentException("Invalid soft key number."); }
         // TODO
+    }
+
+    public void setSoftLabelVisible(boolean b) 
+    {
+        labelVisible = b;
     }
 }

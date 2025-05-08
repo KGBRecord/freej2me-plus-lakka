@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.DataBufferInt;
@@ -1236,6 +1237,65 @@ public abstract class PlatformGraphics implements DirectGraphics
 			DoJa Graphics
 		****************************
 	*/
+
+	public void drawString(String str, int x, int y)
+	{
+		if(str!=null)
+		{
+			int ascent = gc.getFontMetrics().getAscent();
+			int height = gc.getFontMetrics().getHeight();
+
+			y += ascent - 1;
+
+			gc.drawString(str, x, y);
+		}
+	}
+
+	public void drawImage(com.nttdocomo.ui.Image image, int[] matrix) 
+	{
+		try 
+		{
+			float[] fmatrix = new float[matrix.length];
+			System.arraycopy(matrix, 0, fmatrix, 0, matrix.length);
+			AffineTransform transform = new AffineTransform(fmatrix);
+
+			gc.setTransform(transform);
+			gc.drawImage(image.platformImage.getCanvas(), 0, 0, null);
+		} 
+		catch (Exception e) 
+		{
+			Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImage with matrix: " + e.getMessage());
+		}
+	}
+
+	public void drawImage(com.nttdocomo.ui.Image image, int[] matrix, int sx, int sy, int width, int height) 
+	{
+		try 
+		{
+			float[] fmatrix = new float[matrix.length];
+			System.arraycopy(matrix, 0, fmatrix, 0, matrix.length);
+			AffineTransform transform = new AffineTransform(fmatrix);
+
+			gc.setTransform(transform);
+			gc.drawImage(image.platformImage.getCanvas(), sx, sy, sx + width, sy + height, null);
+		} 
+		catch (Exception e) 
+		{
+			Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImage with matrix and part: " + e.getMessage());
+		}
+	}
+
+	public void drawImage(com.nttdocomo.ui.Image image, int x, int y) 
+	{
+		try { gc.drawImage(image.platformImage.getCanvas(), x, y, null); } 
+		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImage (x, y): " + e.getMessage()); }
+	}
+
+	public void drawImage(com.nttdocomo.ui.Image image, int dx, int dy, int sx, int sy, int width, int height) 
+	{
+		try { gc.drawImage(image.platformImage.getCanvas(), dx, dy, dx + width, dy + height, sx, sy, sx + width, sy + height, null); } 
+		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImage (dx, dy, part): " + e.getMessage()); }
+	}
 
 	public void setOrigin(int x, int y) 
 	{
