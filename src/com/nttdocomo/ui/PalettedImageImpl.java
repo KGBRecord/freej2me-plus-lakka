@@ -34,4 +34,10 @@ public class PalettedImageImpl extends PalettedImage
     }
 
     public boolean isMutable() { return platformImage.isMutable(); }
+
+    public void dispose() 
+	{
+		platformImage = null;
+		disposed = true;
+	}
 }

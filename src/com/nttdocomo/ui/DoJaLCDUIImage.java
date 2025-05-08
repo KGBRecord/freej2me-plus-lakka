@@ -33,4 +33,9 @@ public class DoJaLCDUIImage extends Image
 	@Override
     public Graphics getGraphics() { return platformImage.getDoJaGraphics(); }
 
+	public void dispose() 
+	{
+		platformImage = null;
+		disposed = true;
+	}
 }
