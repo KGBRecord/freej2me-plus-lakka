@@ -16,7 +16,6 @@
 */
 package javax.microedition.m3g;
 
-import org.recompile.mobile.PlatformGraphics;
 import org.recompile.mobile.PlatformImage;
 import java.awt.image.Raster;
 

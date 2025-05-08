@@ -19,9 +19,6 @@ package javax.microedition.lcdui;
 import java.util.ArrayList;
 
 import org.recompile.mobile.Mobile;
-import org.recompile.mobile.PlatformGraphics;
-
-
 
 public abstract class Item
 {
@@ -128,7 +125,7 @@ public abstract class Item
 		return Font.getDefaultFont().getHeight() + Font.getDefaultFont().getHeight() / 5;
 	}
 
-	protected void renderItem(PlatformGraphics graphics, int x, int y, int width, int height) { }
+	protected void renderItem(Graphics graphics, int x, int y, int width, int height) { }
 
 	protected void invalidate() 
 	{
@@ -150,7 +147,7 @@ public abstract class Item
 
 	protected boolean keyPressed(int key) { return false; }
 
-	protected void renderItemLabel(PlatformGraphics graphics, int x, int y, int itemContentWidth) 
+	protected void renderItemLabel(Graphics graphics, int x, int y, int itemContentWidth) 
 	{
 		Font oldFont = graphics.getFont();
 		graphics.setFont(Font.getDefaultFont());
@@ -164,7 +161,7 @@ public abstract class Item
 
 	protected void traverseOut() { }
 
-	protected int _drawArrow(PlatformGraphics graphics, int dir, boolean active, int x, int y, int width, int height) 
+	protected int _drawArrow(Graphics graphics, int dir, boolean active, int x, int y, int width, int height) 
 	{
 		// zb3: these parameters are for the field, not for the arrow
 

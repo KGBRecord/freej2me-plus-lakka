@@ -19,7 +19,6 @@ package javax.microedition.lcdui;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
 import org.recompile.mobile.PlatformImage;
-import org.recompile.mobile.PlatformGraphics;
 
 public abstract class Canvas extends Displayable
 {

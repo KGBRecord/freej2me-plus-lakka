@@ -30,6 +30,7 @@ public class DoJaLCDUIImage extends Image
 
     public boolean isMutable() { return platformImage.isMutable(); }
 
+	@Override
     public Graphics getGraphics() { return platformImage.getDoJaGraphics(); }
 
 }

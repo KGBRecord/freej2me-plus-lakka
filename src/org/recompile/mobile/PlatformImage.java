@@ -40,21 +40,21 @@ import java.awt.image.DataBufferInt;
 public class PlatformImage extends javax.microedition.lcdui.Image
 {
 	protected BufferedImage canvas;
-	protected PlatformGraphics gc;
+	protected Graphics gc;
 	protected com.nttdocomo.ui.Graphics djgc;
 
 	private boolean isMutable = false;
 
 	public BufferedImage getCanvas() { return canvas; }
 
-	public PlatformGraphics getGraphics() { return gc; }
+	public Graphics getGraphics() { return gc; }
 
 	public com.nttdocomo.ui.Graphics getDoJaGraphics() { return djgc; }
 
 
 	protected void createGraphics()
 	{
-		gc = new PlatformGraphics(this);
+		gc = new Graphics(this);
 		
 		gc.setColor(0x000000);
 	}

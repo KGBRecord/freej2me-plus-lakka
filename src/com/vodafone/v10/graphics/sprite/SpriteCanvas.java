@@ -44,7 +44,7 @@ public abstract class SpriteCanvas extends Canvas
 	public void createFrameBuffer(int fw, int fh) 
     {
 		spriteImage = Image.createImage(fw, fh, 0);
-		spriteGraphics = spriteImage.getGraphics();
+		spriteGraphics = (Graphics) spriteImage.getGraphics();
 	}
 
 	public void disposeFrameBuffer() { spriteGraphics = null; spriteImage = null; }

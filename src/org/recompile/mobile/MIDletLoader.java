@@ -85,7 +85,7 @@ public class MIDletLoader extends URLClassLoader
 
 	// For the multi-midlet selection screen
 	private PlatformImage platformImage;
-	private PlatformGraphics graphics;
+	private Graphics graphics;
 	private static byte selectedMidlet = 0;
 	public static boolean MIDletSelected = false;
 

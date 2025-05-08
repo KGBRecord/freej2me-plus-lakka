@@ -19,7 +19,6 @@ package com.nokia.mid.m3d;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformImage;
-import org.recompile.mobile.PlatformGraphics;
 
 import javax.microedition.lcdui.Graphics;
 
@@ -59,7 +58,7 @@ public class M3D
 	private int faceCount;
 
 	private PlatformImage platformImage;
-	private PlatformGraphics gc;
+	private Graphics gc;
 
 	private double[] zbuffer;
 	private double near;

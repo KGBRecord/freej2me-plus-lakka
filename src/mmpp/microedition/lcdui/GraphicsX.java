@@ -18,26 +18,28 @@ package mmpp.microedition.lcdui;
 
 import java.awt.image.BufferedImage;
 
-public class GraphicsX extends javax.microedition.lcdui.Graphics 
+import org.recompile.mobile.PlatformImage;
+
+public class GraphicsX extends org.recompile.mobile.PlatformGraphics
 {
 
     public static int DEFAULT_ALPHA = 256;
 
     javax.microedition.lcdui.Image img;
 
-    public GraphicsX() { }
+    public GraphicsX(PlatformImage image) { super(image); }
 
     public javax.microedition.lcdui.Image capture(int x, int y, int width, int height) 
     {
-        img = javax.microedition.lcdui.Image.createRGBImage(toIntArray(platformGraphics.getCanvas().getSubimage(x, y, width, height)), width, height, true);
+        img = javax.microedition.lcdui.Image.createRGBImage(toIntArray(getCanvas().getSubimage(x, y, width, height)), width, height, true);
         return img;
     }
 
     public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints, int argbColor) 
     {
         int tempColor = color;
-        platformGraphics.setAlphaRGB(argbColor);
-        platformGraphics.getGraphics2D().drawPolygon(xPoints, yPoints, nPoints);
+        setAlphaRGB(argbColor);
+        getGraphics2D().drawPolygon(xPoints, yPoints, nPoints);
         setColor(tempColor);
     }
 
@@ -52,14 +54,14 @@ public class GraphicsX extends javax.microedition.lcdui.Graphics
     public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints, int argbColor) 
     {
         int tempColor = color;
-        platformGraphics.setAlphaRGB(argbColor);
-        platformGraphics.getGraphics2D().fillPolygon(xPoints, yPoints, nPoints);
+        setAlphaRGB(argbColor);
+        getGraphics2D().fillPolygon(xPoints, yPoints, nPoints);
         setColor(tempColor);
     }
 
     public int getPixel(int x, int y) { return img.platformImage.getPixel(x, y); }
 
-    public void setAlpha(int alpha) { platformGraphics.setAlphaRGB(alpha); }
+    public void setAlpha(int alpha) { setAlphaRGB(alpha); }
 
     public void setPaintMode() { }
 

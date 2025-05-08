@@ -45,7 +45,7 @@ public abstract class GameCanvas extends Canvas
 
 	protected Graphics getGraphics()
 	{
-		return platformImage.getGraphics();
+		return (Graphics) platformImage.getGraphics();
 	}
 
 	public void paint(Graphics g) { }

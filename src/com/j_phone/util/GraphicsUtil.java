@@ -33,11 +33,11 @@ public class GraphicsUtil
 	public static final int STRETCH_QUALITY_LOW = 1;
 	public static final int STRETCH_QUALITY_HIGH = 2;
 
-	public static int getPixel(Graphics g, int x, int y) { return g.platformGraphics.getCanvas().getRGB(x, y); }
+	public static int getPixel(Graphics g, int x, int y) { return g.getCanvas().getRGB(x, y); }
 
-	public static void setPixel(Graphics g, int x, int y) { g.platformGraphics.getCanvas().setRGB(x, y, 0); }
+	public static void setPixel(Graphics g, int x, int y) { g.getCanvas().setRGB(x, y, 0); }
 
-	public static void setPixel(Graphics g, int x, int y, int color) { g.platformGraphics.getCanvas().setRGB(x, y, color); }
+	public static void setPixel(Graphics g, int x, int y, int color) { g.getCanvas().setRGB(x, y, color); }
 
 	public static void drawRegion(Graphics g, Image src, int x_src, int y_src, int width, int height, int transform,
 	int x_dest, int y_dest, int anchor) 

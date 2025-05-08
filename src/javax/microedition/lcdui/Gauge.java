@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformImage;
-import org.recompile.mobile.PlatformGraphics;
 
 public class Gauge extends Item
 {
@@ -130,7 +129,7 @@ public class Gauge extends Item
 		return handled;
 	}
 
-	protected void renderItem(PlatformGraphics graphics, int x, int y, int width, int height) 
+	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
 		graphics.getGraphics2D().translate(x, y);
 		

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.recompile.mobile.Mobile;
-import org.recompile.mobile.PlatformGraphics;
 
 public class StringItem extends Item
 {
@@ -105,7 +104,7 @@ public class StringItem extends Item
 		return wrappedLines;
 	}
 
-	protected void renderItem(PlatformGraphics graphics, int x, int y, int width, int height) 
+	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
 		if (appearance == Item.BUTTON) 
 		{

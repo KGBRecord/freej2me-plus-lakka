@@ -27,7 +27,7 @@ public abstract class Displayable
 {
 
 	public PlatformImage platformImage;
-	public PlatformGraphics graphics = null;
+	public Graphics graphics = null;
 
 	public int width = 0;
 

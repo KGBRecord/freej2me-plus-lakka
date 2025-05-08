@@ -20,9 +20,6 @@ import java.util.ArrayList;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
-import org.recompile.mobile.PlatformGraphics;
-
-
 
 public class ChoiceGroup extends Item implements Choice
 {
@@ -274,7 +271,7 @@ public class ChoiceGroup extends Item implements Choice
 		else { return size() * Font.getDefaultFont().getHeight() + (Font.getDefaultFont().getHeight() / 6); }
 	}
 
-	protected void renderItem(PlatformGraphics graphics, int x, int y, int width, int height) 
+	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
 		graphics.getGraphics2D().translate(x, y);
 		
@@ -320,7 +317,7 @@ public class ChoiceGroup extends Item implements Choice
 		graphics.getGraphics2D().translate(-x, -y);
 	}
 
-	private void _drawTick(PlatformGraphics graphics, int index, int height, boolean filled, boolean isCircle) 
+	private void _drawTick(Graphics graphics, int index, int height, boolean filled, boolean isCircle) 
 	{
 		int tickMargin = height/2;
 		int tickWidth = height/2;

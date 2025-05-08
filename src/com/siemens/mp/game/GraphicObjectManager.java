@@ -21,7 +21,6 @@ import com.siemens.mp.misc.NativeMem;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformImage;
-import org.recompile.mobile.PlatformGraphics;
 
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;

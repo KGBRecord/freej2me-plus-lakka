@@ -27,13 +27,14 @@ import com.nokia.mid.ui.DirectGraphics;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.DataBufferInt;
 import java.awt.image.Kernel;
 
-public class PlatformGraphics extends javax.microedition.lcdui.Graphics implements DirectGraphics
+public abstract class PlatformGraphics implements DirectGraphics
 {
 	protected BufferedImage canvas;
 	protected Graphics2D gc;
@@ -55,6 +56,29 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		0,         0,         0,         0,         0,         0, 0
 	};
 
+	public static final int BASELINE = 64;
+	public static final int BOTTOM = 32;
+	public static final int DOTTED = 1;
+	public static final int HCENTER = 1;
+	public static final int LEFT = 4;
+	public static final int RIGHT = 8;
+	public static final int SOLID = 0;
+	public static final int TOP = 16;
+	public static final int VCENTER = 2;
+
+
+	protected int translateX = 0;
+	protected int translateY = 0;
+
+	protected Rectangle rect = new Rectangle();
+
+	protected int color = 0xFFFFFF;
+	protected Font font = Font.getDefaultFont();
+	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
+	protected int strokeStyle = SOLID;
+
+	protected int dojaLockCount = 0;
+
 	/* 
 	 * Both DirectGraphics and Sprite's rotations are counter-clockwise, flipping
 	 * an image horizontally is done by multiplying its height or width scale
@@ -71,6 +95,26 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	private static final int V90 = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_90;
 	private static final int V180 = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_180;
 	private static final int V270 = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_270;
+
+	/* 
+	 * DoJa Constants
+	*/
+	public static final int AQUA = Color.CYAN.getRGB();
+	public static final int BLACK = Color.BLACK.getRGB();
+	public static final int BLUE = Color.BLUE.getRGB();
+	public static final int FUCHSIA = Color.MAGENTA.getRGB();
+	public static final int GRAY = Color.GRAY.getRGB();
+	public static final int GREEN = Color.GREEN.getRGB();
+	public static final int LIME = Color.GREEN.brighter().getRGB();
+	public static final int MAROON = new Color(128, 0, 0).getRGB();
+	public static final int NAVY = new Color(0, 0, 128).getRGB();
+	public static final int OLIVE = new Color(128, 128, 0).getRGB();
+	public static final int PURPLE = new Color(128, 0, 128).getRGB();
+	public static final int RED = Color.RED.getRGB();
+	public static final int SILVER = Color.LIGHT_GRAY.getRGB();
+	public static final int TEAL = new Color(0, 128, 128).getRGB();
+	public static final int WHITE = Color.WHITE.getRGB();
+	public static final int YELLOW = Color.YELLOW.getRGB();
 
 
 	public PlatformGraphics(PlatformImage image)
@@ -92,33 +136,8 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		// Example: Enable font AA (GASP uses font resource information to apply AA when appropriate)
         //gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-	
-		platformGraphics = this;
 	}
-
-	public PlatformGraphics()
-	{
-		canvas = new PlatformImage(Mobile.lcdWidth, Mobile.lcdHeight).getCanvas();
-		gc = canvas.createGraphics();
-
-		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
-
-		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
-
-		setColor(0,0,0);
-		setStrokeStyle(SOLID);
-		gc.setBackground(new Color(0, 0, 0, 0));
-		gc.setFont(font.platformFont.awtFont);
-
-		// Assuming we ever decide to implement configurable Java Graphics rendering options (2D smoothing, AA, etc), they should be applied here
-
-		// Example: Enable font AA (GASP uses font resource information to apply AA when appropriate)
-        //gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
-		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	
-		platformGraphics = this;
-	}
-
 	public void reset() //Internal use method, resets the Graphics object to its inital values
 	{
 		translate(-1 * translateX, -1 * translateY);
@@ -565,6 +584,8 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 	public int getDisplayColor(int color) { return color; }
 
+	public Font getFont() { return font; }
+
 	public void setStrokeStyle(int stroke) 
 	{
 		if (strokeStyle == DOTTED) 
@@ -584,7 +605,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public void setFont(Font font)
 	{
 		if(font == null) { font = Font.getDefaultFont(); }
-		super.setFont(font);
+		this.font = font;
 		gc.setFont(font.platformFont.awtFont);
 	}
 
@@ -603,6 +624,14 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public int getTranslateX() { return translateX; }
 	
 	public int getTranslateY() { return translateY; }
+
+	public int getClipHeight() { return rect.height; }
+
+	public int getClipWidth() { return rect.width; }
+
+	public int getClipX() { return rect.x; }
+
+	public int getClipY() { return rect.y; }
 
 	public void translate(int x, int y)
 	{
@@ -1213,7 +1242,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public void setFont(com.nttdocomo.ui.Font dojaFont) 
 	{
 		if(dojaFont == null) { dojaFont = com.nttdocomo.ui.Font.getDefaultFont(); }
-		super.setDoJaFont(dojaFont);
+		this.dojaFont = dojaFont;
 		gc.setFont(dojaFont.platformFont.awtFont);
 	}
 

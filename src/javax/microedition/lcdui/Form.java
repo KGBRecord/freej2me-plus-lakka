@@ -19,7 +19,6 @@ package javax.microedition.lcdui;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
 import org.recompile.mobile.PlatformImage;
-import org.recompile.mobile.PlatformGraphics;
 
 import java.util.ArrayList;
 import java.awt.Rectangle;
@@ -207,7 +206,7 @@ public class Form extends Screen
 		return handled;
 	}
 
-	private void computeLayout(PlatformGraphics gc, int height)
+	private void computeLayout(Graphics gc, int height)
 	{
 		this.clientHeight = height;
 		scrollY = 0;

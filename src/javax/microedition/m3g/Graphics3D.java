@@ -19,7 +19,7 @@ package javax.microedition.m3g;
 import java.util.Hashtable;
 import java.util.List;
 
-import javax.microedition.m3g.Transform;
+import javax.microedition.lcdui.Graphics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +31,6 @@ import java.awt.Polygon;
 import java.awt.image.DataBufferInt;
 
 import org.recompile.mobile.Mobile;
-import org.recompile.mobile.PlatformGraphics;
 
 public class Graphics3D
 {
@@ -161,7 +160,7 @@ public class Graphics3D
 		if (target == null) { throw new NullPointerException("bindTarget() was called but no render target was provided."); }
 		if (this.target != null) { throw new IllegalStateException("This Graphics3D object already has a render target."); }
 
-		/* The target can be an Image2D Object, or a Graphics Object (PlatformGraphics in our case). */
+		/* The target can be an Image2D Object, or a Graphics Object. */
 		if (target instanceof Image2D)
 		{
 			Image2D i2d = (Image2D) target;
@@ -176,16 +175,9 @@ public class Graphics3D
 			this.vieww = i2d.getWidth();
 			this.viewh = i2d.getHeight();
 		}
-		else if (target instanceof PlatformGraphics)
+		else if (target instanceof Graphics)
 		{
-			// This is supposed to be either of the following:
-			//   - java.awt.Graphics
-			//   - javax.microedition.lcdui.Graphics
-			// but we're getting org.recompile.mobile.PlatformGraphics.
-			//
-			// I assume it serves the same purpose and will work as expected.
-
-			PlatformGraphics pgrp = (PlatformGraphics) target;
+			Graphics pgrp = (Graphics) target;
 			this.viewx = pgrp.getClipX();
 			this.viewy = pgrp.getClipY();
 			this.vieww = pgrp.getClipWidth();
@@ -255,15 +247,14 @@ public class Graphics3D
 
 				// CHECK is the bg image used only if clearColor is true?
 
-				// TODO do this check in the PlatformGraphics branch too
 				if (background.getImage() == null || background.getImage().getFormat() != i2d.getFormat())
 				{ throw new IllegalArgumentException("The background image to be cleared does not have the same format as the render target."); }
 
 				// TODO support clearing Image2D
 			}
-			else if (this.target instanceof PlatformGraphics)
+			else if (this.target instanceof Graphics)
 			{
-				PlatformGraphics grp = (PlatformGraphics) this.target;
+				Graphics grp = (Graphics) this.target;
 
 				// Fill the background with the background color
 				grp.getGraphics2D().setColor(new Color(color));
@@ -619,9 +610,9 @@ public class Graphics3D
 			Image2D i2d = (Image2D) this.target;
 			// TODO support rendering to Image2D
 		}
-		else if (this.target instanceof PlatformGraphics)
+		else if (this.target instanceof Graphics)
 		{
-			PlatformGraphics pgrp = (PlatformGraphics) this.target;
+			Graphics pgrp = (Graphics) this.target;
 			Graphics2D grp = pgrp.getGraphics2D();
 
 			colorOrig = grp.getColor();

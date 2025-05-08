@@ -115,16 +115,10 @@ public class MobilePlatform
 		Font.setScreenSize(width, height);
 		com.nttdocomo.ui.Font.setScreenSize(width, height);
 
-		if(!Mobile.isDoJa) 
-		{ 
-			lcd = new PlatformImage(width, height);
-			gc = lcd.getGraphics();
-		}
-		else 
-		{
-			lcd = new PlatformImage(width, height);
-			gc = (PlatformGraphics) lcd.getDoJaGraphics();
-		}
+		lcd = new PlatformImage(width, height);
+
+		if(!Mobile.isDoJa) { gc = lcd.getGraphics(); }
+		else { gc = lcd.getDoJaGraphics(); }
 		
 		/* 
 		 * Try to have the jar scale as well. If this doesn't work,
@@ -135,11 +129,13 @@ public class MobilePlatform
 		{ 
 			Mobile.getDisplay().getCurrent().doSizeChanged(width, height);
 			Mobile.getDisplay().getCurrent().platformImage = lcd; 
-			Mobile.getDisplay().getCurrent().graphics = gc; 
+			Mobile.getDisplay().getCurrent().graphics = (Graphics) gc; 
 		}
-		else 
+		else if(Mobile.isDoJa && Mobile.getDoJaDisplay() != null)
 		{
-			// TODO: DoJa, let's leave that for later
+			// TODO: DoJa, it doesn't even render to screen yet, so i doubt this also works
+			com.nttdocomo.ui.Display.getCurrent().platformImage = lcd; 
+			com.nttdocomo.ui.Display.getCurrent().graphics = (com.nttdocomo.ui.Graphics) gc; 
 		}
 		
 	}

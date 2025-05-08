@@ -17,7 +17,6 @@
 package javax.microedition.lcdui;
 
 import org.recompile.mobile.Mobile;
-import org.recompile.mobile.PlatformGraphics;
 
 public class TextField extends Item
 {
@@ -368,7 +367,7 @@ public class TextField extends Item
 		}
 	}
 
-	protected void renderItem(PlatformGraphics graphics, int x, int y, int width, int height) 
+	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
 		graphics.getGraphics2D().translate(x, y);
 

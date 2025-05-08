@@ -17,7 +17,6 @@
 package javax.microedition.lcdui;
 
 import org.recompile.mobile.Mobile;
-import org.recompile.mobile.PlatformGraphics;
 
 public abstract class CustomItem extends Item
 {
@@ -141,13 +140,13 @@ public abstract class CustomItem extends Item
 
 	protected void traverseOut() { repaint(); } // Request a repaint to clear highlights, traversing out of the object
 
-	protected void renderItem(PlatformGraphics graphics, int x, int y, int width, int height) 
+	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
 		// TODO: Incomplete. Possibly we'd need to save/restore much more
 
 		int color = graphics.getColor();
 		graphics.getGraphics2D().translate(x, y);
-		paint(graphics, width, height);
+		paint((Graphics) graphics, width, height);
 		graphics.getGraphics2D().translate(-x, -y);
 		graphics.setColor(color);
 	}

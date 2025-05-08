@@ -19,8 +19,6 @@ package com.nokia.mid.ui;
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.Graphics;
 
-import org.recompile.mobile.PlatformGraphics;
-
 public class DirectUtils
 {
 
@@ -36,7 +34,7 @@ public class DirectUtils
 
 	public static DirectGraphics getDirectGraphics(Graphics g)
 	{
-		return (PlatformGraphics) g;
+		return g;
 	}
 
 }
