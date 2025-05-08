@@ -16,20 +16,22 @@
 */
 package com.nttdocomo.ui;
 
-import org.recompile.mobile.PlatformImage;
+import java.io.InputStream;
 
-public class DoJaLCDUIImage extends Image 
+public class PalettedImageImpl extends PalettedImage 
 {
-    public PlatformImage platformImage;
 
-    public DoJaLCDUIImage(PlatformImage source) { this.platformImage = source; }
+    public PalettedImageImpl(int width, int height)
+    {
+        this.width = width;
+        this.height = height;
+    }
 
-    public int getWidth() { return platformImage.getWidth(); }
-
-    public int getHeight() { return platformImage.getHeight(); }
+    public PalettedImageImpl(byte[] data) 
+    {
+        this.palette = extractPalette(data);
+        this.imageData = data;
+    }
 
     public boolean isMutable() { return platformImage.isMutable(); }
-
-    public Graphics getGraphics() { return platformImage.getDoJaGraphics(); }
-
 }

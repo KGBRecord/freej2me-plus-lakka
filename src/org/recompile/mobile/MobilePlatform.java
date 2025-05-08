@@ -111,12 +111,21 @@ public class MobilePlatform
 
 		lcdWidth = width;
 		lcdHeight = height;
+
 		Font.setScreenSize(width, height);
 		com.nttdocomo.ui.Font.setScreenSize(width, height);
 
-		lcd = new PlatformImage(width, height);
-		gc = lcd.getGraphics();
-
+		if(!Mobile.isDoJa) 
+		{ 
+			lcd = new PlatformImage(width, height);
+			gc = lcd.getGraphics();
+		}
+		else 
+		{
+			lcd = new PlatformImage(width, height);
+			gc = (PlatformGraphics) lcd.getDoJaGraphics();
+		}
+		
 		/* 
 		 * Try to have the jar scale as well. If this doesn't work,
 		 * a simple restart is all it takes, just like before.

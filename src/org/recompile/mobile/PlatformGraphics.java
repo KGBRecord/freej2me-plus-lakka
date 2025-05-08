@@ -96,6 +96,29 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		platformGraphics = this;
 	}
 
+	public PlatformGraphics()
+	{
+		canvas = new PlatformImage(Mobile.lcdWidth, Mobile.lcdHeight).getCanvas();
+		gc = canvas.createGraphics();
+
+		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
+
+		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
+
+		setColor(0,0,0);
+		setStrokeStyle(SOLID);
+		gc.setBackground(new Color(0, 0, 0, 0));
+		gc.setFont(font.platformFont.awtFont);
+
+		// Assuming we ever decide to implement configurable Java Graphics rendering options (2D smoothing, AA, etc), they should be applied here
+
+		// Example: Enable font AA (GASP uses font resource information to apply AA when appropriate)
+        //gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+	
+		platformGraphics = this;
+	}
+
 	public void reset() //Internal use method, resets the Graphics object to its inital values
 	{
 		translate(-1 * translateX, -1 * translateY);
@@ -1185,13 +1208,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		****************************
 	*/
 
-	public void setOrigin(int x, int y) 
-	{
-		translateX += x;
-		translateY += y;
-		gc.translate(x, y);
-		gc.getClipBounds(rect);
-	}
+	public void setOrigin(int x, int y) { translate(x, y); }
 
 	public void setFont(com.nttdocomo.ui.Font dojaFont) 
 	{
@@ -1222,8 +1239,41 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		return (r << 16) | (g << 8) | b;
 	}
 
-	public void clearClip() 
+	public void clearClip() { setClip(0, 0, canvas.getWidth(), canvas.getHeight()); }
+
+	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) 
 	{
-		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
+		for (int i = 0; i < nPoints - 1; i++) 
+		{
+			drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
+		}
+	}
+
+	public void drawPolyline(int[] xPoints, int[] yPoints, int offset, int count) 
+	{
+		for (int i = offset; i < offset + count - 1; i++) 
+		{
+			drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
+		}
+	}
+
+	public void drawScaledImage(com.nttdocomo.ui.Image image, int dx, int dy, int width, int height, int sx, int sy, int swidth, int sheight) 
+	{
+		gc.drawImage(image.platformImage.getCanvas(), dx, dy, dx + width, dy + height, sx, sy, sx + swidth, sy + sheight, null);
+	}
+
+	public void drawSpriteSet(com.nttdocomo.ui.SpriteSet sprites) 
+	{
+		for (com.nttdocomo.ui.Sprite sprite : sprites.getSprites())  // TODO: Support flip modes
+		{
+			gc.drawImage(sprite.getImage().platformImage.getCanvas(), sprite.getX(), sprite.getY(), null);
+		}
+	}
+
+	public void drawImageMap(com.nttdocomo.ui.ImageMap map, int x, int y) 
+	{
+		map.setWindowLocation(x, y);
+		
+		map.draw((com.nttdocomo.ui.Graphics) this);
 	}
 }

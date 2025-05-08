@@ -303,7 +303,7 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		height = source.platformImage.height;
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		createGraphics();
+		createDoJaGraphics();
 
 		djgc.drawImage2(source.platformImage.getCanvas(), 0, 0);
 

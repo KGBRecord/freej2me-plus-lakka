@@ -86,7 +86,7 @@ public class Font
 		else if (minSize < 176) { screenType = 1; }
 		else if (minSize < 220) { screenType = 2; }
 		else                    { screenType = 3; }
-
+		
 		defaultDoJaFont = new Font(FACE_SYSTEM, STYLE_PLAIN, convertSize(SIZE_MEDIUM));   
 	}
 
