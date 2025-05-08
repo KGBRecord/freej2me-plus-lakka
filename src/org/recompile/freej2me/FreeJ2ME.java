@@ -193,7 +193,7 @@ public class FreeJ2ME
 
 					for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
 					{
-						if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyPressed(Mobile.getMobileKey(i)); }
+						if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyRepeated(Mobile.getMobileKey(i)); }
 					}
 				}
 			}
