@@ -167,7 +167,11 @@ public class FreeJ2ME
 
 					if (MobilePlatform.pressedKeys[mobikey] == false)
  					{
-						if(mobikey < 19) { MobilePlatform.keyPressed(Mobile.getMobileKey(mobikey)); } // Anything over 19 are special keys (fast-forward, etc)
+						if(mobikey < 19) // Anything over 19 are special keys (fast-forward, etc)
+						{ 
+							MobilePlatform.pressedKeys[mobikey] = true; 
+							MobilePlatform.keyPressed(Mobile.getMobileKey(mobikey)); 
+						}
 						else 
 						{
 							if(e.isControlDown())
@@ -195,15 +199,11 @@ public class FreeJ2ME
 					}
 					
 					MobilePlatform.pressedKeys[mobikey] = false;
-					
-					if(mobikey < 19) 
-					{
-						MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
+					MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
 
-						for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
-						{
-							if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyRepeated(Mobile.getMobileKey(i)); }
-						}
+					for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
+					{
+						if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyRepeated(Mobile.getMobileKey(i)); }
 					}
 				}
 			}
