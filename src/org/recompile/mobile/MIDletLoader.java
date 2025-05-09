@@ -321,10 +321,10 @@ public class MIDletLoader extends URLClassLoader
 				{
                     if (currentKey != null) 
 					{
+						if (currentKey.contains("MIDlet-")) { hasMIDlet = true; }
 						// Only add a new key-value pair if the key doesn't already exist (set by the JAD file)
                         if(!keyValueMap.containsKey(currentKey)) 
 						{
-							if (currentKey.contains("MIDlet-")) { hasMIDlet = true; }
 							keyValueMap.put(currentKey, currentValue.toString().trim());  
 						}
 						else { Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "properties already contain " + currentKey + "! Maintaining current value: " + keyValueMap.get(currentKey)); }
