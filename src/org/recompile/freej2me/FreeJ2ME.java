@@ -167,8 +167,14 @@ public class FreeJ2ME
 
 					if (MobilePlatform.pressedKeys[mobikey] == false)
  					{
-						MobilePlatform.pressedKeys[mobikey] = true;
 						if(mobikey < 19) { MobilePlatform.keyPressed(Mobile.getMobileKey(mobikey)); } // Anything over 19 are special keys (fast-forward, etc)
+						else 
+						{
+							if(e.isControlDown())
+							{
+								MobilePlatform.pressedKeys[mobikey] = true;
+							}
+						}
  					}
  					else
  					{
@@ -523,8 +529,6 @@ public class FreeJ2ME
 				}
 				else if (MobilePlatform.pressedKeys[19]) // Check if fast-forward is active
 				{
-					g.setColor(new Color(0, 0, 0, 160));
-					g.fillRect(0, 0, getWidth(), getHeight());
 					g.setFont(new Font("Dialog", Font.BOLD, cw/2));
 					g.setColor(Color.WHITE);
 					String fastForwardIndicator = "»";
