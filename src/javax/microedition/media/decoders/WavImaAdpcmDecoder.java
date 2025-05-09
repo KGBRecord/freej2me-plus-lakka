@@ -73,6 +73,13 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 	private static final short[] predictedSample = {0, 0};
 	private static final byte[] tableIndex = {0, 0};
 
+	public static int hostSampleRate = 0;
+
+	static // Get the host device's sample rate when this class is initially created, getDefaultAudioSampleRate() is rather expensive to call
+	{
+		hostSampleRate = getDefaultAudioSampleRate();
+	}
+
 	/* 
 	 * This method will decode IMA WAV ADPCM into linear PCM_S16LE.
 	 */
@@ -472,20 +479,12 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 		final byte[] input = new byte[stream.available()];
 		readInputStreamData(stream, input, 0, stream.available());
 
-		return upsample(decodeADPCM(input, input.length, (short) wavHeaderData[2], wavHeaderData[3]), wavHeaderData[1], getDefaultAudioSampleRate(), (short) wavHeaderData[2], (short) 16);
+		return upsample(decodeADPCM(input, input.length, (short) wavHeaderData[2], wavHeaderData[3]), wavHeaderData[1], hostSampleRate, (short) wavHeaderData[2], (short) 16);
 	}
 
 
 
-
-
-
-	
 	/* ------------------------------- NON-ADPCM SECTION -------------------------------*/
-
-
-
-
 
 
 	// These will convert from different PCM formats to either 8 or 16-bit Signed PCM:
@@ -530,7 +529,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 				}
 			}
 		}
-		return upsample(convertedWav, sampleRate, getDefaultAudioSampleRate(), (short) numChannels, (short) 8);
+		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 8);
 	}
 
 	// This one pretty much just converts from binary offset to 2's complement if needed, and builds a header
@@ -545,7 +544,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 			if (is2Complement) { convertedWav[i * 2] = (byte) (input[i]); } 
 			else { convertedWav[i] = (byte) (input[i] - 128); }
 		}
-		return upsample(convertedWav, sampleRate, getDefaultAudioSampleRate(), (short) numChannels, (short) 8);
+		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 8);
 	}
 
 	public static final byte[] convert12BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
@@ -572,12 +571,14 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 				convertedWav[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
 			}
 		}
-		return upsample(convertedWav, sampleRate, getDefaultAudioSampleRate(), (short) numChannels, (short) 16);
+		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 16);
 	}
 
 	public static final byte[] convert16BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
 	{
-		byte[] convertedWav = new byte[input.length]; 
+		byte[] convertedWav = new byte[input.length];
+
+		// Build the WAV header with the new updated sample rate
 		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 16);
 
 		for (int i = 0; i < input.length / 2; i++) 
@@ -597,7 +598,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 				convertedWav[i * 2 + 1] = (byte) (((sample - 32768) >> 8) & 0xFF);
 			}
 		}
-		return upsample(convertedWav, sampleRate, getDefaultAudioSampleRate(), (short) numChannels, (short) 16);
+		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 16);
 	}
 
 	public static byte[] upsample(byte[] input, int originalSampleRate, int newSampleRate, short numChannels, short numBits) 
@@ -606,39 +607,32 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 		int newLength = (int) ((inputLength * (double) newSampleRate) / originalSampleRate);
 		byte[] upsampled = new byte[PCMHEADERSIZE + newLength]; // Allocate for header + upsampled audio data
 	
-		// Build the WAV header with the new updated sample rate
 		buildHeader(upsampled, numChannels, newSampleRate, numBits);
+		
+		double ratio = (double) originalSampleRate / newSampleRate;
 	
 		// Upsample the audio data based on how many bits per sample it has
 		for (int i = 0; i < newLength; i++) 
 		{
-			double originalIndex = (i * (double) originalSampleRate) / newSampleRate;
-			int index = (int) originalIndex;
-			double fraction = originalIndex - index; // Fractional part for simple linear interpolation
+			int originalIndex = (int) (i * ratio);
+			double fraction = (i * ratio) - originalIndex;
 	
-			if (numBits == 8) // For 8-bit PCM WAV
+			if (numBits == 8) 
 			{
-				int sample1 = (index < inputLength) ? (input[index] & 0xFF) : 0;
-				int sample2 = (index + 1 < inputLength) ? (input[index + 1] & 0xFF) : 0;
-	
+				int sample1 = (originalIndex < inputLength) ? (input[originalIndex] & 0xFF) : 0;
+    			int sample2 = (originalIndex + 1 < inputLength) ? (input[originalIndex + 1] & 0xFF) : sample1;
+
 				// Apply linear interpolation on sample to reduce artifacts
 				int interpolatedValue = (int) (sample1 + (sample2 - sample1) * fraction);
-				interpolatedValue = Math.max(0, Math.min(255, interpolatedValue));
-				// Save upsampled data back to the byte array
-				upsampled[PCMHEADERSIZE + i] = (byte) interpolatedValue;
-	
+				upsampled[PCMHEADERSIZE + i] = (byte) Math.max(0, Math.min(255, interpolatedValue));
 			} 
-			else if (numBits == 16) // For 16-bit PCM WAV
+			else if (numBits == 16) // For 16-bit PCM WAV, each sample takes 2 bytes
 			{
-				int sampleIndex = index * 2; // Each sample takes up 2 bytes (16 bit after all)
-
-				// Check if we're not going out of bounds before doing any accesses (we need this here because we're not doing linear accesses).
-				if(PCMHEADERSIZE + i * 2 >= upsampled.length || sampleIndex + 2 >= inputLength) { break; }
-
-				short sample1 = (short) ((input[sampleIndex] & 0xFF) | (input[sampleIndex + 1] << 8));
-				short sample2 = (short) ((sampleIndex + 2 < inputLength) ? (input[sampleIndex + 2] & 0xFF) | (input[sampleIndex + 3] << 8) : 0);
+				if (originalIndex * 2 + 2 >= inputLength) { break; }
 	
-				// Linear interpolation
+				short sample1 = (short) ((input[originalIndex * 2] & 0xFF) | (input[originalIndex * 2 + 1] << 8));
+    			short sample2 = (short) ((originalIndex + 1) * 2 < inputLength ? (input[(originalIndex + 1) * 2] & 0xFF) | (input[(originalIndex + 1) * 2 + 1] << 8) : sample1);
+				
 				int interpolatedValue = (int) (sample1 + (sample2 - sample1) * fraction);
 				interpolatedValue = Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, interpolatedValue));
 
@@ -650,7 +644,6 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 	
 		return upsampled;
 	}
-
 
 	public static int getDefaultAudioSampleRate() 
 	{

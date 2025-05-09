@@ -974,7 +974,7 @@ public class PlatformPlayer implements Player
 					wavHeaderData = WavImaAdpcmDecoder.readHeader(stream);
 					byte[] wavAudioData = new byte[stream.available()];
 					stream.read(wavAudioData, 0, stream.available());
-					tmpStream = WavImaAdpcmDecoder.upsample(wavAudioData, wavHeaderData[1], WavImaAdpcmDecoder.getDefaultAudioSampleRate(), (short) wavHeaderData[2], (short) wavHeaderData[4]);
+					tmpStream = WavImaAdpcmDecoder.upsample(wavAudioData, wavHeaderData[1], WavImaAdpcmDecoder.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4]);
 				}
 				else if(wavHeaderData[0] == 7) // Microsoft GSM
 				{
