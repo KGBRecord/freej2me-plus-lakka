@@ -105,7 +105,7 @@ struct retro_core_option_v2_category option_categories[] =
     {
         "speed_hacks",
         "Speed Hacks",
-        "Options that can increase FreeJ2ME's performance in exchange for lower compatibility by going out of J2ME specifications."
+        "Options that can increase FreeJ2ME or app's performance in exchange for lower compatibility by going out of J2ME specifications."
     },
     {
         "compat_settings",
@@ -489,6 +489,22 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_spdhackfpsunlock",
+        "Speed Hacks > Framerate Unlock Hack",
+        "Framerate Unlock Hack",
+        "Hijacks calls to Java methods normally used for delays and synchronization in order to increase the app's internal framerate. Higher aggressiveness levels increase the scope and type of calls intercepted. 'Safe' tackles only sleep() calls that reside in the same function of a rendering call, 'Extended' extends it to all sleep() calls, and 'Aggressive' goes beyond and hijacks system calls used for timing as well. Works best when the FPS limiter is set to anything other than 'Auto'.",
+        "Hijacks calls to Java methods normally used for delays and synchronization in order to increase the app's internal framerate. Higher aggressiveness levels increase the scope and type of calls intercepted. 'Safe' tackles only sleep() calls that reside in the same function of a rendering call, 'Extended' extends it to all sleep() calls, and 'Aggressive' goes beyond and hijacks system calls used for timing as well. Works best when the FPS limiter is set to anything other than 'Auto'.",
+        "speed_hacks",
+        {
+            { "0",  "Disabled (Default)"    },
+            { "1",  "Safe"                  },
+            { "2",  "Extended"              },
+            { "3",  "Aggressive"            },
+            { NULL, NULL },
+        },
+        "0"
+    },
+    {
         "freej2me_compatnonfatalnullimages",
         "Compatibility Settings > Don't throw Exception on null images",
         "Don't throw Exception on null images",
@@ -864,6 +880,19 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
+        "freej2me_spdhackfpsunlock",
+        "Framerate Unlock Hack",
+        "Hijacks calls to Java methods normally used for delays and synchronization in order to increase the app's internal framerate. Higher aggressiveness levels increase the scope and type of calls intercepted. 'Safe' tackles only sleep() calls that reside in the same function of a rendering call, 'Extended' extends it to all sleep() calls, and 'Aggressive' goes beyond and hijacks system calls used for timing as well. Works best when the FPS limiter is set to anything other than 'Auto'.",
+        {
+            { "0",  "Disabled (Default)"    },
+            { "1",  "Safe"                  },
+            { "2",  "Extended"              },
+            { "3",  "Aggressive"            },
+            { NULL, NULL },
+        },
+        "0"
+    },
+    {
         "freej2me_compatnonfatalnullimages",
         "Don't throw Exception on null images",
         "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
@@ -998,23 +1027,27 @@ static const struct retro_variable vars[] =
     },
     { /* No Alpha on Blank Images speed hack */
         "freej2me_spdhacknoalpha",
-        "No Alpha on Blank Images(SpeedHack); off|on",
+        "No Alpha on Blank Images(SpeedHack); off|on"
+    }, 
+    { /* Framerate Unlock Hack */
+        "freej2me_spdhackfpsunlock",
+        "Framerate Unlock Hack; 0|1|2|3"
     },
     { /* Don't throw Exception on null images setting */
         "freej2me_compatnonfatalnullimages",
-        "Don't throw Exception on null images; off|on",
+        "Don't throw Exception on null images; off|on"
     },
     { /* Do clipRect instead of setClip on gfx reset setting */
         "freej2me_compatcliprectongfxreset",
-        "Do clipRect instead of setClip on gfx reset; off|on",
+        "Do clipRect instead of setClip on gfx reset; off|on"
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",
-        "Draw only vertex colors; off|on",
+        "Draw only vertex colors; off|on"
     },
     { /* M3G draw wireframe */
         "freej2me_m3grenderwireframe",
-        "Draw Wireframe; off|on",
+        "Draw Wireframe; off|on"
     },
     { NULL, NULL },
 };

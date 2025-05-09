@@ -79,6 +79,7 @@ public final class AWTGUI
 
 	/* Sub menus (for now, all of them are located in "Settings") */
 	final Menu fpsCap = new Menu("FPS Limit");
+	final Menu unlockFPSHack = new Menu("Unlock FPS Hack");
 	final Menu showFPS = new Menu("Show FPS Counter");
 	final Menu phoneType = new Menu("Phone Key Layout");
 	final Menu backlightColor = new Menu("Backlight Color");
@@ -208,6 +209,15 @@ public final class AWTGUI
 		new CheckboxMenuItem("15 FPS", false)
 	};
 	final String[] fpsValues = {"0", "60", "30", "15"};
+
+	final CheckboxMenuItem[] fpsHackOptions = 
+	{
+		new CheckboxMenuItem("Disabled", true),
+		new CheckboxMenuItem("Safe", false),
+		new CheckboxMenuItem("Extended", false),
+		new CheckboxMenuItem("Aggressive", false)
+	};
+	final String[] fpsHackValues = {"Disabled", "Safe", "Extended", "Aggressive"};
 
 	final CheckboxMenuItem[] fpsCounterPos = 
 	{
@@ -619,6 +629,27 @@ public final class AWTGUI
 			});
 		}
 
+		for(byte i = 0; i < fpsHackOptions.length; i++) 
+		{
+			final byte index = i;
+			fpsHackOptions[i].addItemListener(new ItemListener() 
+			{
+				public void itemStateChanged(ItemEvent e) 
+				{
+					if(!fpsHackOptions[index].getState()){ fpsHackOptions[index].setState(true); }
+					if(fpsHackOptions[index].getState())
+					{ 
+						config.updateFPSHack(fpsHackValues[index]);
+						for(int j = 0; j < fpsHackOptions.length; j++) 
+						{
+							if(j != index) { fpsHackOptions[j].setState(false); }
+						}
+						hasPendingChange = true;
+					}
+				}
+			});
+		}
+
 		for(byte i = 0; i < fpsCounterPos.length; i++) 
 		{
 			final byte index = i;
@@ -759,6 +790,7 @@ public final class AWTGUI
 		optionMenu.add(phoneType);
 		optionMenu.add(backlightColor);
 		optionMenu.add(fpsCap);
+		optionMenu.add(unlockFPSHack);
 		optionMenu.add(fontOffset);
 		optionMenu.add(mapInputs);
 		optionMenu.add(speedHackMenu);
@@ -789,6 +821,7 @@ public final class AWTGUI
 		for(int i = 0; i < layoutOptions.length; i++) { phoneType.add(layoutOptions[i]); }
 		for(int i = 0; i < backlightOptions.length; i++) { backlightColor.add(backlightOptions[i]); }
 		for(int i = 0; i < fpsOptions.length; i++) { fpsCap.add(fpsOptions[i]); }
+		for(int i = 0; i < fpsHackOptions.length; i++) { unlockFPSHack.add(fpsHackOptions[i]); }
 		for(int i = 0; i < fpsCounterPos.length; i++) { showFPS.add(fpsCounterPos[i]); }
 		for(int i = 0; i < fontOffsets.length; i++) { fontOffset.add(fontOffsets[i]); }
 
@@ -812,6 +845,8 @@ public final class AWTGUI
 			useCustomFont.setState(config.settings.get("textfont").equals("Custom"));
 
 			for(int i = 0; i < fpsOptions.length; i++) { fpsOptions[i].setState(config.settings.get("fps").equals(fpsValues[i])); }
+
+			for(int i = 0; i < fpsHackOptions.length; i++) { fpsHackOptions[i].setState(config.settings.get("fpshack").equals(fpsHackValues[i])); }
 
 			for(int i = 0; i < fontOffsets.length; i++) { fontOffsets[i].setState(config.settings.get("fontoffset").equals(fontOffsetValues[i])); }
 

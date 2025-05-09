@@ -154,6 +154,13 @@ public class Mobile
 	// Support for explicit FPS limit on jars that require it to work properly
 	public static int limitFPS = 0;
 
+	// First ever real hack in FreeJ2ME. Tries to unlock the framerate based on agressiveness
+	// 0 = disabled
+	// 1 = safe (overrides only Thread.sleep() calls around a flush/paint call)
+	// 2 = extended (overrides any and all Thread.sleep() calls)
+	// 3 = aggressive (also overrides System.currentTimeMillis and NanoTime)
+	public static byte unlockFramerateHack = 0;
+
 	// Vodafone has a use for this, but maybe this can be made into an actual viewport AA toggle
 	public static boolean isAAEnabled = false;
 
@@ -840,6 +847,11 @@ public class Mobile
 		String fontOffset = config.settings.get("fontoffset");
 		fontSizeOffset = (byte) Integer.parseInt(fontOffset);
 
+		String fpsHackSetting = config.settings.get("fpshack");
+		if(fpsHackSetting.equals("Disabled"))        { unlockFramerateHack = 0; }
+		else if(fpsHackSetting.equals("Safe"))       { unlockFramerateHack = 1; }
+		else if(fpsHackSetting.equals("Extended"))   { unlockFramerateHack = 2; }
+		else if(fpsHackSetting.equals("Aggressive")) { unlockFramerateHack = 3; }
 
 		// Rotation is left at the end since it governs this method's return value
 		String rotate = config.settings.get("rotate");

@@ -895,10 +895,13 @@ public class MIDletLoader extends URLClassLoader
 
 		public MethodVisitor visitMethod(int access, String name, final String desc, final String signature, final String[] exceptions)
 		{
-			if ("java/lang/Thread".equals(superName) && ("suspend".equals(name) || "stop".equals(name) || "resume".equals(name))) 
+			if ("java/lang/Thread".equals(superName))
 			{ 
-				Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "MIDlet tried to override Java's Thread method: " + name + "... patched!");
-				name = "_" + name; 
+				if("suspend".equals(name) || "stop".equals(name) || "resume".equals(name)) 
+				{
+					Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "MIDlet tried to override Java's Thread method: " + name + "... patched!");
+					name = "_" + name; 
+				}
 			}
 
 			if (desc.equals("()V") && name.equals("startRealApp") && access == Opcodes.ACC_PRIVATE) 
@@ -912,6 +915,9 @@ public class MIDletLoader extends URLClassLoader
 
 		private class ASMMethodVisitor extends MethodAdapter implements Opcodes
 		{
+			private boolean methodHasScreenDraw = false;
+			private org.objectweb.asm.Label exitLabel = new org.objectweb.asm.Label();
+
 			public ASMMethodVisitor(MethodVisitor visitor)
 			{
 				super(visitor);
@@ -919,7 +925,26 @@ public class MIDletLoader extends URLClassLoader
 
 			public void visitMethodInsn(int opcode, String owner, String name, String desc)
 			{
-				if(opcode == INVOKEVIRTUAL && name.equals("getResourceAsStream") && owner.equals("java/lang/Class"))
+
+				if (opcode == Opcodes.INVOKEVIRTUAL && ("repaint".equals(name) || "serviceRepaints".equals(name)) || "flushGraphics".equals(name)) { methodHasScreenDraw = true; }
+
+				// This one overrides Thread.sleep calls with a call to the "MIDletEnhancements" class, which allows nullifying all sleeps (Unlock FPS hack)
+				if (opcode == Opcodes.INVOKESTATIC && "java/lang/Thread".equals(owner) && "sleep".equals(name) && "(J)V".equals(desc)) 
+				{
+					if(methodHasScreenDraw) { visitMethodInsn(Opcodes.INVOKESTATIC, "org/recompile/mobile/MIDletEnhancements", "drawSleep", "(J)V"); } // Safer sleep override
+					else { visitMethodInsn(Opcodes.INVOKESTATIC, "org/recompile/mobile/MIDletEnhancements", "sleep", "(J)V"); } // Extended sleep override, more useful for fast-forwarding
+				}
+				else if (opcode == Opcodes.INVOKESTATIC && "java/lang/System".equals(owner) && "currentTimeMillis".equals(name))
+				{
+					// More agressive unlock FPS hack, but mostly useful for "Fast-Forward"
+					mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/recompile/mobile/MIDletEnhancements", "currentTimeMillis", "()J");
+				}
+				else if (opcode == Opcodes.INVOKESTATIC && "java/lang/System".equals(owner) && "nanoTime".equals(name)) 
+				{
+					// Same function as currentTimeMillis override above
+					mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/recompile/mobile/MIDletEnhancements", "nanoTime", "()J");
+				}
+				else if (opcode == INVOKEVIRTUAL && name.equals("getResourceAsStream") && owner.equals("java/lang/Class"))
 				{
 					mv.visitMethodInsn(INVOKESTATIC, "org/recompile/mobile/Mobile", name, "(Ljava/lang/Class;Ljava/lang/String;)Ljava/io/InputStream;");
 				}

@@ -131,22 +131,30 @@ public class Libretro
 		if(Integer.parseInt(args[12]) == 0) { Mobile.compatClipRectOnGfxReset = false; }
 		else { Mobile.compatClipRectOnGfxReset = true; }
 
+		// Custom font and size
 		if(Integer.parseInt(args[13]) == 0) { Mobile.useCustomTextFont = false; }
 		else { Mobile.useCustomTextFont = true; }
 
 		Mobile.fontSizeOffset = (byte) Integer.parseInt(args[14]);
 
+		// Unused for now
 		if(Integer.parseInt(args[15]) == 0) { Mobile.dumpGraphicsData = false; }
 		else { Mobile.dumpGraphicsData = true; }
 
+		// Dump KJX extracted JAR and JAD
 		if(Integer.parseInt(args[16]) == 0) { Mobile.deleteTemporaryKJXFiles = false; }
 		else { Mobile.deleteTemporaryKJXFiles = true; }
 
+		// M3G Render only untextured polygons
 		if(Integer.parseInt(args[17]) == 0) { Mobile.M3GRenderUntexturedPolygons = false; }
 		else { Mobile.M3GRenderUntexturedPolygons = true; }
 
+		// M3G Render Wireframe
 		if(Integer.parseInt(args[18]) == 0) { Mobile.M3GRenderWireframe = false; }
 		else { Mobile.M3GRenderWireframe = true; }
+
+		/* Framerate Unlock. */
+		Mobile.unlockFramerateHack = (byte) Integer.parseInt(args[19]);
 
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
@@ -323,6 +331,11 @@ public class Libretro
 
 										Mobile.config.settings.put("fontoffset", "" + Mobile.fontSizeOffset);
 
+										if(Mobile.unlockFramerateHack == 0)      { Mobile.config.settings.put("fpshack", "Default");  }
+										else if(Mobile.unlockFramerateHack == 1) { Mobile.config.settings.put("fpshack", "Safe");  }
+										else if(Mobile.unlockFramerateHack == 2) { Mobile.config.settings.put("fpshack", "Extended");  }
+										else if(Mobile.unlockFramerateHack == 3) { Mobile.config.settings.put("fpshack", "Aggressive");  }
+
 										Mobile.config.saveConfig();
 										settingsChanged();
 
@@ -418,6 +431,12 @@ public class Libretro
 
 									if(Integer.parseInt(cfgtokens[19])==1) { Mobile.M3GRenderWireframe = true;  }
 									if(Integer.parseInt(cfgtokens[19])==0) { Mobile.M3GRenderWireframe = false; }
+
+									if(Integer.parseInt(cfgtokens[20])==0) { Mobile.config.settings.put("fpshack", "Default"); }
+									if(Integer.parseInt(cfgtokens[20])==1) { Mobile.config.settings.put("fpshack", "Safe");  }
+									if(Integer.parseInt(cfgtokens[20])==2) { Mobile.config.settings.put("fpshack", "Extended");  }
+									if(Integer.parseInt(cfgtokens[20])==3) { Mobile.config.settings.put("fpshack", "Aggressive");  }
+
 
 									Mobile.config.saveConfig();
 									settingsChanged();
