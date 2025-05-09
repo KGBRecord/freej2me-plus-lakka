@@ -443,6 +443,12 @@ public class Libretro
 								break;
 
 								case 15:
+
+									// Check if the frontend is fast-forwarding
+									Mobile.log(Mobile.LOG_INFO, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "DIN: "+din[4]);
+									if(din[4] == 0) { MobilePlatform.pressedKeys[19] = false; }
+									else { MobilePlatform.pressedKeys[19] = true; }
+
 									/* Send Frame to Libretro */
 									try
 									{				

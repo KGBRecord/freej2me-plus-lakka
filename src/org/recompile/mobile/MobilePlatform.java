@@ -645,7 +645,7 @@ public class MobilePlatform
 	public void limitFps() 
 	{
 		frameCount++;
-		if(Mobile.limitFPS == 0) { lastRenderTime = System.nanoTime(); return; }
+		if(Mobile.limitFPS == 0 || pressedKeys[19]) { lastRenderTime = System.nanoTime(); return; }
 
 		requiredFrametime = 1_000_000_000 / Mobile.limitFPS;
 		elapsedTime = System.nanoTime() - lastRenderTime;

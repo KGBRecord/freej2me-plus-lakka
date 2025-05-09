@@ -168,11 +168,11 @@ public class FreeJ2ME
 					if (MobilePlatform.pressedKeys[mobikey] == false)
  					{
 						MobilePlatform.pressedKeys[mobikey] = true;
-						MobilePlatform.keyPressed(Mobile.getMobileKey(mobikey));
+						if(mobikey < 19) { MobilePlatform.keyPressed(Mobile.getMobileKey(mobikey)); } // Anything over 19 are special keys (fast-forward, etc)
  					}
  					else
  					{
-						MobilePlatform.keyRepeated(Mobile.getMobileKey(mobikey));
+						if(mobikey < 19) { MobilePlatform.keyRepeated(Mobile.getMobileKey(mobikey)); }
  					}
 				}
 			}
@@ -189,11 +189,15 @@ public class FreeJ2ME
 					}
 					
 					MobilePlatform.pressedKeys[mobikey] = false;
-					MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
-
-					for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
+					
+					if(mobikey < 19) 
 					{
-						if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyRepeated(Mobile.getMobileKey(i)); }
+						MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
+
+						for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
+						{
+							if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyRepeated(Mobile.getMobileKey(i)); }
+						}
 					}
 				}
 			}
@@ -516,6 +520,18 @@ public class FreeJ2ME
 					int x = (getWidth() - metrics.stringWidth(message)) / 2;
 					int y = (getHeight() + metrics.getAscent()) / 2;
 					g.drawString(message, x, y);
+				}
+				else if (MobilePlatform.pressedKeys[19]) // Check if fast-forward is active
+				{
+					g.setColor(new Color(0, 0, 0, 160));
+					g.fillRect(0, 0, getWidth(), getHeight());
+					g.setFont(new Font("Dialog", Font.BOLD, cw/2));
+					g.setColor(Color.WHITE);
+					String fastForwardIndicator = "»";
+					FontMetrics ffMetrics = g.getFontMetrics();
+					int ffX = (getWidth() - ffMetrics.stringWidth(fastForwardIndicator)) / 2;
+					int ffY = (getHeight() + ffMetrics.getAscent()) / 2;
+					g.drawString(fastForwardIndicator, ffX, ffY);
 				}
 			}
 			else 

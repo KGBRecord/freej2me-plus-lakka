@@ -18,51 +18,78 @@ package org.recompile.mobile;
 
 public class MIDletEnhancements 
 {
-    // TODO: Make ALL these dependent on a future "Fast-Forward" button
+    private static long curTimeMillis = 0;
+    private static long curNanoTime = 0;
+    private static long lastMillisTime = System.currentTimeMillis();
+    private static long lastNanoTime = System.nanoTime();
 
-    // These sleep calls tend to affect game framerate more often than not
     public static void drawSleep(long millis) 
     {
-        if (Mobile.unlockFramerateHack > 0) 
+        if (Mobile.unlockFramerateHack > 0 || MobilePlatform.pressedKeys[19]) 
         {
             // Do not sleep
-        }
+        } 
         else 
         {
-            try { Thread.sleep(millis); } 
+            try { Thread.sleep(millis); }
             catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         }
     }
 
     public static void sleep(long millis) 
     {
-        if (Mobile.unlockFramerateHack > 1) 
+        if (Mobile.unlockFramerateHack > 1 || MobilePlatform.pressedKeys[19]) 
         {
             // Do not sleep
-        }
+        } 
         else 
         {
-            try { Thread.sleep(millis); } 
+            try { Thread.sleep(millis); }
             catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         }
     }
 
-    // These are far more useful for Fast-Forwarding
     public static long currentTimeMillis() 
-    { 
-        if(Mobile.unlockFramerateHack > 2)
+    {
+        long now = System.currentTimeMillis();
+        long elapsedMillis = now - lastMillisTime;
+
+        if (MobilePlatform.pressedKeys[19]) // Fast-Forward Key
         {
-            return (long) (System.currentTimeMillis() * (Mobile.limitFPS == 0 ? 999 : Mobile.limitFPS/10f)); 
+            curTimeMillis += elapsedMillis * 999;
+        } 
+        else if (Mobile.unlockFramerateHack > 2) 
+        {
+            curTimeMillis += elapsedMillis * (Mobile.limitFPS == 0 ? 999 : (float) Mobile.limitFPS / 10f);
+        } 
+        else 
+        {
+            curTimeMillis += elapsedMillis;
         }
-        else { return System.currentTimeMillis(); }
+
+        lastMillisTime = now;
+        return curTimeMillis;
     }
 
     public static long nanoTime() 
     {
-        if(Mobile.unlockFramerateHack > 2) 
+        long now = System.nanoTime();
+        long elapsedNanos = now - lastNanoTime;
+
+        if (MobilePlatform.pressedKeys[19]) 
         {
-            return (long) (System.nanoTime() * (Mobile.limitFPS == 0 ? 999 : Mobile.limitFPS/10f));
+            curNanoTime += elapsedNanos * 999;
+        } 
+        else if (Mobile.unlockFramerateHack > 2) 
+        {
+            curNanoTime += elapsedNanos * (Mobile.limitFPS == 0 ? 999 : (float) Mobile.limitFPS / 10f);
+        } 
+        else 
+        {
+            curNanoTime += elapsedNanos;
         }
-        else { return System.nanoTime(); }
+
+        lastNanoTime = now;
+        return curNanoTime;
     }
 }

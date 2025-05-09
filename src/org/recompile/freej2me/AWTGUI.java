@@ -143,7 +143,7 @@ public final class AWTGUI
 		KeyEvent.VK_NUMPAD7, KeyEvent.VK_NUMPAD8, KeyEvent.VK_NUMPAD9, 
 		KeyEvent.VK_NUMPAD4, KeyEvent.VK_NUMPAD5, KeyEvent.VK_NUMPAD6, 
 		KeyEvent.VK_NUMPAD1, KeyEvent.VK_NUMPAD2, KeyEvent.VK_NUMPAD3, 
-		KeyEvent.VK_E, KeyEvent.VK_NUMPAD0, KeyEvent.VK_R
+		KeyEvent.VK_E, KeyEvent.VK_NUMPAD0, KeyEvent.VK_R, KeyEvent.VK_SPACE
 	};
 
 	private final int newInputKeycodes[] = Arrays.copyOf(inputKeycodes, inputKeycodes.length);
@@ -205,10 +205,12 @@ public final class AWTGUI
 	{
 		new CheckboxMenuItem("No Limit", true),
 		new CheckboxMenuItem("60 FPS", false),
+		new CheckboxMenuItem("40 FPS", false),
 		new CheckboxMenuItem("30 FPS", false),
+		new CheckboxMenuItem("20 FPS", false),
 		new CheckboxMenuItem("15 FPS", false)
 	};
-	final String[] fpsValues = {"0", "60", "30", "15"};
+	final String[] fpsValues = {"0", "60", "40", "30", "20", "15"};
 
 	final CheckboxMenuItem[] fpsHackOptions = 
 	{

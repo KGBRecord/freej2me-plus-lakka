@@ -225,7 +225,9 @@ struct retro_core_option_v2_definition core_options[] =
         {
             { "Auto", "Disabled" },
             { "60",   "60 FPS"   },
+            { "40",   "40 FPS"   },
             { "30",   "30 FPS"   },
+            { "20",   "20 FPS"   },
             { "15",   "15 FPS"   },
             { NULL, NULL },
         },
@@ -664,7 +666,9 @@ struct retro_core_option_definition core_options_v1 [] =
         {
             { "Auto", "Disabled" },
             { "60",   "60 FPS"   },
+            { "40",   "40 FPS"   },
             { "30",   "30 FPS"   },
+            { "20",   "20 FPS"   },
             { "15",   "15 FPS"   },
             { NULL, NULL },
         },
@@ -963,7 +967,7 @@ static const struct retro_variable vars[] =
     },
     { /* Game FPS limit */
         "freej2me_fps",
-        "Game FPS Limit; Auto|60|30|15" 
+        "Game FPS Limit; Auto|60|40|30|20|15" 
     },
     { /* Virtual Phone Sound */
         "freej2me_sound",

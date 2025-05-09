@@ -297,6 +297,16 @@ int read_from_pipe(void* pipe, void *data, int datasize)
 }
 #endif
 
+// Fast-forward state tracker
+void check_fast_forwarding(void) 
+{
+    bool fast_forwarding = false;
+    if (Environ(RETRO_ENVIRONMENT_GET_FASTFORWARDING, &fast_forwarding)) 
+	{
+        javaRequestFrame[4] = fast_forwarding ? 1 : 0;
+    }
+}
+
 /* Function to check the core's config states in the libretro frontend */
 static void check_variables(bool first_time_startup)
 {
@@ -356,7 +366,9 @@ static void check_variables(bool first_time_startup)
 	{
 		if (!strcmp(var.value, "Auto"))    { gameFPS = 0;  }
 		else if (!strcmp(var.value, "60")) { gameFPS = 60; }
+		else if (!strcmp(var.value, "40")) { gameFPS = 40; }
 		else if (!strcmp(var.value, "30")) { gameFPS = 30; }
+		else if (!strcmp(var.value, "20")) { gameFPS = 20; }
 		else if (!strcmp(var.value, "15")) { gameFPS = 15; }
 	}
 
@@ -801,9 +813,11 @@ void retro_run(void)
 
 	if(isRunning())
 	{
+		
 		/* request frame */
 		if(!frameRequested)
 		{
+			check_fast_forwarding();
 			write_to_pipe(pWrite[1], javaRequestFrame, 5);
 			frameRequested = true;
 		}

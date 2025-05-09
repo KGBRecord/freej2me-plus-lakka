@@ -941,7 +941,7 @@ public class MIDletLoader extends URLClassLoader
 				}
 				else if (opcode == Opcodes.INVOKESTATIC && "java/lang/System".equals(owner) && "nanoTime".equals(name)) 
 				{
-					// Same function as currentTimeMillis override above
+					// Same as currentTimeMillis override above
 					mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/recompile/mobile/MIDletEnhancements", "nanoTime", "()J");
 				}
 				else if (opcode == INVOKEVIRTUAL && name.equals("getResourceAsStream") && owner.equals("java/lang/Class"))
