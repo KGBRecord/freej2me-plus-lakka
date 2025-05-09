@@ -58,6 +58,10 @@ public abstract class MIDlet
 	public final void notifyDestroyed()
 	{ 
 		Mobile.log(Mobile.LOG_INFO, MIDlet.class.getPackage().getName() + "." + MIDlet.class.getSimpleName() + ": " + "MIDlet sent Destroyed Notification");
+		for (StackTraceElement element : Thread.currentThread().getStackTrace()) 
+        {
+            Mobile.log(Mobile.LOG_DEBUG, MIDlet.class.getPackage().getName() + "." + MIDlet.class.getSimpleName() + ": " + element);
+        }
 		System.exit(0);
 	}
 

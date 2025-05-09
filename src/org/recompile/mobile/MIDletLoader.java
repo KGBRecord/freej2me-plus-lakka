@@ -307,6 +307,7 @@ public class MIDletLoader extends URLClassLoader
 
 	public static void parseDescriptorInto(InputStream is, Map<String, String> keyValueMap) 
 	{
+		boolean hasMIDlet = false;
         String currentKey = null;
         StringBuilder currentValue = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) 
@@ -321,7 +322,11 @@ public class MIDletLoader extends URLClassLoader
                     if (currentKey != null) 
 					{
 						// Only add a new key-value pair if the key doesn't already exist (set by the JAD file)
-                        if(!keyValueMap.containsKey(currentKey)) { keyValueMap.put(currentKey, currentValue.toString().trim());  }
+                        if(!keyValueMap.containsKey(currentKey)) 
+						{
+							if (currentKey.contains("MIDlet-")) { hasMIDlet = true; }
+							keyValueMap.put(currentKey, currentValue.toString().trim());  
+						}
 						else { Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "properties already contain " + currentKey + "! Maintaining current value: " + keyValueMap.get(currentKey)); }
                         currentValue.setLength(0);
                     }
@@ -340,6 +345,9 @@ public class MIDletLoader extends URLClassLoader
 				if(!keyValueMap.containsKey(currentKey)) { keyValueMap.put(currentKey, currentValue.toString().trim());  }
 				else { Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "properties already contain " + currentKey + "! Maintaining current value: " + keyValueMap.get(currentKey)); }
 			}
+
+			// If no MIDlet was found above, we'll try loading this jar as a DoJa file, which has an accompanying .jam descriptor (this is fine because if a jad is present, it's loaded before this method is even called)
+			Mobile.isDoJa = !hasMIDlet;
         } 
 		catch (IOException e) 
 		{
@@ -353,9 +361,6 @@ public class MIDletLoader extends URLClassLoader
 		Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Parsing .JAM...");
 		String currentKey = null;
 		StringBuilder currentValue = new StringBuilder();
-		String appName = "";
-		String appIcon = "";
-		String appClass = "";
 	
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) 
 		{
@@ -370,13 +375,8 @@ public class MIDletLoader extends URLClassLoader
 					// If there's a current valid key, store the value
 					if (currentKey != null) 
 					{
-						// Store specific values for converted MIDlet-1 construction
-						if ("AppName".equals(currentKey)) { appName = currentValue.toString().trim(); } 
-						else if ("AppIcon".equals(currentKey)) { appIcon = currentValue.toString().split(",")[0].trim(); } 
-						else if ("AppClass".equals(currentKey)) { appClass = currentValue.toString().trim(); }
-
-						keyValueMap.put(convertJamKeyToJar(currentKey), currentValue.toString().trim());
-						Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + convertJamKeyToJar(currentKey) + ") val:" + currentValue.toString().trim());
+						keyValueMap.put(currentKey, currentValue.toString().trim());
+						Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + currentKey + ") val:" + currentValue.toString().trim());
 						currentValue.setLength(0);
 
 						
@@ -395,39 +395,12 @@ public class MIDletLoader extends URLClassLoader
 			// Store the last key-value pair if it exists
 			if (currentKey != null) 
 			{
-				keyValueMap.put(convertJamKeyToJar(currentKey), currentValue.toString().trim());
+				keyValueMap.put(currentKey, currentValue.toString().trim());
 
-				Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + convertJamKeyToJar(currentKey) + ") val:" + currentValue.toString().trim());
+				Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + currentKey + ") val:" + currentValue.toString().trim());
 			}
-
-			System.out.println("vars: " + appName + " " + appIcon + " " + appClass);
-			// Update the converted MIDlet-1 key to match a default jar manifest
-			String midlet1Value = String.format("%s, %s, %s", appName, appIcon, appClass);
-			keyValueMap.put("MIDlet-1", midlet1Value);
-			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Final MIDlet-1:" + currentKey + " val:" + midlet1Value);
 		} 
 		catch (IOException e) { Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Failed to parse descriptor:" + e.getMessage()); }
-	}
-
-	private static String convertJamKeyToJar(String jamKey) 
-	{
-		switch (jamKey) 
-		{
-			case "AppClass":
-				return "MIDlet-1";
-			case "AppName":
-				return "MIDlet-Name";
-			case "AppVer":
-				return "MIDlet-Version";
-			case "AppParam":
-				return "MIDlet-Vendor";
-			case "AppSize":
-				return "MIDlet-Jar-Size";
-			case "UseNetwork":
-			case "LastModified":
-			default:
-				return jamKey; // Return as it has no match as of yet
-		}
 	}
 
 	private void loadManifest()
@@ -448,16 +421,17 @@ public class MIDletLoader extends URLClassLoader
 				Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Jar Manifest!");
 				e.printStackTrace();
 			}
-			Mobile.isDoJa = false;
 		}
-		else // No manifest found in the jar, maybe it's a DoJa file that has an accompanying .jam?
+		else { Mobile.isDoJa = true; } // Else we assume it as DoJa
+
+		if(Mobile.isDoJa) // No manifest found in the jar, or the manifest doesn't have a midlet specified. Maybe it's a DoJa file that has an accompanying .jam?
 		{
-			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "No Manifest file found! Checking if it's a DoJa File");
+			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAR Manifest file not found or lacks MIDlet entry! Checking if it's a DoJa File");
 			
 			String jamURLString = baseUrl.toString().replace(".jar", ".jam");
 			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Path:" + jamURLString);
 
-			try 
+			try
 			{
 				URL jamURL = new URL(jamURLString);
 				File jamFile = new File(jamURL.toURI());
@@ -466,63 +440,75 @@ public class MIDletLoader extends URLClassLoader
 					Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found!");
 					parseJamDescriptorInto(jamURL.openStream(), properties);
 				}
-			} catch (Exception e) 
+			} 
+			catch (Exception e) 
 			{
 				Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Could not parse .jam file:" + e.getMessage());
 			}
-			Mobile.isDoJa = true;
 		}
 
-		for(int i = 0; i < 9; i++) // Support loading up to 9 midlets, though i doubt any jar will have more than a few.
+		String appSpecifier = Mobile.isDoJa ? "AppClass" : "MIDlet-";
+
+		if(!Mobile.isDoJa) 
 		{
-			if (properties.containsKey("MIDlet-" + (i+1) )) // Starts from MIDlet-1
+			for(int i = 0; i < 9; i++) // Support loading up to 9 midlets, though i doubt any jar will have more than a few.
 			{
-				String val = properties.get("MIDlet-" + (i+1) );
-				String[] parts = val.split(",");
-				int argLength = parts.length; // No need for an int here, at max we have 3 arguments
-
-				if (argLength == 3) 
+				if (properties.containsKey("MIDlet-" + (i+1) )) // Starts from MIDlet-1
 				{
-					name[i] = parts[0].trim();
-					if(i == 0) { icon = parts[1].trim(); }
-					
-					if (className[i] == null) { className[i] = parts[2].trim(); }
-					
-					if(i == 0) 
-					{ 
-						suitename = name[i];
-						suitename = suitename.replace(":","");
-					} 
-					
+					String val = properties.get("MIDlet-" + (i+1) );
+					String[] parts = val.split(",");
+					int argLength = parts.length; // No need for an int here, at max we have 3 arguments
+
+					if (argLength == 3) 
+					{
+						name[i] = parts[0].trim();
+						if(i == 0) { icon = parts[1].trim(); }
+						
+						if (className[i] == null) { className[i] = parts[2].trim(); }
+						
+						if(i == 0) 
+						{ 
+							suitename = name[i];
+							suitename = suitename.replace(":","");
+						} 
+						
+					}
+					else if(argLength == 2) // A comma is missing, MUST be between the midlet name and icon path, otherwise there's no way to fix here (manifest has to be edited manually)
+					{
+						String[] newParts = parts[0].split("/", 2); // Split ONLY at the first occurrence of "/"
+
+						name[i] = newParts[0].trim();
+						if(i == 0) { icon = "/" + newParts[1].trim(); }
+
+						if (className[i] == null) { className[i] = parts[1].trim(); }
+
+						if(i == 0) 
+						{ 
+							suitename = name[i];
+							suitename = suitename.replace(":","");
+						} 
+					}
+
+					Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + name[i] +" | Main Class: " + className[i]);
+
+					reg = new Registry(className[i]);
 				}
-				else if(argLength == 2) // A comma is missing, MUST be between the midlet name and icon path, otherwise there's no way to fix here (manifest has to be edited manually)
-				{
-					String[] newParts = parts[0].split("/", 2); // Split ONLY at the first occurrence of "/"
-
-					name[i] = newParts[0].trim();
-					if(i == 0) { icon = "/" + newParts[1].trim(); }
-
-					if (className[i] == null) { className[i] = parts[1].trim(); }
-
-					if(i == 0) 
-					{ 
-						suitename = name[i];
-						suitename = suitename.replace(":","");
-					} 
+				else 
+				{ 
+					name[i] = null;
+					className[i] = null;
 				}
-
-				if(Mobile.isDoJa) { Mobile.log(Mobile.LOG_INFO, "Loading I-Appli: " + name[i] +" | Main Class: " + className[i]); }
-				else { Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + name[i] +" | Main Class: " + className[i]); }
-
-				reg = new Registry(className[i]);
-			}
-			else 
-			{ 
-				name[i] = null;
-				className[i] = null;
 			}
 		}
-		
+		else // So far i've only seen single iApply DoJa
+		{
+			name[0] = properties.get("AppName");
+			icon = properties.get("AppIcon");
+			className[0] = properties.get("AppClass");
+
+			Mobile.log(Mobile.LOG_INFO, "Loading I-Appli: " + name[0] +" | Main Class: " + className[0]);
+			reg = new Registry(className[0]);
+		}		
 		
 	}
 

@@ -1312,11 +1312,13 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void lock() 
 	{ 
+		System.out.println("lock");
 		synchronized (this) { dojaLockCount++; }
 	}
 
     public void unlock(boolean forced)
 	{
+		System.out.println("unlock");
 		synchronized (this) { dojaLockCount = forced ? 0 : dojaLockCount-1; }
 		
 		if (dojaLockCount == 0) 
