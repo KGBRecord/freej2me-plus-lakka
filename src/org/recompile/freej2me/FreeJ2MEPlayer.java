@@ -40,7 +40,7 @@ public final class FreeJ2MEPlayer extends Dialog
     private Label fileTypeLabel = new Label("File Type: None");
     private Label playbackTicker = new Label("00:00 / 00:00", Label.CENTER);
     private ProgressBar progressBar;
-    private Button playButton, pauseButton, stopButton, seekBckButton, seekFwdButton, openButton;
+    private Button[] UIButtons = new Button[6];
     private TextField fileNameField;
     private Player mediaPlayer;
     private boolean isPlaying = false;
@@ -58,7 +58,7 @@ public final class FreeJ2MEPlayer extends Dialog
         dropMessageLabel.setVisible(false);
 
         setBackground(FreeJ2ME.freeJ2MEBGColor);
-        setForeground(new Color(255, 255, 255));
+        setForeground(Color.ORANGE);
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         setSize(240, 240);
@@ -68,16 +68,20 @@ public final class FreeJ2MEPlayer extends Dialog
         fileNameField.setEditable(false);
         fileNameField.setEnabled(false);
         fileNameField.setFocusable(false);
+        fileNameField.setBackground(FreeJ2ME.freeJ2MEBGColor);
+        fileNameField.setForeground(Color.WHITE);
         progressBar = new ProgressBar();
 
-        openButton = new Button("Click here to open a File (or drag)");
-        playButton = new Button("Play");
-        pauseButton = new Button("Pause");
-        stopButton = new Button("Stop");
-        seekBckButton = new Button("- 5s");
-        seekFwdButton = new Button("+ 5s");
+        UIButtons[0] = new Button("Play");
+        UIButtons[1] = new Button("Pause");
+        UIButtons[2] = new Button("Stop");
+        UIButtons[3] = new Button("- 5s");
+        UIButtons[4] = new Button("+ 5s");
+        UIButtons[5] = new Button("Click here to open a File (or drag)");
 
-        playButton.setPreferredSize(new Dimension(100, 30));
+        for(int i = 0; i < UIButtons.length; i++) { UIButtons[i].setBackground(FreeJ2ME.freeJ2MEBGColor); }
+
+        UIButtons[0].setPreferredSize(new Dimension(100, 30));
 
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
@@ -86,7 +90,7 @@ public final class FreeJ2MEPlayer extends Dialog
         add(dropMessageLabel, gbc); // Add the drop message label first
 
         gbc.gridy++;
-        add(openButton, gbc);
+        add(UIButtons[5], gbc);
         gbc.gridy++;
         add(fileNameLabel, gbc);
         gbc.gridy++;
@@ -101,15 +105,15 @@ public final class FreeJ2MEPlayer extends Dialog
         gbc.gridy++;
 
         gbc.gridwidth = 1;
-        add(seekBckButton, gbc);
+        add(UIButtons[3], gbc);
         gbc.gridx++;
-        add(pauseButton, gbc);
+        add(UIButtons[1], gbc);
         gbc.gridx++;
-        add(playButton, gbc);
+        add(UIButtons[0], gbc);
         gbc.gridx++;
-        add(stopButton, gbc);
+        add(UIButtons[2], gbc);
         gbc.gridx++;
-        add(seekFwdButton, gbc);
+        add(UIButtons[4], gbc);
 
         gbc.gridx = 0;
 
@@ -123,12 +127,12 @@ public final class FreeJ2MEPlayer extends Dialog
             }
         });
 
-        openButton.addActionListener(e -> openFile(""));
-        seekBckButton.addActionListener(e -> seekMediaBack());
-        pauseButton.addActionListener(e -> pauseMedia());
-        playButton.addActionListener(e -> playMedia());
-        stopButton.addActionListener(e -> stopMedia());
-        seekFwdButton.addActionListener(e -> seekMediaForward());
+        UIButtons[5].addActionListener(e -> openFile(""));
+        UIButtons[3].addActionListener(e -> seekMediaBack());
+        UIButtons[1].addActionListener(e -> pauseMedia());
+        UIButtons[0].addActionListener(e -> playMedia());
+        UIButtons[2].addActionListener(e -> stopMedia());
+        UIButtons[4].addActionListener(e -> seekMediaForward());
 
         setDropTarget(new DropTarget(this, new DropTargetListener() {
             @Override
@@ -191,18 +195,15 @@ public final class FreeJ2MEPlayer extends Dialog
         }));
     }
 
-    private void toggleComponentsVisibility(boolean visible) {
+    private void toggleComponentsVisibility(boolean visible) 
+    {
         fileNameLabel.setVisible(visible);
         fileTypeLabel.setVisible(visible);
         playbackTicker.setVisible(visible);
         progressBar.setVisible(visible);
-        openButton.setVisible(visible);
-        playButton.setVisible(visible);
-        pauseButton.setVisible(visible);
-        stopButton.setVisible(visible);
-        seekBckButton.setVisible(visible);
-        seekFwdButton.setVisible(visible);
         fileNameField.setVisible(visible);
+
+        for(int i = 0; i < UIButtons.length; i++) { UIButtons[i].setVisible(visible); }
     }
 
     private void startPlaybackTimer() 
@@ -211,7 +212,7 @@ public final class FreeJ2MEPlayer extends Dialog
         playbackTimer.scheduleAtFixedRate(new TimerTask() 
         {
             @Override
-            public void run() 
+            public void run()
             {
                 if (isPlaying)
                 {
