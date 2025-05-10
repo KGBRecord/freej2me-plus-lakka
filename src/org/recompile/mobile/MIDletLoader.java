@@ -948,6 +948,10 @@ public class MIDletLoader extends URLClassLoader
 					// Same as currentTimeMillis override above
 					mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/recompile/mobile/MIDletEnhancements", "nanoTime", "()J");
 				}
+				else if (opcode == Opcodes.INVOKESTATIC && "java/lang/System".equals(owner) && "gc".equals(name)) // Ignore System.gc() calls
+				{
+					mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/recompile/mobile/MIDletEnhancements", "noGC", "()V");
+				}
 				else if (opcode == INVOKEVIRTUAL && name.equals("getResourceAsStream") && owner.equals("java/lang/Class"))
 				{
 					mv.visitMethodInsn(INVOKESTATIC, "org/recompile/mobile/Mobile", name, "(Ljava/lang/Class;Ljava/lang/String;)Ljava/io/InputStream;");

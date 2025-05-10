@@ -92,4 +92,6 @@ public class MIDletEnhancements
         lastNanoTime = now;
         return curNanoTime;
     }
+
+    public static void noGC() { /* Ignore System.gc requests */ }
 }
