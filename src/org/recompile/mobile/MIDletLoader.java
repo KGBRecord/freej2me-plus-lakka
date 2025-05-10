@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -433,11 +434,12 @@ public class MIDletLoader extends URLClassLoader
 
 			try
 			{
-				URL jamURL = new URL(jamURLString);
-				File jamFile = new File(jamURL.toURI());
+				URI jamURI = new URI(jamURLString);
+				File jamFile = new File(jamURI);
 				if(jamFile.exists()) 
 				{
 					Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found!");
+					URL jamURL = jamURI.toURL();
 					parseJamDescriptorInto(jamURL.openStream(), properties);
 				}
 			} 
@@ -600,10 +602,12 @@ public class MIDletLoader extends URLClassLoader
 		{
 			String entryName = entry.getName();
 			if (entryName.equalsIgnoreCase(resourceName)) 
-			{
-				// Construct the URL for the found resource
-				String jarEntryUrl = "jar:" + jarUrl.toExternalForm() + "!/" + entryName;
-				try { return new URL(jarEntryUrl); }
+			{				
+				try 
+				{
+					URI jarEntryURI = new URI("jar:" + jarUrl.toExternalForm() + "!/" + entryName);
+					return jarEntryURI.toURL(); 
+				}
 				catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Couldn't load resource from jar: " + e.getMessage()); e.printStackTrace(); }
 			}
 		}
@@ -764,7 +768,7 @@ public class MIDletLoader extends URLClassLoader
 		// Read all bytes, return ByteArrayInputStream //
 		try
 		{
-			InputStream stream = new FileInputStream(new File(new URL(resource).toURI()));
+			InputStream stream = new FileInputStream(new File(new URI(resource)));
 			
 			// zb3: why not return a stream? or a bufferedinputstream for marks?
 			
