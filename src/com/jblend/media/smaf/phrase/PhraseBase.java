@@ -16,7 +16,7 @@
 */
 package com.jblend.media.smaf.phrase;
 
-import org.recompile.mobile.Mobile;;
+import org.recompile.mobile.Mobile;
 
 import java.io.IOException;
 

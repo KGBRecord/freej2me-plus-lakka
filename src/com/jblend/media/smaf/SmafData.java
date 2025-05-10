@@ -17,7 +17,7 @@
 package com.jblend.media.smaf;
 
 import com.jblend.media.MediaData;
-import org.recompile.mobile.Mobile;;
+import org.recompile.mobile.Mobile;
 
 import java.io.IOException;
 
