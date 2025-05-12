@@ -16,82 +16,43 @@
 */
 package org.recompile.mobile;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class MIDletEnhancements 
 {
-    private static long curTimeMillis = 0;
-    private static long curNanoTime = 0;
-    private static long lastMillisTime = System.currentTimeMillis();
+    private static final AtomicLong curNanoTime = new AtomicLong(0);
     private static long lastNanoTime = System.nanoTime();
 
-    public static void drawSleep(long millis) 
+    public static void drawSleep(long millis) throws InterruptedException
     {
-        if (Mobile.unlockFramerateHack > 0 || MobilePlatform.pressedKeys[19]) 
-        {
-            // Do not sleep
-        } 
-        else 
-        {
-            try { Thread.sleep(millis); }
-            catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        }
+        if (Mobile.unlockFramerateHack == 0 && !MobilePlatform.pressedKeys[19]) { Thread.sleep(millis); } 
+        else { /* Do not sleep */ }
     }
 
-    public static void sleep(long millis) 
+    public static void sleep(long millis) throws InterruptedException
     {
-        if (Mobile.unlockFramerateHack > 1 || MobilePlatform.pressedKeys[19]) 
-        {
-            // Do not sleep
-        } 
-        else 
-        {
-            try { Thread.sleep(millis); }
-            catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        }
+        if (Mobile.unlockFramerateHack == 0 && !MobilePlatform.pressedKeys[19]) { Thread.sleep(millis); } 
+        else { /* Do not sleep */ }
     }
 
-    public static long currentTimeMillis() 
-    {
-        long now = System.currentTimeMillis();
-        long elapsedMillis = now - lastMillisTime;
-
-        if (MobilePlatform.pressedKeys[19]) // Fast-Forward Key
-        {
-            curTimeMillis += elapsedMillis * 999;
-        } 
-        else if (Mobile.unlockFramerateHack > 2) 
-        {
-            curTimeMillis += elapsedMillis * (Mobile.limitFPS == 0 ? 999 : (float) Mobile.limitFPS / 10f);
-        } 
-        else 
-        {
-            curTimeMillis += elapsedMillis;
-        }
-
-        lastMillisTime = now;
-        return curTimeMillis;
-    }
+    // Uses nanoTime due to its higher precision, but converted to milliseconds
+    public static long currentTimeMillis() { return nanoTime() / 1_000_000; }
 
     public static long nanoTime() 
     {
         long now = System.nanoTime();
         long elapsedNanos = now - lastNanoTime;
 
-        if (MobilePlatform.pressedKeys[19]) 
-        {
-            curNanoTime += elapsedNanos * 999;
-        } 
+        if (MobilePlatform.pressedKeys[19]) { curNanoTime.addAndGet(elapsedNanos * 20); } 
         else if (Mobile.unlockFramerateHack > 2) 
         {
-            curNanoTime += elapsedNanos * (Mobile.limitFPS == 0 ? 999 : (float) Mobile.limitFPS / 10f);
+            curNanoTime.addAndGet((long) (elapsedNanos * (Mobile.limitFPS == 0 ? 20 : (float) Mobile.limitFPS / 10f)));
         } 
-        else 
-        {
-            curNanoTime += elapsedNanos;
-        }
+        else { curNanoTime.addAndGet(elapsedNanos); }
 
         lastNanoTime = now;
-        return curNanoTime;
+        return curNanoTime.get();
     }
 
-    public static void noGC() { /* Ignore System.gc requests */ }
+    public static void noGC() { /* Ignore System.gc requests (Check MIDletLoader to see where it overrides System.gc calls) */ }
 }
