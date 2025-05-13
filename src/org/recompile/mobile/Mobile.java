@@ -123,6 +123,7 @@ public class Mobile
 	// Compatibility settings
 	public static boolean compatNonFatalNullImages = false; // Fixes some version of House M.D
 	public static boolean compatClipRectOnGfxReset = false; // Fixes Fantasy Zone 128x128
+	public static boolean compatIgnoreGCCalls      = false; // Helps Bomberman 08 and any other jar that spams System.gc() calls
 
 	// M3G Debug Rendering settings
 	public static boolean M3GRenderUntexturedPolygons = false;
@@ -842,6 +843,10 @@ public class Mobile
 		String clipRectOnGfxReset = config.settings.get("compatcliprectongfxreset");
 		if(clipRectOnGfxReset.equals("on"))        { compatClipRectOnGfxReset = true; }
 		else if (clipRectOnGfxReset.equals("off")) { compatClipRectOnGfxReset = false; };
+
+		String ignoreGCCalls = config.settings.get("ignoregccalls");
+		if(ignoreGCCalls.equals("on"))        { compatIgnoreGCCalls = true; }
+		else if (ignoreGCCalls.equals("off")) { compatIgnoreGCCalls = false; };
 
 		String textFont = config.settings.get("textfont");
 		if(textFont.equals("Custom"))       { useCustomTextFont = true; }

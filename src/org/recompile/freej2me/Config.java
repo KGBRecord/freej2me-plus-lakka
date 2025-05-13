@@ -102,6 +102,7 @@ public class Config
 				settings.put("spdhacknoalpha", "off");
 				settings.put("compatnonfatalnullimage", "off");
 				settings.put("compatcliprectongfxreset", "off");
+				settings.put("ignoregccalls", "off");
 				settings.put("fpshack", "Disabled");
 				saveConfig();
 			}
@@ -145,6 +146,7 @@ public class Config
 			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
 			if(!settings.containsKey("compatnonfatalnullimage")) { settings.put("compatnonfatalnullimage", "off"); }
 			if(!settings.containsKey("compatcliprectongfxreset")) { settings.put("compatcliprectongfxreset", "off"); }
+			if(!settings.containsKey("ignoregccalls")) { settings.put("ignoregccalls", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
 		}
 		catch (Exception e)
@@ -262,6 +264,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatcliprectongfxreset "+value);
 		settings.put("compatcliprectongfxreset", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateCompatIgnoreGCCalls(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: ignoregccalls "+value);
+		settings.put("ignoregccalls", value);
 		saveConfig();
 		onChange.run();
 	}

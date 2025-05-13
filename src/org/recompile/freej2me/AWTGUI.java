@@ -260,6 +260,7 @@ public final class AWTGUI
 	// Compatibility settings
 	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("Don't throw Exception on null images");
 	final CheckboxMenuItem doClipRectOnGfxReset = new CheckboxMenuItem("Do clipRect instead of setClip on gfx reset");
+	final CheckboxMenuItem ignoreGCCalls = new CheckboxMenuItem("Ignore garbage collection calls");
 
 	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("Delete KJX files' temporary JAR/JAD");
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
@@ -554,13 +555,24 @@ public final class AWTGUI
 			}
 		});
 
-		// Compatibility settings
 		doClipRectOnGfxReset.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
 				if(doClipRectOnGfxReset.getState()){ config.updateCompatClipRectOnGfxReset("on"); hasPendingChange = true; }
 				else{ config.updateCompatClipRectOnGfxReset("off"); hasPendingChange = true; }
+
+				awtDialogs[3].setLocationRelativeTo(main);
+				awtDialogs[3].setVisible(true);
+			}
+		});
+
+		ignoreGCCalls.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(ignoreGCCalls.getState()){ config.updateCompatIgnoreGCCalls("on"); hasPendingChange = true; }
+				else{ config.updateCompatIgnoreGCCalls("off"); hasPendingChange = true; }
 
 				awtDialogs[3].setLocationRelativeTo(main);
 				awtDialogs[3].setVisible(true);
@@ -831,6 +843,7 @@ public final class AWTGUI
 
 		compatSettingsMenu.add(NonFatalNullImages);
 		compatSettingsMenu.add(doClipRectOnGfxReset);
+		compatSettingsMenu.add(ignoreGCCalls);
 		
 		// add menus to menubar
 		menuBar.add(fileMenu);
@@ -867,6 +880,8 @@ public final class AWTGUI
 			NonFatalNullImages.setState(config.settings.get("compatnonfatalnullimage").equals("on"));
 
 			doClipRectOnGfxReset.setState(config.settings.get("compatcliprectongfxreset").equals("on"));
+
+			ignoreGCCalls.setState(config.settings.get("ignoregccalls").equals("on"));
 
 			resChoice.select(""+ Integer.parseInt(config.settings.get("width")) + "x" + ""+ Integer.parseInt(config.settings.get("height")));
 

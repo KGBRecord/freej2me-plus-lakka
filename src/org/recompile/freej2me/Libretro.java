@@ -124,10 +124,11 @@ public class Libretro
 		/* LCD Backlight Mask color index. */
 		Mobile.maskIndex = Integer.parseInt(args[10]);
 
-		/* Compat settings are all handled as per-game configs */
+		/* Compat setting to not throw exceptions with null images */
 		if(Integer.parseInt(args[11]) == 0) { Mobile.compatNonFatalNullImages = false; }
 		else { Mobile.compatNonFatalNullImages = true; }
 
+		/* Compat setting to use clipRect instead of setClip whenever the graphics object is reset */
 		if(Integer.parseInt(args[12]) == 0) { Mobile.compatClipRectOnGfxReset = false; }
 		else { Mobile.compatClipRectOnGfxReset = true; }
 
@@ -155,6 +156,10 @@ public class Libretro
 
 		/* Framerate Unlock. */
 		Mobile.unlockFramerateHack = (byte) Integer.parseInt(args[19]);
+
+		/* Compat setting to ignore system.gc calls */
+		if(Integer.parseInt(args[12]) == 0) { Mobile.compatIgnoreGCCalls = false; }
+		else { Mobile.compatIgnoreGCCalls = true; }
 
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
@@ -326,6 +331,9 @@ public class Libretro
 										if(!Mobile.compatClipRectOnGfxReset) { Mobile.config.settings.put("compatcliprectongfxreset", "off"); }
 										else                                 { Mobile.config.settings.put("compatcliprectongfxreset", "on"); }
 
+										if(!Mobile.compatIgnoreGCCalls) { Mobile.config.settings.put("ignoregccalls", "off"); }
+										else                                 { Mobile.config.settings.put("ignoregccalls", "on"); }
+
 										if(!Mobile.useCustomTextFont)  { Mobile.config.settings.put("textfont", "Default"); }
 										else                           { Mobile.config.settings.put("textfont", "Custom");  }
 
@@ -437,6 +445,9 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[20])==2) { Mobile.config.settings.put("fpshack", "Extended");  }
 									if(Integer.parseInt(cfgtokens[20])==3) { Mobile.config.settings.put("fpshack", "Aggressive");  }
 
+									if(Integer.parseInt(cfgtokens[21])==0) { Mobile.config.settings.put("ignoregccalls", "off");  }
+									else { Mobile.config.settings.put("ignoregccalls", "on"); }
+
 
 									Mobile.config.saveConfig();
 									settingsChanged();
@@ -445,7 +456,6 @@ public class Libretro
 								case 15:
 
 									// Check if the frontend is fast-forwarding
-									Mobile.log(Mobile.LOG_INFO, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "DIN: "+din[4]);
 									if(din[4] == 0) { MobilePlatform.pressedKeys[19] = false; }
 									else { MobilePlatform.pressedKeys[19] = true; }
 

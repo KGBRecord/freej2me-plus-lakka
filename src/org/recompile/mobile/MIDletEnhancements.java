@@ -50,9 +50,12 @@ public class MIDletEnhancements
         } 
         else { curNanoTime.addAndGet(elapsedNanos); }
 
-        lastNanoTime = now;
-        return curNanoTime.get();
+        return lastNanoTime = now;
     }
 
-    public static void noGC() { /* Ignore System.gc requests (Check MIDletLoader to see where it overrides System.gc calls) */ }
+    public static void noGC() 
+    { 
+        if(Mobile.compatIgnoreGCCalls) { }
+        else { System.gc(); }
+    }
 }
