@@ -79,7 +79,12 @@ public class Display
 		{
 			synchronized (serialCalls) { call = serialCalls.poll(); }
 			
-			if(call != null) { call.run(); }
+			if(call != null) 
+			{ 
+				call.run();
+				try { Thread.sleep(1); }
+				catch (Exception e) { }
+			}
 			else 
 			{
 				try { Thread.sleep(1); }
@@ -94,11 +99,11 @@ public class Display
 	private void processPaintCalls() 
 	{
 		Runnable call;
+		
 		while (true) 
 		{
 			if(setCurrentRequest != null) 
 			{
-				synchronized (paintQueue) { paintQueue.clear(); }
 				setCurrentRequest.run();
 				setCurrentRequest = null;
 			}
@@ -115,9 +120,16 @@ public class Display
 
 	public void processPaintsNow() // Used by Canvas.serviceRepaints() to force repaints to be serviced
 	{
+		Runnable paintAction;
+
 		synchronized (paintQueue) 
 		{
-			while (!paintQueue.isEmpty()) { paintQueue.poll().run(); }
+			while (!paintQueue.isEmpty()) 
+			{ 
+				paintAction = paintQueue.poll();
+				if (paintAction != null) { paintAction.run(); }
+			}
+			paintQueue.notify();
 		}
 	}
 
