@@ -570,12 +570,9 @@ public class Graphics3D
 				{
 					int index = i * 4;
 					float w = tri.v[index + 3];
-					if (w >= near) 
-					{
-						tri.v[index + 0] *= w; // x * w
-						tri.v[index + 1] *= w; // y * w
-						tri.v[index + 2] *= w; // z * w
-					}
+					tri.v[index + 0] *= w; // x * w
+					tri.v[index + 1] *= w; // y * w
+					tri.v[index + 2] *= w; // z * w
 				}
 			}
 		}
@@ -587,7 +584,6 @@ public class Graphics3D
 		// At this point the triangles in `trisScreen` are actually
 		// in Normalized Device Coordinates, but they will be tranformed
 		// to Screen space in-place, hence the name.
-
 
 		// Reset transform
 		tr.setIdentity();
@@ -829,8 +825,8 @@ public class Graphics3D
 				for (int half = 0; half < 2; half++) 
 				{
 					// Determine the range for the y-coordinate
-					int yStart = half == 0 ? Math.round(yTop) : Math.round(yMid);
-					int yEnd = half == 0 ? Math.round(yMid) : Math.round(yBot);
+					int yStart = half == 0 ? Math.max(Math.round(yTop), 0) : Math.max(Math.round(yMid), 0);
+					int yEnd = half == 0 ? Math.min(Math.round(yMid), viewh) : Math.min(Math.round(yBot), viewh);
 					
 					// Adjust drawY calculation based on half
 					for (int y = yStart; y < yEnd; y++) 
@@ -867,15 +863,11 @@ public class Graphics3D
 							: tBot + drawY * (tMidR - tBot);
 
 
-						final int ixL = Math.round(xL), ixR = Math.round(xR);
+						final int ixL = Math.max(Math.round(xL), 0), ixR = Math.min(Math.round(xR), vieww);
 
 						// Draw the pixels for the current y-coordinate
 						for (int x = ixL; x < ixR; x++) 
 						{
-							// Check the current pixel's x and y values against the viewport bounds and skip drawing if it's out of bounds
-							if(x+viewx < 0 || x+viewx > vieww+viewx || x+viewx > canvasWidth)  { continue; }
-							if(y+viewy < 0 || y+viewy > viewh+viewh || y+viewy > canvasHeight) { continue; }
-
 							try 
 							{
 								float drawX = (x - xL) / (xR - xL);

@@ -30,8 +30,6 @@ class Triangle
 	static float[][] zn = new float[][] {{ 0, 0, 0, 0 }, { 0, 0, 1, 1 }};
 
 	// Let's reuse this when clipping, quite a bit faster than creating ArrayLists each time
-	static final int[] vin = new int[3]; // Vertices that are inside the Clip region
-	static final int[] vout = new int[3]; // Vertices outside the clip region
 	static final float[][] vert = new float[3][4];
 	static final float[][] tex = new float[3][4];
 
@@ -96,9 +94,9 @@ class Triangle
 			},
 			new int[] // IndexBuffer Indices
 			{
-				tris[3* tri_id + 0],
-				tris[3* tri_id + 1],
-				tris[3* tri_id + 2]
+				tris[3* tri_id + 0], //vA
+				tris[3* tri_id + 1], //vB
+				tris[3* tri_id + 2]  //vC
 			});
 		}
 
@@ -143,18 +141,22 @@ class Triangle
 	float rC() { return this.t[4*2 + 2]; }
 	float qC() { return this.t[4*2 + 3]; }
 
-	Stream<Triangle> clip()
-	{
-		Triangle[] orig = new Triangle[] { this };
-		return Arrays.stream(orig)
-			.filter(t -> t.isValid())
-			.flatMap(t -> Arrays.stream(t.clipPlane(xp[0], xp[1])))
-			.flatMap(t -> Arrays.stream(t.clipPlane(xn[0], xn[1])))
-			.flatMap(t -> Arrays.stream(t.clipPlane(yp[0], yp[1])))
-			.flatMap(t -> Arrays.stream(t.clipPlane(yn[0], yn[1])))
-			.flatMap(t -> Arrays.stream(t.clipPlane(zp[0], zp[1])))
-			.flatMap(t -> Arrays.stream(t.clipPlane(zn[0], zn[1])))
-			.map(t -> t.project());
+	Stream<Triangle> clip() 
+	{	
+		return Arrays.stream(new Triangle[] { this })
+			.filter(Triangle::isValid)
+			.flatMap(t -> 
+			{	
+				// Clip against each plane sequentially
+				if (t.clipPlane(xp[0], xp[1]) == null)  { return Stream.empty(); }
+				if (t.clipPlane(xn[0], xn[1]) == null)  { return Stream.empty(); }
+				if (t.clipPlane(yp[0], yp[1]) == null)  { return Stream.empty(); }
+				if (t.clipPlane(yn[0], yn[1]) == null)  { return Stream.empty(); }
+				if (t.clipPlane(zp[0], zp[1]) == null)  { return Stream.empty(); }
+				if (t.clipPlane(zn[0], zn[1]) == null)  { return Stream.empty(); }
+	
+				return Stream.of(t.project()); // If it passed all planes, it means it's at least partially visible, project it
+			});
 	}
 
 	static void transform(Triangle[] triangles, Transform trVert, Transform trTex)
@@ -162,8 +164,7 @@ class Triangle
 		for (int i = 0; i < triangles.length; i++)
 		{
 			trVert.transform(triangles[i].v);
-			if (triangles[i].t != null && trTex != null)
-				trTex.transform(triangles[i].t);
+			if (triangles[i].t != null && trTex != null) { trTex.transform(triangles[i].t); }
 		}
 	}
 
@@ -206,9 +207,8 @@ class Triangle
 		return this;
 	}
 
-	private Triangle[] clipPlane(float[] p, float[] pn)
+	private Triangle clipPlane(float[] p, float[] pn)
 	{
-		int inCount = 0, outCount = 0;
 		pn = M3GMath.div(pn, (float) Math.sqrt(M3GMath.dotProduct(pn, pn)));
 
 		vert[0] = Arrays.copyOfRange(this.v, 0, 4);
@@ -221,93 +221,14 @@ class Triangle
 
 		for (int i = 0; i < 3; i++) 
 		{
-			if (M3GMath.dotProduct(pn, vert[i]) - M3GMath.dotProduct(pn, p) >= 0) { vin[inCount++] = i; } 
-			else { vout[outCount++] = i; }
+			if (M3GMath.dotProduct(pn, vert[i]) - M3GMath.dotProduct(pn, p) >= 0) { return this; } // Partially visible in this plane, move to next
+			else { } // Test next vertex
 		}
 			
-		switch (inCount)
-		{
-			case 0: // Entire triangle is outside the plane so return an empty one
-				return new Triangle[0];
-			case 1: // One vertex is on screen, clipping will generate a single triangle A, B', C'
-			{
-				Triangle[] newTriangles = new Triangle[1];
-				float[][] n1 = M3GMath.intersectTriangle(p, pn, vert[vin[0]], vert[vout[0]], tex[vin[0]], tex[vout[0]]);
-				float[][] n2 = M3GMath.intersectTriangle(p, pn, vert[vin[0]], vert[vout[1]], tex[vin[0]], tex[vout[1]]);
-				
-				// Create new vertex array
-				float[] v1 = { 
-					vert[vin[0]][0], vert[vin[0]][1], vert[vin[0]][2], vert[vin[0]][3],
-					n1[0][0], n1[0][1], n1[0][2], n1[0][3],
-					n2[0][0], n2[0][1], n2[0][2], n2[0][3] 
-				};
-			
-				float[] t1 = { 
-					tex[vin[0]][0], tex[vin[0]][1], tex[vin[0]][2], tex[vin[0]][3],
-					n1[1][0], n1[1][1], n1[1][2], n1[1][3],
-					n2[1][0], n2[1][1], n2[1][2], n2[1][3] 
-				};
-			
-				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[1], bufIndex[2] } );
-				if (newTriangles[0].isCounterClockwise() != this.isCounterClockwise())
-				{
-					newTriangles[0].orientation = -this.orientation;
-				}
-				return newTriangles;
-			}
-			case 2: // Two vertices on screen, clip will result in a quad, so it has to be re-triangulated (which is why we return two triangles here)
-			{
-				Triangle[] newTriangles = new Triangle[2];
-				float[][] n1 = M3GMath.intersectTriangle(p, pn, vert[vin[0]], vert[vout[0]], tex[vin[0]], tex[vout[0]]);
-				float[][] n2 = M3GMath.intersectTriangle(p, pn, vert[vin[1]], vert[vout[0]], tex[vin[1]], tex[vout[0]]);
-				
-				float[] v1 = 
-				{ 
-					vert[vin[0]][0], vert[vin[0]][1], vert[vin[0]][2], vert[vin[0]][3],
-					vert[vin[1]][0], vert[vin[1]][1], vert[vin[1]][2], vert[vin[1]][3],
-					n1[0][0], n1[0][1], n1[0][2], n1[0][3] 
-				};
-
-				float[] t1 = 
-				{ 
-					tex[vin[0]][0], tex[vin[0]][1], tex[vin[0]][2], tex[vin[0]][3],
-					tex[vin[1]][0], tex[vin[1]][1], tex[vin[1]][2], tex[vin[1]][3],
-					n1[1][0], n1[1][1], n1[1][2], n1[1][3] 
-				};
-
-				float[] v2 = 
-				{ 
-					n1[0][0], n1[0][1], n1[0][2], n1[0][3],
-					vert[vin[1]][0], vert[vin[1]][1], vert[vin[1]][2], vert[vin[1]][3],
-					n2[0][0], n2[0][1], n2[0][2], n2[0][3] 
-				};
-
-				float[] t2 = 
-				{ 
-					n1[1][0], n1[1][1], n1[1][2], n1[1][3],
-					tex[vin[1]][0], tex[vin[1]][1], tex[vin[1]][2], tex[vin[1]][3],
-					n2[1][0], n2[1][1], n2[1][2], n2[1][3] 
-				};
-
-				// Update indices for both triangles
-				newTriangles[0] = new Triangle(v1, t1, new int[] { bufIndex[0], bufIndex[1], bufIndex[2] });
-				newTriangles[1] = new Triangle(v2, t2, new int[] { bufIndex[2], bufIndex[1], bufIndex[0] });
-				if (newTriangles[0].isCounterClockwise() != this.isCounterClockwise())
-				{
-					newTriangles[0].orientation = -this.orientation;
-				}
-				if (newTriangles[1].isCounterClockwise() != this.isCounterClockwise())
-				{
-					newTriangles[1].orientation = -this.orientation;
-				}
-				return newTriangles;
-			}
-			case 3:
-				return new Triangle[] { this }; // No clipping needed
-		}
-		throw new java.lang.IllegalStateException();
+		return null; // If no vertex is inside, return a null object since the triangle isn't visible
 	}
 
+	// For perspective-correction
 	void setTexCoords(float[] texCoordA, float[] texCoordB, float[] texCoordC) 
 	{
         if (texCoordA.length != 4 || texCoordB.length != 4 || texCoordC.length != 4) 
@@ -323,7 +244,7 @@ class Triangle
 
 	public boolean isCounterClockwise() 
 	{
-		return ((xB() - xA()) * (yC() - yA()) - (xC() - xA()) * (yB() - yA())) * orientation < 0; // Clockwise if normal points towards the viewer (with corrected orientation) // Clockwise if normal points towards the viewer (with corrected orientation)
+		return ((xB() - xA()) * (yC() - yA()) - (xC() - xA()) * (yB() - yA())) * orientation < 0; // Clockwise if normal points towards the viewer (with corrected orientation)
 	}
 }
 
