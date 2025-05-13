@@ -50,7 +50,8 @@ public class MIDletEnhancements
         } 
         else { curNanoTime.addAndGet(elapsedNanos); }
 
-        return lastNanoTime = now;
+        lastNanoTime = now;
+        return curNanoTime.get();
     }
 
     public static void noGC() 
