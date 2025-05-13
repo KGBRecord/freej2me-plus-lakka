@@ -61,11 +61,11 @@ public class Display
 		Mobile.setDisplay(this);
 
 		serialCalls = new LinkedList<>();
-		serialThread = new Thread(this::processSerialCalls);
+		serialThread = new Thread(this::processSerialCalls, "SerialCalls-Thread");
 		serialThread.start();
 
 		paintQueue = new LinkedList<>();
-		paintThread = new Thread(this::processPaintCalls);
+		paintThread = new Thread(this::processPaintCalls, "CanvasRepaints-Thread");
 		paintThread.start();
 	}
 
@@ -74,11 +74,16 @@ public class Display
 
 	private void processSerialCalls() 
 	{
+		Runnable call;
 		while (true) 
 		{
-			synchronized (serialCalls) 
+			synchronized (serialCalls) { call = serialCalls.poll(); }
+			
+			if(call != null) { call.run(); }
+			else 
 			{
-				if (!serialCalls.isEmpty()) { serialCalls.poll().run(); }
+				try { Thread.sleep(1); }
+				catch (Exception e) { }
 			}
 		}
 	}
@@ -88,6 +93,7 @@ public class Display
 
 	private void processPaintCalls() 
 	{
+		Runnable call;
 		while (true) 
 		{
 			if(setCurrentRequest != null) 
@@ -96,9 +102,13 @@ public class Display
 				setCurrentRequest.run();
 				setCurrentRequest = null;
 			}
-			synchronized (paintQueue) 
+			synchronized (paintQueue) { call = paintQueue.poll(); }
+
+			if(call != null) { call.run(); }
+			else 
 			{
-				if (!paintQueue.isEmpty()) { paintQueue.poll().run(); }
+				try { Thread.sleep(1); }
+				catch (Exception e) { }
 			}
 		}
 	}
