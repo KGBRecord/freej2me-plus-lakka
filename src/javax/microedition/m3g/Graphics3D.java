@@ -681,28 +681,16 @@ public class Graphics3D
 					} 
 					else // If we have vertex colors, good. Read them to color up the triangles properly.
 					{
-						if(vertColors.getComponentCount() == 3)  // If 3 components, RGB
-						{
-							for (int i = 0; i < 3; i++) // Run for each vertex of the triangle
-							{
-								vertColors.get(trisScreen[tri_id].bufIndex[i], 1, color_vertex[i]);
-								colors[i] = new Color (
-								Byte.toUnsignedInt(color_vertex[i][0]), 
-								Byte.toUnsignedInt(color_vertex[i][1]), 
-								Byte.toUnsignedInt(color_vertex[i][2]));
-							}
-						}
-						else // Else we'll assume RGBA, 4 components
-						{
-							for (int i = 0; i < 3; i++) 
-							{
-								vertColors.get(trisScreen[tri_id].bufIndex[i], 1, color_vertex[i]);
-								colors[i] = new Color (
+						for (int i = 0; i < 3; i++) 
+        				{
+							vertColors.get(trisScreen[tri_id].bufIndex[i], 1, color_vertex[i]);
+
+							colors[i] = new Color(
 								Byte.toUnsignedInt(color_vertex[i][0]), 
 								Byte.toUnsignedInt(color_vertex[i][1]), 
 								Byte.toUnsignedInt(color_vertex[i][2]), 
-								Byte.toUnsignedInt(color_vertex[i][3]));
-							}
+								vertColors.getComponentCount() == 4 ? Byte.toUnsignedInt(color_vertex[i][3]) : 255
+							);
 						}
 
 						// Blend fog value with the vertex color, if applicable
@@ -734,7 +722,7 @@ public class Graphics3D
 
 						/* 
 						 * TODO: Not accurate, as all 3 vertices of a triangle can have different colors that have to be interpolated,
-						 * this method might not be doing it the correct way.
+						 * this method is not doing it the correct way.
 						 */
 						Paint originalPaint = grp.getPaint();
 
@@ -903,20 +891,14 @@ public class Graphics3D
 
 									for (int i = 0; i < 3; i++) 
 									{
+										color_vertex = new byte[4];
 										vertColors.get(indices[i], 1, color_vertex);
-										if (vertColors.getComponentCount() == 3) // RGB
-										{ 
-											colors[i] = (255 << 24) | (Byte.toUnsignedInt(color_vertex[0]) << 16) |
-														(Byte.toUnsignedInt(color_vertex[1]) << 8) |
-														Byte.toUnsignedInt(color_vertex[2]);
-										} 
-										else // RGBA
-										{ 
-											colors[i] = (Byte.toUnsignedInt(color_vertex[3]) << 24) |
-														(Byte.toUnsignedInt(color_vertex[0]) << 16) |
-														(Byte.toUnsignedInt(color_vertex[1]) << 8) |
-														Byte.toUnsignedInt(color_vertex[2]);
-										}
+										colors[i] = (vertColors.getComponentCount() == 3)
+											? (255 << 24) | (Byte.toUnsignedInt(color_vertex[0]) << 16) |
+											(Byte.toUnsignedInt(color_vertex[1]) << 8) | Byte.toUnsignedInt(color_vertex[2])
+											: (Byte.toUnsignedInt(color_vertex[3]) << 24) |
+											(Byte.toUnsignedInt(color_vertex[0]) << 16) |
+											(Byte.toUnsignedInt(color_vertex[1]) << 8) | Byte.toUnsignedInt(color_vertex[2]);
 									}
 
 									// Clipped triangles tend to have two vertices sharing the exact same x or y coordinate, which is a problem
@@ -946,12 +928,9 @@ public class Graphics3D
 
 									// Normalize weights
 									float totalWeight = weightA + weightB + weightC;
-									if (totalWeight > 0) 
-									{
-										weightA /= totalWeight;
-										weightB /= totalWeight;
-										weightC /= totalWeight;
-									}
+									weightA /= totalWeight;
+									weightB /= totalWeight;
+									weightC /= totalWeight;
 
 									// Interpolate color based on weights
 									int r = (int) ((weightA * ((colors[0] >> 16) & 0xFF)) + (weightB * ((colors[1] >> 16) & 0xFF)) + (weightC * ((colors[2] >> 16) & 0xFF)));
