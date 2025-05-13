@@ -45,7 +45,6 @@ public class Display
 	private static Display display;
 
 	private final Queue<Runnable> serialCalls;
-	private final Thread serialThread;
 
 	private final Queue<Runnable> paintQueue;
 	private final Thread paintThread;
@@ -61,8 +60,6 @@ public class Display
 		Mobile.setDisplay(this);
 
 		serialCalls = new LinkedList<>();
-		serialThread = new Thread(this::processSerialCalls, "SerialCalls-Thread");
-		serialThread.start();
 
 		paintQueue = new LinkedList<>();
 		paintThread = new Thread(this::processPaintCalls, "CanvasRepaints-Thread");
@@ -75,21 +72,11 @@ public class Display
 	private void processSerialCalls() 
 	{
 		Runnable call;
-		while (true) 
-		{
-			synchronized (serialCalls) { call = serialCalls.poll(); }
-			
-			if(call != null) 
-			{ 
-				call.run();
-				try { Thread.sleep(1); }
-				catch (Exception e) { }
-			}
-			else 
-			{
-				try { Thread.sleep(1); }
-				catch (Exception e) { }
-			}
+		synchronized (serialCalls) { call = serialCalls.poll(); }
+		
+		if(call != null) 
+		{ 
+			call.run();
 		}
 	}
 
@@ -112,9 +99,11 @@ public class Display
 			if(call != null) { call.run(); }
 			else 
 			{
-				try { Thread.sleep(1); }
+				try { Thread.sleep(1); } // Sleep for a bit to reduce cpu usage, we are under no obligation to return serial calls immediately, they just have to be serial
 				catch (Exception e) { }
 			}
+
+			processSerialCalls(); // serial calls should always happen AFTER the paint cycle
 		}
 	}
 
