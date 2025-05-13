@@ -26,13 +26,13 @@ public class MIDletEnhancements
     public static void drawSleep(long millis) throws InterruptedException
     {
         if (Mobile.unlockFramerateHack == 0 && !MobilePlatform.pressedKeys[19]) { Thread.sleep(millis); } 
-        else { /* Do not sleep */ }
+        else { Thread.sleep(1); }
     }
 
     public static void sleep(long millis) throws InterruptedException
     {
         if (Mobile.unlockFramerateHack == 0 && !MobilePlatform.pressedKeys[19]) { Thread.sleep(millis); } 
-        else { /* Do not sleep */ }
+        else { Thread.sleep(1); }
     }
 
     // Uses nanoTime due to its higher precision, but converted to milliseconds
