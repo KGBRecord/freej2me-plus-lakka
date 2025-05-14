@@ -16,4 +16,25 @@
 */
 package com.siemens.mp.media;
 
-public interface PlayerListener extends javax.microedition.media.PlayerListener { }
+public interface PlayerListener
+{ 
+
+	public static final String BUFFERING_STARTED = "BUFFERING_STARTED";
+	public static final String BUFFERING_STOPPED = "BUFFERING_STOPPED";
+	public static final String CLOSED = "CLOSED";
+	public static final String DEVICE_AVAILABLE = "DEVICE_AVAILABLE";
+	public static final String DEVICE_UNAVAILABLE = "DEVICE_UNAVAILABLE";
+	public static final String DURATION_UPDATED = "DURATION_UPDATED";
+	public static final String END_OF_MEDIA = "END_OF_MEDIA";
+	public static final String ERROR = "ERROR";
+	public static final String RECORD_ERROR = "RECORD_ERROR";
+	public static final String RECORD_STARTED = "RECORD_STARTED";
+	public static final String RECORD_STOPPED = "RECORD_STOPPED";
+	public static final String SIZE_CHANGED = "SIZE_CHANGED";
+	public static final String STARTED = "STARTED";
+	public static final String STOPPED = "STOPPED";
+	public static final String STOPPED_AT_TIME = "STOPPED_AT_TIME";
+	public static final String VOLUME_CHANGED = "VOLUME_CHANGED";
+
+	public void playerUpdate(com.siemens.mp.media.Player player, String event, Object eventData);
+}

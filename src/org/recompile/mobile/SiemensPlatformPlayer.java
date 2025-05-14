@@ -27,16 +27,6 @@ public class SiemensPlatformPlayer extends PlatformPlayer implements com.siemens
 
 	public SiemensPlatformPlayer(String locator) { super(locator); }
 
-	public void addPlayerListener(com.siemens.mp.media.PlayerListener playerListener) 
-	{
-		super.listeners.add(playerListener);
-	}
-
-	public void removePlayerListener(com.siemens.mp.media.PlayerListener playerListener) 
-	{
-		super.listeners.remove(playerListener);
-	}
-
     // Controllable interface, these two differ from javax on com.mp.siemens.media //
 
     @Override

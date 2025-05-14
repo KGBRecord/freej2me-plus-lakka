@@ -88,6 +88,7 @@ public class PlatformPlayer implements Player
 	private int state = Player.UNREALIZED;
 
 	protected Vector<PlayerListener> listeners;
+	protected Vector<com.siemens.mp.media.PlayerListener> siemensListeners;
 
 	private SoundListener nokiaListener;
 	private Sound nokiaSound;
@@ -117,6 +118,7 @@ public class PlatformPlayer implements Player
 	public PlatformPlayer(InputStream stream, String type)
 	{
 		listeners = new Vector<PlayerListener>();
+		siemensListeners = new Vector<com.siemens.mp.media.PlayerListener>();
 		controls = new Control[NUM_CONTROLS];
 
 		contentType = type;
@@ -245,6 +247,7 @@ public class PlatformPlayer implements Player
 			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + " Creating MIDI Player for locator: "+locator);
 			player = new midiPlayer();
 			listeners = new Vector<PlayerListener>();
+			siemensListeners = new Vector<com.siemens.mp.media.PlayerListener>();
 			controls = new Control[NUM_CONTROLS];
 			controls[0] = new volumeControl(this.player); // Midi Player with Tones might not use this
 			controls[3] = new toneControl((midiPlayer) this.player);
@@ -254,6 +257,7 @@ public class PlatformPlayer implements Player
 			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "No player for locator: "+locator);
 			player = new audioplayer();
 			listeners = new Vector<PlayerListener>();
+			siemensListeners = new Vector<com.siemens.mp.media.PlayerListener>();
 			controls = new Control[3];
 		}
 	}
@@ -323,11 +327,34 @@ public class PlatformPlayer implements Player
 		listeners.remove(playerListener);
 	}
 
+	// Siemens listeners
+	public void addPlayerListener(com.siemens.mp.media.PlayerListener playerListener) 
+	{
+		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot remove PlayerListener from a CLOSED player"); }
+		if(playerListener == null) { return; }
+
+		siemensListeners.add(playerListener);
+	}
+
+	public void removePlayerListener(com.siemens.mp.media.PlayerListener playerListener) 
+	{
+		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot remove PlayerListener from a CLOSED player"); }
+		if(playerListener == null) { return; }
+
+		siemensListeners.remove(playerListener);
+	}
+
 	private void notifyListeners(String event, Object eventData)
 	{
 		for(int i=0; i<listeners.size(); i++)
 		{
 			listeners.get(i).playerUpdate(this, event, eventData);
+		}
+
+		for(int i=0; i < siemensListeners.size(); i++) 
+		{
+			siemensListeners.get(i).playerUpdate((com.siemens.mp.media.Player) this, event, eventData);
+			if(i == siemensListeners.size() - 1) { return; }
 		}
 
 		if(nokiaListener != null) 
