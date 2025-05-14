@@ -34,7 +34,10 @@ public abstract class Canvas extends Frame
 
     public abstract void paint(Graphics g);
 
-    public void processEvent(int type, int param) { }
+    public void processEvent(int type, int param) 
+	{ 
+		Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "DoJa Canvas Process event type:" + type + " , param:" + param);
+	}
 
     public void repaint() { repaint(0, 0, Mobile.lcdWidth, Mobile.lcdHeight); }
 
@@ -44,10 +47,11 @@ public abstract class Canvas extends Frame
         
         try 
 		{
-			//if (!isShown() || listCommands) { return; }
+
+			if(!isShown()) { return; }
 
 			graphics.reset();
-			paint((Graphics) graphics);
+			paint(graphics);
 			
 			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
 			//if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
@@ -60,4 +64,5 @@ public abstract class Canvas extends Frame
 			e.printStackTrace();
 		}
     }
+
 }

@@ -131,7 +131,7 @@ public class MobilePlatform
 			Mobile.getDisplay().getCurrent().platformImage = lcd; 
 			Mobile.getDisplay().getCurrent().graphics = (Graphics) gc; 
 		}
-		else if(Mobile.isDoJa && Mobile.getDoJaDisplay() != null)
+		else if(Mobile.isDoJa && com.nttdocomo.ui.Display.getCurrent() != null) // Doja's current Frames (Displayables) are static
 		{
 			// TODO: DoJa, it doesn't even render to screen yet, so i doubt this also works
 			com.nttdocomo.ui.Display.getCurrent().platformImage = lcd; 

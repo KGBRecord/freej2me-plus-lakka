@@ -66,7 +66,7 @@ public abstract class IApplication
     protected IApplication()
 	{
 		Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "Create DoJa IApplication");
-		Mobile.iAppli = this;
+        Mobile.iAppli = this;
         appParam = properties.get("AppParam").split(" ");
         Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "arguments:" + Arrays.toString(appParam));
 	}

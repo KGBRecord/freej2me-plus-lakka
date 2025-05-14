@@ -60,4 +60,6 @@ public abstract class Frame
     {
         labelVisible = b;
     }
+
+    public boolean isShown() { return Display.getCurrent() == this; }
 }

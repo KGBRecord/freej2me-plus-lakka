@@ -44,7 +44,6 @@ public class Mobile
 	private static MobilePlatform platform;
 
 	private static Display display;
-	private static com.nttdocomo.ui.Display DoJaDisplay;
 
 	public static MIDlet midlet;
 
@@ -291,10 +290,6 @@ public class Mobile
 	public static Display getDisplay() { return display; }
 
 	public static void setDisplay(Display d) { display = d; }
-
-	public static com.nttdocomo.ui.Display getDoJaDisplay() { return DoJaDisplay; }
-
-	public static void setDoJaDisplay(com.nttdocomo.ui.Display d) { DoJaDisplay = d; }
 
 	public static InputStream getResourceAsStream(Class c, String resource)
 	{

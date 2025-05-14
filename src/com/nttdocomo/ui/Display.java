@@ -51,7 +51,7 @@ public class Display
 
     protected static Frame current = null;
 
-    protected Display() { Mobile.setDoJaDisplay(this); }
+    protected Display() { }
 
     public static Frame getCurrent() { return current; }
 
@@ -59,7 +59,7 @@ public class Display
 
     public static int getWidth() { return MobilePlatform.lcdWidth; }
 
-    public static boolean isColor() { return true;  }
+    public static boolean isColor() { return true; }
 
     public static int numColors() { return 167772162; }
 
