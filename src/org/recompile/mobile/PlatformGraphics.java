@@ -41,7 +41,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected Graphics2D gc;
 	protected int[] canvasData;
 	protected int[] imgPixels;
-	protected Image lastImage;
+	protected PlatformImage lastImage;
 
 	protected Color awtColor;
 
@@ -238,7 +238,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			x = AnchorX(x, image.getWidth(), anchor);
 			y = AnchorY(y, image.getHeight(), anchor);
 
-			gc.drawImage(image.platformImage.getCanvas(), x, y, null);
+			gc.drawImage(image.getCanvas(), x, y, null);
 		}
 		catch (Exception e)
 		{
@@ -250,7 +250,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		try
 		{
-			gc.drawImage(image.platformImage.getCanvas(), x, y, null);
+			gc.drawImage(image.getCanvas(), x, y, null);
 		}
 		catch (Exception e)
 		{
@@ -258,16 +258,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		}
 	}
 
-	public void drawImage2(Image image, int x, int y) // Internal use method called by PlatformImage
-	{
-		gc.drawImage(image.platformImage.getCanvas(), x, y, null);
-	}
-	public void drawImage2(BufferedImage image, int x, int y) // Internal use method called by PlatformImage
-	{
-		gc.drawImage(image, x, y, null);
-	}
-
-	public void flushGraphics(Image image, int x, int y, int width, int height)
+	public void flushGraphics(PlatformImage image, int x, int y, int width, int height)
 	{
 		// called by MobilePlatform.flushGraphics/repaint
 
@@ -288,7 +279,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			// Only spend time reallocating this if we really are drawing from a different image than the last (speeds things up a bit)
 			if(image != lastImage)
 			{
-				imgPixels = ((DataBufferInt) image.platformImage.getCanvas().getRaster().getDataBuffer()).getData();
+				imgPixels = ((DataBufferInt) image.getCanvas().getRaster().getDataBuffer()).getData();
 				lastImage = image;
 			}
 
@@ -351,7 +342,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 		if (image == null) { throw new NullPointerException("Source image cannot be null"); }
 
-		if (subx < 0 || suby < 0 || subx + subw > image.platformImage.getCanvas().getWidth() || suby + subh > image.platformImage.getCanvas().getHeight()) 
+		if (subx < 0 || suby < 0 || subx + subw > image.getCanvas().getWidth() || suby + subh > image.getCanvas().getHeight()) 
 		{
 			throw new IllegalArgumentException("Source region is out of bounds");
 		}
@@ -362,13 +353,13 @@ public abstract class PlatformGraphics implements DirectGraphics
 			{
 				x = AnchorX(x, subw, anchor);
 				y = AnchorY(y, subh, anchor);
-				gc.drawImage(image.platformImage.getCanvas().getSubimage(subx, suby, subw, subh), x, y, null);
+				gc.drawImage(image.getCanvas().getSubimage(subx, suby, subw, subh), x, y, null);
 			}
 			else
 			{
-				PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
-				x = AnchorX(x, sub.width, anchor);
-				y = AnchorY(y, sub.height, anchor);
+				PlatformImage sub = new PlatformImage((Image) image, subx, suby, subw, subh, transform);
+				x = AnchorX(x, sub.getWidth(), anchor);
+				y = AnchorY(y, sub.getHeight(), anchor);
 				gc.drawImage(sub.getCanvas(), x, y, null);
 			}
 		}
@@ -388,13 +379,13 @@ public abstract class PlatformGraphics implements DirectGraphics
 			{
 				x = AnchorX(x, subw, anchor);
 				y = AnchorY(y, subh, anchor);
-				gc.drawImage(image.platformImage.getCanvas().getSubimage(subx, suby, subw, subh), x, y, x + width_dest, y + height_dest, subx, suby, subx + subw, suby + subh, null);
+				gc.drawImage(image.getCanvas().getSubimage(subx, suby, subw, subh), x, y, x + width_dest, y + height_dest, subx, suby, subx + subw, suby + subh, null);
 			}
 			else
 			{
-				PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
-				x = AnchorX(x, sub.width, anchor);
-				y = AnchorY(y, sub.height, anchor);
+				PlatformImage sub = new PlatformImage((Image) image, subx, suby, subw, subh, transform);
+				x = AnchorX(x, sub.getWidth(), anchor);
+				y = AnchorY(y, sub.getHeight(), anchor);
 				gc.drawImage(sub.getCanvas(), x, y, x + width_dest, y + height_dest, subx, suby, subx + subw, suby + subh, null);
 			}
 		}
@@ -687,7 +678,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawImage(javax.microedition.lcdui.Image img, int x, int y, int anchor, int manipulation)
 	{
-		BufferedImage image = manipulateImage(img.platformImage.getCanvas(), manipulation);
+		BufferedImage image = manipulateImage(img.getCanvas(), manipulation);
 		x = AnchorX(x, image.getWidth(), anchor);
 		y = AnchorY(y, image.getHeight(), anchor);
 		gc.drawImage(image, x, y, null);
@@ -1260,7 +1251,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			AffineTransform transform = new AffineTransform(fmatrix);
 
 			gc.setTransform(transform);
-			gc.drawImage(image.platformImage.getCanvas(), 0, 0, null);
+			gc.drawImage(image.getCanvas(), 0, 0, null);
 		} 
 		catch (Exception e) 
 		{
@@ -1277,7 +1268,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			AffineTransform transform = new AffineTransform(fmatrix);
 
 			gc.setTransform(transform);
-			gc.drawImage(image.platformImage.getCanvas(), sx, sy, sx + width, sy + height, null);
+			gc.drawImage(image.getCanvas(), sx, sy, sx + width, sy + height, null);
 		} 
 		catch (Exception e) 
 		{
@@ -1287,13 +1278,13 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawImage(com.nttdocomo.ui.Image image, int x, int y) 
 	{
-		try { gc.drawImage(image.platformImage.getCanvas(), x, y, null); } 
+		try { gc.drawImage(image.getCanvas(), x, y, null); } 
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImage (x, y): " + e.getMessage()); }
 	}
 
 	public void drawImage(com.nttdocomo.ui.Image image, int dx, int dy, int sx, int sy, int width, int height) 
 	{
-		try { gc.drawImage(image.platformImage.getCanvas(), dx, dy, dx + width, dy + height, sx, sy, sx + width, sy + height, null); } 
+		try { gc.drawImage(image.getCanvas(), dx, dy, dx + width, dy + height, sx, sy, sx + width, sy + height, null); } 
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImage (dx, dy, part): " + e.getMessage()); }
 	}
 
@@ -1312,13 +1303,11 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void lock() 
 	{ 
-		System.out.println("lock");
 		synchronized (this) { dojaLockCount++; }
 	}
 
     public void unlock(boolean forced)
 	{
-		System.out.println("unlock");
 		synchronized (this) { dojaLockCount = forced ? 0 : dojaLockCount-1; }
 		
 		if (dojaLockCount == 0) 
@@ -1379,14 +1368,14 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawScaledImage(com.nttdocomo.ui.Image image, int dx, int dy, int width, int height, int sx, int sy, int swidth, int sheight) 
 	{
-		gc.drawImage(image.platformImage.getCanvas(), dx, dy, dx + width, dy + height, sx, sy, sx + swidth, sy + sheight, null);
+		gc.drawImage(image.getCanvas(), dx, dy, dx + width, dy + height, sx, sy, sx + swidth, sy + sheight, null);
 	}
 
 	public void drawSpriteSet(com.nttdocomo.ui.SpriteSet sprites) 
 	{
 		for (com.nttdocomo.ui.Sprite sprite : sprites.getSprites())  // TODO: Support flip modes
 		{
-			gc.drawImage(sprite.getImage().platformImage.getCanvas(), sprite.getX(), sprite.getY(), null);
+			gc.drawImage(sprite.getImage().getCanvas(), sprite.getX(), sprite.getY(), null);
 		}
 	}
 

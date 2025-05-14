@@ -18,14 +18,18 @@ package com.nttdocomo.ui;
 
 import java.io.InputStream;
 
+import org.recompile.mobile.PlatformImage;
+
 public abstract class PalettedImage extends Image 
 {
+    protected Image image;
     protected Palette palette;
     protected byte[] imageData;
     protected int transparentIndex = -1;
 
     protected PalettedImage() 
     {
+        super();
         this.palette = new Palette(256); // Palette has 256 colors
     }
 
@@ -130,7 +134,7 @@ public abstract class PalettedImage extends Image
         throw new UnsupportedOperationException("getGraphics() is not supported for PalettedImage.");
     }
 
-    public int getWidth() { return width; }
+    public int getWidth() { return super.getWidth(); }
 
-    public int getHeight() { return height; }
+    public int getHeight() { return super.getWidth(); }
 }

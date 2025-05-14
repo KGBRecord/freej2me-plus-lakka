@@ -20,11 +20,10 @@ package com.nokia.mid.m3d;
 import javax.microedition.lcdui.Image;
 
 import org.recompile.mobile.Mobile;
-import org.recompile.mobile.PlatformImage;
 
 public class Texture
 {
-	public PlatformImage texture;
+	public Image texture;
 
 	public int[] imagedata;
 
@@ -43,13 +42,14 @@ public class Texture
 	private int[] colors = {0xFFFFFFFF, 0xFF000000};
 
 	public Texture() { }
+	
 	public Texture(int a, int b, Image c)
 	{
-		texture = (PlatformImage)c;
+		texture = c;
 		width = texture.getWidth();
 		height = texture.getHeight();
 		imagedata = new int[width*height];
-		texture.platformImage.getRGB(imagedata, 0, width, 0, 0, width, height);
+		texture.getRGB(imagedata, 0, width, 0, 0, width, height);
 		// Fix Alpha //
 		for (int i=0; i<imagedata.length; i++) { imagedata[i] |= 0x00000000; imagedata[i] &= 0xFFFFFFFF; }
 	}

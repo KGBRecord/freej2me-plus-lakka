@@ -46,7 +46,7 @@ public class ExtendedImage extends com.siemens.mp.misc.NativeMem
 		gc = image.getGraphics();
 	}
 
-	public Image getImage() { return image; }
+	public Image getImage() { return (Image) image; }
 
 	public int getPixel(int x, int y)
 	{

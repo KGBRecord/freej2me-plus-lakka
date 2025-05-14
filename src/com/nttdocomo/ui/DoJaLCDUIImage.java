@@ -20,22 +20,7 @@ import org.recompile.mobile.PlatformImage;
 
 public class DoJaLCDUIImage extends Image 
 {
-    public PlatformImage platformImage;
+    public DoJaLCDUIImage(int width, int height) { super(width, height); }
 
-    public DoJaLCDUIImage(PlatformImage source) { this.platformImage = source; }
-
-    public int getWidth() { return platformImage.getWidth(); }
-
-    public int getHeight() { return platformImage.getHeight(); }
-
-    public boolean isMutable() { return platformImage.isMutable(); }
-
-	@Override
-    public Graphics getGraphics() { return platformImage.getDoJaGraphics(); }
-
-	public void dispose() 
-	{
-		platformImage = null;
-		disposed = true;
-	}
+    public DoJaLCDUIImage(Image source) { super(source); }
 }

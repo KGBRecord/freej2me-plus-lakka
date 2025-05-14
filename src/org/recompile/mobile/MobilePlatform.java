@@ -631,7 +631,7 @@ public class MobilePlatform
 	********* Graphics ********
 */
 
-	public final void flushGraphics(Image img, int x, int y, int width, int height)
+	public final void flushGraphics(PlatformImage img, int x, int y, int width, int height)
 	{
 		if(!isPaused) 
 		{

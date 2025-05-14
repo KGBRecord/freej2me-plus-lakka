@@ -24,7 +24,7 @@ public class DirectUtils
 
 	public static Image createImage(byte[] imageData, int imageOffset, int imageLength)
 	{
-		return Image.createImage(imageData, imageOffset, imageLength);
+		return Image.createImage(imageData, imageOffset, imageLength, true); // Create a mutable image from a byte array
 	}
 
 	public static Image createImage(int width, int height, int ARGBcolor)

@@ -19,8 +19,7 @@ package com.nttdocomo.ui;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformImage;
 
-// Refer to DoJaLCDUIImage for actual method implementations, it wraps all of this so that we don't have to use wholly separate implementations for MIDP and DoJa
-public abstract class Image extends javax.microedition.lcdui.Image
+public abstract class Image extends PlatformImage
 { 
 
 	protected boolean disposed = false;
@@ -28,28 +27,36 @@ public abstract class Image extends javax.microedition.lcdui.Image
 	protected int transparentColor = -1;
 	protected boolean transparentEnabled = false;
 
+	protected Image() { }
+
+	protected Image(int width, int height) { super(width, height, null); }
+
+    protected Image(Image source) { super(source); }
+
 	public static Image createImage(Image source) 
 	{
-		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image from Image ");
+		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create DoJa Image from Image ");
 		if (source == null) { throw new NullPointerException(); }
 
-		return new DoJaLCDUIImage(new PlatformImage(source));
+		return new DoJaLCDUIImage(source);
 	}
 
 	public static Image createImage(int width, int height) 
 	{
-		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image w,h " + width + ", " + height);
+		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create DoJa Image w,h " + width + ", " + height);
 		if (width <= 0 || height <= 0) {throw new IllegalArgumentException();}
 		
-		return new DoJaLCDUIImage(new PlatformImage(width, height, null));
+		return new DoJaLCDUIImage(width, height);
 	}
 
-	public abstract Graphics getGraphics();
-	public abstract int getWidth();
-	public abstract int getHeight();
-	public abstract boolean isMutable();
+    public Graphics getGraphics() { return super.getDoJaGraphics(); }
+
+	public void dispose() // TODO: Implement this properly
+	{
+		disposed = true;
+	}
+
 	public boolean isDisposed() { return disposed; }
-	public abstract void dispose();
 
 	public int getAlpha() { return alpha; }
 

@@ -23,8 +23,7 @@ public class PalettedImageImpl extends PalettedImage
 
     public PalettedImageImpl(int width, int height)
     {
-        this.width = width;
-        this.height = height;
+        image = Image.createImage(width, height);
     }
 
     public PalettedImageImpl(byte[] data) 
@@ -33,11 +32,4 @@ public class PalettedImageImpl extends PalettedImage
         this.imageData = data;
     }
 
-    public boolean isMutable() { return platformImage.isMutable(); }
-
-    public void dispose() 
-	{
-		platformImage = null;
-		disposed = true;
-	}
 }

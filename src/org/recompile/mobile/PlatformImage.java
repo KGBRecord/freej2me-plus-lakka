@@ -37,15 +37,20 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 
-public class PlatformImage extends javax.microedition.lcdui.Image
+public class PlatformImage
 {
 	protected BufferedImage canvas;
 	protected Graphics gc;
 	protected com.nttdocomo.ui.Graphics djgc;
 
+	protected int width;
+	protected int height;
+
 	private boolean isMutable = false;
 
 	public BufferedImage getCanvas() { return canvas; }
+
+	public void setCanvas(BufferedImage newCanvas) { canvas = newCanvas; }
 
 	public Graphics getGraphics() { return gc; }
 
@@ -55,16 +60,16 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 	protected void createGraphics()
 	{
 		gc = new Graphics(this);
-		
 		gc.setColor(0x000000);
 	}
 
 	protected void createDoJaGraphics()
 	{
 		djgc = new com.nttdocomo.ui.Graphics(this);
-		
 		djgc.setColor(0x000000);
 	}
+
+	public PlatformImage() { }
 
 	public PlatformImage(int Width, int Height)
 	{
@@ -82,8 +87,6 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		gc.setColor(0x000000);
 
 		isMutable = true;
-
-		platformImage = this;
 	}
 
 	public PlatformImage(int Width, int Height, int ARGBcolor)
@@ -100,8 +103,6 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		gc.setColor(0x000000);
 
 		isMutable = true;
-
-		platformImage = this;
 	}
 
 	public PlatformImage(String name)
@@ -120,7 +121,6 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 			{
 				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from Resource Name is NULL, ignoring due to Non Fatal Null Images being enabled.");
 			}
-			
 		}
 		else
 		{
@@ -142,9 +142,8 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 			canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 			createGraphics();
 
-			gc.drawImage2(temp, 0, 0);
+			gc.getGraphics2D().drawImage(temp, 0, 0, null);
 		}
-		platformImage = this;
 	}
 
 	public PlatformImage(InputStream stream)
@@ -170,9 +169,7 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		createGraphics();
 
-		gc.drawImage2(temp, 0, 0);
-
-		platformImage = this;
+		gc.getGraphics2D().drawImage(temp, 0, 0, null);
 	}
 
 	public PlatformImage(Image source)
@@ -187,18 +184,16 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 			}
 		}
 
-		width = source.platformImage.width;
-		height = source.platformImage.height;
+		width = source.getWidth();
+		height = source.getHeight();
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		createGraphics();
 
-		gc.drawImage2(source.platformImage.getCanvas(), 0, 0);
-
-		platformImage = this;
+		gc.getGraphics2D().drawImage(source.getCanvas(), 0, 0, null);
 	}
 
-	public PlatformImage(byte[] imageData, int imageOffset, int imageLength)
+	public PlatformImage(byte[] imageData, int imageOffset, int imageLength, boolean mutable)
 	{
 		// Create Image from Byte Array Range (Data is PNG, JPG, etc.)
 		InputStream stream = new ByteArrayInputStream(imageData, imageOffset, imageLength);
@@ -223,11 +218,9 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		createGraphics();
 
-		gc.drawImage2(temp, 0, 0);
+		gc.getGraphics2D().drawImage(temp, 0, 0, null);
 
-		isMutable = true;
-
-		platformImage = this;
+		isMutable = mutable;
 	}
 
 	public PlatformImage(int[] rgb, int Width, int Height, boolean processAlpha)
@@ -252,8 +245,6 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		gc.drawRGB(rgb, 0, width, 0, 0, width, height, true);
 
 		isMutable = true;
-
-		platformImage = this;
 	}
 
 	public PlatformImage(Image image, int x, int y, int Width, int Height, int transform)
@@ -261,17 +252,17 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		BufferedImage sub = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
 	
 		// Get the raw pixel data from the source image, and the new sub image
-		final int[] sourceData = ((DataBufferInt) image.platformImage.canvas.getRaster().getDataBuffer()).getData();
+		final int[] sourceData = ((DataBufferInt) image.canvas.getRaster().getDataBuffer()).getData();
 		final int[] subData = ((DataBufferInt) sub.getRaster().getDataBuffer()).getData();
 	
 		// Copy pixel data directly to the subimage's databuffer.
 		for (int j = 0; j < Height; j++) 
 		{
-			int sourceRow = (y + j) * image.platformImage.canvas.getWidth() + x;
+			int sourceRow = (y + j) * image.canvas.getWidth() + x;
 			int subRow = j * Width;
 	
 			// Copy pixel rows from the source image to the new sub-image
-			System.arraycopy(sourceData, sourceRow, subData, subRow, Math.min(Width, image.platformImage.canvas.getWidth() - x));
+			System.arraycopy(sourceData, sourceRow, subData, subRow, Math.min(Width, image.canvas.getWidth() - x));
 		}
 	
 		canvas = transformImage(sub, transform);
@@ -282,8 +273,6 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		height = (int) canvas.getHeight();
 
 		this.isMutable = true;
-	
-		platformImage = this;
 	}
 
 	// DoJa's image class uses these
@@ -299,15 +288,14 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 			}
 		}
 
-		width = source.platformImage.width;
-		height = source.platformImage.height;
+		width = source.getWidth();
+		height = source.getWidth();
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		createDoJaGraphics();
 
-		djgc.drawImage2(source.platformImage.getCanvas(), 0, 0);
-
-		platformImage = this;
+		djgc.getGraphics2D().drawImage(source.getCanvas(), 0, 0, null);
+		
     }
 
 	public PlatformImage(int Width, int Height, com.nttdocomo.ui.Image source) // Just to differentiate from the other constructor above
@@ -326,11 +314,13 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		djgc.setColor(0x000000);
 
 		isMutable = true;
-
-		platformImage = this;
     }
 
 	// Common methods
+	public int getWidth() { return width; }
+
+	public int getHeight() { return height; }
+
 	public void getRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height) 
 	{
 		if (rgbData == null) 
@@ -541,30 +531,29 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 			if(dumpFile.exists()) { return; } // Don't overwrite an image that already exists
             ImageIO.write(image, "png", dumpFile);
             System.out.println("Image saved successfully: " + dumpPath);
-        } catch (IOException e) { System.err.println("Error saving image: " + e.getMessage()); }
+        } 
+		catch (IOException e) { Mobile.log(Mobile.LOG_ERROR, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Failed to save image file: " + e.getMessage()); }
     }
 
 	private static String generateMD5Hash(BufferedImage image) 
 	{
-        try {
-            // Convert BufferedImage to byte array
+        try 
+		{
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(image, "png", baos); // Change format as needed
+            ImageIO.write(image, "png", baos);
             byte[] imageBytes = baos.toByteArray();
 
-            // Create MD5 hash
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hashBytes = md.digest(imageBytes);
 
-            // Convert byte array to hex string
             StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
+            for (byte b : hashBytes) { sb.append(String.format("%02x", b)); }
 
-            return sb.toString(); // Return the MD5 hash as a hex string
-        } catch (Exception e) {
-            e.printStackTrace(); // Handle exceptions as needed
+            return sb.toString();
+        } 
+		catch (Exception e) 
+		{
+			Mobile.log(Mobile.LOG_ERROR, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Could not generate MD5 Hash for data: " + e.getMessage());
             return null;
         }
     }

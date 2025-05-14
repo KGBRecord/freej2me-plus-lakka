@@ -23,10 +23,9 @@ import org.recompile.mobile.PlatformImage;
 
 import javax.microedition.lcdui.game.Sprite;
 
-// NativeMem is a complete stub as is, so inherit javax Image directly
+// NativeMem is a complete stub as is, so inherit javax Image directly, as it's what many games like as return value here
 public class Image extends javax.microedition.lcdui.Image 
 {
-    int width, height;
     static javax.microedition.lcdui.Image img;
     public static final int COLOR_BMP_8BIT = 5;
 
@@ -41,11 +40,9 @@ public class Image extends javax.microedition.lcdui.Image
     // The idea is to handle as much of this on lcdui.Image as possible
     Image(byte[] bytes, int imageWidth, int imageHeight) throws IllegalArgumentException
 	{
-        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[], width, height) not implemented");
+        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[], width, height) untested");
         //TODO: Might be incorrect
 		img = javax.microedition.lcdui.Image.createImage(bytes, width, height);
-        width = img.getWidth();
-        height = img.getHeight();
 	}
 
     Image(byte[] bytes, int imageWidth, int imageHeight, boolean transparent) 
@@ -53,8 +50,6 @@ public class Image extends javax.microedition.lcdui.Image
         Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[], width, height, boolean transp) not implemented");
         // TODO
 		//img = javax.microedition.lcdui.Image.createRGBImage(rgb, width, height, transparent);
-        //width = img.getWidth();
-        //height = img.getHeight();
     }
 
     Image(byte[] rgb, int width, int height, int bitmapType)
@@ -68,8 +63,6 @@ public class Image extends javax.microedition.lcdui.Image
     {
         Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(Image) untested");
         img = javax.microedition.lcdui.Image.createImage(image);
-        width = img.getWidth();
-        height = img.getHeight();
     }
 
     Image(int imageWidth, int imageHeight)
@@ -80,12 +73,13 @@ public class Image extends javax.microedition.lcdui.Image
 
     Image(String name, boolean doScale) 
     {
-        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(String, boolean) not implemented");
+        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(String, boolean) untested");
         try 
         {
             if(!doScale) { img = createImageWithoutScaling(name); }
             else 
             {
+                Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(String, boolean) with scaling not implemented");
                 img = createImageWithoutScaling(name);
                 // Do Scaling
             }
@@ -145,18 +139,14 @@ public class Image extends javax.microedition.lcdui.Image
     public static void mirrorImageHorizontally(javax.microedition.lcdui.Image image) 
     {
         img = image;
-        img.platformImage = new  org.recompile.mobile.PlatformImage(image, 0, 0, img.getWidth(), img.getHeight(), Sprite.TRANS_MIRROR); // Seems to work in 'Bermuda'
+        img.setCanvas(img.transformImage(img.getCanvas(), Sprite.TRANS_MIRROR)); // Seems to work in 'Bermuda'
     }
 
     public static void mirrorImageVertically(javax.microedition.lcdui.Image image) 
     {
         img = image;
-        img.platformImage = new  org.recompile.mobile.PlatformImage(image, 0, 0, img.getWidth(), img.getHeight(), Sprite.TRANS_MIRROR_ROT180); // Untested
+        img.setCanvas(img.transformImage(img.getCanvas(), Sprite.TRANS_MIRROR_ROT180)); // Untested
         Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "mirrorImageVertically(image) untested"); 
     }
-
-	public int getHeight() { return height; }
-
-	public int getWidth() { return width; }
 
 }

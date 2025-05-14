@@ -59,7 +59,7 @@ public class GraphicsX extends org.recompile.mobile.PlatformGraphics
         setColor(tempColor);
     }
 
-    public int getPixel(int x, int y) { return img.platformImage.getPixel(x, y); }
+    public int getPixel(int x, int y) { return img.getPixel(x, y); }
 
     public void setAlpha(int alpha) { setAlphaRGB(alpha); }
 
@@ -67,7 +67,7 @@ public class GraphicsX extends org.recompile.mobile.PlatformGraphics
 
     public void setPixel(int x, int y, int RGB) 
     {
-        img.platformImage.setPixel(x, y, RGB);
+        img.setPixel(x, y, RGB);
     }
 
     public void setXORMode(int RGB) { }

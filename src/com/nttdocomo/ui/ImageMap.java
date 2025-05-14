@@ -110,7 +110,7 @@ public class ImageMap
                 {
                     int drawX = windowX + x * cellWidth;
                     int drawY = windowY + y * cellHeight;
-                    g.getGraphics2D().drawImage(images[imgIndex].platformImage.getCanvas(), drawX, drawY, cellWidth, cellHeight, null);
+                    g.getGraphics2D().drawImage(images[imgIndex].getCanvas(), drawX, drawY, cellWidth, cellHeight, null);
                 }
             }
         }

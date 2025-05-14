@@ -18,8 +18,8 @@
 package com.nokia.mid.m3d;
 
 import org.recompile.mobile.Mobile;
-import org.recompile.mobile.PlatformImage;
 
+import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.Graphics;
 
 public class M3D
@@ -57,7 +57,7 @@ public class M3D
 	private int vertCount;
 	private int faceCount;
 
-	private PlatformImage platformImage;
+	private Image image;
 	private Graphics gc;
 
 	private double[] zbuffer;
@@ -82,8 +82,8 @@ public class M3D
 
 		width = displayWidth;
 		height = displayHeight;
-		platformImage = new PlatformImage(width, height);
-		gc = platformImage.getGraphics();
+		image = Image.createImage(width, height);
+		gc = image.getGraphics();
 		zbuffer = new double[width*height];
 		clear(0);
 	}
@@ -533,7 +533,7 @@ public class M3D
 
 	public void blit(Graphics g, int x, int y, int w, int h) // 0, 0, 95, 65
 	{
-		g.drawImage(platformImage, x, y, Graphics.LEFT|Graphics.TOP);			
+		g.drawImage(image, x, y, Graphics.LEFT|Graphics.TOP);			
 	}
 
 	private void identity(double[] m)
