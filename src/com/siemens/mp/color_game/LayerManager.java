@@ -108,7 +108,7 @@ public class LayerManager
 
 	public void setViewWindow(int wx, int wy, int wwidth, int wheight)
 	{
-		if (width < 0 || height < 0) { throw new IllegalArgumentException(); }
+		if (wwidth < 0 || wheight < 0) { throw new IllegalArgumentException(); }
 
 		x = wx;
 		y = wy;
