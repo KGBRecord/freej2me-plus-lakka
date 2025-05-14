@@ -113,12 +113,8 @@ public class Display
 
 		synchronized (paintQueue) 
 		{
-			while (!paintQueue.isEmpty()) 
-			{ 
-				paintAction = paintQueue.poll();
-				if (paintAction != null) { paintAction.run(); }
-			}
-			paintQueue.notify();
+			paintAction = paintQueue.poll();
+			if (paintAction != null) { paintAction.run(); }
 		}
 	}
 
