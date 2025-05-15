@@ -71,8 +71,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected int translateX = 0;
 	protected int translateY = 0;
 
-	protected Rectangle rect = new Rectangle();
-
 	protected int color = 0xFFFFFF;
 	protected Font font = Font.getDefaultFont();
 	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
@@ -405,13 +403,13 @@ public abstract class PlatformGraphics implements DirectGraphics
 		{
 			if (offset + scanlength * (height - 1) + width > rgbData.length) 
 			{
-				throw new ArrayIndexOutOfBoundsException();
+				throw new ArrayIndexOutOfBoundsException("DrawRGB Area is out of bounds (scanlength " + scanlength + ")");
 			}
 		} else 
 		{
 			if (offset + width > rgbData.length || offset + scanlength * (height - 1) < 0) 
 			{
-				throw new ArrayIndexOutOfBoundsException();
+				throw new ArrayIndexOutOfBoundsException("DrawRGB Area is out of bounds (scanlength " + scanlength + ")");
 			}
 		}
 	
@@ -419,46 +417,32 @@ public abstract class PlatformGraphics implements DirectGraphics
 		y += getTranslateY();
 	
 		int canvasWidth = canvas.getWidth();
-		int canvasHeight = canvas.getHeight();
-		int clipX = getClipX();
-		int clipY = getClipY();
-		int clipWidth = getClipWidth();
-		int clipHeight = getClipHeight();
-
-		int startX = Math.max(clipX - x, 0);
-		int endX = Math.min(clipX + clipWidth - x, width);
-		int startY = Math.max(clipY - y, 0);
-		int endY = Math.min(clipY + clipHeight - y, height);
-	
-		if (y + height > clipY + clipHeight) { height = (clipY + clipHeight) - y; }
-		if (x + width > clipX + clipWidth)   { width = (clipX + clipWidth) - x; }	
-		
-		// Ensure adjusted width and height are still positive
-		if (width <= 0 || height <= 0) { return; }
+		int clipX = Math.max(getClipX(), 0);
+		int clipY = Math.max(getClipY(), 0);
+		int clipWidth = Math.min(getClipWidth()+clipX, canvasWidth);
+		int clipHeight = Math.min(getClipHeight()+clipY, canvas.getHeight());
 	
 		// Directly manipulate the canvasData
-		for (int j = startY; j < endY; j++)
+		for (int j = 0; j < height; j++) // The array's x and y positions start from 0, as the offset is what dictates where the data should start being read from
 		{
-			if ((y + j) < 0 || (y + j) >= canvasHeight) { continue; }
+			if ((y + j - getTranslateY()) < clipY || (y + j - getTranslateY()) >= clipHeight) { continue; }
 			int rowOffset = offset + (j * scanlength); // Calculate the starting index for the current row
 			int destRow = (y + j) * canvasWidth;
 	
-			for (int i = startX; i < endX; i++)
+			for (int i = 0; i < width; i++)
 			{
-				if ((x + i) < 0 || (x + i) >= canvasWidth) { continue; }
+				if ((x + i - getTranslateX()) < clipX || (x + i - getTranslateX()) >= clipWidth) { continue; }
 
 				int pixelIndex = rowOffset + i; // Source index in rgbData
-				int destIndex = destRow + (x + i);
+				int destIndex = destRow + x + i;
 
 				int pixel = rgbData[pixelIndex];
-				if (!processAlpha) 
-				{
-					canvasData[destIndex] = pixel | 0xFF000000; // Set alpha to 255
-				} 
+				if (!processAlpha) { canvasData[destIndex] = pixel | 0xFF000000; } // Set pixel as fully opaque
 				else // Handle alpha blending
 				{
 					int srcAlpha = (pixel >> 24) & 0xFF; // Source alpha
-					if (srcAlpha > 0) 
+					if(srcAlpha == 255) { canvasData[destIndex] = pixel; }
+					else if (srcAlpha > 0)
 					{
 						int existingPixel = canvasData[destIndex]; // Current pixel in the canvas
 						int destAlpha = (existingPixel >> 24) & 0xFF;
@@ -604,33 +588,30 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void setClip(int x, int y, int width, int height)
 	{
 		gc.setClip(x, y, width, height);
-		gc.getClipBounds(rect);
 	}
 
 	public void clipRect(int x, int y, int width, int height)
 	{
 		gc.clipRect(x, y, width, height);
-		gc.getClipBounds(rect);
 	}
 
 	public int getTranslateX() { return translateX; }
 	
 	public int getTranslateY() { return translateY; }
 
-	public int getClipHeight() { return rect.height; }
+	public int getClipHeight() { return gc.getClipBounds().height; }
 
-	public int getClipWidth() { return rect.width; }
+	public int getClipWidth() { return gc.getClipBounds().width; }
 
-	public int getClipX() { return rect.x; }
+	public int getClipX() { return gc.getClipBounds().x; }
 
-	public int getClipY() { return rect.y; }
+	public int getClipY() { return gc.getClipBounds().y; }
 
 	public void translate(int x, int y)
 	{
 		translateX += x;
 		translateY += y;
 		gc.translate(x, y);
-		gc.getClipBounds(rect);
 	}
 
 	private int AnchorX(int x, int width, int anchor)
