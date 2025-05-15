@@ -48,6 +48,8 @@ public class PlatformImage
 
 	private boolean isMutable = false;
 
+	private boolean is2bpp = false; // SIEMENS: False = 1bpp, True = 2bpp
+
 	public BufferedImage getCanvas() { return canvas; }
 
 	public void setCanvas(BufferedImage newCanvas) { canvas = newCanvas; }
@@ -315,6 +317,11 @@ public class PlatformImage
 
 		isMutable = true;
     }
+
+	// Siemens methods
+	public void set2Bpp(boolean bpp) { this.is2bpp = bpp; }
+
+    public boolean is2Bpp() { return is2bpp; }
 
 	// Common methods
 	public int getWidth() { return width; }

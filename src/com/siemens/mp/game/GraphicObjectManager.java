@@ -34,9 +34,26 @@ public class GraphicObjectManager extends com.siemens.mp.misc.NativeMem
 
 	public GraphicObjectManager() { }
 	
-	public static byte[] createTextureBits(int width, int height, byte[] texture)
+	public static byte[] createTextureBits(int width, int height, byte[] texture) 
 	{
-		return texture;
+		int bitArraySize = (width * height + 7) / 8;
+		byte[] bitTexture = new byte[bitArraySize];
+	
+		for (int y = 0; y < height; y++) 
+		{
+			for (int x = 0; x < width; x++) 
+			{
+				int pixelValue = texture[y * width + x] & 0xFF;
+	
+				// Calculate the byte and bit position in the bit array
+				int byteIndex = (y * width + x) / 8;
+				int bitIndex = (y * width + x) % 8;
+	
+				if (pixelValue != 0) { bitTexture[byteIndex] |= (1 << (7 - bitIndex)); }
+			}
+		}
+	
+		return bitTexture;
 	}
 	
 
@@ -52,8 +69,14 @@ public class GraphicObjectManager extends com.siemens.mp.misc.NativeMem
 	public int getObjectPosition(GraphicObject g) { return list.indexOf(g); }
 
 	
-	public void paint(ExtendedImage img, int x, int y) { }
+	public void paint(ExtendedImage img, int x, int y) { paint(img.getImage(), x, y); }
 
-	public void paint(Image image, int x, int y) { }
+	public void paint(Image image, int x, int y) 
+	{ 
+		for (GraphicObject obj : list) 
+		{
+			if (obj.getVisible()) { obj.paint(image.getGraphics(), x, y); }
+		}
+	}
 
 }

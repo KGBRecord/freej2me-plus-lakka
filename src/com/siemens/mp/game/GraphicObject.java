@@ -28,7 +28,7 @@ public class GraphicObject
 
 	protected GraphicObject() { }
 
-	protected void paint(Graphics g) {  }
+	protected void paint(Graphics g, int x, int y) {  }
 	
 
 	public boolean getVisible() { return visible; }

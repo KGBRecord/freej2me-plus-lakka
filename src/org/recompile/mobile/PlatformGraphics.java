@@ -355,7 +355,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			}
 			else
 			{
-				PlatformImage sub = new PlatformImage((Image) image, subx, suby, subw, subh, transform);
+				PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
 				x = AnchorX(x, sub.getWidth(), anchor);
 				y = AnchorY(y, sub.getHeight(), anchor);
 				gc.drawImage(sub.getCanvas(), x, y, null);
@@ -381,7 +381,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			}
 			else
 			{
-				PlatformImage sub = new PlatformImage((Image) image, subx, suby, subw, subh, transform);
+				PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
 				x = AnchorX(x, sub.getWidth(), anchor);
 				y = AnchorY(y, sub.getHeight(), anchor);
 				gc.drawImage(sub.getCanvas(), x, y, x + width_dest, y + height_dest, subx, suby, subx + subw, suby + subh, null);

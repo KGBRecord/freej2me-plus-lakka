@@ -40,9 +40,7 @@ public class Image extends PlatformImage
 
 	protected Image(Image source) { super(source); }
 
-	protected Image(byte[] imageData, int imageOffset, int imageLength) { super(imageData, imageOffset, imageLength, false); } // Creates immutable image (MIDP)
-
-	protected Image(byte[] imageData, int imageOffset, int imageLength, boolean mutable) { super(imageData, imageOffset, imageLength, true); } // Creates mutable image (DirectGraphics)
+	protected Image(byte[] imageData, int imageOffset, int imageLength, boolean mutable) { super(imageData, imageOffset, imageLength, mutable); }
 
 	protected Image(int[] rgb, int Width, int Height, boolean processAlpha) { super(rgb, Width, Height, processAlpha); }
 
@@ -55,7 +53,7 @@ public class Image extends PlatformImage
 		if (imageData == null) {throw new NullPointerException();}
 		if (imageOffset + imageLength > imageData.length) {throw new ArrayIndexOutOfBoundsException();}
 
-		return new Image(imageData, imageOffset, imageLength);
+		return new Image(imageData, imageOffset, imageLength, false);
 	}
 
 	public static Image createImage(byte[] imageData, int imageOffset, int imageLength, boolean mutable) throws IllegalArgumentException
@@ -128,5 +126,4 @@ public class Image extends PlatformImage
 		if (rgb.length < width * height) {throw new ArrayIndexOutOfBoundsException();}
 		return new Image(rgb, width, height, processAlpha);
 	}
-
 }

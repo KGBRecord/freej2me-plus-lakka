@@ -120,7 +120,7 @@ public class MIDletLoader extends URLClassLoader
 			System.setProperty("microedition.m3g.version", "1.1");
 			System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
 			System.setProperty("device.imei", "000000000000000");
-			System.setProperty("com.siemens.IMEI", "000000000000000");
+			System.setProperty("com.siemens.IMEI", "000000000005102");
 			System.setProperty("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
 			System.setProperty("com.siemens.OSVersion", "11");
 			System.setProperty("microedition.media.version", "1.1");
@@ -346,6 +346,8 @@ public class MIDletLoader extends URLClassLoader
 				if(!keyValueMap.containsKey(currentKey)) { keyValueMap.put(currentKey, currentValue.toString().trim());  }
 				else { Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "properties already contain " + currentKey + "! Maintaining current value: " + keyValueMap.get(currentKey)); }
 			}
+
+			if(keyValueMap.containsKey("MIDlet-1")) { hasMIDlet = true; }
 
 			// If no MIDlet was found above, we'll try loading this jar as a DoJa file, which has an accompanying .jam descriptor (this is fine because if a jad is present, it's loaded before this method is even called)
 			Mobile.isDoJa = !hasMIDlet;
@@ -634,24 +636,26 @@ public class MIDletLoader extends URLClassLoader
 		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
 		while (resource.startsWith("//")) { resource = resource.substring(1); }
 
+		// Replace unsupported slashes
+		resource = resource.replace("\\", "/");
+
 		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
 			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
 			String resourcePath = className[selectedMidlet].replace(".", "/");
     
 			// If we really are in a subdir
-			if(resourcePath.contains("/")) 
+			if(resourcePath.contains("/") && !resource.contains(resourcePath)) 
 			{
 				// Remove the class name from the resolved path
 				resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
-			
-				// And there we have it, just append the resource at the end of it.
-				resource = resourcePath + resource;
+
+				// And there we have it, just append the resource at the end of it, IF the resource doesn't already have it.
+				if(!resource.startsWith(resourcePath)) { resource = resourcePath + resource; }
+				else { resource = "/" + resource; }
 			}
 			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
-		
-		resource = resource.replace("\\", "/");
 
 		URL url = getResource(resource);
 
@@ -689,24 +693,26 @@ public class MIDletLoader extends URLClassLoader
 		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
 		while (resource.startsWith("//")) { resource = resource.substring(1); }
 
+		// Replace unsupported slashes
+		resource = resource.replace("\\", "/");
+
 		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
 			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
 			String resourcePath = className[selectedMidlet].replace(".", "/");
     
 			// If we really are in a subdir
-			if(resourcePath.contains("/")) 
+			if(resourcePath.contains("/") && !resource.contains(resourcePath)) 
 			{
 				// Remove the class name from the resolved path
 				resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
-			
-				// And there we have it, just append the resource at the end of it.
-				resource = resourcePath + resource;
+
+				// And there we have it, just append the resource at the end of it, IF the resource doesn't already have it.
+				if(!resource.startsWith(resourcePath)) { resource = resourcePath + resource; }
+				else { resource = "/" + resource; }
 			}
 			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
-
-		resource = resource.replace("\\", "/");
 
 		URL url = getResource(resource);
 
@@ -741,6 +747,9 @@ public class MIDletLoader extends URLClassLoader
 		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
 		while (resource.startsWith("//")) { resource = resource.substring(1); }
 
+		// Replace unsupported slashes
+		resource = resource.replace("\\", "/");
+
 		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
 			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
@@ -752,13 +761,12 @@ public class MIDletLoader extends URLClassLoader
 				// Remove the class name from the resolved path
 				resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
 			
-				// And there we have it, just append the resource at the end of it.
-				resource = resourcePath + resource;
+				// And there we have it, just append the resource at the end of it, IF the resource doesn't already have it.
+				if(!resource.startsWith(resourcePath)) { resource = resourcePath + resource; }
+				else { resource = "/" + resource; }
 			}
 			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
-
-		resource = resource.replace("\\", "/");
 
 		// We basically ignore everything done above at the moment
 		resource = baseUrl.toString().replace(".jar", ".sp");

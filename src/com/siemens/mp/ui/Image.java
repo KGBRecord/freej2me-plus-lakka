@@ -16,6 +16,7 @@
 */
 package com.siemens.mp.ui;
 
+import java.awt.image.DataBufferInt;
 import java.io.IOException;
 
 import org.recompile.mobile.Mobile;
@@ -26,7 +27,7 @@ import javax.microedition.lcdui.game.Sprite;
 // NativeMem is a complete stub as is, so inherit javax Image directly, as it's what many games like as return value here
 public class Image extends javax.microedition.lcdui.Image 
 {
-    static javax.microedition.lcdui.Image img;
+    public static javax.microedition.lcdui.Image img;
     public static final int COLOR_BMP_8BIT = 5;
 
     protected Image() { }
@@ -129,6 +130,71 @@ public class Image extends javax.microedition.lcdui.Image
         return javax.microedition.lcdui.Image.createRGBImage(imgData, imageWidth, imageHeight, hasAlpha);
     }
 
+    public static javax.microedition.lcdui.Image createImageFromBitmap(byte[] imageData, int imageWidth, int imageHeight) 
+    {
+        if (imageWidth <= 0 || imageHeight <= 0) { throw new IllegalArgumentException("Width and height must be greater than zero.");}
+    
+        javax.microedition.lcdui.Image image = javax.microedition.lcdui.Image.createImage(imageWidth, imageHeight);
+        DataBufferInt dataBuffer = (DataBufferInt) image.getCanvas().getRaster().getDataBuffer();
+        int[] rgbData = dataBuffer.getData();
+    
+        for (int j = 0; j < imageHeight; j++) 
+        {
+            for (int i = 0; i < imageWidth; i++) 
+            {
+                int byteIndex = (j * imageWidth + i) / 8;
+                int bitIndex = (j * imageWidth + i) % 8;
+    
+                int pixelValue = (imageData[byteIndex] >> (7 - bitIndex)) & 0x01;
+    
+                // Set the color based on the pixel value, 1 for black and 0 for white
+                rgbData[j * imageWidth + i] = (pixelValue == 1) ? 0xFF000000 : 0xFFFFFFFF; // Black or White
+            }
+        }
+    
+        image.set2Bpp(false);
+        return image;
+    }
+    
+    public static javax.microedition.lcdui.Image createTransparentImageFromBitmap(byte[] bytes, int width, int height) 
+    {
+        if (width <= 0 || height <= 0) { throw new IllegalArgumentException("Width and height must be greater than zero."); }
+    
+        javax.microedition.lcdui.Image image = javax.microedition.lcdui.Image.createImage(width, height);
+        DataBufferInt dataBuffer = (DataBufferInt) image.getCanvas().getRaster().getDataBuffer();
+        int[] rgbData = dataBuffer.getData();
+    
+        for (int j = 0; j < height; j++) 
+        {
+            for (int i = 0; i < width; i++) 
+            {
+                int byteIndex = (j * width + i) / 4;
+                int bitIndex = (j * width + i) % 4;
+    
+                // Extract the 2bpp value
+                int value = (bytes[byteIndex] >> (6 - bitIndex * 2)) & 0x03;
+    
+                // Set the color based on the 2bpp value
+                switch (value) 
+                {
+                    case 0: // Transparent
+                        rgbData[j * width + i] = 0x00FFFFFF; // Transparent
+                        break;
+                    case 1: // White
+                        rgbData[j * width + i] = 0xFFFFFFFF;
+                        break;
+                    case 2: // Black
+                    case 3: // Black
+                        rgbData[j * width + i] = 0xFF000000; // Black
+                        break;
+                }
+            }
+        }
+    
+        image.set2Bpp(true);
+        return image;
+    }
+
     /* This one is barely documented */
     public static javax.microedition.lcdui.Image getNativeImage(Image img) 
     {
@@ -148,5 +214,4 @@ public class Image extends javax.microedition.lcdui.Image
         img.setCanvas(img.transformImage(img.getCanvas(), Sprite.TRANS_MIRROR_ROT180)); // Untested
         Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "mirrorImageVertically(image) untested"); 
     }
-
 }
