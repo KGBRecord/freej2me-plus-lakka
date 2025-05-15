@@ -231,6 +231,8 @@ public class Sprite extends Layer
 		setTransform(t_currentTransformation);
 	}
 
+	public void setCollisionRectangle(int x, int y, int width, int height) { defineCollisionRectangle(x, y, width, height); }
+
 	public void setTransform(int transform)
 	{
 		this.x = this.x + getTransformedPos(dRefX, this.t_currentTransformation, true) - getTransformedPos(dRefX, transform, true);
@@ -240,10 +242,9 @@ public class Sprite extends Layer
 		t_currentTransformation = transform;
 	}
 
-	/* All CollidesWith methods have been rewritten, but i couldn't find a jar that actually uses them yet, so the debug entry messages will remain in place */
+	/* Looks like this one works, Tested in M-Racer */
 	public final boolean collidesWith(Sprite s, boolean pixelLevel) 
 	{
-		Mobile.log(Mobile.LOG_WARNING, Sprite.class.getPackage().getName() + "." + Sprite.class.getSimpleName() + ": " + "CollidesWith A");
 		if (!(s.visible && this.visible)) { return false; }
 	
 		Rect thisRect = getCollisionRect(this);

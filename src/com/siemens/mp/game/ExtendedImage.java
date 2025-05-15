@@ -30,7 +30,7 @@ public class ExtendedImage extends com.siemens.mp.misc.NativeMem
 {
 	private int[] palette = { 0xFF000000, 0xFFFFFFFF };
 
-	private PlatformImage image;
+	private Image image;
 
 	private PlatformGraphics gc;
 
@@ -40,13 +40,13 @@ public class ExtendedImage extends com.siemens.mp.misc.NativeMem
 	
 	public ExtendedImage(Image img)
 	{
-		image = new PlatformImage(img);
+		image = Image.createImage(img);
 		width = image.getWidth();
 		height = image.getHeight();
 		gc = image.getGraphics();
 	}
 
-	public Image getImage() { return (Image) image; }
+	public Image getImage() { return image; }
 
 	public int getPixel(int x, int y)
 	{
@@ -56,15 +56,15 @@ public class ExtendedImage extends com.siemens.mp.misc.NativeMem
 	public void setPixel(int x, int y, byte color)
 	{
 		image.setPixel(x, y, palette[color & 0x1]);
-		Mobile.log(Mobile.LOG_WARNING, ExtendedImage.class.getPackage().getName() + "." + ExtendedImage.class.getSimpleName() + ": " + "setPixels");
+		Mobile.log(Mobile.LOG_WARNING, ExtendedImage.class.getPackage().getName() + "." + ExtendedImage.class.getSimpleName() + ": " + "setPixels untested");
 	}
 
 	public void getPixelBytes(byte[] pixels, int x, int y, int width, int height) 
 	{ 
-		Mobile.log(Mobile.LOG_WARNING, ExtendedImage.class.getPackage().getName() + "." + ExtendedImage.class.getSimpleName() + ": " + "getPixelBytes");
+		Mobile.log(Mobile.LOG_WARNING, ExtendedImage.class.getPackage().getName() + "." + ExtendedImage.class.getSimpleName() + ": " + "getPixelBytes not implemented");
 	}
 
-	public void setPixels(byte[] pixels, int x, int y, int width, int height) { Mobile.log(Mobile.LOG_WARNING, ExtendedImage.class.getPackage().getName() + "." + ExtendedImage.class.getSimpleName() + ": " + "setPixels"); }
+	public void setPixels(byte[] pixels, int x, int y, int width, int height) { Mobile.log(Mobile.LOG_WARNING, ExtendedImage.class.getPackage().getName() + "." + ExtendedImage.class.getSimpleName() + ": " + "setPixels(byte[]) not implemented"); }
 
 	public void clear(byte color)
 	{

@@ -142,9 +142,8 @@ public class MelodyComposer
 		/* The notes array is a pair of [note, length] */
 		for (int i = 0; i < notes.length; i += 2) 
 		{
-			if(notes[i] == TONE_REPEAT) 
+			if(notes[i] == TONE_REPEAT) // Looks like it works, tested on M-Racer
 			{
-				Mobile.log(Mobile.LOG_DEBUG, MelodyComposer.class.getPackage().getName() + "." + MelodyComposer.class.getSimpleName() + ": " + "TONE_REPEAT!");
 				for(int rep = 0; rep < notes[i+1]; rep++) // Repeat N times from the beginning until the current position
 				{
 					for(int repindex= 0; repindex < i; repindex += 2) 
