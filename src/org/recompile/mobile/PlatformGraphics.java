@@ -136,13 +136,16 @@ public abstract class PlatformGraphics implements DirectGraphics
         //gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	}
-	
+
 	public void reset() //Internal use method, resets the Graphics object to its inital values
 	{
-		translate(-1 * translateX, -1 * translateY);
-		
-		if(Mobile.compatClipRectOnGfxReset) { clipRect(0, 0, canvas.getWidth(), canvas.getHeight()); }
-		else { setClip(0, 0, canvas.getWidth(), canvas.getHeight()); }
+		reset(0, 0, canvas.getWidth(), canvas.getHeight());
+	}
+	
+	public void reset(int clipx, int clipy, int clipw, int cliph) //Internal use method, resets the Graphics object to its inital values
+	{		
+		if(Mobile.compatClipRectOnGfxReset) { clipRect(clipx, clipy, clipw, cliph); }
+		else { setClip(clipx, clipy, clipw, cliph); }
 		setColor(0,0,0);
 		setFont(Font.getDefaultFont());
 		setStrokeStyle(SOLID);

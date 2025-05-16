@@ -406,11 +406,11 @@ public class Form extends Screen
 				graphics.setColor(Mobile.lcduiTextColor);
 				graphics.fillRect(x + width - scrollbarWidth, y+yscrollStart, scrollbarWidth, yscrollHeight);
 			}
-		
-			graphics.reset();
 
 			ret = (focusedItem+1)+" of "+items.size();
 		}
+
+		graphics.reset();
 
 		return ret;
 	}

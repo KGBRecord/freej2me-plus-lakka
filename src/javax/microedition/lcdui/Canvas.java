@@ -178,7 +178,6 @@ public abstract class Canvas extends Displayable
 
 		// serviceRepaints has to force pending repaints to happen
 		Mobile.getDisplay().processPaintsNow();
-		Mobile.getPlatform().flushGraphics(platformImage, 0, 0, width, height);
 	}
 
 	public void setFullScreenMode(boolean mode)
@@ -207,6 +206,9 @@ public abstract class Canvas extends Displayable
 
 	private void paintCommandsBar() 
 	{
+		// LCDUI should work independently of the current graphics translation, so translate back to 0,0 before any drawing and restore at the end
+		int restoreX = graphics.getTranslateX(), restoreY = graphics.getTranslateY();
+		graphics.translate(-restoreX, -restoreY);
 		graphics.reset();
 
 		graphics.setFont(Font.getDefaultFont());
@@ -232,6 +234,8 @@ public abstract class Canvas extends Displayable
 			xPos = (3 * width / 4) - textCenter;
 			graphics.drawString(commands.get(1).getLabel(), xPos, height-barHeight, Graphics.LEFT);
 		}
+
+		graphics.translate(restoreX, restoreY);
 	}
 
 	public void addCommand(Command cmd)	{ super.addCommand(cmd); }

@@ -122,6 +122,11 @@ public abstract class Displayable
 	{
 		if(!isShown()) { return; }
 
+		// LCDUI should work independently of the current graphics translation, so translate back to 0,0 before any drawing and restore at the end
+		int restoreX = graphics.getTranslateX(), restoreY = graphics.getTranslateY();
+		graphics.translate(-restoreX, -restoreY);
+		graphics.reset();
+
 		graphics.setFont(Font.getDefaultFont());
 
 		// Draw Background:
@@ -255,6 +260,8 @@ public abstract class Displayable
 				graphics.drawString(itemCommand.getLabel(), width/2, height-commandsBarHeight+titlePadding, Graphics.HCENTER);
 			}
 		}
+
+		graphics.translate(restoreX, restoreY);
 	
 		Mobile.getPlatform().flushGraphics(platformImage, 0, 0, width, height);
 	}
