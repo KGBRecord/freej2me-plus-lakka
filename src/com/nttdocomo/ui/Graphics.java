@@ -18,7 +18,7 @@ package com.nttdocomo.ui;
 
 import java.awt.Color;
 
-public class Graphics extends javax.microedition.lcdui.Graphics
+public class Graphics extends org.recompile.mobile.PlatformGraphics
 { 
 	public Graphics(org.recompile.mobile.PlatformImage image) { super(image); }
 }

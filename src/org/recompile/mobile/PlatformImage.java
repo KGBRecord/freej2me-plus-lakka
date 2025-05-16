@@ -54,7 +54,7 @@ public class PlatformImage
 
 	public void setCanvas(BufferedImage newCanvas) { canvas = newCanvas; }
 
-	public Graphics getGraphics() { return gc; }
+	public Graphics getMIDPGraphics() { return gc; }
 
 	public com.nttdocomo.ui.Graphics getDoJaGraphics() { return djgc; }
 

@@ -126,4 +126,6 @@ public class Image extends PlatformImage
 		if (rgb.length < width * height) {throw new ArrayIndexOutOfBoundsException();}
 		return new Image(rgb, width, height, processAlpha);
 	}
+
+	public Graphics getGraphics() { return super.getMIDPGraphics(); }
 }

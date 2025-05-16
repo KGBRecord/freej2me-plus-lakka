@@ -117,7 +117,7 @@ public class MobilePlatform
 
 		lcd = new PlatformImage(width, height);
 
-		if(!Mobile.isDoJa) { gc = lcd.getGraphics(); }
+		if(!Mobile.isDoJa) { gc = lcd.getMIDPGraphics(); }
 		else { gc = lcd.getDoJaGraphics(); }
 		
 		/* 

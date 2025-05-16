@@ -21,6 +21,7 @@ import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Graphics;
 
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 import org.recompile.mobile.PlatformImage;
 
 public abstract class GameCanvas extends Canvas
@@ -45,7 +46,7 @@ public abstract class GameCanvas extends Canvas
 
 	protected Graphics getGraphics()
 	{
-		return (Graphics) platformImage.getGraphics();
+		return platformImage.getMIDPGraphics();
 	}
 
 	public void paint(Graphics g) { }
@@ -66,7 +67,7 @@ public abstract class GameCanvas extends Canvas
 
 	public int getKeyStates() // found in use
 	{
-		int t = Mobile.getPlatform().keyState;
+		int t = MobilePlatform.keyState;
 		return t;
 	}
 

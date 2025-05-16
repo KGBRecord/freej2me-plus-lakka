@@ -16,7 +16,6 @@
 */
 package javax.microedition.m3g;
 
-import org.recompile.mobile.PlatformImage;
 import java.awt.image.Raster;
 
 import org.recompile.mobile.Mobile;
@@ -124,7 +123,7 @@ public class Image2D extends Object3D
 		if (!(image instanceof javax.microedition.lcdui.Image) && !(image instanceof java.awt.Image)) 
 			{ throw new IllegalArgumentException("The image object received is not appropriate to this implementation."); }
 
-		Raster img = ((PlatformImage) image).getCanvas().getData();
+		Raster img = ((javax.microedition.lcdui.Image) image).getCanvas().getData();
 		int bppSrc = img.getNumBands();
 		int[] buf = new int[bppSrc];
 

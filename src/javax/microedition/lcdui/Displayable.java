@@ -54,7 +54,7 @@ public abstract class Displayable
 		width = Mobile.getPlatform().lcdWidth;
 		height = Mobile.getPlatform().lcdHeight;
 		platformImage = new PlatformImage(width, height);
-		graphics = platformImage.getGraphics();
+		graphics = platformImage.getMIDPGraphics();
 	}
 
 	public void addCommand(Command cmd)
