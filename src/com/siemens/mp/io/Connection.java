@@ -21,7 +21,7 @@ import org.recompile.mobile.Mobile;
 public class Connection 
 {
     String connectTo;
-    ConnectionListener listener;
+    static ConnectionListener listener;
 
     public Connection(String connectTo) { this.connectTo = connectTo; }
 
@@ -31,7 +31,7 @@ public class Connection
         if (listener != null) { listener.receiveData(data); }
     }
 
-    public void setListener(ConnectionListener listener) { this.listener = listener; }
+    public static void setListener(ConnectionListener listener) { listener = listener; }
 
     public ConnectionListener getListener() { return listener; }
 }

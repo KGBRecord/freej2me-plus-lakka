@@ -114,14 +114,18 @@ public class ExtendedImage extends com.siemens.mp.misc.NativeMem
 		{
 			throw new IllegalArgumentException("x and width must be multiples of " + (image.is2Bpp() ? 4 : 8));
 		}
-	
-		for (int j = 0; j < height; j++) 
+
+		if(x < 0) { x = 0; }
+		if(y < 0) { y = 0; }
+
+		for (int j = 0; j < Math.min(height, image.getHeight()); j++) 
 		{
-			for (int i = 0; i < width; i++) 
+			for (int i = 0; i < Math.min(width, image.getWidth()); i++) 
 			{
 				int pixelIndex = (j * width + i) / (image.is2Bpp() ? 4 : 8);
 				int bitIndex = (j * width + i) % (image.is2Bpp() ? 4 : 8);
 	
+				if(pixelIndex >= pixels.length) { continue; }
 				if (image.is2Bpp()) 
 				{
 					int value = (pixels[pixelIndex] >> (6 - bitIndex * 2)) & 0x03;
@@ -150,9 +154,8 @@ public class ExtendedImage extends com.siemens.mp.misc.NativeMem
 
 	public void clear(byte color)
 	{
-		if(image.is2Bpp()) { gc.setColor(palette2Bpp[color & 3]); }
-		else { gc.setColor(palette1Bpp[color & 1]); }
-		
+		if(image.is2Bpp()) { gc.setColor(palette2Bpp[color & 0x3]); }
+		else { gc.setColor(palette1Bpp[color & 0x1]); }
 		gc.fillRect(0, 0, width, height);
 		gc.setColor(0xFFFFFFFF);
 	}

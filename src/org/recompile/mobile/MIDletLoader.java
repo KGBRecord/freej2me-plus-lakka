@@ -38,7 +38,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.ArrayList;
@@ -49,6 +51,8 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -90,6 +94,7 @@ public class MIDletLoader extends URLClassLoader
 	private static byte selectedMidlet = 0;
 	public static boolean MIDletSelected = false;
 
+
 	public MIDletLoader(URL url, Map<String, String> descriptorProperties)
 	{
 		super(new URL[] {url} );
@@ -120,7 +125,7 @@ public class MIDletLoader extends URLClassLoader
 			System.setProperty("microedition.m3g.version", "1.1");
 			System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
 			System.setProperty("device.imei", "000000000000000");
-			System.setProperty("com.siemens.IMEI", "000000000005102");
+			System.setProperty("com.siemens.IMEI", "000000000005152");
 			System.setProperty("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
 			System.setProperty("com.siemens.OSVersion", "11");
 			System.setProperty("microedition.media.version", "1.1");
@@ -152,7 +157,7 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("microedition.m3g.version", "1.1");
 		properties.put("wireless.messaging.sms.smsc", "+8613800010000");
 		properties.put("device.imei", "000000000000000");
-		properties.put("com.siemens.IMEI", "000000000000000");
+		properties.put("com.siemens.IMEI", "000000000005152");
 		properties.put("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
 		properties.put("com.siemens.OSVersion", "11");
 		properties.put("microedition.media.version", "1.1");
@@ -416,7 +421,7 @@ public class MIDletLoader extends URLClassLoader
 			url = findResource(resource);
 		}
 
-		if(url != null) // Standard MIDlet file (at least i assume so)
+		if(url != null) // Standard MIDlet manifest is present (at least i assume so)
 		{
 			try { parseDescriptorInto(url.openStream(), properties); } 
 			catch (Exception e) 
@@ -425,7 +430,7 @@ public class MIDletLoader extends URLClassLoader
 				e.printStackTrace();
 			}
 		}
-		else { Mobile.isDoJa = true; } // Else we assume it as DoJa
+		else { Mobile.isDoJa = properties.containsKey("MIDlet-1") ? false : true; } // Else we assume it as DoJa if a JAD file wasn't found, or if it was found but it, like the manifest, doesn't have the MIDlet token
 
 		if(Mobile.isDoJa) // No manifest found in the jar, or the manifest doesn't have a midlet specified. Maybe it's a DoJa file that has an accompanying .jam?
 		{
@@ -639,8 +644,9 @@ public class MIDletLoader extends URLClassLoader
 		// Replace unsupported slashes
 		resource = resource.replace("\\", "/");
 
-		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
+		if(!resource.startsWith("/") && getResource(resource) == null) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
+			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Initial path returned null data. Treating as relative path...");
 			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
 			String resourcePath = className[selectedMidlet].replace(".", "/");
     
@@ -696,8 +702,9 @@ public class MIDletLoader extends URLClassLoader
 		// Replace unsupported slashes
 		resource = resource.replace("\\", "/");
 
-		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
+		if(!resource.startsWith("/") && getResource(resource) == null) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
+			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Initial path returned null data. Treating as relative path...");
 			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
 			String resourcePath = className[selectedMidlet].replace(".", "/");
     
@@ -750,8 +757,9 @@ public class MIDletLoader extends URLClassLoader
 		// Replace unsupported slashes
 		resource = resource.replace("\\", "/");
 
-		if(!resource.startsWith("/")) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
+		if(!resource.startsWith("/") && getResource(resource) == null) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
 		{
+			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Initial path returned no scratchpad data. Treating as relative path...");
 			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
 			String resourcePath = className[selectedMidlet].replace(".", "/");
     
@@ -905,8 +913,15 @@ public class MIDletLoader extends URLClassLoader
 			super.visit(version, access, name, signature, superName, interfaces);
 		}
 
+		public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) 
+		{
+			return super.visitField(access, name, desc, signature, value);
+		}
+
 		public MethodVisitor visitMethod(int access, String name, final String desc, final String signature, final String[] exceptions)
 		{
+
+			// Override invalid Thread methods
 			if ("java/lang/Thread".equals(superName))
 			{ 
 				if("suspend".equals(name) || "stop".equals(name) || "resume".equals(name)) 
@@ -916,6 +931,7 @@ public class MIDletLoader extends URLClassLoader
 				}
 			}
 
+			// Try bypassing ALW1 wrapper
 			if (desc.equals("()V") && name.equals("startRealApp") && access == Opcodes.ACC_PRIVATE) 
 			{
 				Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "MIDlet uses an ALW1 ad/demo wrapper... trying to patch...");
@@ -937,7 +953,6 @@ public class MIDletLoader extends URLClassLoader
 
 			public void visitMethodInsn(int opcode, String owner, String name, String desc)
 			{
-
 				if (opcode == Opcodes.INVOKEVIRTUAL && ("repaint".equals(name) || "serviceRepaints".equals(name)) || "flushGraphics".equals(name)) { methodHasScreenDraw = true; }
 
 				// This one overrides Thread.sleep calls with a call to the "MIDletEnhancements" class, which allows nullifying all sleeps (Unlock FPS hack)
@@ -968,6 +983,16 @@ public class MIDletLoader extends URLClassLoader
 				{
 					mv.visitMethodInsn(opcode, owner, name, desc);
 				}
+			}
+
+			public void visitFieldInsn(int opcode, String owner, String name, String desc) 
+			{
+				super.visitFieldInsn(opcode, owner, name, desc);
+			}
+
+			public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) 
+			{
+				super.visitLocalVariable(name, desc, signature, start, end, index);
 			}
 		}
 	}
