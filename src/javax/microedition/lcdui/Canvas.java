@@ -52,6 +52,8 @@ public abstract class Canvas extends Displayable
 	private int barHeight;
 	private boolean fullscreen = false;
 
+	private boolean pendingRepaint = false;
+
 	protected Canvas()
 	{
 		Mobile.log(Mobile.LOG_INFO, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Create Canvas:"+width+", "+height);
@@ -148,7 +150,11 @@ public abstract class Canvas extends Displayable
 	public void repaint(int x, int y, int width, int height)
 	{
 		Mobile.getPlatform().limitFps();
-		Mobile.getDisplay().postPaintRequest(() -> { paintRequest(x, y, width, height); });
+		if(!pendingRepaint) 
+		{ 
+			Mobile.getDisplay().postPaintRequest(() -> { paintRequest(x, y, width, height); }); 
+			pendingRepaint = true;
+		}
 	}
 
 	public void paintRequest(int x, int y, int width, int height) // Repaint queues this (looks better than throwing all this code inside the postPaintRequest lambda above)
@@ -170,6 +176,7 @@ public abstract class Canvas extends Displayable
 			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
 			e.printStackTrace();
 		}
+		finally { pendingRepaint = false; }
 	}
 
 	public void serviceRepaints() 

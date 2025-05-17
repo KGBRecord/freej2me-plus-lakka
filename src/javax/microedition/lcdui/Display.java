@@ -111,11 +111,9 @@ public class Display
 	{
 		Runnable paintAction;
 
-		synchronized (paintQueue) 
-		{
-			paintAction = paintQueue.poll();
-			if (paintAction != null) { paintAction.run(); }
-		}
+		synchronized (paintQueue) { paintAction = paintQueue.poll(); }
+		if (paintAction != null) { paintAction.run(); }
+		processSerialCalls(); // serial calls should always happen AFTER the paint cycle
 	}
 
 	public boolean flashBacklight(int duration) 
