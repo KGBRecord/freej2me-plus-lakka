@@ -651,6 +651,7 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{ 
+			stop();
 			if(metaListener != null) 
 			{
 				midi.removeMetaEventListener(metaListener);
@@ -662,6 +663,7 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
+			stop();
 			if (metaListener != null) 
 			{
 				midi.removeMetaEventListener(metaListener);
@@ -882,13 +884,18 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
+			if(wavClips != null) 
+			{
+				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); }
+			}
 			isPlaying = false;
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
 
 		public void deallocate() 
-		{ 
+		{
+			stop();
 			if(metaListener != null) 
 			{
 				midi.removeMetaEventListener(metaListener);
@@ -899,13 +906,18 @@ public class PlatformPlayer implements Player
 			
 			if(wavClips != null) 
 			{
-				for(int i = 0; i < wavClips.length; i++) { wavClips[i].close(); }
+				for(int i = 0; i < wavClips.length; i++) 
+				{ 
+					wavClips[i].stop(); 
+					wavClips[i].close(); 
+				}
 			}
 			isPlaying = false;
 		}
 
 		public void close() 
 		{
+			stop();
 			if (metaListener != null) 
 			{
 				midi.removeMetaEventListener(metaListener);
@@ -919,6 +931,7 @@ public class PlatformPlayer implements Player
 			{
 				for(int i = 0; i < wavClips.length; i++) 
 				{
+					wavClips[i].stop();
 					wavClips[i].close();
 					wavStreams[i] = null;
 				}
@@ -1088,6 +1101,7 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{
+			stop();
 			if (lineListener != null) 
 			{
 				wavClip.removeLineListener(lineListener);
@@ -1098,6 +1112,7 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
+			stop();
 			if (lineListener != null) 
 			{
 				wavClip.removeLineListener(lineListener);
@@ -1232,6 +1247,7 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
+			stop();
 			mp3Player.close();
 			mp3Player = null;
 			tmpStream = null;
