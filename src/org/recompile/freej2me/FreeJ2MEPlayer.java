@@ -164,7 +164,8 @@ public final class FreeJ2MEPlayer extends Dialog
 
             @Override
             @SuppressWarnings("unchecked")
-            public void drop(DropTargetDropEvent dtde) {
+            public void drop(DropTargetDropEvent dtde) 
+            {
                 try 
                 {
                     dtde.acceptDrop(DnDConstants.ACTION_COPY);
@@ -178,13 +179,10 @@ public final class FreeJ2MEPlayer extends Dialog
                         }
                     }
                     dtde.dropComplete(true);
-                } catch (Exception e) 
-                {
-                    e.printStackTrace();
-                    dtde.dropComplete(false);
-                }
+                } catch (Exception e) { System.out.println("Exception caught in Drag and Drop:" + e.getMessage()); }
                 finally 
                 {
+                    dtde.dropComplete(true);
                     toggleComponentsVisibility(true);
                     dropMessageLabel.setVisible(false);
                     setBackground(FreeJ2ME.freeJ2MEBGColor);

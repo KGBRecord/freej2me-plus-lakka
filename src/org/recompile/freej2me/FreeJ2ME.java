@@ -604,7 +604,8 @@ public class FreeJ2ME
 					{
 						dtde.acceptDrop(DnDConstants.ACTION_COPY);
 						Transferable transferable = dtde.getTransferable();
-						if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+						if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) 
+						{
 							java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
 							if (!files.isEmpty() && !awtGUI.hasLoadedFile() && fileSupported) 
 							{
@@ -612,15 +613,11 @@ public class FreeJ2ME
 								awtGUI.loadJarFile(files.get(0).toURI().toString(), true);
 							}
 						}
-						dtde.dropComplete(true);
 					} 
-					catch (Exception e) 
-					{
-						e.printStackTrace();
-						dtde.dropComplete(false);
-					} 
+					catch (Exception e) { System.out.println("Exception caught in Drag and Drop:" + e.getMessage()); } 
 					finally 
 					{
+						dtde.dropComplete(true);
 						showDragMessage = false;
 						repaint();
 					}
