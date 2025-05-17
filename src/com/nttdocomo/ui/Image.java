@@ -29,9 +29,11 @@ public abstract class Image extends PlatformImage
 
 	protected Image() { }
 
+	protected Image(Image source) { super(source); }
+
 	protected Image(int width, int height) { super(width, height, null); }
 
-    protected Image(Image source) { super(source); }
+	protected Image(int width, int height, int[] data, int off) { super(width, height, data, off); }
 
 	public static Image createImage(Image source) 
 	{
@@ -49,7 +51,16 @@ public abstract class Image extends PlatformImage
 		return new DoJaLCDUIImage(width, height);
 	}
 
-    public Graphics getGraphics() { return super.getDoJaGraphics(); }
+	public static Image createImage(int width, int height, int[] data, int off) 
+	{
+		if (data == null) { throw new NullPointerException("data cannot be null"); }
+		if (width <= 0 || height <= 0) { throw new IllegalArgumentException("width and height must be greater than zero"); }
+		if (off < 0 || off + width * height > data.length) { throw new ArrayIndexOutOfBoundsException("Invalid offset or data length"); }
+
+		return new DoJaLCDUIImage(width, height, data, off);
+	}
+
+	public Graphics getGraphics() { return super.getDoJaGraphics(); }
 
 	public void dispose() // TODO: Implement this properly
 	{

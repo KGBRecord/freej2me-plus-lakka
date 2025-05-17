@@ -54,9 +54,17 @@ public class PlatformImage
 
 	public void setCanvas(BufferedImage newCanvas) { canvas = newCanvas; }
 
-	public Graphics getMIDPGraphics() { return gc; }
+	public Graphics getMIDPGraphics() 
+	{ 
+		if(!isMutable()) { throw new IllegalStateException("Image is immutable, cannot access Graphics object"); }
+		return gc;
+	}
 
-	public com.nttdocomo.ui.Graphics getDoJaGraphics() { return djgc; }
+	public com.nttdocomo.ui.Graphics getDoJaGraphics() 
+	{ 
+		if(!isMutable()) { throw new IllegalStateException("Image is immutable, cannot access Graphics object"); }
+		return djgc; 
+	}
 
 
 	protected void createGraphics()
@@ -142,9 +150,7 @@ public class PlatformImage
 			height = (int)temp.getHeight();
 
 			canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			createGraphics();
-
-			gc.getGraphics2D().drawImage(temp, 0, 0, null);
+			canvas.getGraphics().drawImage(temp, 0, 0, null);
 		}
 	}
 
@@ -169,9 +175,8 @@ public class PlatformImage
 		height = (int)temp.getHeight();
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		createGraphics();
 
-		gc.getGraphics2D().drawImage(temp, 0, 0, null);
+		canvas.getGraphics().drawImage(temp, 0, 0, null);
 	}
 
 	public PlatformImage(Image source)
@@ -190,9 +195,8 @@ public class PlatformImage
 		height = source.getHeight();
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		createGraphics();
 
-		gc.getGraphics2D().drawImage(source.getCanvas(), 0, 0, null);
+		canvas.getGraphics().drawImage(source.getCanvas(), 0, 0, null);
 	}
 
 	public PlatformImage(byte[] imageData, int imageOffset, int imageLength, boolean mutable)
@@ -218,9 +222,9 @@ public class PlatformImage
 		height = temp.getHeight();
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		createGraphics();
+		if(mutable) { createGraphics(); }
 
-		gc.getGraphics2D().drawImage(temp, 0, 0, null);
+		canvas.getGraphics().drawImage(temp, 0, 0, null);
 
 		isMutable = mutable;
 	}
@@ -235,8 +239,7 @@ public class PlatformImage
 		if(height < 1) { height = 1; }
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		
-		createGraphics();
+		int[] canvasPixels = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
 		// Process alpha if necessary
 		if (!processAlpha) 
@@ -244,9 +247,7 @@ public class PlatformImage
 			for (int i = 0; i < rgb.length; i++) { rgb[i] |= 0xFF000000; } // Set alpha to opaque
 		}
 
-		gc.drawRGB(rgb, 0, width, 0, 0, width, height, true);
-
-		isMutable = true;
+		System.arraycopy(rgb, 0, canvasPixels, 0, Math.min(rgb.length, canvasPixels.length));
 	}
 
 	public PlatformImage(Image image, int x, int y, int Width, int Height, int transform)
@@ -268,19 +269,15 @@ public class PlatformImage
 		}
 	
 		canvas = transformImage(sub, transform);
-	
-		createGraphics();
-	
+		
 		width = (int) canvas.getWidth();
 		height = (int) canvas.getHeight();
-
-		this.isMutable = true;
 	}
 
 	// DoJa's image class uses these
 	public PlatformImage(com.nttdocomo.ui.Image source) 
 	{
-        // Create Image from DoJa Image
+		// Create DoJa Image from DoJa Image
 		if(source == null) 
 		{ 
 			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image, it is null."); }
@@ -294,11 +291,9 @@ public class PlatformImage
 		height = source.getWidth();
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		createDoJaGraphics();
 
-		djgc.getGraphics2D().drawImage(source.getCanvas(), 0, 0, null);
-		
-    }
+		canvas.getGraphics().drawImage(source.getCanvas(), 0, 0, null);
+	}
 
 	public PlatformImage(int Width, int Height, com.nttdocomo.ui.Image source) // Just to differentiate from the other constructor above
 	{
@@ -316,7 +311,23 @@ public class PlatformImage
 		djgc.setColor(0x000000);
 
 		isMutable = true;
-    }
+	}
+
+	public PlatformImage(int Width, int Height, int[] data, int off) 
+	{
+		// Create DoJa image from int array
+		width = Width;
+		height = Height;
+
+		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		createDoJaGraphics();
+
+		int[] canvasPixels = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
+		System.arraycopy(data, off, canvasPixels, 0, width * height);
+		
+		isMutable = true;
+	}
+
 
 	// Siemens methods
 	public void set2Bpp(boolean bpp) { this.is2bpp = bpp; }

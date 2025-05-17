@@ -20,7 +20,9 @@ import org.recompile.mobile.PlatformImage;
 
 public class DoJaLCDUIImage extends Image 
 {
-    public DoJaLCDUIImage(int width, int height) { super(width, height); }
+	public DoJaLCDUIImage(Image source) { super(source); }
 
-    public DoJaLCDUIImage(Image source) { super(source); }
+	public DoJaLCDUIImage(int width, int height) { super(width, height); }
+
+	public DoJaLCDUIImage(int width, int height, int[] data, int off) { super(width, height, data, off); }
 }
