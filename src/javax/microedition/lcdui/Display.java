@@ -44,10 +44,10 @@ public class Display
 
 	private static Display display;
 
-	private final Queue<Runnable> serialCalls;
+	private static final Queue<Runnable> serialCalls = new LinkedList<>();
 
-	private final Queue<Runnable> paintQueue;
-	private final Thread paintThread;
+	private static final Queue<Runnable> paintQueue = new LinkedList<>();
+	private Thread paintThread;
 
 	private Runnable setCurrentRequest;
 
@@ -59,9 +59,6 @@ public class Display
 
 		Mobile.setDisplay(this);
 
-		serialCalls = new LinkedList<>();
-
-		paintQueue = new LinkedList<>();
 		paintThread = new Thread(this::processPaintCalls, "CanvasRepaints-Thread");
 		paintThread.start();
 	}
@@ -74,10 +71,7 @@ public class Display
 		Runnable call;
 		synchronized (serialCalls) { call = serialCalls.poll(); }
 		
-		if(call != null) 
-		{ 
-			call.run();
-		}
+		if(call != null) { call.run(); }
 	}
 
 	// Paint queue methods
