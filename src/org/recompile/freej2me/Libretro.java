@@ -291,8 +291,8 @@ public class Libretro
 										Mobile.config.init();
 
 										/* Override configs with the ones passed through commandline */
-										Mobile.config.settings.put("width",  ""+lcdWidth);
-										Mobile.config.settings.put("height", ""+lcdHeight);
+										Mobile.config.settings.put("scrwidth",  ""+lcdWidth);
+										Mobile.config.settings.put("scrheight", ""+lcdHeight);
 
 										if(Mobile.rotateDisplay)   { Mobile.config.settings.put("rotate", "on");  }
 										if(!Mobile.rotateDisplay)  { Mobile.config.settings.put("rotate", "off"); }
@@ -331,8 +331,8 @@ public class Libretro
 										if(!Mobile.compatTranslateToOriginOnReset) { Mobile.config.settings.put("compattranstooriginonreset", "off"); }
 										else                                       { Mobile.config.settings.put("compattranstooriginonreset", "on"); }
 
-										if(!Mobile.compatIgnoreGCCalls) { Mobile.config.settings.put("ignoregccalls", "off"); }
-										else                                 { Mobile.config.settings.put("ignoregccalls", "on"); }
+										if(!Mobile.compatIgnoreGCCalls) { Mobile.config.settings.put("compatignoregccalls", "off"); }
+										else                                 { Mobile.config.settings.put("compatignoregccalls", "on"); }
 
 										if(!Mobile.useCustomTextFont)  { Mobile.config.settings.put("textfont", "Default"); }
 										else                           { Mobile.config.settings.put("textfont", "Custom");  }
@@ -377,8 +377,8 @@ public class Libretro
 									 * received string is a config update. Only useful for debugging, 
 									 * but better leave it in there as we might make adjustments later.
 									 */
-									Mobile.config.settings.put("width",  ""+Integer.parseInt(cfgtokens[1]));
-									Mobile.config.settings.put("height", ""+Integer.parseInt(cfgtokens[2]));
+									Mobile.config.settings.put("scrwidth",  ""+Integer.parseInt(cfgtokens[1]));
+									Mobile.config.settings.put("scrheight", ""+Integer.parseInt(cfgtokens[2]));
 
 									if(Integer.parseInt(cfgtokens[3])==1) { Mobile.config.settings.put("rotate", "on");  }
 									if(Integer.parseInt(cfgtokens[3])==0) { Mobile.config.settings.put("rotate", "off"); }
@@ -445,8 +445,8 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[20])==2) { Mobile.config.settings.put("fpshack", "Extended");  }
 									if(Integer.parseInt(cfgtokens[20])==3) { Mobile.config.settings.put("fpshack", "Aggressive");  }
 
-									if(Integer.parseInt(cfgtokens[21])==0) { Mobile.config.settings.put("ignoregccalls", "off");  }
-									else { Mobile.config.settings.put("ignoregccalls", "on"); }
+									if(Integer.parseInt(cfgtokens[21])==0) { Mobile.config.settings.put("compatignoregccalls", "off");  }
+									else { Mobile.config.settings.put("compatignoregccalls", "on"); }
 
 
 									Mobile.config.saveConfig();

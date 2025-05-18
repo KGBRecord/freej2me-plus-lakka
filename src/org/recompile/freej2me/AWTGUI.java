@@ -881,9 +881,9 @@ public final class AWTGUI
 
 			transToOriginOnReset.setState(config.settings.get("compattranstooriginonreset").equals("on"));
 
-			ignoreGCCalls.setState(config.settings.get("ignoregccalls").equals("on"));
+			ignoreGCCalls.setState(config.settings.get("compatignoregccalls").equals("on"));
 
-			resChoice.select(""+ Integer.parseInt(config.settings.get("width")) + "x" + ""+ Integer.parseInt(config.settings.get("height")));
+			resChoice.select(""+ Integer.parseInt(config.settings.get("scrwidth")) + "x" + ""+ Integer.parseInt(config.settings.get("scrheight")));
 
 			/* We only need to do this call once, when the jar first loads */
 			firstLoad = false;

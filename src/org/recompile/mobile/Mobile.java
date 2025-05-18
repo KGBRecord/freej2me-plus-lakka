@@ -786,8 +786,8 @@ public class Mobile
 
 	public static boolean updateSettings() 
 	{
-		lcdWidth = Integer.parseInt(config.settings.get("width"));
-		lcdHeight = Integer.parseInt(config.settings.get("height"));
+		lcdWidth = Integer.parseInt(config.settings.get("scrwidth"));
+		lcdHeight = Integer.parseInt(config.settings.get("scrheight"));
 
 		limitFPS = Integer.parseInt(config.settings.get("fps"));
 
@@ -839,7 +839,7 @@ public class Mobile
 		if(translateToOriginOnReset.equals("on"))        { compatTranslateToOriginOnReset = true; }
 		else if (translateToOriginOnReset.equals("off")) { compatTranslateToOriginOnReset = false; };
 
-		String ignoreGCCalls = config.settings.get("ignoregccalls");
+		String ignoreGCCalls = config.settings.get("compatignoregccalls");
 		if(ignoreGCCalls.equals("on"))        { compatIgnoreGCCalls = true; }
 		else if (ignoreGCCalls.equals("off")) { compatIgnoreGCCalls = false; };
 

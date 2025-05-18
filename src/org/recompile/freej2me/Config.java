@@ -17,7 +17,9 @@
 package org.recompile.freej2me;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.awt.image.BufferedImage;
 
 import java.io.File;
@@ -89,8 +91,8 @@ public class Config
 			if(!file.exists())
 			{
 				file.createNewFile();
-				settings.put("width", ""+width);
-				settings.put("height", ""+height);
+				settings.put("scrwidth", ""+width);
+				settings.put("scrheight", ""+height);
 				settings.put("sound", "on");
 				settings.put("phone", "Standard");
 				settings.put("backlightcolor", "Disabled");
@@ -102,7 +104,7 @@ public class Config
 				settings.put("spdhacknoalpha", "off");
 				settings.put("compatnonfatalnullimage", "off");
 				settings.put("compattranstooriginonreset", "off");
-				settings.put("ignoregccalls", "off");
+				settings.put("compatignoregccalls", "off");
 				settings.put("fpshack", "Disabled");
 				saveConfig();
 			}
@@ -133,8 +135,14 @@ public class Config
 					}
 				}
 			}
-			if(!settings.containsKey("width")) { settings.put("width", ""+width); }
-			if(!settings.containsKey("height")) { settings.put("height", ""+height); }
+			// Remove now invalid settings
+			if(settings.containsKey("compatcliprectongfxreset")) { settings.remove("compatcliprectongfxreset"); }
+			if(settings.containsKey("width")) { settings.remove("width"); }
+			if(settings.containsKey("height")) { settings.remove("height"); }
+
+			// Add any missing settings
+			if(!settings.containsKey("scrwidth")) { settings.put("scrwidth", ""+width); }
+			if(!settings.containsKey("scrheight")) { settings.put("scrheight", ""+height); }
 			if(!settings.containsKey("sound")) { settings.put("sound", "on"); }
 			if(!settings.containsKey("phone")) { settings.put("phone", "Standard"); }
 			if(!settings.containsKey("backlightcolor")) { settings.put("backlightcolor", "Disabled"); }
@@ -146,7 +154,7 @@ public class Config
 			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
 			if(!settings.containsKey("compatnonfatalnullimage")) { settings.put("compatnonfatalnullimage", "off"); }
 			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", "off"); }
-			if(!settings.containsKey("ignoregccalls")) { settings.put("ignoregccalls", "off"); }
+			if(!settings.containsKey("compatignoregccalls")) { settings.put("compatignoregccalls", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
 		}
 		catch (Exception e)
@@ -165,7 +173,11 @@ public class Config
 
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fout));
 
-			for (String key : settings.keySet())
+			// Sort the config keys alphabetically before writing
+			List<String> sortedKeys = new ArrayList<>(settings.keySet());
+        	Collections.sort(sortedKeys);
+
+			for (String key : sortedKeys)
 			{
 				writer.write(key+":"+settings.get(key)+"\n");
 			}
@@ -180,8 +192,8 @@ public class Config
 
 	public void updateDisplaySize(int w, int h)
 	{
-		settings.put("width", ""+w);
-		settings.put("height", ""+h);
+		settings.put("scrwidth", ""+w);
+		settings.put("scrheight", ""+h);
 		saveConfig();
 		onChange.run();
 		width = w;
@@ -270,8 +282,8 @@ public class Config
 
 	public void updateCompatIgnoreGCCalls(String value)
 	{
-		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: ignoregccalls "+value);
-		settings.put("ignoregccalls", value);
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatignoregccalls "+value);
+		settings.put("compatignoregccalls", value);
 		saveConfig();
 		onChange.run();
 	}
