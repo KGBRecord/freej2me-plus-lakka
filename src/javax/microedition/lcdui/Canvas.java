@@ -152,36 +152,34 @@ public abstract class Canvas extends Displayable
 		Mobile.getPlatform().limitFps();
 		if(!pendingRepaint) 
 		{ 
-			Mobile.getDisplay().postPaintRequest(() -> { paintRequest(x, y, width, height); }); 
 			pendingRepaint = true;
-		}
-	}
+			Mobile.getDisplay().postPaintRequest(() -> 
+			{ 
+				try 
+				{
+					if (!isShown() || listCommands) { return; }
 
-	public void paintRequest(int x, int y, int width, int height) // Repaint queues this (looks better than throwing all this code inside the postPaintRequest lambda above)
-	{
-		try 
-		{
-			if (!isShown() || listCommands) { return; }
+					graphics.reset();
+					paint(graphics);
+					
+					// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+					if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
 
-			graphics.reset();
-			paint(graphics);
-			
-			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
-
-			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+					Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+				}
+				catch (Exception e) 
+				{
+					Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
+					e.printStackTrace();
+				}
+				finally { pendingRepaint = false; }
+			}); 
 		}
-		catch (Exception e) 
-		{
-			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
-			e.printStackTrace();
-		}
-		finally { pendingRepaint = false; }
 	}
 
 	public void serviceRepaints() 
 	{
-		if(!isShown()) { return; }
+		if(!isShown() && !pendingRepaint) { return; }
 
 		// serviceRepaints has to force pending repaints to happen
 		Mobile.getDisplay().processPaintsNow();
