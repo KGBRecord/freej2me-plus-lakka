@@ -268,7 +268,7 @@ public class PlatformPlayer implements Player
 
 		try
 		{
-			if(player.isRunning()) { stop(); }
+			if(getState() >= Player.REALIZED && player.isRunning()) { stop(); }
 			player.close();
 			controls = null;
 			player = null;
@@ -368,8 +368,8 @@ public class PlatformPlayer implements Player
 	public void deallocate()
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot deallocate player, it is already CLOSED."); }
-
-		if(player.isRunning()) { stop(); }
+		
+		if(getState() >= Player.REALIZED && player.isRunning()) { stop(); }
 		player.deallocate();
 
 		/* 
@@ -651,27 +651,24 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{ 
-			stop();
 			if(metaListener != null) 
 			{
 				midi.removeMetaEventListener(metaListener);
 				metaListener = null;
 			}
 			receiver = null;
-			midi.close();
+			if(midi != null) { midi.close(); }
 		}
 
 		public void close() 
 		{
-			stop();
 			if (metaListener != null) 
 			{
 				midi.removeMetaEventListener(metaListener);
 				metaListener = null;
 			}
-			//synthesizer.close();
 			receiver = null;
-			midi.close();
+			if(midi != null) { midi.close(); }
 			midiSequence = null;
 		}
 
@@ -895,14 +892,13 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{
-			stop();
 			if(metaListener != null) 
 			{
 				midi.removeMetaEventListener(metaListener);
 				metaListener = null;
 			}
 			receiver = null;
-			midi.close();
+			if(midi != null) { midi.close(); }
 			
 			if(wavClips != null) 
 			{
@@ -917,14 +913,13 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
-			stop();
 			if (metaListener != null) 
 			{
 				midi.removeMetaEventListener(metaListener);
 				metaListener = null;
 			}
 			receiver = null;
-			midi.close();
+			if(midi != null) { midi.close(); }
 			midiSequence = null;
 
 			if(wavClips != null) 
@@ -1101,24 +1096,22 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{
-			stop();
 			if (lineListener != null) 
 			{
 				wavClip.removeLineListener(lineListener);
 				lineListener = null;
 			}
-			wavClip.close(); 
+			if(wavClip != null) { wavClip.close(); }
 		}
 
 		public void close() 
 		{
-			stop();
 			if (lineListener != null) 
 			{
 				wavClip.removeLineListener(lineListener);
 				lineListener = null;
 			}
-			wavClip.close();
+			if(wavClip != null) { wavClip.close(); }
 			wavClip = null;
 			wavStream = null;
 			wavHeaderData = null;
@@ -1247,8 +1240,7 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
-			stop();
-			mp3Player.close();
+			if(mp3Player != null) { mp3Player.close(); }
 			mp3Player = null;
 			tmpStream = null;
 			playerThread = null;
