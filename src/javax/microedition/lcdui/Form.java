@@ -410,7 +410,7 @@ public class Form extends Screen
 			ret = (focusedItem+1)+" of "+items.size();
 		}
 
-		graphics.reset();
+		graphics.setColor(0, 0, 0);
 
 		return ret;
 	}

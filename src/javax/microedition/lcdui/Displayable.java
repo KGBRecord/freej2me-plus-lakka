@@ -125,7 +125,6 @@ public abstract class Displayable
 		// LCDUI should work independently of the current graphics translation, so translate back to 0,0 before any drawing and restore at the end
 		int restoreX = graphics.getTranslateX(), restoreY = graphics.getTranslateY();
 		graphics.translate(-restoreX, -restoreY);
-		graphics.reset();
 
 		graphics.setFont(Font.getDefaultFont());
 
@@ -212,7 +211,7 @@ public abstract class Displayable
 
 			currentY += contentHeight;
 
-			graphics.reset();
+			graphics.setClip(0, 0, graphics.getCanvas().getWidth(), graphics.getCanvas().getHeight());
 			graphics.setFont(Font.getDefaultFont());
 
 			Command itemCommand = null;

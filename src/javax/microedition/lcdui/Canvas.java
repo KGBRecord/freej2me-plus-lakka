@@ -213,10 +213,11 @@ public abstract class Canvas extends Displayable
 	{
 		// LCDUI should work independently of the current graphics translation, so translate back to 0,0 before any drawing and restore at the end
 		int restoreX = graphics.getTranslateX(), restoreY = graphics.getTranslateY();
-		graphics.translate(-restoreX, -restoreY);
-		graphics.reset();
+		int clipX = graphics.getClipX(), clipY = graphics.getClipY(), clipW = graphics.getClipWidth(), clipH = graphics.getClipHeight();
 
-		graphics.setFont(Font.getDefaultFont());
+		graphics.translate(-restoreX, -restoreY);
+		graphics.setClip(0, 0, graphics.getCanvas().getWidth(), graphics.getCanvas().getHeight());
+
 		graphics.setColor(Mobile.lcduiBGColor);
 		graphics.fillRect(0, height-barHeight, width, barHeight);
 
@@ -241,6 +242,7 @@ public abstract class Canvas extends Displayable
 		}
 
 		graphics.translate(restoreX, restoreY);
+		graphics.setClip(clipX, clipY, clipW, clipH);
 	}
 
 	public void addCommand(Command cmd)	{ super.addCommand(cmd); }
