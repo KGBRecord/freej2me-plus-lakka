@@ -120,9 +120,9 @@ public class Mobile
 	public static byte funLightRegionSize = 8;
 
 	// Compatibility settings
-	public static boolean compatNonFatalNullImages = false; // Fixes some version of House M.D
-	public static boolean compatClipRectOnGfxReset = false; // Fixes Fantasy Zone 128x128
-	public static boolean compatIgnoreGCCalls      = false; // Helps Bomberman 08 and any other jar that spams System.gc() calls
+	public static boolean compatNonFatalNullImages       = false; // Fixes some versions of House M.D
+	public static boolean compatTranslateToOriginOnReset = false; // Fixes Fantasy Zone 128x128
+	public static boolean compatIgnoreGCCalls            = false; // Helps Bomberman 08 and any other jar that spams System.gc() calls
 
 	// M3G Debug Rendering settings
 	public static boolean M3GRenderUntexturedPolygons = false;
@@ -835,9 +835,9 @@ public class Mobile
 		if(nonFatalNullImage.equals("on"))        { compatNonFatalNullImages = true; }
 		else if (nonFatalNullImage.equals("off")) { compatNonFatalNullImages = false; };
 
-		String clipRectOnGfxReset = config.settings.get("compatcliprectongfxreset");
-		if(clipRectOnGfxReset.equals("on"))        { compatClipRectOnGfxReset = true; }
-		else if (clipRectOnGfxReset.equals("off")) { compatClipRectOnGfxReset = false; };
+		String translateToOriginOnReset = config.settings.get("compattranstooriginonreset");
+		if(translateToOriginOnReset.equals("on"))        { compatTranslateToOriginOnReset = true; }
+		else if (translateToOriginOnReset.equals("off")) { compatTranslateToOriginOnReset = false; };
 
 		String ignoreGCCalls = config.settings.get("ignoregccalls");
 		if(ignoreGCCalls.equals("on"))        { compatIgnoreGCCalls = true; }

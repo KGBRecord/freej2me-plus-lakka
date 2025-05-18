@@ -101,7 +101,7 @@ public class Config
 				settings.put("fontoffset", "0");
 				settings.put("spdhacknoalpha", "off");
 				settings.put("compatnonfatalnullimage", "off");
-				settings.put("compatcliprectongfxreset", "off");
+				settings.put("compattranstooriginonreset", "off");
 				settings.put("ignoregccalls", "off");
 				settings.put("fpshack", "Disabled");
 				saveConfig();
@@ -145,7 +145,7 @@ public class Config
 			if(!settings.containsKey("fontoffset")) { settings.put("fontoffset", "0"); }
 			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
 			if(!settings.containsKey("compatnonfatalnullimage")) { settings.put("compatnonfatalnullimage", "off"); }
-			if(!settings.containsKey("compatcliprectongfxreset")) { settings.put("compatcliprectongfxreset", "off"); }
+			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", "off"); }
 			if(!settings.containsKey("ignoregccalls")) { settings.put("ignoregccalls", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
 		}
@@ -260,10 +260,10 @@ public class Config
 		onChange.run();
 	}
 
-	public void updateCompatClipRectOnGfxReset(String value)
+	public void updateCompatTranslateToOriginOnReset(String value)
 	{
-		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatcliprectongfxreset "+value);
-		settings.put("compatcliprectongfxreset", value);
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compattranstooriginonreset "+value);
+		settings.put("compattranstooriginonreset", value);
 		saveConfig();
 		onChange.run();
 	}

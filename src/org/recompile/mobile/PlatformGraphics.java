@@ -143,9 +143,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 	}
 	
 	public void reset(int clipx, int clipy, int clipw, int cliph) //Internal use method, resets the Graphics object to its inital values
-	{		
-		if(Mobile.compatClipRectOnGfxReset) { clipRect(clipx, clipy, clipw, cliph); }
-		else { setClip(clipx, clipy, clipw, cliph); }
+	{
+		if(Mobile.compatTranslateToOriginOnReset) { translate(-translateX, -translateY); }
+		setClip(clipx, clipy, clipw, cliph);
 		setColor(0,0,0);
 		setFont(Font.getDefaultFont());
 		setStrokeStyle(SOLID);

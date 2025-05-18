@@ -259,7 +259,7 @@ public final class AWTGUI
 	
 	// Compatibility settings
 	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("Don't throw Exception on null images");
-	final CheckboxMenuItem doClipRectOnGfxReset = new CheckboxMenuItem("Do clipRect instead of setClip on gfx reset");
+	final CheckboxMenuItem transToOriginOnReset = new CheckboxMenuItem("Translate to origin on gfx reset");
 	final CheckboxMenuItem ignoreGCCalls = new CheckboxMenuItem("Ignore garbage collection calls");
 
 	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("Delete KJX files' temporary JAR/JAD");
@@ -555,12 +555,12 @@ public final class AWTGUI
 			}
 		});
 
-		doClipRectOnGfxReset.addItemListener(new ItemListener() 
+		transToOriginOnReset.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(doClipRectOnGfxReset.getState()){ config.updateCompatClipRectOnGfxReset("on"); hasPendingChange = true; }
-				else{ config.updateCompatClipRectOnGfxReset("off"); hasPendingChange = true; }
+				if(transToOriginOnReset.getState()){ config.updateCompatTranslateToOriginOnReset("on"); hasPendingChange = true; }
+				else{ config.updateCompatTranslateToOriginOnReset("off"); hasPendingChange = true; }
 
 				awtDialogs[3].setLocationRelativeTo(main);
 				awtDialogs[3].setVisible(true);
@@ -842,7 +842,7 @@ public final class AWTGUI
 		speedHackMenu.add(noAlphaOnBlankImages);
 
 		compatSettingsMenu.add(NonFatalNullImages);
-		compatSettingsMenu.add(doClipRectOnGfxReset);
+		compatSettingsMenu.add(transToOriginOnReset);
 		compatSettingsMenu.add(ignoreGCCalls);
 		
 		// add menus to menubar
@@ -879,7 +879,7 @@ public final class AWTGUI
 
 			NonFatalNullImages.setState(config.settings.get("compatnonfatalnullimage").equals("on"));
 
-			doClipRectOnGfxReset.setState(config.settings.get("compatcliprectongfxreset").equals("on"));
+			transToOriginOnReset.setState(config.settings.get("compattranstooriginonreset").equals("on"));
 
 			ignoreGCCalls.setState(config.settings.get("ignoregccalls").equals("on"));
 

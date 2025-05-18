@@ -128,9 +128,9 @@ public class Libretro
 		if(Integer.parseInt(args[11]) == 0) { Mobile.compatNonFatalNullImages = false; }
 		else { Mobile.compatNonFatalNullImages = true; }
 
-		/* Compat setting to use clipRect instead of setClip whenever the graphics object is reset */
-		if(Integer.parseInt(args[12]) == 0) { Mobile.compatClipRectOnGfxReset = false; }
-		else { Mobile.compatClipRectOnGfxReset = true; }
+		/* Compat setting to translate back to the origin whenever graphics object is reset */
+		if(Integer.parseInt(args[12]) == 0) { Mobile.compatTranslateToOriginOnReset = false; }
+		else { Mobile.compatTranslateToOriginOnReset = true; }
 
 		// Custom font and size
 		if(Integer.parseInt(args[13]) == 0) { Mobile.useCustomTextFont = false; }
@@ -328,8 +328,8 @@ public class Libretro
 										if(!Mobile.compatNonFatalNullImages) { Mobile.config.settings.put("compatnonfatalnullimage", "off"); }
 										else                                 { Mobile.config.settings.put("compatnonfatalnullimage", "on"); }
 
-										if(!Mobile.compatClipRectOnGfxReset) { Mobile.config.settings.put("compatcliprectongfxreset", "off"); }
-										else                                 { Mobile.config.settings.put("compatcliprectongfxreset", "on"); }
+										if(!Mobile.compatTranslateToOriginOnReset) { Mobile.config.settings.put("compattranstooriginonreset", "off"); }
+										else                                       { Mobile.config.settings.put("compattranstooriginonreset", "on"); }
 
 										if(!Mobile.compatIgnoreGCCalls) { Mobile.config.settings.put("ignoregccalls", "off"); }
 										else                                 { Mobile.config.settings.put("ignoregccalls", "on"); }
@@ -420,8 +420,8 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[12])==0) { Mobile.config.settings.put("compatnonfatalnullimage", "off");  }
 									else { Mobile.config.settings.put("compatnonfatalnullimage", "on"); }
 
-									if(Integer.parseInt(cfgtokens[13])==0) { Mobile.config.settings.put("compatcliprectongfxreset", "off");  }
-									else { Mobile.config.settings.put("compatcliprectongfxreset", "on"); }
+									if(Integer.parseInt(cfgtokens[13])==0) { Mobile.config.settings.put("compattranstooriginonreset", "off");  }
+									else { Mobile.config.settings.put("compattranstooriginonreset", "on"); }
 
 									if(Integer.parseInt(cfgtokens[14])==0) { Mobile.config.settings.put("textfont", "Default"); }
 									if(Integer.parseInt(cfgtokens[14])==1) { Mobile.config.settings.put("textfont", "Custom");  }

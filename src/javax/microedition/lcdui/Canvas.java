@@ -159,7 +159,7 @@ public abstract class Canvas extends Displayable
 				{
 					if (!isShown() || listCommands) { return; }
 
-					graphics.reset();
+					graphics.reset(x, y, width, height);
 					paint(graphics);
 					
 					// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar

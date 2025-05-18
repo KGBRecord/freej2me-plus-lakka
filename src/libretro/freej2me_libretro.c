@@ -175,9 +175,9 @@ unsigned int spdHackNoAlpha = 0; // Boolean
 unsigned int spdFrameRateUnlock = 0; // Boolean
 
 /* Compatibility Settings section */
-unsigned int compatNonFatalNullImages = 0; // Boolean
-unsigned int compatClipRectOnGfxReset = 0; // Boolean
-unsigned int compatIgnoreGCCalls      = 0; // Boolean
+unsigned int compatNonFatalNullImages      = 0; // Boolean
+unsigned int compatTransToOriginOnGFXReset = 0; // Boolean
+unsigned int compatIgnoreGCCalls           = 0; // Boolean
 
 /* Libretro exposed config variables END */
 
@@ -548,11 +548,11 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "on"))   { compatNonFatalNullImages = 1; }
 	}
 
-	var.key = "freej2me_compatcliprectongfxreset";
+	var.key = "freej2me_compattranstooriginongfxreset";
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
 	{
-		if (!strcmp(var.value, "off"))       { compatClipRectOnGfxReset = 0; }
-		else if (!strcmp(var.value, "on"))   { compatClipRectOnGfxReset = 1; }
+		if (!strcmp(var.value, "off"))       { compatTransToOriginOnGFXReset = 0; }
+		else if (!strcmp(var.value, "on"))   { compatTransToOriginOnGFXReset = 1; }
 	}
 
 	var.key = "freej2me_compatignoregccalls";
@@ -582,7 +582,7 @@ static void check_variables(bool first_time_startup)
 
 	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, 
 		phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatNonFatalNullImages, 
-		compatClipRectOnGfxReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatIgnoreGCCalls);
+		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatIgnoreGCCalls);
 	optstrlen = strlen(options_update);
 
 	/* 0xD = 13, which is the special case where the java app will receive the updated configs */
@@ -633,7 +633,7 @@ void retro_init(void)
 	/* Check variables and set parameters */
 	check_variables(true);
 	char resArg[2][4], rotateArg[2], phoneArg[2], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2];
-	char compatNonFatalNullImagesArg[2], compatClipRectOnGfxResetArg[2], fontArg[2], offsetArg[3], dumpGFXArg[2], tempKJXArg[2], m3gUntexArg[2], m3gWireArg[2];
+	char compatNonFatalNullImagesArg[2], compatTransToOriginOnGFXResetArg[2], fontArg[2], offsetArg[3], dumpGFXArg[2], tempKJXArg[2], m3gUntexArg[2], m3gWireArg[2];
 	char fpsunlockHack[2], compatIgnoreGCArg[2];
 
 	sprintf(resArg[0], "%lu", screenRes[0]);
@@ -648,7 +648,7 @@ void retro_init(void)
 	sprintf(spdHackNoAlphaArg, "%d", spdHackNoAlpha);
 	sprintf(backlightArg, "%d", backlightColor);
 	sprintf(compatNonFatalNullImagesArg, "%d", compatNonFatalNullImages);
-	sprintf(compatClipRectOnGfxResetArg, "%d", compatClipRectOnGfxReset);
+	sprintf(compatTransToOriginOnGFXResetArg, "%d", compatTransToOriginOnGFXReset);
 	sprintf(fontArg, "%d", customFont);
 	sprintf(offsetArg, "%d", fontOffset);
 	sprintf(dumpGFXArg, "%d", dumpGraphicsData);
@@ -691,7 +691,7 @@ void retro_init(void)
 	params[12] = strdup(spdHackNoAlphaArg);
 	params[13] = strdup(backlightArg);
 	params[14] = strdup(compatNonFatalNullImagesArg);
-	params[15] = strdup(compatClipRectOnGfxResetArg);
+	params[15] = strdup(compatTransToOriginOnGFXResetArg);
 	params[16] = strdup(fontArg);
 	params[17] = strdup(offsetArg);
 	params[18] = strdup(dumpGFXArg);
