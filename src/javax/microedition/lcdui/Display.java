@@ -89,11 +89,6 @@ public class Display
 		
 		while (true) 
 		{
-			if(setCurrentRequest != null) 
-			{
-				setCurrentRequest.run();
-				setCurrentRequest = null;
-			}
 			synchronized (paintQueue) { call = paintQueue.poll(); }
 
 			if(call != null) { call.run(); }
@@ -102,8 +97,14 @@ public class Display
 				try { Thread.sleep(1); } // Sleep for a bit to reduce cpu usage, we are under no obligation to return serial calls immediately, they just have to be serial
 				catch (Exception e) { }
 			}
-
 			processSerialCalls(); // serial calls should always happen AFTER the paint cycle
+
+			// MIDP docs don't specify anything exact on when setCurrent should be processed, so let's assume it happens after the paint and serial call cycles.
+			if(setCurrentRequest != null) 
+			{
+				setCurrentRequest.run();
+				setCurrentRequest = null;
+			}
 		}
 	}
 
