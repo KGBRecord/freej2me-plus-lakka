@@ -86,7 +86,7 @@ public class MobilePlatform
 	public volatile static int DoJaKeyState = 0;
 
 	// MobilePlatform will handle the input repeats as well
-	public static boolean[] pressedKeys = new boolean[20];
+	public static boolean[] pressedKeys = new boolean[22];
 
 	public static Runnable painter;
 

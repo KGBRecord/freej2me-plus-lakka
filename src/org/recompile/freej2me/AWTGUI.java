@@ -134,6 +134,9 @@ public final class AWTGUI
 		new Button("E"),
 		new Button("NumPad-0"),
 		new Button("R"),
+		new Button("Space"),
+		new Button("C"),
+		new Button("X")
 	};
 
 	/* Array of inputs in order to support input remapping */
@@ -143,7 +146,7 @@ public final class AWTGUI
 		KeyEvent.VK_NUMPAD7, KeyEvent.VK_NUMPAD8, KeyEvent.VK_NUMPAD9, 
 		KeyEvent.VK_NUMPAD4, KeyEvent.VK_NUMPAD5, KeyEvent.VK_NUMPAD6, 
 		KeyEvent.VK_NUMPAD1, KeyEvent.VK_NUMPAD2, KeyEvent.VK_NUMPAD3, 
-		KeyEvent.VK_E, KeyEvent.VK_NUMPAD0, KeyEvent.VK_R, KeyEvent.VK_SPACE
+		KeyEvent.VK_E, KeyEvent.VK_NUMPAD0, KeyEvent.VK_R, KeyEvent.VK_SPACE, KeyEvent.VK_C, KeyEvent.VK_X
 	};
 
 	private final int newInputKeycodes[] = Arrays.copyOf(inputKeycodes, inputKeycodes.length);
@@ -253,6 +256,7 @@ public final class AWTGUI
 		new CheckboxMenuItem("Warning", false),
 		new CheckboxMenuItem("Error", false)
 	};
+	final String[] logLevelValues = {"0", "1", "2", "3", "4"};
 
 	// Speedhacks
 	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("No alpha on blank images");
@@ -282,14 +286,23 @@ public final class AWTGUI
 		usedMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
 		maxMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
 
-		awtButtons[0].setBackground(Color.green);
-		awtButtons[1].setBackground(Color.green);
-		awtButtons[2].setBackground(Color.yellow);
-		awtButtons[3].setBackground(Color.green);
-		awtButtons[4].setBackground(Color.yellow);
-		awtButtons[5].setBackground(Color.green);
+		awtButtons[0].setBackground(FreeJ2ME.freeJ2MEDragColor);
+		awtButtons[0].setForeground(Color.ORANGE);
 
-		awtDialogs[1].setBackground(Color.white);
+		awtButtons[1].setBackground(FreeJ2ME.freeJ2MEDragColor);
+		awtButtons[1].setForeground(Color.ORANGE);
+
+		awtButtons[2].setBackground(FreeJ2ME.freeJ2MEBGColor);
+		awtButtons[2].setForeground(Color.ORANGE);
+		
+		awtButtons[3].setBackground(FreeJ2ME.freeJ2MEDragColor);
+		awtButtons[3].setForeground(Color.ORANGE);
+
+		awtButtons[4].setBackground(FreeJ2ME.freeJ2MEBGColor);
+		awtButtons[4].setForeground(Color.ORANGE);
+
+		awtDialogs[1].setBackground(FreeJ2ME.freeJ2MEBGColor);
+		awtDialogs[1].setForeground(Color.ORANGE);
 		awtDialogs[1].setLayout( new FlowLayout(FlowLayout.CENTER, 200, 0));  
 		awtDialogs[1].setUndecorated(true); /* Whenever a Dialog is undecorated, it's because it's meant to look like an internal menu on FreeJ2ME's main Frame */
 		awtDialogs[1].setSize(230, 235);
@@ -307,10 +320,11 @@ public final class AWTGUI
 		awtDialogs[1].add(awtButtons[0]);
 
 
-		awtDialogs[0].setBackground(Color.white);
+		awtDialogs[0].setBackground(FreeJ2ME.freeJ2MEBGColor);
+		awtDialogs[0].setForeground(Color.ORANGE);
 		awtDialogs[0].setLayout( new FlowLayout(FlowLayout.CENTER, 60, 5));
 		awtDialogs[0].setUndecorated(true);
-		awtDialogs[0].setSize(230, 175);
+		awtDialogs[0].setSize(230, 125);
 		awtDialogs[0].setResizable(false);
 		awtDialogs[0].setLocationRelativeTo(main);
 		awtDialogs[0].add(new Label("Select a Resolution from the Dropdown"));
@@ -320,8 +334,9 @@ public final class AWTGUI
 		awtDialogs[0].add(awtButtons[2]);
 
 
-		awtDialogs[2].setBackground(Color.white);
-		awtDialogs[2].setLayout( new FlowLayout(FlowLayout.LEFT, 5, 0));  
+		awtDialogs[2].setBackground(FreeJ2ME.freeJ2MEBGColor);
+		awtDialogs[2].setForeground(Color.ORANGE);
+		awtDialogs[2].setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
 		awtDialogs[2].setSize(240, 145);
 		awtDialogs[2].setResizable(false);
 		awtDialogs[2].add(totalMemLabel);
@@ -330,10 +345,23 @@ public final class AWTGUI
 		awtDialogs[2].add(maxMemLabel);
 
 		/* Input mapping dialog: It's a grid, so a few tricks had to be employed to align everything up */
-		awtDialogs[4].setBackground(Color.white);
+		awtDialogs[4].setBackground(FreeJ2ME.freeJ2MEBGColor);
+        awtDialogs[4].setForeground(Color.ORANGE);
 		awtDialogs[4].setLayout(new GridLayout(0, 3)); /* Get as many rows as needed, as long it still uses only 3 columns */
-		awtDialogs[4].setSize(240, 320);
+		awtDialogs[4].setSize(240, 440);
+		awtDialogs[4].setLocationRelativeTo(main);
 		awtDialogs[4].setResizable(false);
+		
+
+		// Setup input button colors
+		awtButtons[5].setBackground(FreeJ2ME.freeJ2MEDragColor);
+		awtButtons[5].setForeground(Color.GREEN);
+
+		for(int i = 0; i < inputButtons.length; i++) 
+		{ 
+			inputButtons[i].setBackground(FreeJ2ME.freeJ2MEDragColor);
+			inputButtons[i].setForeground(Color.ORANGE);
+		}
 
 		awtDialogs[4].add(new Label("Map keys by"));
 		awtDialogs[4].add(new Label("clicking each"));
@@ -383,11 +411,44 @@ public final class AWTGUI
 		awtDialogs[4].add(inputButtons[17]);
 		awtDialogs[4].add(inputButtons[18]);
 
+		awtDialogs[4].add(new Label("-----------------------"));
+		awtDialogs[4].add(new Label("-----------------------"));
+		awtDialogs[4].add(new Label("-----------------------"));
 
-		awtDialogs[3].setBackground(Color.white);
+		awtDialogs[4].add(new Label("Hotkeys"));
+		awtDialogs[4].add(new Label(""));
+		awtDialogs[4].add(new Label("(Ctrl + *)"));
+
+		awtDialogs[4].add(new Label(""));
+		awtDialogs[4].add(new Label(""));
+		awtDialogs[4].add(new Label(""));
+		
+		awtDialogs[4].add(new Label("Fast-Forward"));
+		awtDialogs[4].add(new Label("Screenshot"));
+		awtDialogs[4].add(new Label("Pause/Resume"));
+
+		awtDialogs[4].add(inputButtons[19]);
+		awtDialogs[4].add(inputButtons[20]);
+		awtDialogs[4].add(inputButtons[21]);
+
+		awtDialogs[4].add(new Label(""));
+		awtDialogs[4].add(new Label(""));
+		awtDialogs[4].add(new Label(""));
+		
+		awtDialogs[4].add(new Label("Slowdown"));
+		awtDialogs[4].add(new Label("TODO"));
+		awtDialogs[4].add(new Label("TODO"));
+
+		awtDialogs[4].add(new Label("TODO"));
+		awtDialogs[4].add(new Label(""));
+		awtDialogs[4].add(new Label(""));
+
+
+		awtDialogs[3].setBackground(FreeJ2ME.freeJ2MEBGColor);
+		awtDialogs[3].setForeground(Color.ORANGE);
 		awtDialogs[3].setLayout( new FlowLayout(FlowLayout.CENTER, 10, 10));  
 		awtDialogs[3].setUndecorated(true);
-		awtDialogs[3].setSize(230, 175);
+		awtDialogs[3].setSize(230, 80);
 		awtDialogs[3].setLocationRelativeTo(main);
 		awtDialogs[3].add(new Label("This change requires a restart to apply!"));
 		awtDialogs[3].add(awtButtons[3]);
@@ -664,26 +725,6 @@ public final class AWTGUI
 			});
 		}
 
-		for(byte i = 0; i < fpsCounterPos.length; i++) 
-		{
-			final byte index = i;
-			fpsCounterPos[i].addItemListener(new ItemListener() 
-			{
-				public void itemStateChanged(ItemEvent e) 
-				{
-					if(!fpsCounterPos[index].getState()){ fpsCounterPos[index].setState(true); }
-					if(fpsCounterPos[index].getState())
-					{ 
-						Mobile.getPlatform().setShowFPS(showFPSValues[index]);
-						for(int j = 0; j < fpsCounterPos.length; j++) 
-						{
-							if(j != index) { fpsCounterPos[j].setState(false); }
-						}
-					}
-				}
-			});
-		}
-
 		for(byte i = 0; i < fontOffsets.length; i++) 
 		{
 			final byte index = i;
@@ -704,6 +745,28 @@ public final class AWTGUI
 			});
 		}
 
+		// Sys settings
+		for(byte i = 0; i < fpsCounterPos.length; i++) 
+		{
+			final byte index = i;
+			fpsCounterPos[i].addItemListener(new ItemListener() 
+			{
+				public void itemStateChanged(ItemEvent e) 
+				{
+					if(!fpsCounterPos[index].getState()){ fpsCounterPos[index].setState(true); }
+					if(fpsCounterPos[index].getState())
+					{ 
+						config.updatefpsCounterPosition(showFPSValues[index]);
+						Mobile.getPlatform().setShowFPS(showFPSValues[index]);
+						for(int j = 0; j < fpsCounterPos.length; j++) 
+						{
+							if(j != index) { fpsCounterPos[j].setState(false); }
+						}
+					}
+				}
+			});
+		}
+
 		for(byte i = 0; i < logLevels.length; i++) 
 		{
 			final byte index = i;
@@ -713,7 +776,8 @@ public final class AWTGUI
 				{
 					if(!logLevels[index].getState()){ logLevels[index].setState(true); }
 					if(logLevels[index].getState())
-					{ 
+					{
+						config.updateLogLevel(logLevelValues[index]);
 						Mobile.logging = (index > 0);
 						Mobile.minLogLevel = (byte) (index-1); // This can go negative if index = 0, as it won't log anyway.
 						for(int j = 0; j < logLevels.length; j++) 
@@ -729,8 +793,8 @@ public final class AWTGUI
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(deleteTemporaryKJXFiles.getState()){ Mobile.deleteTemporaryKJXFiles = true; }
-				else{ Mobile.deleteTemporaryKJXFiles = false; }
+				if(deleteTemporaryKJXFiles.getState()) { config.updateDeleteTempKJXFiles("on"); Mobile.deleteTemporaryKJXFiles = true; }
+				else { config.updateDeleteTempKJXFiles("off"); Mobile.deleteTemporaryKJXFiles = false; }
 			}
 		});
 		
@@ -739,8 +803,8 @@ public final class AWTGUI
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(dumpAudioData.getState()){ Mobile.dumpAudioStreams = true; }
-				else{ Mobile.dumpAudioStreams = false; }
+				if(dumpAudioData.getState()) { config.updateDumpAudioStreams("on"); Mobile.dumpAudioStreams = true; }
+				else { config.updateDumpAudioStreams("off"); Mobile.dumpAudioStreams = false; }
 			}
 		});
 
@@ -748,18 +812,8 @@ public final class AWTGUI
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(dumpGraphicsData.getState()){ /* TODO */ }
-				else{ /* TODO */ }
-			}
-		});
-
-		showMemoryUsage.addItemListener(new ItemListener() 
-		{
-			public void itemStateChanged(ItemEvent e) 
-			{
-				/* Mem stats frame won't be centered on FreeJ2ME's frame, instead, it will sit right by its side, that's why "setLocationRelativeTo(main)" isn't used */
-				if(showMemoryUsage.getState()){ awtDialogs[2].setLocation(main.getLocation().x+main.getSize().width, main.getLocation().y); awtDialogs[2].setVisible(true); }
-				else{ awtDialogs[2].setVisible(false); }
+				if(dumpGraphicsData.getState()) { config.updateDumpGraphicsObjects("on"); }
+				else { config.updateDumpGraphicsObjects("off"); }
 			}
 		});
 
@@ -767,8 +821,8 @@ public final class AWTGUI
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(M3GUntextured.getState()){ Mobile.M3GRenderUntexturedPolygons = true; }
-				else{ Mobile.M3GRenderUntexturedPolygons = false; }
+				if(M3GUntextured.getState()) { config.updateM3GUntextured("on"); Mobile.M3GRenderUntexturedPolygons = true; }
+				else { config.updateM3GUntextured("off"); Mobile.M3GRenderUntexturedPolygons = false; }
 			}
 		});
 
@@ -776,8 +830,19 @@ public final class AWTGUI
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(M3GWireframe.getState()){ Mobile.M3GRenderWireframe = true; }
-				else{ Mobile.M3GRenderWireframe = false; }
+				if(M3GWireframe.getState()) { config.updateM3GWireframe("on"); Mobile.M3GRenderWireframe = true; }
+				else { config.updateM3GWireframe("on"); Mobile.M3GRenderWireframe = false; }
+			}
+		});
+
+		// This one is specific to AWTGUI
+		showMemoryUsage.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				/* Mem stats frame won't be centered on FreeJ2ME's frame, instead, it will sit right by its side, that's why "setLocationRelativeTo(main)" isn't used */
+				if(showMemoryUsage.getState()) { awtDialogs[2].setLocation(main.getLocation().x+main.getSize().width, main.getLocation().y); awtDialogs[2].setVisible(true); }
+				else { awtDialogs[2].setVisible(false); }
 			}
 		});
 	}
@@ -800,18 +865,18 @@ public final class AWTGUI
 		optionMenu.add(useCustomMidi);
 		optionMenu.add(useCustomFont);
 		optionMenu.add(resChangeMenuItem);
-		optionMenu.add(showFPS);
+		optionMenu.add(mapInputs);
 		optionMenu.add(phoneType);
 		optionMenu.add(backlightColor);
 		optionMenu.add(fpsCap);
 		optionMenu.add(unlockFPSHack);
 		optionMenu.add(fontOffset);
-		optionMenu.add(mapInputs);
 		optionMenu.add(speedHackMenu);
 		optionMenu.add(compatSettingsMenu);
 
 		debugMenu.add(showPlayer);
 		debugMenu.addSeparator();
+		debugMenu.add(showFPS);
 		debugMenu.add(deleteTemporaryKJXFiles);
 		debugMenu.add(dumpAudioData);
 		debugMenu.add(dumpGraphicsData);
@@ -882,9 +947,28 @@ public final class AWTGUI
 			transToOriginOnReset.setState(config.settings.get("compattranstooriginonreset").equals("on"));
 
 			ignoreGCCalls.setState(config.settings.get("compatignoregccalls").equals("on"));
-
+			
 			resChoice.select(""+ Integer.parseInt(config.settings.get("scrwidth")) + "x" + ""+ Integer.parseInt(config.settings.get("scrheight")));
 
+			// Sys Settings
+			for(int i = 0; i < logLevels.length; i++) { logLevels[i].setState(config.sysSettings.get("logLevel").equals(logLevelValues[i])); }
+
+			for(int i = 0; i < fpsCounterPos.length; i++) { fpsCounterPos[i].setState(config.sysSettings.get("fpsCounterPosition").equals(showFPSValues[i])); }
+
+			dumpGraphicsData.setState(config.sysSettings.get("dumpGraphicsObjects").equals("on"));
+
+			dumpAudioData.setState(config.sysSettings.get("dumpAudioStreams").equals("on"));
+			
+			M3GWireframe.setState(config.sysSettings.get("M3GWireframe").equals("on"));
+
+			M3GUntextured.setState(config.sysSettings.get("M3GUntextured").equals("on"));
+
+			deleteTemporaryKJXFiles.setState(config.sysSettings.get("deleteTempKJXFiles").equals("on"));
+
+			// Get saved inputs from system config file.
+			inputKeycodes = config.inputKeycodes;
+			for(int i = 0; i < inputButtons.length; i++) { inputButtons[i].setLabel(KeyEvent.getKeyText(inputKeycodes[i])); }
+			
 			/* We only need to do this call once, when the jar first loads */
 			firstLoad = false;
 	}
@@ -966,12 +1050,12 @@ public final class AWTGUI
 
 			else if(a.getActionCommand() == "RestartLater") { awtDialogs[3].setVisible(false); }
 
-			else if(a.getActionCommand() == "MapInputs") { awtDialogs[4].setLocation(main.getLocation().x, main.getLocation().y); awtDialogs[4].setVisible(true); }
+			else if(a.getActionCommand() == "MapInputs") { awtDialogs[4].setVisible(true); }
 
-			/* TODO: Flesh out input mappings apply and file saving (preferably per-game, though a global config could also work great) */
 			else if(a.getActionCommand() == "ApplyInputs") 
 			{
 				System.arraycopy(newInputKeycodes, 0, inputKeycodes, 0, inputKeycodes.length);
+				config.updateAWTInputs();
 				awtDialogs[4].setVisible(false); 
 			}
 
@@ -979,6 +1063,7 @@ public final class AWTGUI
 			{ 
 				// Create FreeJ2MEPlayer Dialog instance and show it;
 				FreeJ2MEPlayer playerDialog = new FreeJ2MEPlayer(main);
+				playerDialog.setLocationRelativeTo(main);
 				playerDialog.setVisible(true);
 			}
 		}

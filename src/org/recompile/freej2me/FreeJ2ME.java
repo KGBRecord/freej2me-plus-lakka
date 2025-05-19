@@ -140,18 +140,6 @@ public class FreeJ2ME
 								main.setSize(lcdWidth * scaleFactor + xborder, lcdHeight * scaleFactor + yborder);
 							}
 						break;
-						case KeyEvent.VK_C:
-							if(e.isControlDown())
-							{
-								ScreenShot.takeScreenshot(false);
-							}
-						break;
-						case KeyEvent.VK_X:
-							if(e.isControlDown())
-							{
-								MobilePlatform.pauseResumeApp();
-							}
-						break;
 						case KeyEvent.VK_F:
 							if(e.isControlDown())
 							{
@@ -200,6 +188,9 @@ public class FreeJ2ME
 					
 					MobilePlatform.pressedKeys[mobikey] = false;
 					MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
+
+					if(mobikey == 20) { ScreenShot.takeScreenshot(false); }
+					else if(mobikey == 21) { MobilePlatform.pauseResumeApp(); }
 
 					for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
 					{

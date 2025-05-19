@@ -44,15 +44,45 @@ public class Config
 	private int width;
 	private int height;
 
-	private File file;
+	private File cFile;
 	private String configPath = "";
 	private String configFile = "";
 
+	private File sFile;
+	private final String systemPath = "freej2me_system/";
+	private final String systemFile = systemPath + "freej2me.conf";
+
 	public final String[] supportedResolutions = {"96x65","101x64","101x80","128x128","130x130","120x160","128x160","132x176","176x208","176x220","220x176","208x208","180x320","320x180","208x320","240x320","320x240","240x400","400x240","240x432","240x480","360x360","352x416","360x640","640x360","640x480","480x800","800x480"};
+
+	int inputKeycodes[] = new int[] { 
+		81,  // Q Key
+		87,  // W Key
+		38,  // Arrow Up
+		37,  // Arrow Left
+		10,  // Enter Key
+		39,  // Arrow Right
+		40,  // Arrow Down
+		107, // Numpad_7
+		104, // Numpad_8
+		105, // Numpad_9 
+		100, // Numpad_4
+		101, // Numpad_5 
+		102, // Numpad_6 
+		97,  // Numpad_1
+		98,  // Numpad_2 
+		99,  // Numpad_3 
+		69,  // E Key 
+		96,  // Numpad_0 
+		82,  // R Key 
+		32,  // Space Key (for AWT fast-forward)
+		67,  // C Key (for AWT screenshots)
+		88   // X Key (for AWT Pause/Resume)
+	};
 
 	public Runnable onChange;
 
 	public HashMap<String, String> settings = new HashMap<String, String>(4);
+	public HashMap<String, String> sysSettings = new HashMap<String, String>(4);
 
 	public Config()
 	{
@@ -78,6 +108,7 @@ public class Config
 		try
 		{
 			Files.createDirectories(Paths.get(configPath));
+			Files.createDirectories(Paths.get(systemPath));
 		}
 		catch (Exception e)
 		{
@@ -87,10 +118,10 @@ public class Config
 
 		try // Check Config File
 		{
-			file = new File(configFile);
-			if(!file.exists())
+			cFile = new File(configFile);
+			if(!cFile.exists())
 			{
-				file.createNewFile();
+				cFile.createNewFile();
 				settings.put("scrwidth", ""+width);
 				settings.put("scrheight", ""+height);
 				settings.put("sound", "on");
@@ -108,6 +139,21 @@ public class Config
 				settings.put("fpshack", "Disabled");
 				saveConfig();
 			}
+
+			sFile = new File(systemFile);
+			if(!sFile.exists())
+			{
+				sFile.createNewFile();
+				sysSettings.put("fpsCounterPosition", "Off");
+				sysSettings.put("logLevel", "2");
+				sysSettings.put("M3GWireframe", "off");
+				sysSettings.put("M3GUntextured", "off");
+				sysSettings.put("deleteTempKJXFiles", "on");
+				sysSettings.put("dumpAudioStreams", "off");
+				sysSettings.put("dumpGraphicsObjects", "off");
+				// AWT Inputs
+				updateAWTInputs();
+			}
 		}
 		catch (Exception e)
 		{
@@ -117,7 +163,7 @@ public class Config
 
 		try // Read Records
 		{
-			BufferedReader reader = new BufferedReader(new FileReader(file));
+			BufferedReader reader = new BufferedReader(new FileReader(cFile));
 			String line;
 			String[] parts;
 			while((line = reader.readLine())!=null)
@@ -127,18 +173,14 @@ public class Config
 				{
 					parts[0] = parts[0].trim();
 					parts[1] = parts[1].trim();
-					if(parts[0]!="" && parts[1]!="")
-					{
-						// Compatibility with the deprecated "Nokia" input mapping, which is now the Standard mapping (as Canvas was reworked to not need J2ME's default mappings)
-						if(parts[0].equals("phone") && parts[1].equals("Nokia") ) { parts[1] = "Standard"; }
-						settings.put(parts[0], parts[1]);
-					}
+					if(parts[0]!="" && parts[1]!="") { settings.put(parts[0], parts[1]); }
 				}
 			}
 			// Remove now invalid settings
 			if(settings.containsKey("compatcliprectongfxreset")) { settings.remove("compatcliprectongfxreset"); }
 			if(settings.containsKey("width")) { settings.remove("width"); }
 			if(settings.containsKey("height")) { settings.remove("height"); }
+			if(!settings.containsKey("ignoregccalls")) { settings.put("ignoregccalls", "off"); }
 
 			// Add any missing settings
 			if(!settings.containsKey("scrwidth")) { settings.put("scrwidth", ""+width); }
@@ -156,6 +198,73 @@ public class Config
 			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", "off"); }
 			if(!settings.containsKey("compatignoregccalls")) { settings.put("compatignoregccalls", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
+
+			// System settings
+			reader = new BufferedReader(new FileReader(sFile));
+			while((line = reader.readLine())!=null)
+			{
+				parts = line.split(":");
+				if(parts.length==2)
+				{
+					parts[0] = parts[0].trim();
+					parts[1] = parts[1].trim();
+					if(parts[0]!="" && parts[1]!="") { sysSettings.put(parts[0], parts[1]); }
+				}
+			}
+
+			if(!sysSettings.containsKey("fpsCounterPosition")) { sysSettings.put("fpsCounterPosition", "Off"); }
+			if(!sysSettings.containsKey("logLevel")) { sysSettings.put("logLevel", "2"); }
+			if(!sysSettings.containsKey("M3GWireframe")) { sysSettings.put("M3GWireframe", "off"); }
+			if(!sysSettings.containsKey("M3GUntextured")) { sysSettings.put("M3GUntextured", "off"); }
+			if(!sysSettings.containsKey("deleteTempKJXFiles")) { sysSettings.put("deleteTempKJXFiles", "on"); }
+			if(!sysSettings.containsKey("dumpAudioStreams")) { sysSettings.put("dumpAudioStreams", "off"); }
+			if(!sysSettings.containsKey("dumpGraphicsObjects")) { sysSettings.put("dumpGraphicsObjects", "off"); }
+			// AWT Inputs
+			if(!sysSettings.containsKey("input_LeftSoft"))    { sysSettings.put("input_LeftSoft", ""     + inputKeycodes[0]); }
+			if(!sysSettings.containsKey("input_RightSoft"))   { sysSettings.put("input_RightSoft", ""    + inputKeycodes[1]); }
+			if(!sysSettings.containsKey("input_ArrowUp"))     { sysSettings.put("input_ArrowUp", ""      + inputKeycodes[2]); }
+			if(!sysSettings.containsKey("input_ArrowLeft"))   { sysSettings.put("input_ArrowLeft", ""    + inputKeycodes[3]); }
+			if(!sysSettings.containsKey("input_Fire"))        { sysSettings.put("input_Fire", ""         + inputKeycodes[4]); }
+			if(!sysSettings.containsKey("input_ArrowRight"))  { sysSettings.put("input_ArrowRight", ""   + inputKeycodes[5]); }
+			if(!sysSettings.containsKey("input_ArrowDown"))   { sysSettings.put("input_ArrowDown", ""    + inputKeycodes[6]); }
+			if(!sysSettings.containsKey("input_Num7"))        { sysSettings.put("input_Num7", ""         + inputKeycodes[7]); }
+			if(!sysSettings.containsKey("input_Num8"))        { sysSettings.put("input_Num8", ""         + inputKeycodes[8]); }
+			if(!sysSettings.containsKey("input_Num9"))        { sysSettings.put("input_Num9", ""         + inputKeycodes[9]); }
+			if(!sysSettings.containsKey("input_Num4"))        { sysSettings.put("input_Num4", ""         + inputKeycodes[10]); }
+			if(!sysSettings.containsKey("input_Num5"))        { sysSettings.put("input_Num5", ""         + inputKeycodes[11]); }
+			if(!sysSettings.containsKey("input_Num6"))        { sysSettings.put("input_Num6", ""         + inputKeycodes[12]); }
+			if(!sysSettings.containsKey("input_Num1"))        { sysSettings.put("input_Num1", ""         + inputKeycodes[13]); }
+			if(!sysSettings.containsKey("input_Num2"))        { sysSettings.put("input_Num2", ""         + inputKeycodes[14]); }
+			if(!sysSettings.containsKey("input_Num3"))        { sysSettings.put("input_Num3", ""         + inputKeycodes[15]); }
+			if(!sysSettings.containsKey("input_Star"))        { sysSettings.put("input_Star", ""         + inputKeycodes[16]); }
+			if(!sysSettings.containsKey("input_Num0"))        { sysSettings.put("input_Num0", ""         + inputKeycodes[17]); }
+			if(!sysSettings.containsKey("input_Pound"))       { sysSettings.put("input_Pound", ""        + inputKeycodes[18]); }
+			if(!sysSettings.containsKey("input_FastForward")) { sysSettings.put("input_FastForward", ""  + inputKeycodes[19]); }
+			if(!sysSettings.containsKey("input_Screenshot"))  { sysSettings.put("input_Screenshot", ""   + inputKeycodes[20]); }
+			if(!sysSettings.containsKey("input_PauseResume")) { sysSettings.put("input_PauseResume", ""  + inputKeycodes[21]); }
+
+			inputKeycodes[0] = Integer.parseInt(sysSettings.get("input_LeftSoft"));
+			inputKeycodes[1] = Integer.parseInt(sysSettings.get("input_RightSoft"));
+			inputKeycodes[2] = Integer.parseInt(sysSettings.get("input_ArrowUp"));
+			inputKeycodes[3] = Integer.parseInt(sysSettings.get("input_ArrowLeft"));
+			inputKeycodes[4] = Integer.parseInt(sysSettings.get("input_Fire"));
+			inputKeycodes[5] = Integer.parseInt(sysSettings.get("input_ArrowRight"));
+			inputKeycodes[6] = Integer.parseInt(sysSettings.get("input_ArrowDown"));
+			inputKeycodes[7] = Integer.parseInt(sysSettings.get("input_Num7"));
+			inputKeycodes[8] = Integer.parseInt(sysSettings.get("input_Num8"));
+			inputKeycodes[9] = Integer.parseInt(sysSettings.get("input_Num9"));
+			inputKeycodes[10] = Integer.parseInt(sysSettings.get("input_Num4"));
+			inputKeycodes[11] = Integer.parseInt(sysSettings.get("input_Num5"));
+			inputKeycodes[12] = Integer.parseInt(sysSettings.get("input_Num6"));
+			inputKeycodes[13] = Integer.parseInt(sysSettings.get("input_Num1"));
+			inputKeycodes[14] = Integer.parseInt(sysSettings.get("input_Num2"));
+			inputKeycodes[15] = Integer.parseInt(sysSettings.get("input_Num3"));
+			inputKeycodes[16] = Integer.parseInt(sysSettings.get("input_Star"));
+			inputKeycodes[17] = Integer.parseInt(sysSettings.get("input_Num0"));
+			inputKeycodes[18] = Integer.parseInt(sysSettings.get("input_Pound"));
+			inputKeycodes[19] = Integer.parseInt(sysSettings.get("input_FastForward"));
+			inputKeycodes[20] = Integer.parseInt(sysSettings.get("input_Screenshot"));
+			inputKeycodes[21] = Integer.parseInt(sysSettings.get("input_PauseResume"));
 		}
 		catch (Exception e)
 		{
@@ -169,11 +278,10 @@ public class Config
 	{
 		try
 		{
-			FileOutputStream fout = new FileOutputStream(file);
-
+			FileOutputStream fout = new FileOutputStream(cFile);
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fout));
 
-			// Sort the config keys alphabetically before writing
+			// Sort the config keys alphabetically before saving
 			List<String> sortedKeys = new ArrayList<>(settings.keySet());
         	Collections.sort(sortedKeys);
 
@@ -182,10 +290,24 @@ public class Config
 				writer.write(key+":"+settings.get(key)+"\n");
 			}
 			writer.close();
+
+
+			/* Save system file, also sorted alphabetically */
+			sortedKeys = new ArrayList<>(sysSettings.keySet());
+        	Collections.sort(sortedKeys);
+
+			fout = new FileOutputStream(sFile);
+			writer = new BufferedWriter(new OutputStreamWriter(fout));
+
+			for (String key : sortedKeys)
+			{
+				writer.write(key+":"+sysSettings.get(key)+"\n");
+			}
+			writer.close();
 		}
 		catch (Exception e)
 		{
-			Mobile.log(Mobile.LOG_ERROR, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Problem Opening Config "+configFile);
+			Mobile.log(Mobile.LOG_ERROR, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Problem saving configs: " + e.getMessage());
 			Mobile.log(Mobile.LOG_ERROR, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + e.getMessage());
 		}
 	}
@@ -300,6 +422,94 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: backlightcolor "+value);
 		settings.put("backlightcolor", value);
+		saveConfig();
+		onChange.run();
+	}
+
+
+	// System settings
+
+	public void updatefpsCounterPosition(String value) 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: fpsCounterPosition "+value);
+		sysSettings.put("fpsCounterPosition", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateLogLevel(String value) 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: logLevel "+value);
+		sysSettings.put("logLevel", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateM3GWireframe(String value) 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: M3GWireframe "+value);
+		sysSettings.put("M3GWireframe", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateM3GUntextured(String value) 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: M3GUntextured "+value);
+		sysSettings.put("M3GUntextured", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateDeleteTempKJXFiles(String value) 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: deleteTempKJXFiles "+value);
+		sysSettings.put("deleteTempKJXFiles", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateDumpAudioStreams(String value) 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: dumpAudioStreams "+value);
+		sysSettings.put("dumpAudioStreams", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateDumpGraphicsObjects(String value) 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: dumpGraphicsObjects "+value);
+		sysSettings.put("dumpGraphicsObjects", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateAWTInputs() 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Updating inputs on System file");
+		sysSettings.put("input_LeftSoft", ""     + inputKeycodes[0]);
+		sysSettings.put("input_RightSoft", ""    + inputKeycodes[1]);
+		sysSettings.put("input_ArrowUp", ""      + inputKeycodes[2]);
+		sysSettings.put("input_ArrowLeft", ""    + inputKeycodes[3]);
+		sysSettings.put("input_Fire", ""         + inputKeycodes[4]);
+		sysSettings.put("input_ArrowRight", ""   + inputKeycodes[5]);
+		sysSettings.put("input_ArrowDown", ""    + inputKeycodes[6]);
+		sysSettings.put("input_Num7", ""         + inputKeycodes[7]);
+		sysSettings.put("input_Num8", ""         + inputKeycodes[8]);
+		sysSettings.put("input_Num9", ""         + inputKeycodes[9]);
+		sysSettings.put("input_Num4", ""         + inputKeycodes[10]);
+		sysSettings.put("input_Num5", ""         + inputKeycodes[11]);
+		sysSettings.put("input_Num6", ""         + inputKeycodes[12]);
+		sysSettings.put("input_Num1", ""         + inputKeycodes[13]);
+		sysSettings.put("input_Num2", ""         + inputKeycodes[14]);
+		sysSettings.put("input_Num3", ""         + inputKeycodes[15]);
+		sysSettings.put("input_Star", ""         + inputKeycodes[16]);
+		sysSettings.put("input_Num0", ""         + inputKeycodes[17]);
+		sysSettings.put("input_Pound", ""        + inputKeycodes[18]);
+		sysSettings.put("input_FastForward", ""  + inputKeycodes[19]);
+		sysSettings.put("input_Screenshot",  ""  + inputKeycodes[20]);
+		sysSettings.put("input_PauseResume", ""  + inputKeycodes[21]);
 		saveConfig();
 		onChange.run();
 	}

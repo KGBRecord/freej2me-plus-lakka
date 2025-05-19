@@ -79,7 +79,7 @@ public final class FreeJ2MEPlayer extends Dialog
         UIButtons[4] = new Button("+ 5s");
         UIButtons[5] = new Button("Click here to open a File (or drag)");
 
-        for(int i = 0; i < UIButtons.length; i++) { UIButtons[i].setBackground(FreeJ2ME.freeJ2MEBGColor); }
+        for(int i = 0; i < UIButtons.length; i++) { UIButtons[i].setBackground(FreeJ2ME.freeJ2MEDragColor); }
 
         UIButtons[0].setPreferredSize(new Dimension(100, 30));
 
