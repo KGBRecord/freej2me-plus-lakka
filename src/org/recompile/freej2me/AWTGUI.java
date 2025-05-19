@@ -102,7 +102,8 @@ public final class AWTGUI
 		new Button("Cancel"),
 		new Button("Close FreeJ2ME"),
 		new Button("Restart later"),
-		new Button("Apply Inputs")
+		new Button("Apply Inputs"),
+		new Button("Cancel")
 	};
 	
 
@@ -357,6 +358,9 @@ public final class AWTGUI
 		awtButtons[5].setBackground(FreeJ2ME.freeJ2MEDragColor);
 		awtButtons[5].setForeground(Color.GREEN);
 
+		awtButtons[6].setBackground(FreeJ2ME.freeJ2MEDragColor);
+		awtButtons[6].setForeground(Color.RED);
+
 		for(int i = 0; i < inputButtons.length; i++) 
 		{ 
 			inputButtons[i].setBackground(FreeJ2ME.freeJ2MEDragColor);
@@ -367,9 +371,9 @@ public final class AWTGUI
 		awtDialogs[4].add(new Label("clicking each"));
 		awtDialogs[4].add(new Label("button below"));
 
-		awtDialogs[4].add(new Label(""));
 		awtDialogs[4].add(awtButtons[5]);
 		awtDialogs[4].add(new Label(""));
+		awtDialogs[4].add(awtButtons[6]);
 
 		awtDialogs[4].add(new Label("-----------------------"));
 		awtDialogs[4].add(new Label("-----------------------"));
@@ -468,6 +472,7 @@ public final class AWTGUI
 		awtButtons[4].setActionCommand("RestartLater");
 		mapInputs.setActionCommand("MapInputs");
 		awtButtons[5].setActionCommand("ApplyInputs");
+		awtButtons[6].setActionCommand("CancelInputs");
 
 		showPlayer.setActionCommand("ShowPlayer");
 		
@@ -485,6 +490,7 @@ public final class AWTGUI
 		awtButtons[4].addActionListener(menuItemListener);
 		mapInputs.addActionListener(menuItemListener);
 		awtButtons[5].addActionListener(menuItemListener);
+		awtButtons[6].addActionListener(menuItemListener);
 
 		showPlayer.addActionListener(menuItemListener);
 
@@ -1058,6 +1064,8 @@ public final class AWTGUI
 				config.updateAWTInputs();
 				awtDialogs[4].setVisible(false); 
 			}
+
+			else if(a.getActionCommand() == "CancelInputs") { awtDialogs[4].setVisible(false); }
 
 			else if(a.getActionCommand() == "ShowPlayer") 
 			{ 
