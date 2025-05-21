@@ -22,6 +22,8 @@ import javax.microedition.midlet.MIDlet;
 
 import javax.microedition.lcdui.Image;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -46,7 +48,7 @@ public class Display
 
 	private static final Queue<Runnable> serialCalls = new LinkedList<>();
 
-	private static final Queue<Runnable> paintQueue = new LinkedList<>();
+	private static final AtomicReference<Runnable> paintEvent = new AtomicReference<>();
 	private Thread paintThread;
 
 	private Runnable setCurrentRequest;
@@ -75,20 +77,18 @@ public class Display
 	}
 
 	// Paint queue methods
-	public void postPaintRequest(Runnable r) { synchronized (paintQueue) { paintQueue.add(r); } }
+	public void postPaintRequest(Runnable r) { paintEvent.set(r); }
 
 	private void processPaintCalls() 
-	{
-		Runnable call;
-		
+	{		
 		while (true) 
 		{
-			synchronized (paintQueue) { call = paintQueue.poll(); }
+			Runnable call = paintEvent.getAndSet(null);
 
 			if(call != null) { call.run(); }
 			else 
 			{
-				try { Thread.sleep(1); } // Sleep for a bit to reduce cpu usage, we are under no obligation to return serial calls immediately, they just have to be serial
+				try { Thread.sleep(16); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
 				catch (Exception e) { }
 			}
 			processSerialCalls(); // serial calls should always happen AFTER the paint cycle
@@ -104,9 +104,7 @@ public class Display
 
 	public void processPaintsNow() // Used by Canvas.serviceRepaints() to force repaints to be serviced
 	{
-		Runnable paintAction;
-
-		synchronized (paintQueue) { paintAction = paintQueue.poll(); }
+		Runnable paintAction = paintEvent.getAndSet(null);
 		if (paintAction != null) { paintAction.run(); }
 		processSerialCalls(); // serial calls should always happen AFTER the paint cycle
 	}
