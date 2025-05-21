@@ -445,16 +445,15 @@ public class FreeJ2ME
 	{
 		main.addComponentListener(new ComponentAdapter()
 		{
-			public void componentResized(ComponentEvent e)
-			{
-				resize();
-			}
+			public void componentResized(ComponentEvent e) { resize(); }
 		});
 
 		main.setVisible(true);
 		main.pack();
 		resize();
 		if(!isFullscreen) { main.setSize(lcdWidth*scaleFactor+xborder, lcdHeight*scaleFactor+yborder); }
+
+		awtGUI.updateMemStatDialog();
 	}
 
 	private class LCD extends Canvas
@@ -489,8 +488,7 @@ public class FreeJ2ME
 		// Used to clear the entire framebuffer when rotated in fullscreen to remove garbage pixels
 		public void clearScreen() 
 		{
-			Graphics2D cgc = (Graphics2D) this.getGraphics();
-			cgc.clearRect(0, 0, getWidth(), getHeight());
+			((Graphics2D) this.getGraphics()).clearRect(0, 0, getWidth(), getHeight());
 		}
 
 		public void paint(Graphics g)
@@ -500,18 +498,18 @@ public class FreeJ2ME
 				if(!Mobile.rotateDisplay) { g.drawImage(Mobile.getPlatform().getLCD(), cx, cy, cw, ch, null); }
 				else
 				{
-					final Graphics2D cgc = (Graphics2D)this.getGraphics();
 					// Rotate the FB 90 degrees counterclockwise with an adjusted pivot
-					cgc.rotate(Math.toRadians(-90), ch/2, ch/2);
+					((Graphics2D) g).rotate(Math.toRadians(-90), ch/2, ch/2);
 					// Draw the rotated FB with adjusted cy and cx values
-					cgc.drawImage(Mobile.getPlatform().getLCD(), 0, cx, ch, cw, null);
+					g.drawImage(Mobile.getPlatform().getLCD(), 0, cx, ch, cw, null);
 				}
+				
 				if(MobilePlatform.isPaused) 
-				{ 
-					g.setColor(new Color(0, 0, 0, 160));
+				{
+					g.setColor(new Color(0, 0, 64, 160));
 					g.fillRect(0, 0, getWidth(), getHeight());
 					g.setFont(new Font("Dialog", Font.BOLD, cw/5));
-					g.setColor(Color.WHITE);
+					g.setColor(Color.ORANGE);
 					String message = "PAUSED!";
 					FontMetrics metrics = g.getFontMetrics();
 					int x = (getWidth() - metrics.stringWidth(message)) / 2;
@@ -521,7 +519,7 @@ public class FreeJ2ME
 				else if (MobilePlatform.pressedKeys[19]) // Check if fast-forward is active
 				{
 					g.setFont(new Font("Dialog", Font.BOLD, cw/2));
-					g.setColor(Color.WHITE);
+					g.setColor(Color.ORANGE);
 					String fastForwardIndicator = "»";
 					FontMetrics ffMetrics = g.getFontMetrics();
 					int ffX = (getWidth() - ffMetrics.stringWidth(fastForwardIndicator)) / 2;
@@ -531,11 +529,10 @@ public class FreeJ2ME
 			}
 			else 
 			{
-				super.paint(g);
 				g.setColor(freeJ2MEDragColor);
 				g.fillRect(cx, cy, cw, ch);
 				g.setFont(new Font("Dialog", Font.BOLD, 20));
-				g.setColor(fileSupported ? Color.WHITE : Color.RED);
+				g.setColor(fileSupported ? Color.ORANGE : Color.RED);
 				String message = fileSupported ? ">> DROP HERE <<" : "INVALID FILE TYPE!!!";
 				FontMetrics metrics = g.getFontMetrics();
 				int x = (getWidth() - metrics.stringWidth(message)) / 2;
