@@ -282,6 +282,9 @@ public final class AWTGUI
 		this.config = config;
 
 		resChoice.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+		resChoice.setBackground(FreeJ2ME.freeJ2MEBGColor);
+		resChoice.setForeground(Color.ORANGE);
+
 		totalMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
 		freeMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
 		usedMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
@@ -628,9 +631,6 @@ public final class AWTGUI
 			{
 				if(transToOriginOnReset.getState()){ config.updateCompatTranslateToOriginOnReset("on"); hasPendingChange = true; }
 				else{ config.updateCompatTranslateToOriginOnReset("off"); hasPendingChange = true; }
-
-				awtDialogs[3].setLocationRelativeTo(main);
-				awtDialogs[3].setVisible(true);
 			}
 		});
 
@@ -640,9 +640,6 @@ public final class AWTGUI
 			{
 				if(ignoreGCCalls.getState()){ config.updateCompatIgnoreGCCalls("on"); hasPendingChange = true; }
 				else{ config.updateCompatIgnoreGCCalls("off"); hasPendingChange = true; }
-
-				awtDialogs[3].setLocationRelativeTo(main);
-				awtDialogs[3].setVisible(true);
 			}
 		});
 
@@ -818,8 +815,8 @@ public final class AWTGUI
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(dumpGraphicsData.getState()) { config.updateDumpGraphicsObjects("on"); }
-				else { config.updateDumpGraphicsObjects("off"); }
+				if(dumpGraphicsData.getState()) { config.updateDumpGraphicsObjects("on"); Mobile.dumpGraphicsObjects = true; }
+				else { config.updateDumpGraphicsObjects("off"); Mobile.dumpGraphicsObjects = false; }
 			}
 		});
 
