@@ -55,4 +55,6 @@ public class PhoneSystem
         }
         return false; 
     }
+
+    public static final boolean isAvailable(final int n) { return true; }
 }

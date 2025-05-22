@@ -39,7 +39,7 @@ public abstract class Canvas extends Frame
 		Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "DoJa Canvas Process event type:" + type + " , param:" + param);
 	}
 
-    public void repaint() { repaint(0, 0, Mobile.lcdWidth, Mobile.lcdHeight); }
+    public void repaint() { repaint(0, 0, getWidth(), getHeight()); }
 
     public void repaint(int x, int y, int width, int height) 
     {

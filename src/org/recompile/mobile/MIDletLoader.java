@@ -28,6 +28,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.lang.ClassLoader;
@@ -370,7 +371,7 @@ public class MIDletLoader extends URLClassLoader
 		String currentKey = null;
 		StringBuilder currentValue = new StringBuilder();
 	
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) 
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "Shift_JIS"))) // DoJa uses the Shift_JIS charset in its descriptor
 		{
 			String line;
 			while ((line = br.readLine()) != null) 
@@ -456,8 +457,6 @@ public class MIDletLoader extends URLClassLoader
 			}
 		}
 
-		String appSpecifier = Mobile.isDoJa ? "AppClass" : "MIDlet-";
-
 		if(!Mobile.isDoJa) 
 		{
 			for(int i = 0; i < 9; i++) // Support loading up to 9 midlets, though i doubt any jar will have more than a few.
@@ -509,11 +508,14 @@ public class MIDletLoader extends URLClassLoader
 				}
 			}
 		}
-		else // So far i've only seen single iApply DoJa
+		else // So far i've only seen single iAppli DoJa
 		{
 			name[0] = properties.get("AppName");
 			icon = properties.get("AppIcon");
 			className[0] = properties.get("AppClass");
+
+			suitename = name[0];
+			suitename = suitename.replace(":","");
 
 			Mobile.log(Mobile.LOG_INFO, "Loading I-Appli: " + name[0] +" | Main Class: " + className[0]);
 			reg = new Registry(className[0]);

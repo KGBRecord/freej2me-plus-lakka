@@ -90,11 +90,22 @@ public class PlatformImage
 		if(Mobile.noAlphaOnBlankImages) { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_RGB); }
 		else { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB); }
 		
-		createGraphics();
+		if(!Mobile.isDoJa) 
+		{
+			createGraphics();
 
-		gc.setColor(0xFFFFFF);
-		gc.fillRect(0, 0, width, height);
-		gc.setColor(0x000000);
+			gc.setColor(0xFFFFFF);
+			gc.fillRect(0, 0, width, height);
+			gc.setColor(0x000000);
+		}
+		else 
+		{
+			createDoJaGraphics();
+
+			djgc.setColor(0xFFFFFF);
+			djgc.fillRect(0, 0, width, height);
+			djgc.setColor(0x000000);
+		}
 
 		isMutable = true;
 	}
@@ -325,6 +336,36 @@ public class PlatformImage
 		int[] canvasPixels = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		System.arraycopy(data, off, canvasPixels, 0, width * height);
 		
+		isMutable = true;
+	}
+
+	public PlatformImage(byte[] imageData, int imageOffset, int imageLength)
+	{
+		// Create Image from Byte Array Range (Data is PNG, JPG, etc.)
+		InputStream stream = new ByteArrayInputStream(imageData, imageOffset, imageLength);
+
+		BufferedImage temp;
+		
+		try { temp = ImageIO.read(stream); } 
+		catch (IOException e) { throw new IllegalArgumentException("Failed to read image from Byte Array." + e.getMessage()); }
+		
+		if(temp == null) 
+		{ 
+			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from byte array, as the returned image is null."); }
+			else 
+			{
+				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from byte array is NULL, ignoring due to Non Fatal Null Images being enabled.");
+			}
+		}
+		
+		width = temp.getWidth();
+		height = temp.getHeight();
+
+		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		createGraphics();
+
+		canvas.getGraphics().drawImage(temp, 0, 0, null);
+
 		isMutable = true;
 	}
 

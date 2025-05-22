@@ -35,6 +35,8 @@ public abstract class Image extends PlatformImage
 
 	protected Image(int width, int height, int[] data, int off) { super(width, height, data, off); }
 
+	protected Image(byte[] data, int offset, int length) { super(data, offset, length); }
+
 	public static Image createImage(Image source) 
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create DoJa Image from Image ");
@@ -58,6 +60,14 @@ public abstract class Image extends PlatformImage
 		if (off < 0 || off + width * height > data.length) { throw new ArrayIndexOutOfBoundsException("Invalid offset or data length"); }
 
 		return new DoJaLCDUIImage(width, height, data, off);
+	}
+
+	public static Image createImage(byte[] data, int offset, int length) 
+	{
+		if (data == null) { throw new NullPointerException("data cannot be null"); }
+		if (offset < 0 || offset + length > data.length) { throw new ArrayIndexOutOfBoundsException("Invalid offset or data length"); }
+
+		return new DoJaLCDUIImage(data, offset, length);
 	}
 
 	public Graphics getGraphics() { return super.getDoJaGraphics(); }

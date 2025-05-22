@@ -1215,15 +1215,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawString(String str, int x, int y)
 	{
-		if(str!=null)
-		{
-			int ascent = gc.getFontMetrics().getAscent();
-			int height = gc.getFontMetrics().getHeight();
-
-			y += ascent - 1;
-
-			gc.drawString(str, x, y);
-		}
+		if(str!=null) { gc.drawString(str, x, y); }
 	}
 
 	public void drawImage(com.nttdocomo.ui.Image image, int[] matrix) 
@@ -1296,7 +1288,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 		
 		if (dojaLockCount == 0) 
 		{
-			flushGraphics(lastImage, 0, 0, lastImage.getWidth(), lastImage.getHeight()); // TODO: Maybe incorrect
+			com.nttdocomo.ui.Canvas DoJaCanvas =  (com.nttdocomo.ui.Canvas) com.nttdocomo.ui.Display.getCurrent();
+			DoJaCanvas.repaint();
 		}
     }
 

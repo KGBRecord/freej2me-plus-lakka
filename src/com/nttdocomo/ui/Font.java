@@ -107,6 +107,11 @@ public class Font
 		return defaultDoJaFont;
     }
 
+	public static void setDefaultFont(Font font) 
+	{
+		if(font != null) { defaultDoJaFont = font; }
+	}
+
     public int getDescent() { return 0; }
 
     public int getHeight() { return platformFont.getHeight(); }

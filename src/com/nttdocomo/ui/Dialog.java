@@ -16,6 +16,8 @@
 */
 package com.nttdocomo.ui;
 
+import org.recompile.mobile.Mobile;
+
 public final class Dialog extends Frame 
 {
     public static final int BUTTON_OK = 0x0001;
@@ -49,7 +51,11 @@ public final class Dialog extends Frame
         this.message = (msg != null) ? msg : " ";
     }
 
-    public int show() throws UIException { return BUTTON_OK; }
+    public int show() throws UIException 
+    { 
+        Mobile.log(Mobile.LOG_WARNING, Dialog.class.getPackage().getName() + "." + Dialog.class.getSimpleName() + ": " + title + " " + message + " Dialog type " + dialogType);
+        return BUTTON_YES; 
+    }
 
     public void setSoftLabel(int key, String label) { }
 }

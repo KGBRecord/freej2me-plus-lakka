@@ -14,17 +14,12 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.lang;
 
-import org.recompile.mobile.PlatformImage;
-
-public class DoJaLCDUIImage extends Image 
+public class IllegalStateException extends Exception 
 {
-	public DoJaLCDUIImage(Image source) { super(source); }
+    
+	public IllegalStateException() { super(); }
 
-	public DoJaLCDUIImage(int width, int height) { super(width, height); }
-
-	public DoJaLCDUIImage(int width, int height, int[] data, int off) { super(width, height, data, off); }
-
-	public DoJaLCDUIImage(byte[] data, int offset, int length) { super(data, offset, length); }
+	public IllegalStateException(String msg) { super(msg); }
 }

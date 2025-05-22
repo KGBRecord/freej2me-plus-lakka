@@ -16,15 +16,21 @@
 */
 package com.nttdocomo.ui;
 
-import org.recompile.mobile.PlatformImage;
-
-public class DoJaLCDUIImage extends Image 
+public class MediaImageImpl implements MediaImage 
 {
-	public DoJaLCDUIImage(Image source) { super(source); }
+    private Image doJaImage;
 
-	public DoJaLCDUIImage(int width, int height) { super(width, height); }
+    MediaImageImpl(byte[] data) { doJaImage = new DoJaLCDUIImage(data, 0, data.length); }
 
-	public DoJaLCDUIImage(int width, int height, int[] data, int off) { super(width, height, data, off); }
+    public int getHeight() { return doJaImage.getHeight(); }
 
-	public DoJaLCDUIImage(byte[] data, int offset, int length) { super(data, offset, length); }
+    public int getWidth() { return doJaImage.getWidth(); }
+    
+    public Image getImage() { return doJaImage; }
+
+    public void dispose() { doJaImage = null; }
+
+    public void unuse() { }
+
+    public void use() { }
 }

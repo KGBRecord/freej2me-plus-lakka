@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -71,26 +72,43 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 		this.name = null; // TODO: Clear scratchpad data, maybe write any pending data prior to it?
 	}
 
-	public DataInputStream openDataInputStream() 
-	{
-		return new DataInputStream(openInputStream());
-	}
+	public DataInputStream openDataInputStream() throws IOException { return new DataInputStream(openInputStream()); }
 
 	public InputStream openInputStream() 
 	{
-        String[] parsedName = name.split(";");
-        pos = Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", ""));
-        length = Integer.parseInt(parsedName[1].split(",")[1].replace("length=", ""));
-        if(openedScratchPads.get(parsedName[0]) == false) 
-        {
-            try { scratchPadData = Mobile.getIAppliScratchPadAsByteArray(parsedName[0]); } 
-            catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to open ScratchPad:" + e.getMessage());}
+		String[] parsedName = name.split(";");
+		pos = Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64;
+		length = Integer.parseInt(parsedName[1].split(",")[1].replace("length=", ""));
+		if(openedScratchPads.get(parsedName[0]) == false) 
+		{
+			try { scratchPadData = Mobile.getIAppliScratchPadAsByteArray(parsedName[0]); } 
+			catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to open ScratchPad:" + e.getMessage());}
 
-            openedScratchPads.put(parsedName[0], true);
-        }
+			openedScratchPads.put(parsedName[0], true);
+		}
 
-        byte[] returnData = new byte[length];
-        System.arraycopy(scratchPadData, pos, returnData, 0, length);
+		byte[] returnData = new byte[length];
+		for (int i = 0; i < length; i++) 
+		{
+			int index = pos + i;
+			if (index >= scratchPadData.length) { index -= scratchPadData.length; } // Wrap around
+			returnData[i] = scratchPadData[index];
+		}
+
+		// DoJa's Scratchpad appears to be little-endian, so reverse multi-byte data
+		// TODO: Implement something more flexible and not prone to errors like this is (eg: A String with length 4 shouldn't be reversed i think)
+		returnData = convertBEtoLE(returnData);
+		
+		if(Mobile.minLogLevel == Mobile.LOG_INFO) 
+		{
+			StringBuilder hexString = new StringBuilder();
+			for (byte b : returnData) 
+			{
+				hexString.append(String.format("%02X ", b));
+			}
+			Mobile.log(Mobile.LOG_INFO, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Hex Data read: " + hexString.toString());
+		}
+		
 
 		return new ByteArrayInputStream(returnData);
 	}
@@ -102,8 +120,9 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 
 	public OutputStream openOutputStream() 
 	{
+		Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Opened for writing (untested)");
         String[] parsedName = name.split(";");
-        pos = Integer.parseInt(parsedName[1].split(",")[0]);
+        pos = Integer.parseInt(parsedName[1].split(",")[0]) + 64;
         length = Integer.parseInt(parsedName[1].split(",")[1]);
         if(openedScratchPads.get(parsedName[0]) == false) 
         {
@@ -118,4 +137,25 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 
 		return new ByteArrayOutputStream(length);
 	}
+
+	// DoJa's Scratchpad appears to be little-endian, so any multi-byte values have to be reversed
+	public byte[] convertBEtoLE(byte[] originalData) 
+	{
+		byte[] convertedData = new byte[originalData.length];
+		
+		for (int i = 0; i < originalData.length; i += 4) 
+		{
+			if (i + 4 <= originalData.length) 
+			{
+				convertedData[i] = originalData[i + 3];
+				convertedData[i + 1] = originalData[i + 2];
+				convertedData[i + 2] = originalData[i + 1];
+				convertedData[i + 3] = originalData[i];
+			} 
+			else { System.arraycopy(originalData, i, convertedData, i, originalData.length - i); }
+		}
+		
+		return convertedData;
+	}
+
 }

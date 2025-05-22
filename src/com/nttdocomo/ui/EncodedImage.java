@@ -16,15 +16,19 @@
 */
 package com.nttdocomo.ui;
 
-import org.recompile.mobile.PlatformImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
-public class DoJaLCDUIImage extends Image 
+public class EncodedImage 
 {
-	public DoJaLCDUIImage(Image source) { super(source); }
+    private byte[] imageData;
 
-	public DoJaLCDUIImage(int width, int height) { super(width, height); }
+    public EncodedImage(byte[] imageData) { this.imageData = imageData; }
 
-	public DoJaLCDUIImage(int width, int height, int[] data, int off) { super(width, height, data, off); }
+    public int size() { return imageData.length; }
 
-	public DoJaLCDUIImage(byte[] data, int offset, int length) { super(data, offset, length); }
+    public InputStream getInputStream() { return new ByteArrayInputStream(imageData); }
+
+    public MediaImage getImage() { return new MediaImageImpl(imageData); }
 }

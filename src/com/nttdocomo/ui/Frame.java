@@ -39,9 +39,9 @@ public abstract class Frame
 		graphics = platformImage.getDoJaGraphics();
     }
 
-    public final int getHeight()  { return width; }
+    public final int getHeight()  { return height; }
 
-    public final int getWidth() { return height; }
+    public final int getWidth() { return width; }
 
     public void setBackground(int color) 
     {

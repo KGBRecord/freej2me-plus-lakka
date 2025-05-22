@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
+
 import javax.wireless.messaging.MessageConnectionImpl;
 
 import org.recompile.mobile.Mobile;
@@ -33,7 +35,7 @@ public class Connector
 
 	private static OutputStream output = null;
 	
-	public static InputStream openInputStream(String name)
+	public static InputStream openInputStream(String name) throws IOException
 	{
 		if (name.startsWith("scratchpad:"))
 		{
@@ -42,7 +44,7 @@ public class Connector
 		return new InputConnectionImpl(name).openInputStream();
 	}
 
-	public static DataInputStream openDataInputStream(String name)
+	public static DataInputStream openDataInputStream(String name) throws IOException
 	{
 		if (name.startsWith("scratchpad:"))
 		{
@@ -51,11 +53,11 @@ public class Connector
 		return new InputConnectionImpl(name).openDataInputStream();
 	}
 
-	public static Connection open(String name) { return open(name, 3, false); }
+	public static Connection open(String name) throws IOException { return open(name, 3, false); }
 
-	public static Connection open(String name, int mode) { return open(name, mode, false); }
+	public static Connection open(String name, int mode) throws IOException { return open(name, mode, false); }
 
-	public static Connection open(String name, int mode, boolean timeouts) 
+	public static Connection open(String name, int mode, boolean timeouts) throws IOException
 	{
 		
 		if (name.startsWith("scratchpad:"))
