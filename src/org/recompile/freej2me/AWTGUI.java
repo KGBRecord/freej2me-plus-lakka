@@ -781,8 +781,6 @@ public final class AWTGUI
 					if(logLevels[index].getState())
 					{
 						config.updateLogLevel(logLevelValues[index]);
-						Mobile.logging = (index > 0);
-						Mobile.minLogLevel = (byte) (index-1); // This can go negative if index = 0, as it won't log anyway.
 						for(int j = 0; j < logLevels.length; j++) 
 						{
 							if(j != index) { logLevels[j].setState(false); }

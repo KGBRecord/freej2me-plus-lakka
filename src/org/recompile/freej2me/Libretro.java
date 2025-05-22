@@ -114,8 +114,7 @@ public class Libretro
 		else { Mobile.dumpAudioStreams = true; }
 
 		/* Same for Logging Level */
-		if(Integer.parseInt(args[8]) == 0) { Mobile.logging = false; }
-		else { Mobile.logging = true; Mobile.minLogLevel = (byte) (Integer.parseInt(args[8])-1); }
+		Mobile.minLogLevel = (byte) (Integer.parseInt(args[8]));
 
 		/* No Alpha on Blank Images SpeedHack is a per-game config */
 		if(Integer.parseInt(args[9]) == 0) { Mobile.noAlphaOnBlankImages = false; }

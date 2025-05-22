@@ -80,17 +80,17 @@ public class Mobile
 	public static boolean dumpGraphicsObjects = false;
 
 	// Enable/disable logging to the console and optionally to a file
-	public static boolean logging = true; 
 	private static final String LOG_FILE = "freej2me_system" + File.separatorChar + "FreeJ2ME.log";
 	public static final String SIEMENS_DATA_PATH = "freej2me_system" + File.separatorChar + "SiemensData" + File.separatorChar;
-	public static byte minLogLevel = 1;
+	public static byte minLogLevel = 2;
 
 	// Log Levels
-	public static final byte LOG_DEBUG = 0;
-    public static final byte LOG_INFO = 1;
-    public static final byte LOG_WARNING = 2;
-    public static final byte LOG_ERROR = 3;
-    public static final byte LOG_FATAL = 4;
+	public static final byte LOG_NONE    = 0;
+	public static final byte LOG_DEBUG   = 1;
+	public static final byte LOG_INFO    = 2;
+	public static final byte LOG_WARNING = 3;
+	public static final byte LOG_ERROR   = 4;
+	public static final byte LOG_FATAL   = 5;
 
 	// KDDI/KJX variables
 	public static final String tempKJXDir = "." + File.separatorChar + "FreeJ2MEDumps" + File.separatorChar + "KDDI" + File.separatorChar;
@@ -741,7 +741,7 @@ public class Mobile
 
 	public static final void log(byte logLevel, String text) 
 	{
-		if(!logging || (logLevel < minLogLevel)) { return; }
+		if(logLevel == 0 || logLevel < minLogLevel) { return; }
 
 		switch(logLevel) 
 		{
@@ -788,8 +788,6 @@ public class Mobile
 	{
 		// Start with system settings
 		minLogLevel = (byte) Integer.parseInt(config.sysSettings.get("logLevel"));
-		if(minLogLevel > 0) { logging = true; }
-		else { logging = false; }
 		
 		String showFPS = config.sysSettings.get("fpsCounterPosition");
 		platform.setShowFPS(showFPS);
