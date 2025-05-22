@@ -69,10 +69,7 @@ public abstract class MIDlet
 
 	protected abstract void pauseApp();
 
-	public void callPauseApp() 
-	{
-		pauseApp();
-	}
+	public void callPauseApp() { pauseApp(); }
 
 	public final boolean platformRequest(String URL) { return false; }
 
