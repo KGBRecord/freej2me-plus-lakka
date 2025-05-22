@@ -54,7 +54,8 @@ public class Config
 
 	public final String[] supportedResolutions = {"96x65","101x64","101x80","128x128","130x130","120x160","128x160","132x176","176x208","176x220","220x176","208x208","180x320","320x180","208x320","240x320","320x240","240x400","400x240","240x432","240x480","360x360","352x416","360x640","640x360","640x480","480x800","800x480"};
 
-	int inputKeycodes[] = new int[] { 
+	int inputKeycodes[] = new int[] 
+	{ 
 		81,  // Q Key
 		87,  // W Key
 		38,  // Arrow Up
@@ -62,7 +63,7 @@ public class Config
 		10,  // Enter Key
 		39,  // Arrow Right
 		40,  // Arrow Down
-		107, // Numpad_7
+		103, // Numpad_7
 		104, // Numpad_8
 		105, // Numpad_9 
 		100, // Numpad_4
