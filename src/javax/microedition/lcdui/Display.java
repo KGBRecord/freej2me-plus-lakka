@@ -91,14 +91,19 @@ public class Display
 				try { Thread.sleep(16); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
 				catch (Exception e) { }
 			}
-			processSerialCalls(); // serial calls should always happen AFTER the paint cycle
-
-			// MIDP docs don't specify anything exact on when setCurrent should be processed, so let's assume it happens after the paint and serial call cycles.
+			
+			/* 
+			 * MIDP docs don't specify anything exact on when setCurrent should be processed, so let's assume it happens after the paint cycle but before serial calls,
+			 * which seems to work best with jars known to be annoying with the setCurrent, serial calls and serviceRepaints combo, like Ratatouille, Heroes Lore Wind of Soltia,
+			 * and Racing Fever 2.
+			 */
 			if(setCurrentRequest != null) 
 			{
 				setCurrentRequest.run();
 				setCurrentRequest = null;
 			}
+
+			processSerialCalls(); // serial calls should always happen AFTER the paint cycle
 		}
 	}
 
@@ -106,6 +111,13 @@ public class Display
 	{
 		Runnable paintAction = paintEvent.getAndSet(null);
 		if (paintAction != null) { paintAction.run(); }
+
+		if(setCurrentRequest != null) 
+		{
+			setCurrentRequest.run();
+			setCurrentRequest = null;
+		}
+
 		processSerialCalls(); // serial calls should always happen AFTER the paint cycle
 	}
 
