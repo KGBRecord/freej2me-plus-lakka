@@ -157,7 +157,7 @@ public abstract class Canvas extends Displayable
 			{ 
 				try 
 				{
-					if (!isShown() || listCommands) { return; }
+					if (!isShown() || listCommands) { pendingRepaint = false; return; }
 
 					graphics.reset(x, y, width, height);
 					paint(graphics);
@@ -255,4 +255,5 @@ public abstract class Canvas extends Displayable
 		else { repaint(); }
 	}
 
+	public void clearPendingRepaint() { pendingRepaint = false; }
 }

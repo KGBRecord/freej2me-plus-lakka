@@ -45,8 +45,8 @@ public class Mobile
 
 	private static Display display;
 
+	// Used mostly for pause/resume requests
 	public static MIDlet midlet;
-
 	public static IApplication iAppli;
 
 	public static boolean isDoJa = false;

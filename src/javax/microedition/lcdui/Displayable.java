@@ -80,12 +80,7 @@ public abstract class Displayable
 
 	public void setTitle(String text) { title = text; }        
 
-	public boolean isShown() 
-	{
-		if(Mobile.getDisplay() == null) { return false; } // If we don't have a display up yet, nothing is shown
-
-		return Mobile.getDisplay().getCurrent() == this; 
-	}
+	public boolean isShown() { return Mobile.getDisplay().getCurrent() == this; }
 
 	public Ticker getTicker() { return ticker; }
 

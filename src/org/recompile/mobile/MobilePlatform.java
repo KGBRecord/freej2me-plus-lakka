@@ -92,6 +92,7 @@ public class MobilePlatform
 
 	public MobilePlatform(int width, int height)
 	{
+		Mobile.setDisplay(new Display());
 		resizeLCD(width, height);
 
 		painter = new Runnable()
@@ -125,7 +126,7 @@ public class MobilePlatform
 		 * a simple restart is all it takes, just like before.
 		 */
 
-		if(!Mobile.isDoJa && Mobile.getDisplay() != null) 
+		if(!Mobile.isDoJa && Mobile.getDisplay() != null && Mobile.getDisplay().getCurrent() != null) 
 		{ 
 			Mobile.getDisplay().getCurrent().doSizeChanged(width, height);
 			Mobile.getDisplay().getCurrent().platformImage = lcd; 

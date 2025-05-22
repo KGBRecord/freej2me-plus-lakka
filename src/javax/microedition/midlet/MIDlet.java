@@ -27,14 +27,11 @@ public abstract class MIDlet
 {
 	public static HashMap<String, String> properties;
 
-	private Display display = new Display();
-
 	protected MIDlet()
 	{
 		Mobile.log(Mobile.LOG_INFO, MIDlet.class.getPackage().getName() + "." + MIDlet.class.getSimpleName() + ": " + "Create MIDlet");
 		Mobile.midlet = this;
 	}
-
 
 	public final int checkPermission(String permission)
 	{
@@ -76,7 +73,4 @@ public abstract class MIDlet
 	public final void resumeRequest() { }
 
 	protected abstract void startApp() throws MIDletStateChangeException;
-
-	public Display getDisplay() { return display; }
-
 }

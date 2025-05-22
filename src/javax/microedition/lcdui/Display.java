@@ -44,8 +44,6 @@ public class Display
 
 	private Displayable current;
 
-	private static Display display;
-
 	private static final Queue<Runnable> serialCalls = new LinkedList<>();
 
 	private static final AtomicReference<Runnable> paintEvent = new AtomicReference<>();
@@ -57,10 +55,6 @@ public class Display
 
 	public Display()
 	{
-		display = this;
-
-		Mobile.setDisplay(this);
-
 		paintThread = new Thread(this::processPaintCalls, "CanvasRepaints-Thread");
 		paintThread.start();
 	}
@@ -211,7 +205,7 @@ public class Display
 	{
 		if(m == null) { throw new NullPointerException("Cannot get a unique Display for a null MIDlet"); } 
 		
-		return m.getDisplay(); 
+		return Mobile.getDisplay(); 
 	}
 
 	public boolean isColor() { return true; }
@@ -240,7 +234,14 @@ public class Display
 				if (prev != null && prev instanceof Canvas) { prev.hideNotify(); }
 
 				if(current instanceof Canvas) { current.showNotify(); }
+				
+				// Make sure we're not holding a pending repaint before issuing a call to notifySetCurrent, otherwise it'll be ignored.
+				synchronized(paintEvent) 
+				{
+					if(paintEvent.get() != null) { paintEvent.getAndSet(null).run(); }
+				}
 				current.notifySetCurrent();
+				
 
 				Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
 			}
