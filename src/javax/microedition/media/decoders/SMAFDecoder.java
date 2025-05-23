@@ -923,21 +923,22 @@ public final class SMAFDecoder
             }
             else // Mobile Standard formats (with or without compression, as this method will receive uncompressed data either way)
             {
-                //duration = getVariableLengthValue(data, new int[]{offset});
-                int numBytes = 0;
                 // In Mobile Standard, both duration and gateTime use the variable length notation, up to 4 bytes
-                // TODO: We might need to do more stuff here (handy phone format has an increment if more than one byte is used for example)...
-                for (int i = 0; i < 4; i++) 
+                // TODO: Values longer than 2 and 3 bytes are untested
+                firstDurByte = (byte) (data[offset++] & 0xFF);
+                if ((firstDurByte & 0x80) == 0) { duration = firstDurByte & 0x7F; } // Single-byte gateTime
+                else // Multi-byte gateTime
                 {
-                    
-                    byte currentByte = data[offset++]; // Read the current byte
-                    duration = (i > 0 ? ((duration & 0x3F) | (currentByte & 0x7F)) : currentByte);
-                    duration += (numBytes << 7);
+                    duration = (firstDurByte & 0x3F) << 7;
 
-                    numBytes++;
-                    // Check if the MSB is 0 to determine if this is the last byte
-                    if ((currentByte & 0x80) == 0) { break; }
-                    
+                    for (int i = 1; i < 4; i++) 
+                    {
+                        byte nextDurByte = (byte) (data[offset++] & 0xFF);
+                        duration |= (nextDurByte & 0x7F) << (7 * (i - 1));
+
+                        // Break if the MSB of the next byte is 0 (indicating the end)
+                        if ((nextDurByte & 0x80) == 0) { break; }
+                    }
                 }
 
                 totalDuration += (duration * timeBasetoMs(TimeBase_D)); // Update total duration
@@ -981,16 +982,21 @@ public final class SMAFDecoder
                         case 0x80: // Note without velocity
                             channel = (byte) (status & 0x0F);
                             noteNumber = (byte) (data[offset++] & 0x7F); // Note Number
-                            numBytes = 0;
                             // Read gate time
-                            for (int i = 0; i < 4; i++) 
-                            {            
-                                byte currentByte = data[offset++]; // Read the current byte
-                                gateTime = (i > 0 ? ((gateTime & 0x3F) | (currentByte & 0x7F)) : currentByte);
-                                gateTime += (numBytes << 7);
-                                numBytes++;
-                                // Check if the MSB is 0 to determine if this is the last byte
-                                if ((currentByte & 0x80) == 0) { break; }
+                            firstGateByte = (byte) (data[offset++] & 0xFF);
+                            if ((firstGateByte & 0x80) == 0) { gateTime = firstGateByte & 0x7F; } // Single-byte gateTime
+                            else // Multi-byte gateTime
+                            {
+                                gateTime = (firstGateByte & 0x3F) << 7;
+
+                                for (int i = 1; i < 4; i++) 
+                                {
+                                    byte nextGateByte = (byte) (data[offset++] & 0xFF);
+                                    gateTime |= (nextGateByte & 0x7F) << (7 * (i - 1));
+
+                                    // Break if the MSB of the next byte is 0 (indicating the end)
+                                    if ((nextGateByte & 0x80) == 0) { break; }
+                                }
                             }
                     
                             // As per the documentation, gateTime cannot be zero, this indicates either a corrupted file or a parse error
@@ -999,15 +1005,13 @@ public final class SMAFDecoder
                                 Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "note gateTime value cannot be zero. ");
                                 return;
                             }
-
-                            
                             
                             // TODO: This might be incorrect as the SMAF documentation doesn't detail how the chip differentiates between PCM data and Sequence Data to play
                             // All it notes is that a piano has 88 notes and in midi it goes all the way up to 108 (which is where this "20" value comes from, as anything lower supposedly is a PCM file)
                             if(noteNumber < 20)
                             {
-                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request value " + noteNumber + " to channel " + channel + " at duration " + totalDuration);
-                                pcmDataPositions.put(totalDuration, (int) noteNumber);
+                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value " + noteNumber + " to channel " + channel + " at duration " + totalDuration);
+                                pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
                             }
                             else { Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + channel); }
                             
@@ -1022,16 +1026,21 @@ public final class SMAFDecoder
                             channel = (byte) (status & 0x0F);
                             noteNumber = (byte) (data[offset++] & 0x7F); // Note Number
                             channelData[channel].velocity = (byte) (data[offset++] & 0x7F); // Key Velocity
-                            numBytes = 0;
                             // Read gate time
-                            for (int i = 0; i < 4; i++) 
+                            firstGateByte = (byte) (data[offset++] & 0xFF);
+                            if ((firstGateByte & 0x80) == 0) { gateTime = firstGateByte & 0x7F; } // Single-byte gateTime
+                            else // Multi-byte gateTime
                             {
-                                byte currentByte = data[offset++]; // Read the current byte
-                                gateTime = (i > 0 ? ((gateTime & 0x3F) | (currentByte & 0x7F)) : currentByte);
-                                gateTime += (numBytes << 7);
-                                numBytes++;
-                                // Check if the MSB is 0 to determine if this is the last byte
-                                if ((currentByte & 0x80) == 0) { break; }
+                                gateTime = (firstGateByte & 0x3F) << 7;
+
+                                for (int i = 1; i < 4; i++) 
+                                {
+                                    byte nextGateByte = (byte) (data[offset++] & 0xFF);
+                                    gateTime |= (nextGateByte & 0x7F) << (7 * (i - 1));
+
+                                    // Break if the MSB of the next byte is 0 (indicating the end)
+                                    if ((nextGateByte & 0x80) == 0) { break; }
+                                }
                             }
                     
                             // As per the documentation, gateTime cannot be zero, this indicates either a corrupted file or a parse error
@@ -1040,12 +1049,11 @@ public final class SMAFDecoder
                                 Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "note gateTime value cannot be zero. ");
                                 return;
                             }
-
                             
                             if(noteNumber < 20)
                             {
-                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request value " + noteNumber + " with new velocity to channel " + channel + " at duration " + totalDuration);
-                                pcmDataPositions.put(totalDuration, (int) noteNumber);
+                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value" + noteNumber + " with new velocity to channel " + channel + " at duration " + totalDuration);
+                                pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
                             }
                             else { Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " with new velocity to channel " + channel); }
                             midiEvent = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, channel, noteNumber, channelData[channel].velocity), totalDuration);
@@ -1243,21 +1251,6 @@ public final class SMAFDecoder
             }
         }
         return "Unknown TimeBase";
-    }
-
-    private static int getVariableLengthValue(byte[] data, int[] offset) 
-    {
-        int value = 0;
-        int byteRead;
-    
-        do 
-        {
-            byteRead = data[offset[0]] & 0xFF; // Read the byte
-            value = ((value & 0x3F) << 7) | (byteRead & 0x7F);
-            offset[0]++; // Move to the next byte
-        } while ((byteRead & 0x80) != 0);
-    
-        return value; // Return the constructed value
     }
 }
 
