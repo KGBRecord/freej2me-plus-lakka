@@ -31,11 +31,11 @@ public abstract class Image extends PlatformImage
 
 	protected Image(Image source) { super(source); }
 
-	protected Image(int width, int height) { super(width, height, null); }
+	protected Image(int width, int height) { super(width, height); }
 
 	protected Image(int width, int height, int[] data, int off) { super(width, height, data, off); }
 
-	protected Image(byte[] data, int offset, int length) { super(data, offset, length); }
+	protected Image(byte[] data, int offset, int length) { super(data, offset, length, true); }
 
 	public static Image createImage(Image source) 
 	{

@@ -210,7 +210,7 @@ public class PlatformImage
 		canvas.getGraphics().drawImage(source.getCanvas(), 0, 0, null);
 	}
 
-	public PlatformImage(byte[] imageData, int imageOffset, int imageLength, boolean mutable)
+	public PlatformImage(byte[] imageData, int imageOffset, int imageLength, boolean mutable) // DoJa also uses this one, creates mutable images like DirectGraphics
 	{
 		// Create Image from Byte Array Range (Data is PNG, JPG, etc.)
 		InputStream stream = new ByteArrayInputStream(imageData, imageOffset, imageLength);
@@ -233,7 +233,11 @@ public class PlatformImage
 		height = temp.getHeight();
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		if(mutable) { createGraphics(); }
+		if(mutable) 
+		{ 
+			if(!Mobile.isDoJa) { createGraphics(); }
+			else { createDoJaGraphics(); }
+		}
 
 		canvas.getGraphics().drawImage(temp, 0, 0, null);
 
@@ -285,7 +289,7 @@ public class PlatformImage
 		height = (int) canvas.getHeight();
 	}
 
-	// DoJa's image class uses these
+	// These constructors are exclusive to DoJa's Image classes
 	public PlatformImage(com.nttdocomo.ui.Image source) 
 	{
 		// Create DoJa Image from DoJa Image
@@ -302,26 +306,7 @@ public class PlatformImage
 		height = source.getWidth();
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
 		canvas.getGraphics().drawImage(source.getCanvas(), 0, 0, null);
-	}
-
-	public PlatformImage(int Width, int Height, com.nttdocomo.ui.Image source) // Just to differentiate from the other constructor above
-	{
-		// Create blank DoJa Image
-		width = Width;
-		height = Height;
-
-		if(Mobile.noAlphaOnBlankImages) { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_RGB); }
-		else { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB); }
-		
-		createDoJaGraphics();
-
-		djgc.setColor(0xFFFFFF);
-		djgc.fillRect(0, 0, width, height);
-		djgc.setColor(0x000000);
-
-		isMutable = true;
 	}
 
 	public PlatformImage(int Width, int Height, int[] data, int off) 
@@ -338,37 +323,6 @@ public class PlatformImage
 		
 		isMutable = true;
 	}
-
-	public PlatformImage(byte[] imageData, int imageOffset, int imageLength)
-	{
-		// Create Image from Byte Array Range (Data is PNG, JPG, etc.)
-		InputStream stream = new ByteArrayInputStream(imageData, imageOffset, imageLength);
-
-		BufferedImage temp;
-		
-		try { temp = ImageIO.read(stream); } 
-		catch (IOException e) { throw new IllegalArgumentException("Failed to read image from Byte Array." + e.getMessage()); }
-		
-		if(temp == null) 
-		{ 
-			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from byte array, as the returned image is null."); }
-			else 
-			{
-				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from byte array is NULL, ignoring due to Non Fatal Null Images being enabled.");
-			}
-		}
-		
-		width = temp.getWidth();
-		height = temp.getHeight();
-
-		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		createGraphics();
-
-		canvas.getGraphics().drawImage(temp, 0, 0, null);
-
-		isMutable = true;
-	}
-
 
 	// Siemens methods
 	public void set2Bpp(boolean bpp) { this.is2bpp = bpp; }
