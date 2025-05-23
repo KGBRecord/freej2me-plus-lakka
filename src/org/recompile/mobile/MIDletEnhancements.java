@@ -55,11 +55,7 @@ public class MIDletEnhancements
     }
 
     /* Helps with jars that spam GC calls, causing cpu usage spikes */
-    public static void noGC() 
-    { 
-        if(Mobile.compatIgnoreGCCalls) { }
-        else { System.gc(); }
-    }
+    public static void noGC() { }
 
     /* Can reduce cpu usage in some games, and even helps fix others like Super Action Hero (pulled from J2ME-Loader) */
     public static void yieldOverride() throws InterruptedException

@@ -181,8 +181,12 @@ public abstract class Canvas extends Displayable
 	{
 		if(!isShown() && !pendingRepaint) { return; }
 
-		// serviceRepaints has to force pending repaints to happen
-		Mobile.getDisplay().processPaintsNow();
+		// serviceRepaints has to force pending repaints to happen, so block until the pending repaint is serviced
+		while(pendingRepaint) 
+		{
+			try { Thread.sleep(1); }
+			catch (Exception e) { }
+		}
 	}
 
 	public void setFullScreenMode(boolean mode)
