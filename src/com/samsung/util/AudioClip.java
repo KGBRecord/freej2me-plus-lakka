@@ -103,6 +103,11 @@ public class AudioClip
 		if(player.getState() == Player.PREFETCHED && (player.getMediaTime() < player.getDuration())) { player.start(); }
 	}
 
-	public void stop() { player.close(); }
+	public void stop() 
+	{ 
+		if(player.getState() != Player.STARTED) { return; }
+		player.stop();
+		player.setMediaTime(0); 
+	}
 
 }
