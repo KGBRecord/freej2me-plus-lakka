@@ -150,31 +150,37 @@ public abstract class Canvas extends Displayable
 	public void repaint(int x, int y, int width, int height)
 	{
 		Mobile.getPlatform().limitFps();
-		if(!pendingRepaint) 
-		{ 
-			pendingRepaint = true;
-			Mobile.getDisplay().postPaintRequest(() -> 
+		if(!Mobile.compatImmediateRepaints) 
+		{
+			if(!pendingRepaint) 
 			{ 
-				try 
-				{
-					if (!isShown() || listCommands) { pendingRepaint = false; return; }
-
-					graphics.reset(x, y, width, height);
-					paint(graphics);
-					
-					// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-					if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
-
-					Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
-				}
-				catch (Exception e) 
-				{
-					Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
-					e.printStackTrace();
-				}
-				finally { pendingRepaint = false; }
-			}); 
+				pendingRepaint = true;
+				Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
+			}
 		}
+		else { repaintRequest(x, y, width, height); }
+	}
+
+	public void repaintRequest(int x, int y, int width, int height) 
+	{
+		try 
+		{
+			if (!isShown() || listCommands) { pendingRepaint = false; return; }
+
+			graphics.reset(x, y, width, height);
+			paint(graphics);
+			
+			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
+
+			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+		}
+		catch (Exception e) 
+		{
+			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
+			e.printStackTrace();
+		}
+		finally { pendingRepaint = false; }
 	}
 
 	public void serviceRepaints() 

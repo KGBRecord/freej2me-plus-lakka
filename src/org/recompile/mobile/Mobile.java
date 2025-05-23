@@ -122,7 +122,7 @@ public class Mobile
 	// Compatibility settings
 	public static boolean compatNonFatalNullImages       = false; // Fixes some versions of House M.D
 	public static boolean compatTranslateToOriginOnReset = false; // Fixes Fantasy Zone 128x128
-	public static boolean compatIgnoreGCCalls            = false; // Helps Bomberman 08 and any other jar that spams System.gc() calls
+	public static boolean compatImmediateRepaints        = false; // Helps Rush and Attack by Konami, and any jar that freezes randomly by causing deadlocks with the repaint queue
 
 	// M3G Debug Rendering settings
 	public static boolean M3GRenderUntexturedPolygons = false;
@@ -856,9 +856,9 @@ public class Mobile
 		if(translateToOriginOnReset.equals("on"))        { compatTranslateToOriginOnReset = true; }
 		else if (translateToOriginOnReset.equals("off")) { compatTranslateToOriginOnReset = false; };
 
-		String ignoreGCCalls = config.settings.get("compatignoregccalls");
-		if(ignoreGCCalls.equals("on"))        { compatIgnoreGCCalls = true; }
-		else if (ignoreGCCalls.equals("off")) { compatIgnoreGCCalls = false; };
+		String immediateRepaints = config.settings.get("compatimmediaterepaints");
+		if(immediateRepaints.equals("on"))        { compatImmediateRepaints = true; }
+		else if (immediateRepaints.equals("off")) { compatImmediateRepaints = false; };
 
 		String textFont = config.settings.get("textfont");
 		if(textFont.equals("Custom"))       { useCustomTextFont = true; }

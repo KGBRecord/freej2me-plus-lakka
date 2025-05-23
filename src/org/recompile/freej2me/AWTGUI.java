@@ -265,7 +265,7 @@ public final class AWTGUI
 	// Compatibility settings
 	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("Don't throw Exception on null images");
 	final CheckboxMenuItem transToOriginOnReset = new CheckboxMenuItem("Translate to origin on gfx reset");
-	final CheckboxMenuItem ignoreGCCalls = new CheckboxMenuItem("Ignore garbage collection calls");
+	final CheckboxMenuItem immediateRepaints = new CheckboxMenuItem("Process canvas repaints immediately");
 
 	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("Delete KJX files' temporary JAR/JAD");
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
@@ -634,12 +634,12 @@ public final class AWTGUI
 			}
 		});
 
-		ignoreGCCalls.addItemListener(new ItemListener() 
+		immediateRepaints.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(ignoreGCCalls.getState()){ config.updateCompatIgnoreGCCalls("on"); hasPendingChange = true; }
-				else{ config.updateCompatIgnoreGCCalls("off"); hasPendingChange = true; }
+				if(immediateRepaints.getState()){ config.updateCompatImmediateRepaints("on"); hasPendingChange = true; }
+				else{ config.updateCompatImmediateRepaints("off"); hasPendingChange = true; }
 			}
 		});
 
@@ -909,7 +909,7 @@ public final class AWTGUI
 
 		compatSettingsMenu.add(NonFatalNullImages);
 		compatSettingsMenu.add(transToOriginOnReset);
-		compatSettingsMenu.add(ignoreGCCalls);
+		compatSettingsMenu.add(immediateRepaints);
 		
 		// add menus to menubar
 		menuBar.add(fileMenu);
@@ -947,7 +947,7 @@ public final class AWTGUI
 
 			transToOriginOnReset.setState(config.settings.get("compattranstooriginonreset").equals("on"));
 
-			ignoreGCCalls.setState(config.settings.get("compatignoregccalls").equals("on"));
+			immediateRepaints.setState(config.settings.get("compatimmediaterepaints").equals("on"));
 			
 			resChoice.select(""+ Integer.parseInt(config.settings.get("scrwidth")) + "x" + ""+ Integer.parseInt(config.settings.get("scrheight")));
 

@@ -535,11 +535,11 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
-        "freej2me_compatignoregccalls",
-        "Compatibility Settings > Ignore garbage collection calls",
-        "Ignore garbage collection calls",
-        "By default, J2ME allows applications to call for garbage collection explicitly. However, some apps like Bomberman 08 abuse this call to such a degree that cpu usage skyrockets and stutterings become commonplace if memory usage is high enough, enabling this can help those cases, but will cause issues in apps that use this to help synchronization like Gradius Neo, so only enable it if you really need it, or think this might help your cpu in a specific app.",
-        "By default, J2ME allows applications to call for garbage collection explicitly. However, some apps like Bomberman 08 abuse this call to such a degree that cpu usage skyrockets and stutterings become commonplace if memory usage is high enough, enabling this can help those cases, but will cause issues in apps that use this to help synchronization like Gradius Neo, so only enable it if you really need it, or think this might help your cpu in a specific app.",
+        "freej2me_compatimmediaterepaintcalls",
+        "Compatibility Settings > Process canvas repaint calls immediately",
+        "Process canvas repaint calls immediately",
+        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
+        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
         "compat_settings",
         {
             { "on",  "Enabled"            },
@@ -933,9 +933,9 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
-        "freej2me_compatignoregccalls",
-        "Ignore garbage collection calls",
-        "By default, J2ME allows applications to call for garbage collection explicitly. However, some apps like Bomberman 08 abuse this call to such a degree that cpu usage skyrockets and stutterings become commonplace if memory usage is high enough, enabling this can help those cases, but will cause issues in apps that use this to help synchronization like Gradius Neo, so only enable it if you really need it, or think this might help your cpu in a specific app.",
+        "freej2me_compatimmediaterepaintcalls",
+        "Process canvas repaint calls immediately",
+        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -1070,9 +1070,9 @@ static const struct retro_variable vars[] =
         "freej2me_compattranstooriginongfxreset",
         "Translate to origin on gfx reset; off|on"
     },
-    { /* Ignore garbage collection calls */
-        "freej2me_compatignoregccalls",
-        "Ignore garbage collection calls; off|on"
+    { /* Process canvas repaint calls immediately */
+        "freej2me_compatimmediaterepaintcalls",
+        "Process canvas repaint calls immediately; off|on"
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",

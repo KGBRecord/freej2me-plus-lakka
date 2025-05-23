@@ -136,7 +136,7 @@ public class Config
 				settings.put("spdhacknoalpha", "off");
 				settings.put("compatnonfatalnullimage", "off");
 				settings.put("compattranstooriginonreset", "off");
-				settings.put("compatignoregccalls", "off");
+				settings.put("compatimmediaterepaints", "off");
 				settings.put("fpshack", "Disabled");
 				saveConfig();
 			}
@@ -181,7 +181,7 @@ public class Config
 			if(settings.containsKey("compatcliprectongfxreset")) { settings.remove("compatcliprectongfxreset"); }
 			if(settings.containsKey("width")) { settings.remove("width"); }
 			if(settings.containsKey("height")) { settings.remove("height"); }
-			if(!settings.containsKey("ignoregccalls")) { settings.put("ignoregccalls", "off"); }
+			if(settings.containsKey("compatignoregccalls")) { settings.remove("compatignoregccalls"); } // These are now ignored by default, after some bug fixes to lcdui canvas
 
 			// Add any missing settings
 			if(!settings.containsKey("scrwidth")) { settings.put("scrwidth", ""+width); }
@@ -197,7 +197,7 @@ public class Config
 			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
 			if(!settings.containsKey("compatnonfatalnullimage")) { settings.put("compatnonfatalnullimage", "off"); }
 			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", "off"); }
-			if(!settings.containsKey("compatignoregccalls")) { settings.put("compatignoregccalls", "off"); }
+			if(!settings.containsKey("compatimmediaterepaints")) { settings.put("compatimmediaterepaints", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
 
 			// System settings
@@ -403,10 +403,10 @@ public class Config
 		onChange.run();
 	}
 
-	public void updateCompatIgnoreGCCalls(String value)
+	public void updateCompatImmediateRepaints(String value)
 	{
-		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatignoregccalls "+value);
-		settings.put("compatignoregccalls", value);
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatimmediaterepaints "+value);
+		settings.put("compatimmediaterepaints", value);
 		saveConfig();
 		onChange.run();
 	}

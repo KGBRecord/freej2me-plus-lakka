@@ -156,9 +156,9 @@ public class Libretro
 		/* Framerate Unlock. */
 		Mobile.unlockFramerateHack = (byte) Integer.parseInt(args[19]);
 
-		/* Compat setting to ignore system.gc calls */
-		if(Integer.parseInt(args[12]) == 0) { Mobile.compatIgnoreGCCalls = false; }
-		else { Mobile.compatIgnoreGCCalls = true; }
+		/* Compat setting to process repaints immediately */
+		if(Integer.parseInt(args[12]) == 0) { Mobile.compatImmediateRepaints = false; }
+		else { Mobile.compatImmediateRepaints = true; }
 
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
@@ -330,8 +330,8 @@ public class Libretro
 										if(!Mobile.compatTranslateToOriginOnReset) { Mobile.config.settings.put("compattranstooriginonreset", "off"); }
 										else                                       { Mobile.config.settings.put("compattranstooriginonreset", "on"); }
 
-										if(!Mobile.compatIgnoreGCCalls) { Mobile.config.settings.put("compatignoregccalls", "off"); }
-										else                                 { Mobile.config.settings.put("compatignoregccalls", "on"); }
+										if(!Mobile.compatImmediateRepaints) { Mobile.config.settings.put("compatimmediaterepaints", "off"); }
+										else                                 { Mobile.config.settings.put("compatimmediaterepaints", "on"); }
 
 										if(!Mobile.useCustomTextFont)  { Mobile.config.settings.put("textfont", "Default"); }
 										else                           { Mobile.config.settings.put("textfont", "Custom");  }
@@ -464,8 +464,8 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[20])==2) { Mobile.config.settings.put("fpshack", "Extended");  }
 									if(Integer.parseInt(cfgtokens[20])==3) { Mobile.config.settings.put("fpshack", "Aggressive");  }
 
-									if(Integer.parseInt(cfgtokens[21])==0) { Mobile.config.settings.put("compatignoregccalls", "off");  }
-									else { Mobile.config.settings.put("compatignoregccalls", "on"); }
+									if(Integer.parseInt(cfgtokens[21])==0) { Mobile.config.settings.put("compatimmediaterepaints", "off");  }
+									else { Mobile.config.settings.put("compatimmediaterepaints", "on"); }
 
 
 									Mobile.config.saveConfig();

@@ -177,7 +177,7 @@ unsigned int spdFrameRateUnlock = 0; // Boolean
 /* Compatibility Settings section */
 unsigned int compatNonFatalNullImages      = 0; // Boolean
 unsigned int compatTransToOriginOnGFXReset = 0; // Boolean
-unsigned int compatIgnoreGCCalls           = 0; // Boolean
+unsigned int compatImmediateRepaintCalls           = 0; // Boolean
 
 /* Libretro exposed config variables END */
 
@@ -555,11 +555,11 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "on"))   { compatTransToOriginOnGFXReset = 1; }
 	}
 
-	var.key = "freej2me_compatignoregccalls";
+	var.key = "freej2me_compatimmediaterepaintcalls";
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
 	{
-		if (!strcmp(var.value, "off"))       { compatIgnoreGCCalls = 0; }
-		else if (!strcmp(var.value, "on"))   { compatIgnoreGCCalls = 1; }
+		if (!strcmp(var.value, "off"))       { compatImmediateRepaintCalls = 0; }
+		else if (!strcmp(var.value, "on"))   { compatImmediateRepaintCalls = 1; }
 	}
 
 	var.key = "freej2me_m3grenderuntextured";
@@ -582,7 +582,7 @@ static void check_variables(bool first_time_startup)
 
 	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, 
 		phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatNonFatalNullImages, 
-		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatIgnoreGCCalls);
+		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatImmediateRepaintCalls);
 	optstrlen = strlen(options_update);
 
 	/* 0xD = 13, which is the special case where the java app will receive the updated configs */
@@ -634,7 +634,7 @@ void retro_init(void)
 	check_variables(true);
 	char resArg[2][4], rotateArg[2], phoneArg[2], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2];
 	char compatNonFatalNullImagesArg[2], compatTransToOriginOnGFXResetArg[2], fontArg[2], offsetArg[3], dumpGFXArg[2], tempKJXArg[2], m3gUntexArg[2], m3gWireArg[2];
-	char fpsunlockHack[2], compatIgnoreGCArg[2];
+	char fpsunlockHack[2], compatImmediateRepaintArg[2];
 
 	sprintf(resArg[0], "%lu", screenRes[0]);
 	sprintf(resArg[1], "%lu", screenRes[1]);
@@ -656,7 +656,7 @@ void retro_init(void)
 	sprintf(m3gUntexArg, "%d", m3gUntextured);
 	sprintf(m3gWireArg, "%d", m3gWireframe);
 	sprintf(fpsunlockHack, "%d", spdFrameRateUnlock);
-	sprintf(compatIgnoreGCArg, "%d", compatIgnoreGCCalls);
+	sprintf(compatImmediateRepaintArg, "%d", compatImmediateRepaintCalls);
 
 	/* We need to clean up any argument memory from the previous launch arguments in order to load up updated ones */
 	if (restarting)
@@ -699,7 +699,7 @@ void retro_init(void)
 	params[20] = strdup(m3gUntexArg);
 	params[21] = strdup(m3gWireArg);
 	params[22] = strdup(fpsunlockHack);
-	params[23] = strdup(compatIgnoreGCArg);
+	params[23] = strdup(compatImmediateRepaintArg);
 	params[24] = NULL; // Null-terminate the array
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
