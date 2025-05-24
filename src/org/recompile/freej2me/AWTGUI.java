@@ -50,7 +50,7 @@ import org.recompile.mobile.MobilePlatform;
 
 public final class AWTGUI 
 {
-	final String VERSION = "1.45";
+	final String VERSION = "1.48";
 	/* This is used to indicate to FreeJ2ME that it has to call "settingsChanged()" to apply changes made here */
 	private boolean hasPendingChange;
 
