@@ -57,15 +57,15 @@ public abstract class PlatformGraphics implements DirectGraphics
 		0,         0,         0,         0,         0,         0, 0
 	};
 
-	public static final int BASELINE = 64;
-	public static final int BOTTOM = 32;
-	public static final int DOTTED = 1;
-	public static final int HCENTER = 1;
-	public static final int LEFT = 4;
-	public static final int RIGHT = 8;
-	public static final int SOLID = 0;
-	public static final int TOP = 16;
-	public static final int VCENTER = 2;
+	public static final byte BASELINE = 64;
+	public static final byte BOTTOM   = 32;
+	public static final byte DOTTED   = 1;
+	public static final byte HCENTER  = 1;
+	public static final byte LEFT     = 4;
+	public static final byte RIGHT    = 8;
+	public static final byte SOLID    = 0;
+	public static final byte TOP      = 16;
+	public static final byte VCENTER  = 2;
 
 
 	protected int translateX = 0;
@@ -78,7 +78,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected int color = 0xFFFFFF;
 	protected Font font = Font.getDefaultFont();
 	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
-	protected int strokeStyle = SOLID;
+	protected byte strokeStyle = SOLID;
 
 	protected int dojaLockCount = 0;
 
@@ -88,36 +88,36 @@ public abstract class PlatformGraphics implements DirectGraphics
 	 * by -1 respectively. Flipping vertically is the same as flipping horizontally, 
 	 * and then rotating by 180 degrees.
 	 */
-	private static final int HV = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.FLIP_VERTICAL;
-	private static final int HV90 = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_90;
-	private static final int HV180 = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_180;
-	private static final int HV270 = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_270;
-	private static final int H90 = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.ROTATE_90;
-	private static final int H180 = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.ROTATE_180;
-	private static final int H270 = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.ROTATE_270;
-	private static final int V90 = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_90;
-	private static final int V180 = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_180;
-	private static final int V270 = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_270;
+	private static final short HV    = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.FLIP_VERTICAL;
+	private static final short HV90  = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_90;
+	private static final short HV180 = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_180;
+	private static final short HV270 = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_270;
+	private static final short H90   = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.ROTATE_90;
+	private static final short H180  = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.ROTATE_180;
+	private static final short H270  = DirectGraphics.FLIP_HORIZONTAL | DirectGraphics.ROTATE_270;
+	private static final short V90   = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_90;
+	private static final short V180  = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_180;
+	private static final short V270  = DirectGraphics.FLIP_VERTICAL | DirectGraphics.ROTATE_270;
 
 	/* 
 	 * DoJa Constants
-	*/
-	public static final int BLACK = 0;       // (0x00, 0x00, 0x00)
-	public static final int BLUE = 1;        // (0x00, 0x00, 0xff)
-	public static final int LIME = 2;        // (0x00, 0xff, 0x00)
-	public static final int AQUA = 3;        // (0x00, 0xff, 0xff)
-	public static final int RED = 4;         // (0xff, 0x00, 0x00)
-	public static final int FUCHSIA = 5;     // (0xff, 0x00, 0xff)
-	public static final int YELLOW = 6;       // (0xff, 0xff, 0x00)
-	public static final int WHITE = 7;        // (0xff, 0xff, 0xff)
-	public static final int GRAY = 8;         // (0x80, 0x80, 0x80)
-	public static final int NAVY = 9;         // (0x00, 0x00, 0x80)
-	public static final int GREEN = 10;       // (0x00, 0x80, 0x00)
-	public static final int TEAL = 11;        // (0x00, 0x80, 0x80)
-	public static final int MAROON = 12;      // (0x80, 0x00, 0x00)
-	public static final int PURPLE = 13;      // (0x80, 0x00, 0x80)
-	public static final int OLIVE = 14;       // (0x80, 0x80, 0x00)
-	public static final int SILVER = 15;      // (0xc0, 0xc0, 0xc0)
+	 */
+	public static final byte BLACK   = 0;    // (0x00, 0x00, 0x00)
+	public static final byte BLUE    = 1;    // (0x00, 0x00, 0xff)
+	public static final byte LIME    = 2;    // (0x00, 0xff, 0x00)
+	public static final byte AQUA    = 3;    // (0x00, 0xff, 0xff)
+	public static final byte RED     = 4;    // (0xff, 0x00, 0x00)
+	public static final byte FUCHSIA = 5;    // (0xff, 0x00, 0xff)
+	public static final byte YELLOW  = 6;    // (0xff, 0xff, 0x00)
+	public static final byte WHITE   = 7;    // (0xff, 0xff, 0xff)
+	public static final byte GRAY    = 8;    // (0x80, 0x80, 0x80)
+	public static final byte NAVY    = 9;    // (0x00, 0x00, 0x80)
+	public static final byte GREEN   = 10;   // (0x00, 0x80, 0x00)
+	public static final byte TEAL    = 11;   // (0x00, 0x80, 0x80)
+	public static final byte MAROON  = 12;   // (0x80, 0x00, 0x00)
+	public static final byte PURPLE  = 13;   // (0x80, 0x00, 0x80)
+	public static final byte OLIVE   = 14;   // (0x80, 0x80, 0x00)
+	public static final byte SILVER  = 15;   // (0xc0, 0xc0, 0xc0)
 
 
 	public PlatformGraphics(PlatformImage image)
@@ -302,22 +302,23 @@ public abstract class PlatformGraphics implements DirectGraphics
 				drawFunLights(overlayData, width, height);
 			}
 		
+			int destRowIndex, srcRowIndex, destIndex, srcIndex, srcAlpha, existingPixel, destAlpha, newAlpha, newRed, newGreen, newBlue;
 			// Render the resulting image
 			for (int j = startY + y; j < endY + y; j++) 
 			{
 				// If there's no masking or overlay needed, we can copy a whole row at once, which is faster
 				if(!Mobile.renderLCDMask && Mobile.maskIndex != 0 && !Mobile.funLightsEnabled)
 				{
-					int destRowIndex = j * canvasWidth + startX + x;
-            		int srcRowIndex = j * imageWidth + startX;
+					destRowIndex = j * canvasWidth + startX + x;
+            		srcRowIndex = j * imageWidth + startX;
 					System.arraycopy(imgPixels, srcRowIndex, canvasData, destRowIndex, endX - startX);
 				}
 				else
 				{
 					for (int i = startX + x; i < endX + x; i++) 
 					{
-						int destIndex = j * canvasWidth + i;
-						int srcIndex = j * imageWidth + i;
+						destIndex = j * canvasWidth + i;
+						srcIndex = j * imageWidth + i;
 
 						// Only apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
 						canvasData[destIndex] = imgPixels[srcIndex] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
@@ -325,15 +326,15 @@ public abstract class PlatformGraphics implements DirectGraphics
 						// If funLights overlay is requested by the game, apply its pixels to the screen area
 						if(Mobile.funLightsEnabled) 
 						{
-							int srcAlpha = (overlayData[srcIndex] >> 24) & 0xFF; // Source alpha
-							int existingPixel = canvasData[destIndex]; // Current pixel in the canvas
-							int destAlpha = (existingPixel >> 24) & 0xFF;
+							srcAlpha = (overlayData[srcIndex] >> 24) & 0xFF; // Source alpha
+							existingPixel = canvasData[destIndex]; // Current pixel in the canvas
+							destAlpha = (existingPixel >> 24) & 0xFF;
 		
 							// Blend alpha and color values using the srcOver alpha compositing method
-							int newAlpha = Math.min(255, srcAlpha + destAlpha);
-							int newRed = (((overlayData[srcIndex] >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-							int newGreen = (((overlayData[srcIndex] >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-							int newBlue = ((overlayData[srcIndex] & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
+							newAlpha = Math.min(255, srcAlpha + destAlpha);
+							newRed = (((overlayData[srcIndex] >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+							newGreen = (((overlayData[srcIndex] >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+							newBlue = ((overlayData[srcIndex] & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
 
 							canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 						}
@@ -430,42 +431,43 @@ public abstract class PlatformGraphics implements DirectGraphics
 		x += getTranslateX();
 		y += getTranslateY();
 	
-		int canvasWidth = canvas.getWidth();
-		int clipX = Math.max(getClipX(), 0);
-		int clipY = Math.max(getClipY(), 0);
-		int clipWidth = Math.min(getClipWidth()+clipX, canvasWidth);
-		int clipHeight = Math.min(getClipHeight()+clipY, canvas.getHeight());
+		final int canvasWidth = canvas.getWidth();
+		final int clipX = Math.max(getClipX(), 0);
+		final int clipY = Math.max(getClipY(), 0);
+		final int clipWidth = Math.min(getClipWidth()+clipX, canvasWidth);
+		final int clipHeight = Math.min(getClipHeight()+clipY, canvas.getHeight());
 	
+		int rowOffset, destRow, pixelIndex, destIndex, pixel, srcAlpha, existingPixel, destAlpha, newAlpha, newRed, newGreen, newBlue;
 		// Directly manipulate the canvasData
 		for (int j = 0; j < height; j++) // The array's x and y positions start from 0, as the offset is what dictates where the data should start being read from
 		{
 			if ((y + j - getTranslateY()) < clipY || (y + j - getTranslateY()) >= clipHeight) { continue; }
-			int rowOffset = offset + (j * scanlength); // Calculate the starting index for the current row
-			int destRow = (y + j) * canvasWidth;
+			rowOffset = offset + (j * scanlength); // Calculate the starting index for the current row
+			destRow = (y + j) * canvasWidth;
 	
 			for (int i = 0; i < width; i++)
 			{
 				if ((x + i - getTranslateX()) < clipX || (x + i - getTranslateX()) >= clipWidth) { continue; }
 
-				int pixelIndex = rowOffset + i; // Source index in rgbData
-				int destIndex = destRow + x + i;
+				pixelIndex = rowOffset + i; // Source index in rgbData
+				destIndex = destRow + x + i;
 
-				int pixel = rgbData[pixelIndex];
+				pixel = rgbData[pixelIndex];
 				if (!processAlpha) { canvasData[destIndex] = pixel | 0xFF000000; } // Set pixel as fully opaque
 				else // Handle alpha blending
 				{
-					int srcAlpha = (pixel >> 24) & 0xFF; // Source alpha
+					srcAlpha = (pixel >> 24) & 0xFF; // Source alpha
 					if(srcAlpha == 255) { canvasData[destIndex] = pixel; }
 					else if (srcAlpha > 0)
 					{
-						int existingPixel = canvasData[destIndex]; // Current pixel in the canvas
-						int destAlpha = (existingPixel >> 24) & 0xFF;
+						existingPixel = canvasData[destIndex]; // Current pixel in the canvas
+						destAlpha = (existingPixel >> 24) & 0xFF;
 	
 						// Blend alpha and color values using the srcOver alpha compositing method
-						int newAlpha = Math.min(255, srcAlpha + destAlpha);
-						int newRed = (((pixel >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-						int newGreen = (((pixel >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-						int newBlue = ((pixel & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
+						newAlpha = Math.min(255, srcAlpha + destAlpha);
+						newRed = (((pixel >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+						newGreen = (((pixel >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+						newBlue = ((pixel & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
 	
 						// Store the new pixel back in canvasData
 						canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
@@ -587,7 +589,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		} 
 		else { gc.setStroke(new BasicStroke(1.0f)); } // Solid stroke with width of 2 px
 
-		strokeStyle = stroke;
+		strokeStyle = (byte) stroke;
 	}
 
 	public int getStrokeStyle() { return strokeStyle;}
