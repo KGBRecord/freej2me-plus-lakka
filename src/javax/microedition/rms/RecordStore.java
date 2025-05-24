@@ -380,7 +380,6 @@ public class RecordStore
 			Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Problem deleting RecordStore "+recordStoreName);
 			e.printStackTrace();
 		}
-		System.gc();
 	}
 
 	public RecordEnumeration enumerateRecords(RecordFilter filter, RecordComparator comparator, boolean keepUpdated)
@@ -611,61 +610,16 @@ public class RecordStore
 		public enumeration(RecordFilter filter, RecordComparator comparator, boolean keepUpdated)
 		{
 			this.keepUpdated = keepUpdated;
-			index = 0;
-			count = 0;
 
 			this.filter = filter;
 			this.comparator = comparator;
-
 			this.filter = filter;
 
-			build();
+			rebuild();
 
 			if (keepUpdated) 
 			{
 				thisStore.addRecordListener(recordListener);
-			}
-		}
-
-		private void build()
-		{
-			elements = new int[records.size()];
-			for(int i=0; i<records.size(); i++) { elements[i] = 1; }
-			count = 0;
-
-			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Enumerator > " + (filter == null ? "Not Filtered" : "Filtered"));
-
-			for (int i = 0; i < records.size(); i++) 
-			{
-				if (records.get(i).length > 0 && (filter == null || filter.matches(records.get(i)))) 
-				{
-					elements[count++] = i;
-				}
-			}
-			
-			/*
-			 * Games like 孤岛悲歌1-起源 and 魔龙传奇I use RecordEnumerator and after enumerating, they start checking for previous records. The MIDP docs do not explicitly state that the index at
-			 * the end of the enumeration should be the same as the amount of records, but let's assume it should be, as i don't know of any other jars that really puts RecordEnumerator to good use.
-			 */
-			index = count;
-
-			int result = 0;
-			int temp;
-			if(comparator!=null)
-			{
-				Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Comparator");
-				for (int i = 0; i < count - 1; i++) 
-				{
-					for (int j = 0; j < count - 1 - i; j++) 
-					{
-						if (comparator.compare(records.get(elements[j]), records.get(elements[j + 1])) == RecordComparator.FOLLOWS) 
-						{
-							temp = elements[j];
-							elements[j] = elements[j + 1];
-							elements[j + 1] = temp;
-						}
-					}
-				}
 			}
 		}
 
@@ -683,15 +637,9 @@ public class RecordStore
 			return elements[index];
 		}
 
-		public boolean hasNextElement()
-		{
-			return index < count;
-		}
+		public boolean hasNextElement() { return index < count; }
 
-		public boolean hasPreviousElement()
-		{
-			return index > 0;
-		}
+		public boolean hasPreviousElement() { return index != 0 && count > 0; }
 
 		public boolean isKeptUpdated() { return keepUpdated; }
 
@@ -704,9 +652,8 @@ public class RecordStore
 					rebuild();
 					thisStore.addRecordListener(recordListener);
 				}
-			} else {
-				thisStore.removeRecordListener(recordListener);
-			}
+			} 
+			else { thisStore.removeRecordListener(recordListener); }
 	
 			this.keepUpdated = keepUpdated;
 		}
@@ -714,7 +661,8 @@ public class RecordStore
 		public byte[] nextRecord() throws InvalidRecordIDException, RecordStoreNotOpenException
 		{
 			if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the next record of a closed Record Store"); }
-			if(index>=count) { throw(new InvalidRecordIDException("Next Record ID is out of bounds")); }
+			if(index < 0) { index = 0; }
+			if(index >= count) { throw(new InvalidRecordIDException("Next Record ID is out of bounds")); }
 			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Enum Next Record " + index);
 			return records.get(elements[index++]).clone();
 		}
@@ -722,7 +670,8 @@ public class RecordStore
 		public int nextRecordId() throws InvalidRecordIDException, RecordStoreNotOpenException	
 		{
 			if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the next record ID of a closed Record Store"); }
-			if(index>=count) { throw(new InvalidRecordIDException("Next Record ID is out of bounds")); }
+			if(index < 0) { index = 0; }
+			if(index >= count) { throw(new InvalidRecordIDException("Next Record ID is out of bounds")); }
 			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Enum Next Record ID " + elements[index]);
 			return elements[index++];
 		}
@@ -736,26 +685,62 @@ public class RecordStore
 		public byte[] previousRecord() throws InvalidRecordIDException, RecordStoreNotOpenException
 		{
 			if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the previous record of a closed Record Store"); }
-			if(index < 0) { throw new InvalidRecordIDException("Previous Record is out of bounds"); }
+			if(index == 0 || count == 0) { throw new InvalidRecordIDException("Previous Record is out of bounds"); }
+			
+			if(index < 0) { index = records.size(); }
+
 			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Enum Previous Record " + (index-1));
+			
 			return records.get(elements[--index]).clone();
 		}
 
 		public int previousRecordId() throws InvalidRecordIDException, RecordStoreNotOpenException
 		{
 			if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the previous record ID of a closed Record Store"); }
-			if(index < 0) { throw new InvalidRecordIDException("Previous Record is out of bounds"); }
+			if(index == 0 || count == 0) { throw new InvalidRecordIDException("Previous Record is out of bounds"); }
+			
+			if(index < 0) { index = records.size(); }
+
 			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Enum Previous Record ID " + elements[index-1]);
+			
 			return elements[--index];
 		}
 
 		public void rebuild()
 		{
-			build();
-			if(index > count) { index = count; }
-			if(index < 0) { index = 0; }
+			reset();
+			elements = new int[records.size()];
+			for(int i=0; i<records.size(); i++) { elements[i] = 1; }
+			count = 0;
+
+			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Enumerator > " + (filter == null ? "Not Filtered" : "Filtered"));
+
+			for (int i = 0; i < records.size(); i++) 
+			{
+				if (records.get(i).length > 0 && (filter == null || filter.matches(records.get(i)))) 
+				{
+					elements[count++] = i;
+				}
+			}
+
+			if(comparator!=null)
+			{
+				Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Comparator");
+				for (int i = 0; i < count - 1; i++) 
+				{
+					for (int j = 0; j < count - 1 - i; j++) 
+					{
+						if (comparator.compare(records.get(elements[j]), records.get(elements[j + 1])) == RecordComparator.FOLLOWS) 
+						{
+							int temp = elements[j];
+							elements[j] = elements[j + 1];
+							elements[j + 1] = temp;
+						}
+					}
+				}
+			}
 		}
 
-		public void reset() { index = 0; }
+		public void reset() { index = -1; }
 	}
 }
