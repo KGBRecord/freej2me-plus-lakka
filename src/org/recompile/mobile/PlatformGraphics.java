@@ -354,7 +354,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			{
 				x = AnchorX(x, subw, anchor);
 				y = AnchorY(y, subh, anchor);
-				gc.drawImage(image.getCanvas().getSubimage(subx, suby, subw, subh), x, y, null);
+				gc.drawImage(image.getCanvas(), x, y, x + subw, y + subh, subx, suby, subx + subw, suby + subh, null);
 			}
 			else
 			{
@@ -380,7 +380,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			{
 				x = AnchorX(x, subw, anchor);
 				y = AnchorY(y, subh, anchor);
-				gc.drawImage(image.getCanvas().getSubimage(subx, suby, subw, subh), x, y, x + width_dest, y + height_dest, subx, suby, subx + subw, suby + subh, null);
+				gc.drawImage(image.getCanvas(), x, y, x + width_dest, y + height_dest, subx, suby, subx + subw, suby + subh, null);
 			}
 			else
 			{

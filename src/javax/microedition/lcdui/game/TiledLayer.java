@@ -31,6 +31,20 @@ public class TiledLayer extends Layer
 	private int cols;
 	private int tileHeight;
 	private int tileWidth;
+
+	// Rendering checks
+	private int clipX;
+	private int clipY;
+	private int clipWidth;
+	private int clipHeight;
+
+	private int startColumn;
+	private int endColumn;
+	private int startRow;
+	private int endRow;
+
+	private int tileIndex;
+	private int tx, ty, row, column;
 	
 	private int numberOfTiles;
 	protected int[] tileSetX;
@@ -161,23 +175,20 @@ public class TiledLayer extends Layer
 		if (!visible) { return; }
 	
 		// Drawing is restricted to target's clip rect bounds
-		int clipX = g.getClipX();
-		int clipY = g.getClipY();
-		int clipWidth = g.getClipWidth();
-		int clipHeight = g.getClipHeight();
+		clipX = g.getClipX();
+		clipY = g.getClipY();
+		clipWidth = g.getClipWidth();
+		clipHeight = g.getClipHeight();
 	
-		int startColumn = Math.max(0, (clipX - this.x) / tileWidth);
-		int endColumn = Math.min(this.cols, (clipX + clipWidth - this.x + tileWidth - 1) / tileWidth);
-		int startRow = Math.max(0, (clipY - this.y) / tileHeight);
-		int endRow = Math.min(this.rows, (clipY + clipHeight - this.y + tileHeight - 1) / tileHeight);
+		startColumn = Math.max(0, (clipX - this.x) / tileWidth);
+		endColumn = Math.min(this.cols, (clipX + clipWidth - this.x + tileWidth - 1) / tileWidth);
+		startRow = Math.max(0, (clipY - this.y) / tileHeight);
+		endRow = Math.min(this.rows, (clipY + clipHeight - this.y + tileHeight - 1) / tileHeight);
 	
-		int tileIndex;
-		int tx, ty;
-	
-		for (int row = startRow; row < endRow; row++) 
+		for (row = startRow; row < endRow; row++) 
 		{
 			ty = y + (row * tileHeight);
-			for (int column = startColumn; column < endColumn; column++) 
+			for (column = startColumn; column < endColumn; column++) 
 			{
 				tileIndex = tiles[row][column];
 	
