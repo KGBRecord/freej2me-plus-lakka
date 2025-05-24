@@ -81,12 +81,12 @@ public class PlatformImage
 		if(!Mobile.isDoJa) 
 		{
 			gc = new Graphics(this);
-			Arrays.fill(canvasData, 0xFFFFFF);
+			Arrays.fill(canvasData, 0xFFFFFFFF);
 		}
 		else 
 		{
 			djgc = new com.nttdocomo.ui.Graphics(this);
-			Arrays.fill(canvasData, 0xFFFFFF);
+			Arrays.fill(canvasData, 0xFFFFFFFF);
 		}
 
 		isMutable = true;
