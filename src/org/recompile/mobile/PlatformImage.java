@@ -66,19 +66,6 @@ public class PlatformImage
 		return djgc; 
 	}
 
-
-	protected void createGraphics()
-	{
-		gc = new Graphics(this);
-		gc.setColor(0x000000);
-	}
-
-	protected void createDoJaGraphics()
-	{
-		djgc = new com.nttdocomo.ui.Graphics(this);
-		djgc.setColor(0x000000);
-	}
-
 	public PlatformImage() { }
 
 	public PlatformImage(int Width, int Height)
@@ -89,22 +76,17 @@ public class PlatformImage
 
 		if(Mobile.noAlphaOnBlankImages) { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_RGB); }
 		else { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB); }
+		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		
 		if(!Mobile.isDoJa) 
 		{
-			createGraphics();
-
-			gc.setColor(0xFFFFFF);
-			gc.fillRect(0, 0, width, height);
-			gc.setColor(0x000000);
+			gc = new Graphics(this);
+			Arrays.fill(canvasData, 0xFFFFFF);
 		}
 		else 
 		{
-			createDoJaGraphics();
-
-			djgc.setColor(0xFFFFFF);
-			djgc.fillRect(0, 0, width, height);
-			djgc.setColor(0x000000);
+			djgc = new com.nttdocomo.ui.Graphics(this);
+			Arrays.fill(canvasData, 0xFFFFFF);
 		}
 
 		isMutable = true;
@@ -112,16 +94,15 @@ public class PlatformImage
 
 	public PlatformImage(int Width, int Height, int ARGBcolor)
 	{
+		// Create Image with specific BG color
 		canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
-		// Create blank Image
+		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
+		
 		width = Width;
 		height = Height;
 		
-		createGraphics();
-
-		gc.setARGBColor(ARGBcolor);
-		gc.fillRect(0, 0, width, height);
-		gc.setColor(0x000000);
+		gc = new Graphics(this);
+		Arrays.fill(canvasData, ARGBcolor);
 
 		isMutable = true;
 	}
@@ -192,7 +173,7 @@ public class PlatformImage
 
 	public PlatformImage(Image source)
 	{
-		// Create Image from Image
+		// Create a copy from an LCDUI Image
 		if(source == null) 
 		{ 
 			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image, it is null."); }
@@ -205,9 +186,12 @@ public class PlatformImage
 		width = source.getWidth();
 		height = source.getHeight();
 
+		// It's safe to assume that the source image will have the same type as the destination, so instead of drawImage we can just arraycopy the source to the destination
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-		canvas.getGraphics().drawImage(source.getCanvas(), 0, 0, null);
+		final int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
+		final int[] tempData = ((DataBufferInt) source.getCanvas().getRaster().getDataBuffer()).getData();
+		
+		System.arraycopy(tempData, 0, canvasData, 0, tempData.length);
 	}
 
 	public PlatformImage(byte[] imageData, int imageOffset, int imageLength, boolean mutable) // DoJa also uses this one, creates mutable images like DirectGraphics
@@ -235,8 +219,8 @@ public class PlatformImage
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		if(mutable) 
 		{ 
-			if(!Mobile.isDoJa) { createGraphics(); }
-			else { createDoJaGraphics(); }
+			if(!Mobile.isDoJa) { gc = new Graphics(this); }
+			else { djgc = new com.nttdocomo.ui.Graphics(this); }
 		}
 
 		canvas.getGraphics().drawImage(temp, 0, 0, null);
@@ -267,6 +251,7 @@ public class PlatformImage
 
 	public PlatformImage(Image image, int x, int y, int Width, int Height, int transform)
 	{
+		// Create a transformed copy of an image
 		BufferedImage sub = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
 	
 		// Get the raw pixel data from the source image, and the new sub image
@@ -292,7 +277,7 @@ public class PlatformImage
 	// These constructors are exclusive to DoJa's Image classes
 	public PlatformImage(com.nttdocomo.ui.Image source) 
 	{
-		// Create DoJa Image from DoJa Image
+		// Create a copy from a DoJa Image
 		if(source == null) 
 		{ 
 			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image, it is null."); }
@@ -305,18 +290,22 @@ public class PlatformImage
 		width = source.getWidth();
 		height = source.getWidth();
 
+		// It's safe to assume that the source image will have the same type as the destination, so instead of drawImage we can just arraycopy the source to the destination
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		canvas.getGraphics().drawImage(source.getCanvas(), 0, 0, null);
+		final int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
+		final int[] tempData = ((DataBufferInt) source.getCanvas().getRaster().getDataBuffer()).getData();
+		
+		System.arraycopy(tempData, 0, canvasData, 0, tempData.length);
 	}
 
 	public PlatformImage(int Width, int Height, int[] data, int off) 
 	{
-		// Create DoJa image from int array
+		// Create DoJa image from int array starting from a given offset
 		width = Width;
 		height = Height;
 
 		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		createDoJaGraphics();
+		djgc = new com.nttdocomo.ui.Graphics(this);
 
 		int[] canvasPixels = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		System.arraycopy(data, off, canvasPixels, 0, width * height);
