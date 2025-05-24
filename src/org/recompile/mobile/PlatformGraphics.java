@@ -71,6 +71,10 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected int translateX = 0;
 	protected int translateY = 0;
 
+	protected int resetTransX = 0;
+	protected int resetTransY = 0;
+	private boolean firstReset = true;
+
 	protected int color = 0xFFFFFF;
 	protected Font font = Font.getDefaultFont();
 	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
@@ -144,7 +148,14 @@ public abstract class PlatformGraphics implements DirectGraphics
 	
 	public void reset(int clipx, int clipy, int clipw, int cliph) //Internal use method, resets the Graphics object to its inital values
 	{
-		if(Mobile.compatTranslateToOriginOnReset) { translate(-translateX, -translateY); }
+		if(firstReset) // Save the translation state prior to the very first graphics reset, so it can be restored later (Jars may use this to set their fixed drawing position)
+		{
+			resetTransX = getTranslateX();
+			resetTransY = getTranslateY();
+			firstReset = false;
+		}
+		translate(-translateX, -translateY);
+		translate(resetTransX, resetTransY);
 		setClip(clipx, clipy, clipw, cliph);
 		setColor(0,0,0);
 		setFont(Font.getDefaultFont());
