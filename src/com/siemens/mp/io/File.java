@@ -136,7 +136,7 @@ public class File
 
     public int open(String fileName) throws IOException
     { 
-        System.out.println("Opening " + fileName);
+        Mobile.log(Mobile.LOG_DEBUG, File.class.getPackage().getName() + "." + File.class.getSimpleName() + ": " + "Opening:" + fileName);
         java.io.File file = findFile(fileName);
 		RandomAccessFile rfile = new RandomAccessFile(file, "rw");
 		openFiles.put(++lastFileDescriptor, rfile);
@@ -145,7 +145,7 @@ public class File
 
     public int read(int fileDescriptor, byte[] buf, int offset, int numBytes) throws IOException
     { 
-        System.out.println("Opening " + fileDescriptor);
+        Mobile.log(Mobile.LOG_DEBUG, File.class.getPackage().getName() + "." + File.class.getSimpleName() + ": " + "Opening:" + fileDescriptor);
         RandomAccessFile file = openFiles.get(fileDescriptor);
 		if (file == null) { return -1; }
 

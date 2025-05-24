@@ -39,7 +39,7 @@ public class SiemensPlatformPlayer extends PlatformPlayer implements com.siemens
             if(controlType.contains("VolumeControl")) { return (com.siemens.mp.media.Control) super.controls[0]; }
             if(controlType.contains("ToneControl"))   { return (com.siemens.mp.media.Control) super.controls[3]; }
         }
-        catch (Exception e) { System.out.println("lmao " + e.getMessage());}
+        catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, SiemensPlatformPlayer.class.getPackage().getName() + "." + SiemensPlatformPlayer.class.getSimpleName() + ": " + "Failed to get player control (Siemens):" + e.getMessage()); }
 		
 		return null;
 	}

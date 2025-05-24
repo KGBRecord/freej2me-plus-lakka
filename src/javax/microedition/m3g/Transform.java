@@ -200,14 +200,14 @@ public class Transform
 	public void transform(VertexArray in, float[] out, boolean W)
 	{
 		/* As per JSR-184, throw NullPointerException if either 'in' or 'out' are null. */
-		if(in == null || out == null) { System.exit(0); throw new NullPointerException("Cannot transform since input vertex array or output array are null."); }
+		if(in == null || out == null) { throw new NullPointerException("Cannot transform since input vertex array or output array are null."); }
 
 		int vertexCount = in.getVertexCount();
 		int vertexDims = in.getComponentCount();
 		float[] components = new float[4]; /* Temp variables that hold the vector quadruplets (x,y,z,w). */
 
 		/* Also per JSR-184, throw IllegalArgumentException if numComponents == 4 or out.length < (4 * vertexCount). */
-		if (vertexDims == 4 || out.length < 4 * vertexCount) { System.exit(0); System.out.println("lal"); throw new IllegalArgumentException("Tried to transform an invalid vertex array."); }
+		if (vertexDims == 4 || out.length < 4 * vertexCount) { throw new IllegalArgumentException("Tried to transform an invalid vertex array."); }
 
 		// Fill the `out` array with raw data
 		if (in.getComponentType() == 1) 

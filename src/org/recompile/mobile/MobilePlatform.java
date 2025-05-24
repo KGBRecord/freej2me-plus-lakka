@@ -470,7 +470,6 @@ public class MobilePlatform
 
 		if(fileName.toLowerCase().contains(".kjx")) // KDDI KJX parser, originally from J2ME-Loader by @ohayoyogi
 		{
-			System.out.println("filenamePre:" + fileName);
 			try
 			{
 				File testDir = new File(Mobile.tempKJXDir);

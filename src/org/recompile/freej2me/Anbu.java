@@ -557,7 +557,6 @@ public class Anbu
 
 		private int getMobileKeyFromButton(int button)
 		{
-			System.out.println("button:" + button);
 			for(int i = 0; i < joypadKeycodes.length; i++) 
 			{
 				if(button == joypadKeycodes[i]) { return Mobile.convertSDLKeycode(i);}
