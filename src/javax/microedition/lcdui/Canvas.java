@@ -185,13 +185,17 @@ public abstract class Canvas extends Displayable
 
 	public void serviceRepaints() 
 	{
+		short waitTime = 0;
 		if(!isShown() && !pendingRepaint) { return; }
 
 		// serviceRepaints has to force pending repaints to happen, so block until the pending repaint is serviced
 		while(pendingRepaint) 
 		{
-			try { Thread.sleep(1); }
+			try { Thread.sleep(1); waitTime++; }
 			catch (Exception e) { }
+
+			// We've waited long enough, the jar might be trying to paint on the same thread this is blocking, so force the repaint to happen
+			if(waitTime > 100 && pendingRepaint) { Mobile.getDisplay().processPaintsNow(); }
 		}
 	}
 
