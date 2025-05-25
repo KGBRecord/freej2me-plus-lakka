@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.LockSupport;
 
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
@@ -46,18 +47,32 @@ public class Manager
 	public static final String MIDI_DEVICE_LOCATOR = "device://midi";
 
 	/* Custom MIDI variables */
-	public static boolean hasLoadedSoundfont = false;
-	public static boolean hasLoadedToneSynth = false;
-	public static File soundfontDir = new File("freej2me_system" + File.separatorChar + "customMIDI" + File.separatorChar);
-	public static Soundbank customSoundfont;
-	private static Synthesizer dedicatedTonePlayer = null;
-	private static MidiChannel dedicatedToneChannel;
+	private static boolean hasLoadedSoundfont = false;
+	private static File soundfontDir = new File("freej2me_system" + File.separatorChar + "customMIDI" + File.separatorChar);
+	private static Soundbank customSoundfont;
+	
+	public static Synthesizer dedicatedSynth = null;
+	private static MidiChannel toneChannel;
 	private static Thread toneThread;
+
+	static 
+	{
+		try  
+		{
+			checkCustomMidi();
+			
+			dedicatedSynth = MidiSystem.getSynthesizer(); 
+			dedicatedSynth.open();
+			if(Mobile.useCustomMidi) { dedicatedSynth.loadAllInstruments(customSoundfont); }
+
+			toneChannel = dedicatedSynth.getChannels()[15]; // The last MIDI channel is often the least used, so use it for tones to minimize possible issues in case they play alongside sequenced data
+			Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Synthesizer for sequenced and tone data is ready.");
+		} 
+		catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); }
+	}
 
 	public static synchronized Player createPlayer(InputStream stream, String type) throws IOException, MediaException
 	{
-		checkCustomMidi();
-
 		if (stream == null) { throw new IllegalArgumentException("Cannot create a player since the received stream is null"); }
 		/* 
 		 * NOTE: If type is null, we can either try to determine the type, or throw a MediaException. Some jars do use exceptions
@@ -72,8 +87,6 @@ public class Manager
 
 	public static Player createPlayer(String locator) throws MediaException
 	{
-		checkCustomMidi();
-
 		if(locator == null) { throw new IllegalArgumentException("Cannot create a player with a null locator"); }
 
 		InputStream stream = Mobile.getPlatform().loader.getResourceAsStream(locator);
@@ -90,8 +103,6 @@ public class Manager
 
 	public static Player createPlayer(DataSource data) throws MediaException
 	{
-		checkCustomMidi();
-
 		if(data == null) { throw new IllegalArgumentException("Cannot create a player with a null DataSource"); }
 
 		return createPlayer(data.getLocator());
@@ -101,8 +112,6 @@ public class Manager
 
 	public static Player createSiemensPlayer(com.siemens.mp.media.protocol.DataSource source) throws MediaException
 	{
-		checkCustomMidi();
-
 		if(source == null) { throw new IllegalArgumentException("Cannot create a player with a null DataSource"); }
 
 		Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Create Player DataSource (Siemens)");
@@ -112,8 +121,6 @@ public class Manager
 
 	public static synchronized Player createSiemensPlayer(InputStream stream, String type) throws IOException, MediaException
 	{
-		checkCustomMidi();
-
 		if (stream == null) { throw new IllegalArgumentException("Cannot create a player since the received stream is null"); }
 		/* 
 		 * NOTE: If type is null, we can either try to determine the type, or throw a MediaException. Some jars do use exceptions
@@ -128,8 +135,6 @@ public class Manager
 
 	public static Player createSiemensPlayer(String locator) throws MediaException
 	{
-		checkCustomMidi();
-
 		if(locator == null) { throw new IllegalArgumentException("Cannot create a player with a null locator"); }
 
 		InputStream stream = Mobile.getPlatform().loader.getResourceAsStream(locator);
@@ -163,7 +168,6 @@ public class Manager
 	{
 		if(Mobile.sound == false) { return; }
 		
-		checkCustomMidi();
 		Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Play Tone");
 
 		if (note < 0 || note > 127) { throw new IllegalArgumentException("playTone: Note value must be between 0 and 127."); }
@@ -171,22 +175,13 @@ public class Manager
 		if (volume < 0) { volume = 0; } 
 		else if (volume > 100) { volume = 100; }
 
-		if(dedicatedTonePlayer == null) 
-		{ 
-			try  
-			{ 
-				dedicatedTonePlayer = MidiSystem.getSynthesizer(); 
-				dedicatedTonePlayer.open();
-				if(Mobile.useCustomMidi && !hasLoadedToneSynth) { dedicatedTonePlayer.loadAllInstruments(customSoundfont); hasLoadedToneSynth = true; }
+		final int restoreBankMSB = toneChannel.getController(0);    // Bank MSB
+        final int restoreBankLSB = toneChannel.getController(32);   // Bank LSB
+        final int restoreInstrument = toneChannel.getProgram();     // Current instrument
 
-				dedicatedToneChannel = dedicatedTonePlayer.getChannels()[0];
-
-				dedicatedToneChannel.controlChange(0, 1);   // Bank change MSB (Bank 1)
-        		dedicatedToneChannel.controlChange(32, 0);  // Bank change LSB
-				dedicatedToneChannel.programChange(80);     // Set it to use the square wave instrument, just so all tones formats are using the same
-			} 
-			catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); return;}
-		}
+		toneChannel.controlChange(0, 1);   // Bank change MSB (Bank 1)
+		toneChannel.controlChange(32, 0);  // Bank change LSB
+		toneChannel.programChange(80);     // Set it to use the square wave instrument, just so all tones formats are using the same
 
 		if(toneThread != null && toneThread.isAlive()) { toneThread.interrupt(); } // Interrupt the currently playing tone if one is playing
 
@@ -194,20 +189,27 @@ public class Manager
 		if(duration < 50) { Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Tone duration too short (" + duration + " ms), changing to the 50ms min."); }
 		final int effectiveDuration = (duration < 50 ? 50 : duration);
 
+		final byte restoreVolume = (byte) toneChannel.getController(7); // Save previous volume to restore later, as this synth is shared by everything that uses MIDI
+
+		System.out.println("restorevol:" + restoreVolume);
 		/* 
 		 * There's no need to calculate the note frequency as per the MIDP Manager docs,
 		 * they are pretty much the note numbers used by Java's Built-in MIDI library. 
 		 * Just play the note straight away, mapping the volume from 0-100 to 0-127.
 		 */ 
-		dedicatedToneChannel.controlChange(7, volume * 127 / 100);
-		dedicatedToneChannel.noteOn(note, effectiveDuration); // Make the decay just long enough for the note not to fade shorter than expected
+		toneChannel.controlChange(7, volume * 127 / 100);
+		toneChannel.noteOn(note, effectiveDuration); // Make the decay just long enough for the note not to fade shorter than expected
 
 		/* Since it has to be non-blocking, wait for the specified duration in a separate Thread before stopping the note. */
 		toneThread = new Thread(() -> 
 		{
 			try { Thread.sleep(effectiveDuration); } 
-			catch (InterruptedException e) { dedicatedToneChannel.noteOff(note); } // Stop playing earlier if interrupted
-			dedicatedToneChannel.noteOff(note);
+			catch (InterruptedException e) { }
+			toneChannel.noteOff(note);
+			toneChannel.controlChange(0,  restoreBankMSB);
+			toneChannel.controlChange(32, restoreBankLSB);
+			toneChannel.programChange(restoreInstrument);
+			toneChannel.controlChange(7, restoreVolume);
 		});
 		
 		toneThread.start();

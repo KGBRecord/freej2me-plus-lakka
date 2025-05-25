@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.locks.LockSupport;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.InvalidMidiDataException;
@@ -77,7 +78,7 @@ public class PlatformPlayer implements Player
 {
 
 	private static final midiPlayer[] midiPlayers = new midiPlayer[32];
-	private static final Synthesizer[] synthesizers = new Synthesizer[midiPlayers.length/8];
+	private static Synthesizer synthesizer = Manager.dedicatedSynth;
 
 	private final byte NUM_CONTROLS = 4;
 
@@ -95,25 +96,6 @@ public class PlatformPlayer implements Player
 
 	protected boolean disableControls = false; // For when a given audio format is not supported
 	protected Control[] controls;
-
-	static // Load synthesizers as soon as this class is loaded by the jar
-	{
-		try 
-		{
-			if(synthesizers[0] == null) // If synths are not open yet, prepare them
-			{
-				for(int i = 0; i < synthesizers.length; i++) 
-				{
-					synthesizers[i] = MidiSystem.getSynthesizer();
-					synthesizers[i].open();
-					if(Mobile.useCustomMidi) 
-					{
-						synthesizers[i].loadAllInstruments(Manager.customSoundfont);
-					}
-				}
-			}
-		} catch (Exception e) { }
-	}
 
 	public PlatformPlayer(InputStream stream, String type)
 	{
@@ -472,7 +454,7 @@ public class PlatformPlayer implements Player
 		return controls; 
 	}
 
-	public static int addPlayerToStack(midiPlayer midplayer, wavPlayer wavplayer, MP3Player mpegPlayer, SMAFPlayer smafPlayer)
+	public static void addPlayerToStack(midiPlayer midplayer, wavPlayer wavplayer, MP3Player mpegPlayer, SMAFPlayer smafPlayer)
 	{
 		if(midplayer != null || smafPlayer != null) 
 		{
@@ -480,21 +462,8 @@ public class PlatformPlayer implements Player
 			{
 				if(midiPlayers[i] == null || midiPlayers[i].getSequence() == null) 
 				{
-					if(midiPlayers[i] != null)
-					{
-						try // To restore the volume of the synth that's bound to this player
-						{
-							MidiChannel channels[] = midiPlayers[i].synthesizer.getChannels();
-							// Set volume for all channels through Control Change command 7 (volume)
-							for (int channel = 0; channel < channels.length; channel++) 
-							{
-								channels[channel].controlChange(7, 127);
-							}
-						} catch (Exception e) { }
-					}
-					
 					midiPlayers[i] = midplayer; // TODO: SMAF here too, in case a jar that never releases players for it is found
-					return i%synthesizers.length; // Return the synth for that midiPlayer position
+					return;
 				}
 			}
 			// All players are occupied, find the first stopped one to be replaced
@@ -502,28 +471,17 @@ public class PlatformPlayer implements Player
 			{
 				if(midiPlayers[i] != null && !midiPlayers[i].isRunning()) 
 				{
-					try // To restore the volume of the synth that's bound to this player
-					{
-						MidiChannel channels[] = midiPlayers[i].synthesizer.getChannels();
-						// Set volume for all channels through Control Change command 7 (volume)
-						for (int channel = 0; channel < channels.length; channel++) 
-						{
-							channels[channel].controlChange(7, 127);
-						}
-					} catch (Exception e) { }
 					midiPlayers[i].close();
 					midiPlayers[i] = midplayer;
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Overriding a previously allocated midi player. Either the jar requires more than " + midiPlayers.length + " midi at the same time, or it's not closing media properly.");
-					return i%synthesizers.length;
+					return;
 				}
 			}
 		}
 		else if(wavplayer != null)
 		{
-			return 0;
+			return;
 		}
-
-		return 0;
 	}
 
 
@@ -531,6 +489,8 @@ public class PlatformPlayer implements Player
 
 	private class audioplayer
 	{
+		int volume = 100;
+
 		public void start() {  }
 		public void stop() {  }
 		public void setLoopCount(int count) {  }
@@ -542,6 +502,9 @@ public class PlatformPlayer implements Player
 		public void realize() { }
 		public void prefetch() { }
 		public long getDuration() { return Player.TIME_UNKNOWN; }
+
+		public int getVolume() { return volume; }
+		public void setVolume(int level) { volume = level; }
 	}
 
 	private class midiPlayer extends audioplayer
@@ -564,7 +527,9 @@ public class PlatformPlayer implements Player
 				midiSequence = new Sequence(Sequence.PPQ, 24); 
 			} 
 			catch (Exception e) {  Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load midi file:" + e.getMessage()); }
-			synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(this, null, null, null)];
+			
+			PlatformPlayer.addPlayerToStack(this, null, null, null);
+			this.synthesizer = PlatformPlayer.synthesizer;
 		}
 
 		public midiPlayer(InputStream stream) 
@@ -574,7 +539,9 @@ public class PlatformPlayer implements Player
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load MIDI file: " + e.getMessage());
 			}
-			synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(this, null, null, null)];
+
+			PlatformPlayer.addPlayerToStack(this, null, null, null);
+			this.synthesizer = PlatformPlayer.synthesizer;
 		}
 
 		public void realize() 
@@ -636,6 +603,7 @@ public class PlatformPlayer implements Player
 				else { setMediaTime(time); } // Else, resume from where it stopped
 
 				midi.start();
+				((volumeControl)getControl("VolumeControl")).setLevel(getVolume());
 				state = Player.STARTED;
 				notifyListeners(PlayerListener.STARTED, getMediaTime());
 			}
@@ -754,19 +722,13 @@ public class PlatformPlayer implements Player
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load SMAF data: " + e.getMessage());
 			}
-			//synthesizer = synthesizers[PlatformPlayer.addPlayerToStack(null, null, null, this)];
+			this.synthesizer = PlatformPlayer.synthesizer;
 		}
 
 		public void realize() 
 		{
 			try 
 			{
-				synthesizer = MidiSystem.getSynthesizer();
-				synthesizer.open();
-				if(Mobile.useCustomMidi) 
-				{
-					synthesizer.loadAllInstruments(Manager.customSoundfont);
-				}
 				receiver = synthesizer.getReceiver();
 				midi = MidiSystem.getSequencer(false);
 				midi.getTransmitter().setReceiver(receiver);
@@ -847,6 +809,7 @@ public class PlatformPlayer implements Player
 			Set<Integer> playedPositions = new HashSet<>();
 
 			midi.start();
+			((volumeControl)getControl("VolumeControl")).setLevel(getVolume());
 			while (isPlaying && wavClips != null) 
 			{
 				int mediaTime = (int) (getMediaTime() / 1000);
@@ -1464,7 +1427,7 @@ public class PlatformPlayer implements Player
 
 		public void setChannelVolume(int channel, int volume) 
 		{
-			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: setChannelVolume() untested");
+			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: setChannelVolume() untested");
 
 			try 
 			{
@@ -1475,6 +1438,7 @@ public class PlatformPlayer implements Player
 				// Set the volume on the MIDI channel
 				channelVolume[channel] = volume; // For tracking purposes, whenever getChannelVolume is called.
 				channels[channel].controlChange(7, volume);
+				LockSupport.parkNanos(150_000); // Java Sound API is so horrible with MIDI volume changes, it can't even be described
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Midi setChannelVolume failed: " + e.getMessage());}
 		}
@@ -1522,7 +1486,6 @@ public class PlatformPlayer implements Player
 
 	public class volumeControl implements com.siemens.mp.media.control.VolumeControl // Siemens already extends javax here
 	{
-		private int level = 100;
 		private boolean muted = false;
 		private audioplayer player; // Reference to the player this is linked to, or else we won't be able to apply changes
 
@@ -1532,7 +1495,7 @@ public class PlatformPlayer implements Player
 		{
 			if(getState() == Player.REALIZED) { return -1; }
 
-			return level; 
+			return player.getVolume(); 
 		}
 
 		public int setLevel(int level) 
@@ -1541,19 +1504,23 @@ public class PlatformPlayer implements Player
 			if(level > 100) { level = 100; }
 			else if(level < 0) { level = 0; }
 
-			// Return early if there's no level change as we shouldn't notify listeners of changes nor waste time setting up the same volume.
-			if(level == getLevel()) { return getLevel(); }
-
 			if (player instanceof midiPlayer) 
 			{
 				midiPlayer sequencer = (midiPlayer) player;
 				int midiVolume = isMuted() ? 0 : (int) (level * 127 / 100); // Convert to MIDI volume range
 
-				MidiChannel channels[] = sequencer.synthesizer.getChannels();
-				// Set volume for all channels through Control Change command 7 (volume)
-				for (int channel = 0; channel < channels.length; channel++) 
+				if(sequencer.isRunning())
 				{
-					channels[channel].controlChange(7, level);
+					synchronized(sequencer) 
+					{
+						MidiChannel channels[] = sequencer.synthesizer.getChannels();
+						// Set volume for all channels through Control Change command 7 (volume)
+						for (int channel = 0; channel < channels.length; channel++) 
+						{
+							channels[channel].controlChange(7, level);
+							LockSupport.parkNanos(150_000); // Java Sound API is so horrible with MIDI volume changes, it can't even be described
+						}
+					}
 				}
 			}
 			else if(player instanceof wavPlayer) /* Haven't found a jar that actually makes use of this yet - Scratch that: Shadow Shoot again */
@@ -1568,8 +1535,9 @@ public class PlatformPlayer implements Player
 			}
 			else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
 
+			player.setVolume(level); // Save volume level for the given player, in the player itself.
+
 			notifyListeners(PlayerListener.VOLUME_CHANGED, this); 
-			this.level = level;
 
 			return getLevel(); 
 		}
@@ -1580,7 +1548,7 @@ public class PlatformPlayer implements Player
 			{
 				muted = mute;
 
-				setLevel(level);
+				setLevel(player.getVolume());
 				notifyListeners(PlayerListener.VOLUME_CHANGED, this);
 			}
 		}
