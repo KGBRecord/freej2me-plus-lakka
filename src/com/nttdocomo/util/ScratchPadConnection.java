@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -72,13 +73,14 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 		this.name = null; // TODO: Clear scratchpad data, maybe write any pending data prior to it?
 	}
 
-	public DataInputStream openDataInputStream() throws IOException { return new DataInputStream(openInputStream()); }
+	public DataInputStream openDataInputStream() throws IOException, EOFException { return new DataInputStream(openInputStream()); }
 
-	public InputStream openInputStream() 
+	public InputStream openInputStream() throws EOFException
 	{
 		String[] parsedName = name.split(";");
-		pos = Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64;
-		length = Integer.parseInt(parsedName[1].split(",")[1].replace("length=", ""));
+
+		pos = (parsedName[1].split(",").length > 0) ? (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64) : 64;
+
 		if(openedScratchPads.get(parsedName[0]) == false) 
 		{
 			try { scratchPadData = Mobile.getIAppliScratchPadAsByteArray(parsedName[0]); } 
@@ -87,17 +89,16 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 			openedScratchPads.put(parsedName[0], true);
 		}
 
+		length = (parsedName[1].split(",").length > 1) ? Integer.parseInt(parsedName[1].split(",")[1].replace("length=", "")) : scratchPadData.length-pos-1;
+
+		if(pos+length >= scratchPadData.length) { throw new EOFException("Cannot read out of bounds"); }
+
 		byte[] returnData = new byte[length];
 		for (int i = 0; i < length; i++) 
 		{
 			int index = pos + i;
-			if (index >= scratchPadData.length) { index -= scratchPadData.length; } // Wrap around
 			returnData[i] = scratchPadData[index];
 		}
-
-		// DoJa's Scratchpad appears to be little-endian, so reverse multi-byte data
-		// TODO: Implement something more flexible and not prone to errors like this is (eg: A String with length 4 shouldn't be reversed i think)
-		returnData = convertBEtoLE(returnData);
 		
 		if(Mobile.minLogLevel == Mobile.LOG_INFO) 
 		{
@@ -108,54 +109,30 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 			}
 			Mobile.log(Mobile.LOG_INFO, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Hex Data read: " + hexString.toString());
 		}
-		
 
 		return new ByteArrayInputStream(returnData);
 	}
 
-    public DataOutputStream openDataOutputStream() 
-	{
-		return new DataOutputStream(openOutputStream()); 
-	}
+    public DataOutputStream openDataOutputStream() { return new DataOutputStream(openOutputStream()); }
 
 	public OutputStream openOutputStream() 
 	{
 		Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Opened for writing (untested)");
         String[] parsedName = name.split(";");
-        pos = Integer.parseInt(parsedName[1].split(",")[0]) + 64;
-        length = Integer.parseInt(parsedName[1].split(",")[1]);
+
+        pos = (parsedName[1].split(",").length > 0) ? (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64) : 64;
+
         if(openedScratchPads.get(parsedName[0]) == false) 
         {
-            try 
-            {
-                scratchPadData = Mobile.getIAppliScratchPadAsByteArray(parsedName[0]);
-            } 
+            try { scratchPadData = Mobile.getIAppliScratchPadAsByteArray(parsedName[0]); } 
             catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to open ScratchPad:" + e.getMessage());}
 
             openedScratchPads.put(parsedName[0], true);
         }
 
-		return new ByteArrayOutputStream(length);
-	}
+		length = (parsedName[1].split(",").length > 1) ? Integer.parseInt(parsedName[1].split(",")[1].replace("length=", "")) : scratchPadData.length-pos-1;
 
-	// DoJa's Scratchpad appears to be little-endian, so any multi-byte values have to be reversed
-	public byte[] convertBEtoLE(byte[] originalData) 
-	{
-		byte[] convertedData = new byte[originalData.length];
-		
-		for (int i = 0; i < originalData.length; i += 4) 
-		{
-			if (i + 4 <= originalData.length) 
-			{
-				convertedData[i] = originalData[i + 3];
-				convertedData[i + 1] = originalData[i + 2];
-				convertedData[i + 2] = originalData[i + 1];
-				convertedData[i + 3] = originalData[i];
-			} 
-			else { System.arraycopy(originalData, i, convertedData, i, originalData.length - i); }
-		}
-		
-		return convertedData;
+		return new ByteArrayOutputStream(length);
 	}
 
 }

@@ -43,6 +43,7 @@ public abstract class Canvas extends Frame
 
     public void repaint(int x, int y, int width, int height) 
     {
+		Mobile.getPlatform().limitFps();
         if (width < 0 || height < 0) { throw new IllegalArgumentException("Width and height must be non-negative."); }
         
         try 
@@ -50,7 +51,7 @@ public abstract class Canvas extends Frame
 
 			if(!isShown()) { return; }
 
-			graphics.reset();
+			//graphics.reset(x, y, width, height);
 			paint(graphics);
 			
 			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar

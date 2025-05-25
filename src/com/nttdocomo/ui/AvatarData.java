@@ -16,19 +16,7 @@
 */
 package com.nttdocomo.ui;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
-public class EncodedImage 
+public interface AvatarData extends MediaResource 
 {
-    private byte[] imageData;
-
-    public EncodedImage(byte[] imageData) { this.imageData = imageData; }
-
-    public int size() { return imageData.length; }
-
-    public InputStream getInputStream() { return new ByteArrayInputStream(imageData); }
-
-    public MediaImage getImage() { return new com.nttdocomo.ui.impls.MediaImageImpl(imageData); }
+    void use(MediaResource overwritten, boolean useOnce) throws com.nttdocomo.io.ConnectionException;
 }

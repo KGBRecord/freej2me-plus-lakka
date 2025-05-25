@@ -14,13 +14,25 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.ui.impls;
 
-public class MediaImageImpl implements MediaImage 
+import java.io.InputStream;
+
+import com.nttdocomo.io.ConnectionException;
+import com.nttdocomo.ui.UIException;
+import com.nttdocomo.ui.Image;
+
+public class MediaImageImpl implements com.nttdocomo.ui.MediaImage 
 {
-    private Image doJaImage;
+	private ImageImpl doJaImage;
 
-    MediaImageImpl(byte[] data) { doJaImage = new DoJaLCDUIImage(data, 0, data.length); }
+	public MediaImageImpl(int width, int height) { doJaImage = new ImageImpl(width, height); }
+
+	public MediaImageImpl(String str) { doJaImage = new ImageImpl(str); }
+
+	public MediaImageImpl(InputStream inputStream) { doJaImage = new ImageImpl(inputStream); }
+
+	public MediaImageImpl(byte[] data) { doJaImage = new ImageImpl(data, 0, data.length); }
 
     public int getHeight() { return doJaImage.getHeight(); }
 
@@ -30,7 +42,8 @@ public class MediaImageImpl implements MediaImage
 
     public void dispose() { doJaImage = null; }
 
-    public void unuse() { }
+	public void use() throws com.nttdocomo.io.ConnectionException, com.nttdocomo.ui.UIException { }
 
-    public void use() { }
+	public void unuse() { }
+
 }

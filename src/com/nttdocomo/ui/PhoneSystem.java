@@ -16,6 +16,10 @@
 */
 package com.nttdocomo.ui;
 
+import org.recompile.mobile.Mobile;
+
+import javax.microedition.media.Manager;
+
 public class PhoneSystem 
 {
 
@@ -36,11 +40,21 @@ public class PhoneSystem
     public static void setAttribute(int attr, int value) 
     {
         if (!isValidAttribute(attr, value)) { throw new IllegalArgumentException("Invalid attribute or value."); }
+
+        Mobile.log(Mobile.LOG_DEBUG, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "I-Appli set " + (attr == 0 ? "backlight" : "vibrator") + " to:" + (value == 1));
     }
 
     public static void playSound(int type) 
     {
         if (type < SOUND_INFO || type > SOUND_CONFIRM) { throw new IllegalArgumentException("Invalid sound type."); }
+
+        try 
+        { 
+            DoJaSoundPlayer player = new DoJaSoundPlayer(type);
+            Thread soundThread = new Thread(player, "DoJa-PlaySound");
+            soundThread.start();
+        }
+        catch (Exception e) { }
     }
 
     private static boolean isValidAttribute(int attr, int value) 
@@ -48,6 +62,7 @@ public class PhoneSystem
         if (attr == DEV_BACKLIGHT) 
         {
             return value == ATTR_BACKLIGHT_OFF || value == ATTR_BACKLIGHT_ON;
+            
         } 
         else if (attr == DEV_VIBRATOR) 
         {
@@ -57,4 +72,81 @@ public class PhoneSystem
     }
 
     public static final boolean isAvailable(final int n) { return true; }
+}
+
+class DoJaSoundPlayer implements Runnable 
+{
+    private final int type;
+
+    public DoJaSoundPlayer(int type) { this.type = type; }
+
+    public final void run()
+    {
+        try 
+        {
+            switch (type) 
+            {
+                case PhoneSystem.SOUND_INFO:
+                    Manager.playTone(0, 30, 127);
+                    Thread.sleep(40);
+                    Manager.playTone(88, 90, 127);
+                    Thread.sleep(60);
+                    Manager.playTone(90, 90, 127);
+                    Thread.sleep(60);
+                    Manager.playTone(96, 180, 127);
+                    break;
+            
+                case PhoneSystem.SOUND_WARNING:
+                    Manager.playTone(0, 30, 127);
+                    Thread.sleep(40);
+                    Manager.playTone(86, 100, 127);
+                    Thread.sleep(70);
+                    Manager.playTone(83, 100, 127);
+                    Thread.sleep(70);
+                    Manager.playTone(86, 100, 127);
+                    Thread.sleep(70);
+                    Manager.playTone(84, 100, 127);
+                    break;
+
+                case PhoneSystem.SOUND_ERROR:
+                    Manager.playTone(0, 30, 127);
+                    Thread.sleep(40);
+                    Manager.playTone(64, 120, 127);
+                    Manager.playTone(72, 150, 127);
+                    Thread.sleep(90);
+                    Manager.playTone(64, 120, 127);
+                    Thread.sleep(60);
+                    Manager.playTone(62, 150, 127);
+                    Thread.sleep(60);
+                    Manager.playTone(59, 150, 127);
+                    Thread.sleep(60);
+                    Manager.playTone(57, 200, 127);
+                    break;
+
+                case PhoneSystem.SOUND_ALARM:
+                    Manager.playTone(0, 30, 127);
+                    Thread.sleep(40);
+                    Manager.playTone(88, 300, 127);
+                    Thread.sleep(250);
+                    Manager.playTone(82, 300, 127);
+                    Thread.sleep(250);
+                    Manager.playTone(88, 300, 127);
+                    Thread.sleep(250);
+                    Manager.playTone(82, 350, 127);
+                    break;
+
+                case PhoneSystem.SOUND_CONFIRM:
+                    Manager.playTone(0, 30, 127);
+                    Thread.sleep(40);
+                    Manager.playTone(84, 40, 127);
+                    Thread.sleep(40);
+                    Manager.playTone(91, 40, 127);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        catch (Exception e) { Mobile.log(Mobile.LOG_DEBUG, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "Failed to play sound " + e.getMessage()); }
+    }
 }

@@ -16,25 +16,127 @@
 */
 package com.nttdocomo.ui;
 
-public final class MediaManager
+import com.nttdocomo.ui.impls.MediaImageImpl;
+
+import org.recompile.mobile.Mobile;
+
+public final class MediaManager 
 {
-    private MediaManager() {}
-
-    public static final MediaData getData(String location) 
+    
+    public static MediaImage createMediaImage(int width, int height) 
     {
-        if (location == null || location.isEmpty()) { throw new IllegalArgumentException("Invalid location specified."); }
-        return null; 
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " createMediaImage w,h " + width + " " + height);
+        return new MediaImageImpl(width, height);
     }
-
-    public static final MediaImage getImage(String location) 
+    
+    public static MediaSound createMediaSound(int bytes) 
     {
-        if (location == null || location.isEmpty()) { throw new IllegalArgumentException("Invalid location specified."); }
-        return null; 
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " createMediaImage bytes: " + bytes);
+        return null;
+        //return new MediaSound(bytes);
     }
-
-    public static final MediaSound getSound(String location) 
+    
+    public static AvatarData getAvatarData(byte[] data) 
     {
-        if (location == null || location.isEmpty()) { throw new IllegalArgumentException("Invalid location specified."); }
-        return null; 
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getAvatarData bytes: " + data.length);
+        return null;
+        //return new AvatarData(data);
+    }
+    
+    public static AvatarData getAvatarData(java.io.InputStream in) throws java.io.IOException
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getAvatarData inputstream: " + in.available());
+        return null;
+        //return new AvatarData(in);
+    }
+    
+    public static AvatarData getAvatarData(String location) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getAvatarData str: " + location);
+        return null;
+        //return new AvatarData(location);
+    }
+    
+    public static MediaData getData(byte[] data) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getData bytes: " + data.length);
+        return null;
+        //return new MediaData(data);
+    }
+    
+    public static MediaData getData(java.io.InputStream in) throws java.io.IOException
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getData inputstream: " + in.available());
+        return null;
+        //return new MediaData(in);
+    }
+    
+    public static MediaData getData(String location) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getData str: " + location);
+        return null;
+        //return new MediaData(location);
+    }
+    
+    public static MediaImage getImage(byte[] data) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getImage bytes: " + data.length);
+        return new MediaImageImpl(data);
+    }
+    
+    public static MediaImage getImage(java.io.InputStream in) throws java.io.IOException
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getImage inputstream: " + in.available());
+        return new MediaImageImpl(in);
+    }
+    
+    public static MediaImage getImage(String location) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getImage str: " + location);
+        return new MediaImageImpl(location);
+    }
+    
+    public static MediaSound getSound(byte[] data) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getSound bytes: " + data.length);
+        return null;
+        //return new MediaSound(data);
+    }
+    
+    public static MediaSound getSound(java.io.InputStream in) throws java.io.IOException
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getSound bytes: " + in.available());
+        return null;
+        //return new MediaSound(in);
+    }
+    
+    public static MediaSound getSound(String location) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getSound str: " + location);
+        return null;
+        //return new MediaSound(location);
+    }
+    
+    public static MediaImage getStreamingImage(String location, String mimetype) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getstreamingImage loc: " + location + " mime:" + mimetype);
+        return null;
+        //return new MediaImage(location, mimetype);
+    }
+    
+    public static void use(MediaImage[] images, boolean useOnce) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " use images[] " + useOnce);
+        //for (MediaImage image : images) {
+        //    image.use(useOnce);
+        //}
+    }
+    
+    public static void use(MediaSound[] sounds, boolean useOnce) 
+    {
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " use sounds[] " + useOnce);
+        //for (MediaSound sound : sounds) {
+        //    sound.use(useOnce);
+        //}
     }
 }

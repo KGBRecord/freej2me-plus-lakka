@@ -16,8 +16,12 @@
 */
 package com.nttdocomo.ui;
 
+import java.io.InputStream;
+
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformImage;
+
+import com.nttdocomo.ui.impls.ImageImpl;
 
 public abstract class Image extends PlatformImage
 { 
@@ -37,12 +41,16 @@ public abstract class Image extends PlatformImage
 
 	protected Image(byte[] data, int offset, int length) { super(data, offset, length, true); }
 
+	protected Image(String location) { super(location); }
+
+	protected Image(InputStream input) { super(input); }
+
 	public static Image createImage(Image source) 
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create DoJa Image from Image ");
 		if (source == null) { throw new NullPointerException(); }
 
-		return new DoJaLCDUIImage(source);
+		return new ImageImpl(source);
 	}
 
 	public static Image createImage(int width, int height) 
@@ -50,24 +58,26 @@ public abstract class Image extends PlatformImage
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create DoJa Image w,h " + width + ", " + height);
 		if (width <= 0 || height <= 0) {throw new IllegalArgumentException();}
 		
-		return new DoJaLCDUIImage(width, height);
+		return new ImageImpl(width, height);
 	}
 
 	public static Image createImage(int width, int height, int[] data, int off) 
 	{
+		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create DoJa Image w,h,int[len],off " + width + ", " + height + ", " + data.length + ", " + off);
 		if (data == null) { throw new NullPointerException("data cannot be null"); }
 		if (width <= 0 || height <= 0) { throw new IllegalArgumentException("width and height must be greater than zero"); }
 		if (off < 0 || off + width * height > data.length) { throw new ArrayIndexOutOfBoundsException("Invalid offset or data length"); }
 
-		return new DoJaLCDUIImage(width, height, data, off);
+		return new ImageImpl(width, height, data, off);
 	}
 
 	public static Image createImage(byte[] data, int offset, int length) 
 	{
+		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create DoJa Image byte[len],off,len " + data.length + ", " + offset + ", " + length);
 		if (data == null) { throw new NullPointerException("data cannot be null"); }
 		if (offset < 0 || offset + length > data.length) { throw new ArrayIndexOutOfBoundsException("Invalid offset or data length"); }
 
-		return new DoJaLCDUIImage(data, offset, length);
+		return new ImageImpl(data, offset, length);
 	}
 
 	public Graphics getGraphics() { return super.getDoJaGraphics(); }

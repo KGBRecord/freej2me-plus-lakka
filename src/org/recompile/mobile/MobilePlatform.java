@@ -241,10 +241,10 @@ public class MobilePlatform
 			case Canvas.KEY_NUM6: mask = GameCanvas.RIGHT_PRESSED;  break;
 			case Canvas.KEY_NUM8: mask = GameCanvas.DOWN_PRESSED;   break;
 			case Canvas.KEY_NUM5: mask = GameCanvas.FIRE_PRESSED;   break;
-			case Canvas.KEY_NUM1: mask = GameCanvas.GAME_A_PRESSED; break;
-			case Canvas.KEY_NUM3: mask = GameCanvas.GAME_B_PRESSED; break;
-			case Canvas.KEY_NUM7: mask = GameCanvas.GAME_C_PRESSED; break;
-			case Canvas.KEY_NUM9: mask = GameCanvas.GAME_D_PRESSED; break;
+			case Canvas.GAME_A:   mask = GameCanvas.GAME_A_PRESSED; break;
+			case Canvas.GAME_B:   mask = GameCanvas.GAME_B_PRESSED; break;
+			case Canvas.GAME_C:   mask = GameCanvas.GAME_C_PRESSED; break;
+			case Canvas.GAME_D:   mask = GameCanvas.GAME_D_PRESSED; break;
 			case Canvas.UP:       mask = GameCanvas.UP_PRESSED;     break;
 			case Canvas.LEFT:     mask = GameCanvas.LEFT_PRESSED;   break;
 			case Canvas.RIGHT:    mask = GameCanvas.RIGHT_PRESSED;  break;
@@ -276,19 +276,16 @@ public class MobilePlatform
 			case Canvas.FIRE:
 				mask = 1 << 16; // 16 Select
 				break;
-			case Canvas.GAME_C:
-				mask = 1 << 19; // 19 Softkey 3
-				break;
 			case Canvas.KEY_NUM0:
 				mask = 1; //  0 0
 				break;
-			case Canvas.KEY_NUM1:
+			case Canvas.GAME_A:
 				mask = 1 << 1; //  1 1
 				break;
 			case Canvas.KEY_NUM2:
 				mask = 1 << 2; //  2 2
 				break;
-			case Canvas.KEY_NUM3:
+			case Canvas.GAME_B:
 				mask = 1 << 3; //  3 3
 				break;
 			case Canvas.KEY_NUM4:
@@ -300,13 +297,13 @@ public class MobilePlatform
 			case Canvas.KEY_NUM6:
 				mask = 1 << 6; //  6 6
 				break;
-			case Canvas.KEY_NUM7:
+			case Canvas.GAME_C:
 				mask = 1 << 7; //  7 7
 				break;
 			case Canvas.KEY_NUM8:
 				mask = 1 << 8; //  8 8
 				break;
-			case Canvas.KEY_NUM9:
+			case Canvas.GAME_D:
 				mask = 1 << 9; //  9 9
 				break;
 			case Canvas.KEY_STAR:
@@ -349,19 +346,16 @@ public class MobilePlatform
 			case Canvas.FIRE:
 				mask = 1 << 0x14;
 				break;
-			case Canvas.GAME_C:
-				mask = 1 << 19; 
-				break;
 			case Canvas.KEY_NUM0:
 				mask = 1; 
 				break;
-			case Canvas.KEY_NUM1:
+			case Canvas.GAME_A:
 				mask = 1 << 1; 
 				break;
 			case Canvas.KEY_NUM2:
 				mask = 1 << 2; 
 				break;
-			case Canvas.KEY_NUM3:
+			case Canvas.GAME_B:
 				mask = 1 << 3; 
 				break;
 			case Canvas.KEY_NUM4:
@@ -373,13 +367,13 @@ public class MobilePlatform
 			case Canvas.KEY_NUM6:
 				mask = 1 << 6; 
 				break;
-			case Canvas.KEY_NUM7:
+			case Canvas.GAME_C:
 				mask = 1 << 7; 
 				break;
 			case Canvas.KEY_NUM8:
 				mask = 1 << 8; 
 				break;
-			case Canvas.KEY_NUM9:
+			case Canvas.GAME_D:
 				mask = 1 << 9; 
 				break;
 			case Canvas.KEY_STAR:

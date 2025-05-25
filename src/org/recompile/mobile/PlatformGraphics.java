@@ -1290,19 +1290,15 @@ public abstract class PlatformGraphics implements DirectGraphics
 		gc.setFont(dojaFont.platformFont.awtFont);
 	}
 
-	public void lock() 
-	{ 
-		synchronized (this) { dojaLockCount++; }
-	}
+	public void lock() { dojaLockCount++; }
 
     public void unlock(boolean forced)
 	{
-		synchronized (this) { dojaLockCount = forced ? 0 : dojaLockCount-1; }
+		dojaLockCount = forced ? 0 : dojaLockCount-1;
 		
-		if (dojaLockCount == 0) 
+		if (dojaLockCount == 0 && com.nttdocomo.ui.Display.getCurrent() instanceof com.nttdocomo.ui.Canvas) 
 		{
-			com.nttdocomo.ui.Canvas DoJaCanvas =  (com.nttdocomo.ui.Canvas) com.nttdocomo.ui.Display.getCurrent();
-			DoJaCanvas.repaint();
+			((com.nttdocomo.ui.Canvas) com.nttdocomo.ui.Display.getCurrent()).repaint();
 		}
     }
 
