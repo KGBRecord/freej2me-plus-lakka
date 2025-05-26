@@ -603,7 +603,7 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 
 	public static byte[] upsample(byte[] input, int originalSampleRate, int newSampleRate, short numChannels, short numBits) 
 	{
-		int inputLength = input.length;
+		int inputLength = input.length, paddedSamples = 0;
 		int newLength = (int) ((inputLength * (double) newSampleRate) / originalSampleRate);
 		byte[] upsampled = new byte[PCMHEADERSIZE + newLength]; // Allocate for header + upsampled audio data
 	
@@ -619,30 +619,36 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 	
 			if (numBits == 8) 
 			{
-				int sample1 = (originalIndex < inputLength) ? (input[originalIndex] & 0xFF) : 0;
+				int sample1 = (input[originalIndex] & 0xFF);
     			int sample2 = (originalIndex + 1 < inputLength) ? (input[originalIndex + 1] & 0xFF) : sample1;
 
 				// Apply linear interpolation on sample to reduce artifacts
-				int interpolatedValue = (int) (sample1 + (sample2 - sample1) * fraction);
-				upsampled[PCMHEADERSIZE + i] = (byte) Math.max(0, Math.min(255, interpolatedValue));
+				upsampled[PCMHEADERSIZE + i] = (byte) (sample1 + (sample2 - sample1) * fraction);
 			} 
 			else if (numBits == 16) // For 16-bit PCM WAV, each sample takes 2 bytes
 			{
 				if (originalIndex * 2 + 2 >= inputLength) { break; }
 	
-				short sample1 = (short) ((input[originalIndex * 2] & 0xFF) | (input[originalIndex * 2 + 1] << 8));
-    			short sample2 = (short) ((originalIndex + 1) * 2 < inputLength ? (input[(originalIndex + 1) * 2] & 0xFF) | (input[(originalIndex + 1) * 2 + 1] << 8) : sample1);
+				int sample1 = ((input[originalIndex * 2] & 0xFF) | (input[originalIndex * 2 + 1] << 8));
+    			int sample2 = ((originalIndex + 1) * 2 < inputLength ? (input[(originalIndex + 1) * 2] & 0xFF) | (input[(originalIndex + 1) * 2 + 1] << 8) : sample1);
 				
 				int interpolatedValue = (int) (sample1 + (sample2 - sample1) * fraction);
-				interpolatedValue = Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, interpolatedValue));
-
-				// Store the interpolated value back to byte representation
 				upsampled[PCMHEADERSIZE + i * 2] = (byte) (interpolatedValue & 0xFF); // Low byte
 				upsampled[PCMHEADERSIZE + i * 2 + 1] = (byte) ((interpolatedValue >> 8) & 0xFF); // High byte
 			}
 		}
+
+		// Prepare to return a copy of the upsampled array without padded samples (samples whose values are 0 at the end)
+		for(int i = PCMHEADERSIZE+newLength-1; i >= 0; i--) 
+		{
+			if(upsampled[i] == 0) { paddedSamples++; }
+			else { break; }
+		}
 	
-		return upsampled;
+		// This operates under the assumption that for n paddedSamples, n*upsRatio samples in the upsampled array are affected by them
+		// Don't know if that's correct, but it does fix any and all cases of crackling/popping at the end of wav media.
+		if(paddedSamples > 0) { return Arrays.copyOf(upsampled, upsampled.length-((newSampleRate / originalSampleRate)*paddedSamples)); }
+		else {return upsampled; }
 	}
 
 	public static int getDefaultAudioSampleRate() 
