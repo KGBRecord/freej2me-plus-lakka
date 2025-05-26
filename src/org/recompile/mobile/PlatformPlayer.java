@@ -79,6 +79,7 @@ public class PlatformPlayer implements Player
 
 	private static final midiPlayer[] midiPlayers = new midiPlayer[32];
 	private static Synthesizer synthesizer = Manager.dedicatedSynth;
+	private static Receiver receiver = Manager.dedicatedReceiver;
 
 	private final byte NUM_CONTROLS = 4;
 
@@ -530,6 +531,7 @@ public class PlatformPlayer implements Player
 			
 			PlatformPlayer.addPlayerToStack(this, null, null, null);
 			this.synthesizer = PlatformPlayer.synthesizer;
+			this.receiver = PlatformPlayer.receiver;
 		}
 
 		public midiPlayer(InputStream stream) 
@@ -542,13 +544,13 @@ public class PlatformPlayer implements Player
 
 			PlatformPlayer.addPlayerToStack(this, null, null, null);
 			this.synthesizer = PlatformPlayer.synthesizer;
+			this.receiver = PlatformPlayer.receiver;
 		}
 
 		public void realize() 
 		{
 			try 
 			{
-				receiver = synthesizer.getReceiver();
 				midi = MidiSystem.getSequencer(false);
 				midi.getTransmitter().setReceiver(receiver);
 				midi.open();
@@ -629,7 +631,6 @@ public class PlatformPlayer implements Player
 						midi.removeMetaEventListener(metaListener);
 						metaListener = null;
 					}
-					receiver = null;
 					if(midi != null) { midi.close(); }
 				}
 			}).start();
@@ -647,7 +648,6 @@ public class PlatformPlayer implements Player
 						midi.removeMetaEventListener(metaListener);
 						metaListener = null;
 					}
-					receiver = null;
 					if(midi != null) { midi.close(); }
 					midiSequence = null;
 				}
@@ -737,13 +737,13 @@ public class PlatformPlayer implements Player
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load SMAF data: " + e.getMessage());
 			}
 			this.synthesizer = PlatformPlayer.synthesizer;
+			this.receiver = PlatformPlayer.receiver;
 		}
 
 		public void realize() 
 		{
 			try 
 			{
-				receiver = synthesizer.getReceiver();
 				midi = MidiSystem.getSequencer(false);
 				midi.getTransmitter().setReceiver(receiver);
 				midi.open();
@@ -879,7 +879,6 @@ public class PlatformPlayer implements Player
 						midi.removeMetaEventListener(metaListener);
 						metaListener = null;
 					}
-					receiver = null;
 					if(midi != null) { midi.close(); }
 					
 					if(wavClips != null) 
@@ -908,7 +907,6 @@ public class PlatformPlayer implements Player
 						midi.removeMetaEventListener(metaListener);
 						metaListener = null;
 					}
-					receiver = null;
 					if(midi != null) { midi.close(); }
 					midiSequence = null;
 
@@ -1489,7 +1487,7 @@ public class PlatformPlayer implements Player
 				// Set the volume on the MIDI channel
 				channelVolume[channel] = volume; // For tracking purposes, whenever getChannelVolume is called.
 				channels[channel].controlChange(7, volume);
-				LockSupport.parkNanos(150_000); // Java Sound API is so horrible with MIDI volume changes, it can't even be described
+				LockSupport.parkNanos(100_000); // Java Sound API is so horrible with MIDI volume changes, it can't even be described
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Midi setChannelVolume failed: " + e.getMessage());}
 		}
@@ -1568,8 +1566,8 @@ public class PlatformPlayer implements Player
 						// Set volume for all channels through Control Change command 7 (volume)
 						for (int channel = 0; channel < channels.length; channel++) 
 						{
+							LockSupport.parkNanos(75_000); // Java Sound API is so horrible with MIDI volume changes, it can't even be described
 							channels[channel].controlChange(7, level);
-							LockSupport.parkNanos(150_000); // Java Sound API is so horrible with MIDI volume changes, it can't even be described
 						}
 					}
 				}
@@ -1586,9 +1584,9 @@ public class PlatformPlayer implements Player
 			}
 			else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
 
-			player.setVolume(level); // Save volume level for the given player, in the player itself.
-
 			notifyListeners(PlayerListener.VOLUME_CHANGED, this); 
+
+			player.setVolume(level); // Save volume level for the given player, in the player itself.
 
 			return getLevel(); 
 		}

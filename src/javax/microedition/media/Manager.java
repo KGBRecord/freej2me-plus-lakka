@@ -32,6 +32,7 @@ import java.util.concurrent.locks.LockSupport;
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
 import javax.microedition.media.protocol.DataSource;
@@ -52,6 +53,7 @@ public class Manager
 	private static Soundbank customSoundfont;
 	
 	public static Synthesizer dedicatedSynth = null;
+	public static Receiver dedicatedReceiver = null;
 	private static MidiChannel toneChannel;
 	private static Thread toneThread;
 
@@ -65,6 +67,7 @@ public class Manager
 			dedicatedSynth.open();
 			if(Mobile.useCustomMidi) { dedicatedSynth.loadAllInstruments(customSoundfont); }
 
+			dedicatedReceiver = dedicatedSynth.getReceiver();
 			toneChannel = dedicatedSynth.getChannels()[15]; // The last MIDI channel is often the least used, so use it for tones to minimize possible issues in case they play alongside sequenced data
 			Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Synthesizer for sequenced and tone data is ready.");
 		} 
