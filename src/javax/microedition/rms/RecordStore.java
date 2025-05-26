@@ -187,15 +187,18 @@ public class RecordStore
 			setUInt16(temp, 0, nextid);
 			fout.write(temp);
 			// record count //
-			setUInt16(temp, 0, records.size()-1);
+			setUInt16(temp, 0, recordIds.size()-1);
 			fout.write(temp);
 
 			// records //
 			for(int i=1; i<records.size(); i++)
 			{
-				setUInt16(temp, 0, records.get(i).length);
-				fout.write(temp);
-				fout.write(records.get(i));
+				if(records.get(i) != null) 
+				{
+					setUInt16(temp, 0, records.get(i).length);
+					fout.write(temp);
+					fout.write(records.get(i));
+				}
 			}
 
 			// last modified //
@@ -204,7 +207,7 @@ public class RecordStore
 			fout.write(lastMod);
 
 			// record ids // (yes, it would be nicer if these were saved interleaved with each record, but this would mean breaking pretty much every save made in FreeJ2ME prior to this change)
-			for(int i=1; i<records.size(); i++) // records and recordIds will always be the same size
+			for(int i=1; i<recordIds.size(); i++) // records and recordIds will always be the same size
 			{
 				fout.write(setUInt32(0, recordIds.get(i)));
 			}
@@ -356,9 +359,9 @@ public class RecordStore
 	public void deleteRecord(int recordId)
 	{
 		version++;
-		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Delete Record");
-		records.remove(recordIds.indexOf(recordId));
-		recordIds.remove(recordId);
+		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Delete Record " + recordId);
+		records.set(recordIds.indexOf(recordId), null);
+		recordIds.remove(recordIds.indexOf(recordId));
 		save();
 		for(int i=0; i<listeners.size(); i++)
 		{
@@ -415,11 +418,11 @@ public class RecordStore
 	{
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the record of a closed Record Store"); }
 		
+		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> getRecord("+recordId+")");
+
 		if(recordId == 0) { recordId++; } // Records should always start at ID 1
 
 		if(!recordIds.contains(recordId)) { throw new InvalidRecordIDException("getRecord: Invalid Record ID: "+recordId); }
-
-		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> getRecord("+recordId+")");
 
 		byte[] t = records.get(recordIds.indexOf(recordId));
 		if(t == null || t.length < 1) { throw new InvalidRecordIDException("getRecord: Invalid Record ID (empty): "+recordId); }
@@ -429,9 +432,9 @@ public class RecordStore
 	public int getRecord(int recordId, byte[] buffer, int offset) throws InvalidRecordIDException, RecordStoreException
 	{
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the record of a closed Record Store"); }
+		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> getRecord(" + recordId + ", " + buffer + ", " + offset + ")");
 		if(!recordIds.contains(recordId)) { throw new InvalidRecordIDException("getRecord: Invalid Record ID: "+recordId); }
 
-		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> getRecord(id, buffer, offset)");
 		byte[] temp = getRecord(recordIds.indexOf(recordId));
 
 		int len = temp.length;
@@ -710,16 +713,15 @@ public class RecordStore
 		{
 			reset();
 			elements = new int[records.size()];
-			for(int i=0; i<records.size(); i++) { elements[i] = 1; }
 			count = 0;
 
 			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Enumerator > " + (filter == null ? "Not Filtered" : "Filtered"));
 
-			for (int i = 0; i < records.size(); i++) 
+			for (int i = 1; i < records.size(); i++) 
 			{
 				if (records.get(i).length > 0 && (filter == null || filter.matches(records.get(i)))) 
 				{
-					elements[count++] = i;
+					elements[count++] = recordIds.get(i);
 				}
 			}
 
