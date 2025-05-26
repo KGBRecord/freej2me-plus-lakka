@@ -21,7 +21,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MIDletEnhancements 
 {
     private static final AtomicLong curNanoTime = new AtomicLong(0);
+    private static final AtomicLong curTimeMillis = new AtomicLong(0);
     private static long lastNanoTime = System.nanoTime();
+    private static long lastMillisTime = System.currentTimeMillis();
+
+    // Simulated time will start from the current system time, for better compatibility
+    private static final long startMillisTime = lastMillisTime;
+    private static final long startNanoTime = lastNanoTime;
 
     public static void drawSleep(long millis) throws InterruptedException
     {
@@ -35,8 +41,18 @@ public class MIDletEnhancements
         else { Thread.sleep(1); }
     }
 
-    // Uses nanoTime due to its higher precision, but converted to milliseconds
-    public static long currentTimeMillis() { return nanoTime() / 1_000_000; }
+    public static long currentTimeMillis() 
+    {
+        long now = System.currentTimeMillis();
+        long elapsedMillis = now - lastMillisTime;
+
+        if (MobilePlatform.pressedKeys[19]) { curTimeMillis.addAndGet(elapsedMillis * 20); } 
+        else if (Mobile.unlockFramerateHack > 2) { curTimeMillis.addAndGet((long) (elapsedMillis * (Mobile.limitFPS == 0 ? 20 : (float) Mobile.limitFPS / 10f))); } 
+        else { curTimeMillis.addAndGet(elapsedMillis); }
+
+        lastMillisTime = now;
+        return startMillisTime + curTimeMillis.get();
+    }
 
     public static long nanoTime() 
     {
@@ -44,22 +60,16 @@ public class MIDletEnhancements
         long elapsedNanos = now - lastNanoTime;
 
         if (MobilePlatform.pressedKeys[19]) { curNanoTime.addAndGet(elapsedNanos * 20); } 
-        else if (Mobile.unlockFramerateHack > 2) 
-        {
-            curNanoTime.addAndGet((long) (elapsedNanos * (Mobile.limitFPS == 0 ? 20 : (float) Mobile.limitFPS / 10f)));
-        } 
+        else if (Mobile.unlockFramerateHack > 2) { curNanoTime.addAndGet((long) (elapsedNanos * (Mobile.limitFPS == 0 ? 20 : (float) Mobile.limitFPS / 10f))); } 
         else { curNanoTime.addAndGet(elapsedNanos); }
 
         lastNanoTime = now;
-        return curNanoTime.get();
+        return startNanoTime + curNanoTime.get();
     }
 
     /* Helps with jars that spam GC calls, causing cpu usage spikes */
     public static void noGC() { }
 
     /* Can reduce cpu usage in some games, and even helps fix others like Super Action Hero (pulled from J2ME-Loader) */
-    public static void yieldOverride() throws InterruptedException
-    { 
-        Thread.sleep(1);
-    }
+    public static void yieldOverride() throws InterruptedException { Thread.sleep(1); }
 }
