@@ -619,25 +619,39 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{ 
-			if(metaListener != null) 
+			new Thread(new Runnable() 
 			{
-				midi.removeMetaEventListener(metaListener);
-				metaListener = null;
-			}
-			receiver = null;
-			if(midi != null) { midi.close(); }
+				@Override
+				public void run() 
+				{
+					if(metaListener != null) 
+					{
+						midi.removeMetaEventListener(metaListener);
+						metaListener = null;
+					}
+					receiver = null;
+					if(midi != null) { midi.close(); }
+				}
+			}).start();
 		}
 
 		public void close() 
 		{
-			if (metaListener != null) 
+			new Thread(new Runnable() 
 			{
-				midi.removeMetaEventListener(metaListener);
-				metaListener = null;
-			}
-			receiver = null;
-			if(midi != null) { midi.close(); }
-			midiSequence = null;
+				@Override
+				public void run() 
+				{
+					if (metaListener != null) 
+					{
+						midi.removeMetaEventListener(metaListener);
+						metaListener = null;
+					}
+					receiver = null;
+					if(midi != null) { midi.close(); }
+					midiSequence = null;
+				}
+			}).start();
 		}
 
 		public void setLoopCount(int count)
@@ -855,45 +869,61 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{
-			if(metaListener != null) 
+			new Thread(new Runnable() 
 			{
-				midi.removeMetaEventListener(metaListener);
-				metaListener = null;
-			}
-			receiver = null;
-			if(midi != null) { midi.close(); }
-			
-			if(wavClips != null) 
-			{
-				for(int i = 0; i < wavClips.length; i++) 
-				{ 
-					wavClips[i].stop(); 
-					wavClips[i].close(); 
+				@Override
+				public void run() 
+				{
+					if(metaListener != null) 
+					{
+						midi.removeMetaEventListener(metaListener);
+						metaListener = null;
+					}
+					receiver = null;
+					if(midi != null) { midi.close(); }
+					
+					if(wavClips != null) 
+					{
+						for(int i = 0; i < wavClips.length; i++) 
+						{ 
+							wavClips[i].stop(); 
+							wavClips[i].close(); 
+						}
+					}
 				}
-			}
+			}).start();
+
 			isPlaying = false;
 		}
 
 		public void close() 
 		{
-			if (metaListener != null) 
+			new Thread(new Runnable() 
 			{
-				midi.removeMetaEventListener(metaListener);
-				metaListener = null;
-			}
-			receiver = null;
-			if(midi != null) { midi.close(); }
-			midiSequence = null;
-
-			if(wavClips != null) 
-			{
-				for(int i = 0; i < wavClips.length; i++) 
+				@Override
+				public void run() 
 				{
-					wavClips[i].stop();
-					wavClips[i].close();
-					wavStreams[i] = null;
+					if (metaListener != null) 
+					{
+						midi.removeMetaEventListener(metaListener);
+						metaListener = null;
+					}
+					receiver = null;
+					if(midi != null) { midi.close(); }
+					midiSequence = null;
+
+					if(wavClips != null) 
+					{
+						for(int i = 0; i < wavClips.length; i++) 
+						{
+							wavClips[i].stop();
+							wavClips[i].close();
+							wavStreams[i] = null;
+						}
+					}
 				}
-			}
+			}).start();
+			
 			isPlaying = false;
 		}
 
@@ -1059,25 +1089,39 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{
-			if (lineListener != null) 
+			new Thread(new Runnable() 
 			{
-				wavClip.removeLineListener(lineListener);
-				lineListener = null;
-			}
-			if(wavClip != null) { wavClip.close(); }
+				@Override
+				public void run() 
+				{
+					if (lineListener != null) 
+					{
+						wavClip.removeLineListener(lineListener);
+						lineListener = null;
+					}
+					if(wavClip != null) { wavClip.close(); }
+				}
+			}).start();
 		}
 
 		public void close() 
 		{
-			if (lineListener != null) 
+			new Thread(new Runnable() 
 			{
-				wavClip.removeLineListener(lineListener);
-				lineListener = null;
-			}
-			if(wavClip != null) { wavClip.close(); }
-			wavClip = null;
-			wavStream = null;
-			wavHeaderData = null;
+				@Override
+				public void run() 
+				{
+					if (lineListener != null) 
+					{
+						wavClip.removeLineListener(lineListener);
+						lineListener = null;
+					}
+					if(wavClip != null) { wavClip.close(); }
+					wavClip = null;
+					wavStream = null;
+					wavHeaderData = null;
+				}
+			}).start();
 		}
 
 		public void setLoopCount(int count)
@@ -1203,10 +1247,17 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
-			if(mp3Player != null) { mp3Player.close(); }
-			mp3Player = null;
-			tmpStream = null;
-			playerThread = null;
+			new Thread(new Runnable() 
+			{
+				@Override
+				public void run() 
+				{
+					if(mp3Player != null) { mp3Player.close(); }
+					mp3Player = null;
+					tmpStream = null;
+					playerThread = null;
+				}
+			}).start();
 		}
 
 		public void setLoopCount(int count)
