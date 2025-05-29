@@ -347,7 +347,7 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "Nokia Full Keyboard")){ phoneType = 5; }
 		else if (!strcmp(var.value, "Sagem"))              { phoneType = 6; }
 		else if (!strcmp(var.value, "Siemens"))            { phoneType = 7; }
-		else if (!strcmp(var.value, "Siemens Old"))        { phoneType = 8; }
+		else if (!strcmp(var.value, "Sharp"))              { phoneType = 8; }
 	}
 
 	var.key = "freej2me_backlightcolor";

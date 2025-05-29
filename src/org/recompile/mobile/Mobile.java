@@ -136,7 +136,7 @@ public class Mobile
 	public static boolean nokiaKeyboard = false;
 	public static boolean sagem = false;
 	public static boolean siemens = false;
-	public static boolean siemensold = false; // Siemens for SoftKeys and J2ME default/Canvas for everything else.
+	public static boolean sharp = false;
 
 	/*                                               
 	 * For AWTGUI, the input array is as follows:    [LeftSoft, RightSoft, Up, Left, Fire, Right, Down, 1, 2, 3, 4, 5, 6, 7, 8, 9, *, 0, #, Fast-Forward, Screenshot]
@@ -207,6 +207,15 @@ public class Mobile
 	public static final int NOKIA_SOFT3 = -5; // KEY_SOFTKEY3 = -5; (Fire)
 	public static final int NOKIA_END   = -11; // KEY_END = -11;
 	public static final int NOKIA_SEND  = -10; // KEY_SEND = -10;
+
+	//Sharp keycodes
+	public static final int SHARP_UP    = 1;  // KEY_UP_ARROW = 1;
+	public static final int SHARP_DOWN  = 6;  // KEY_DOWN_ARROW = 6;
+	public static final int SHARP_LEFT  = 2;  // KEY_LEFT_ARROW = 2;
+	public static final int SHARP_RIGHT = 5;  // KEY_RIGHT_ARROW = 5;
+	public static final int SHARP_SOFT1 = 21; // KEY_SOFTKEY1 = 21; (Left Soft)
+	public static final int SHARP_SOFT2 = 22; // KEY_SOFTKEY2 = 22; (Right Soft)
+	public static final int SHARP_FIRE  = 20; // KEY_SOFTKEY3 = 20; (Fire)
 
 	//Nokia keyboard keycodes
 	public static final int NOKIAKB_UP    = -1; // KEY_UP_ARROW = -1;
@@ -382,16 +391,16 @@ public class Mobile
 		{
 			switch(keycode)
 			{
-				case 0: return NOKIAKB_UP; // Up
-				case 1: return NOKIAKB_DOWN; // Down
-				case 2: return NOKIAKB_LEFT; // Left
-				case 3: return NOKIAKB_RIGHT; // Right
-				case 4: return NOKIAKB_NUM9; // A
-				case 5: return NOKIAKB_NUM7; // B
-				case 6: return NOKIAKB_NUM0; // X
-				case 7: return NOKIAKB_SOFT3; // Y
-				case 8: return NOKIAKB_SOFT2; // Start
-				case 9: return NOKIAKB_SOFT1; // Select
+				case 0:  return NOKIAKB_UP; // Up
+				case 1:  return NOKIAKB_DOWN; // Down
+				case 2:  return NOKIAKB_LEFT; // Left
+				case 3:  return NOKIAKB_RIGHT; // Right
+				case 4:  return NOKIAKB_NUM9; // A
+				case 5:  return NOKIAKB_NUM7; // B
+				case 6:  return NOKIAKB_NUM0; // X
+				case 7:  return NOKIAKB_SOFT3; // Y
+				case 8:  return NOKIAKB_SOFT2; // Start
+				case 9:  return NOKIAKB_SOFT1; // Select
 				case 10: return NOKIAKB_NUM1; // L
 				case 11: return NOKIAKB_NUM3; // R
 				case 12: return NOKIAKB_STAR; // L2
@@ -429,29 +438,33 @@ public class Mobile
 				case 9: return SIEMENS_SOFT1; // Select
 			}
 		}
-		if(siemensold)
+		if(sharp)
 		{
 			switch(keycode)
 			{
-				// Up, Down, Left, Right, Fire are handled by J2ME Canvas
-				case 8: return SIEMENS_SOFT2; // Start
-				case 9: return SIEMENS_SOFT1; // Select
+				case 0: return SHARP_UP; // Up
+				case 1: return SHARP_DOWN; // Down
+				case 2: return SHARP_LEFT; // Left
+				case 3: return SHARP_RIGHT; // Right
+				case 7: return SHARP_FIRE; // Y
+				case 8: return SHARP_SOFT2; // Start
+				case 9: return SHARP_SOFT1; // Select
 			}
 		}
 
 		// J2ME Canvas standard keycodes (not exactly standard, just the most common mappings), to match against any keys not covered above.
 		switch(keycode)
 		{
-			case 0: return NOKIA_UP; // Up
-			case 1: return NOKIA_DOWN; // Down
-			case 2: return NOKIA_LEFT; // Left
-			case 3: return NOKIA_RIGHT; // Right
-			case 4: return KEY_NUM9; // A
-			case 5: return KEY_NUM7; // B
-			case 6: return KEY_NUM0; // X
-			case 7: return NOKIA_SOFT3; // Y
-			case 8: return NOKIA_SOFT2; // Start
-			case 9: return NOKIA_SOFT1; // Select
+			case 0:  return NOKIA_UP; // Up
+			case 1:  return NOKIA_DOWN; // Down
+			case 2:  return NOKIA_LEFT; // Left
+			case 3:  return NOKIA_RIGHT; // Right
+			case 4:  return KEY_NUM9; // A
+			case 5:  return KEY_NUM7; // B
+			case 6:  return KEY_NUM0; // X
+			case 7:  return NOKIA_SOFT3; // Y
+			case 8:  return NOKIA_SOFT2; // Start
+			case 9:  return NOKIA_SOFT1; // Select
 			case 10: return KEY_NUM1; // L
 			case 11: return KEY_NUM3; // R
 			case 12: return KEY_STAR; // L2
@@ -475,11 +488,11 @@ public class Mobile
 		{
 			switch (keycode) 
 			{
-				case LG_UP: return Canvas.UP; // Up
-				case LG_DOWN: return Canvas.DOWN; // Down
-				case LG_LEFT: return Canvas.LEFT; // Left
+				case LG_UP:    return Canvas.UP; // Up
+				case LG_DOWN:  return Canvas.DOWN; // Down
+				case LG_LEFT:  return Canvas.LEFT; // Left
 				case LG_RIGHT: return Canvas.RIGHT; // Right
-				case LG_FIRE: return Canvas.FIRE; // Y
+				case LG_FIRE:  return Canvas.FIRE; // Y
 				case LG_SOFT1: return Canvas.KEY_SOFT_LEFT;
 				case LG_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
@@ -488,11 +501,11 @@ public class Mobile
 		{
 			switch (keycode) 
 			{
-				case MOTOROLA_UP: return Canvas.UP; // Up
-				case MOTOROLA_DOWN: return Canvas.DOWN; // Down
-				case MOTOROLA_LEFT: return Canvas.LEFT; // Left
+				case MOTOROLA_UP:    return Canvas.UP; // Up
+				case MOTOROLA_DOWN:  return Canvas.DOWN; // Down
+				case MOTOROLA_LEFT:  return Canvas.LEFT; // Left
 				case MOTOROLA_RIGHT: return Canvas.RIGHT; // Right
-				case MOTOROLA_FIRE: return Canvas.FIRE; // Y
+				case MOTOROLA_FIRE:  return Canvas.FIRE; // Y
 				case MOTOROLA_SOFT1: return Canvas.KEY_SOFT_LEFT;
 				case MOTOROLA_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
@@ -501,11 +514,11 @@ public class Mobile
 		{
 			switch (keycode) 
 			{
-				case TRIPLETS_UP: return Canvas.UP; // Up
-				case TRIPLETS_DOWN: return Canvas.DOWN; // Down
-				case TRIPLETS_LEFT: return Canvas.LEFT; // Left
+				case TRIPLETS_UP:    return Canvas.UP; // Up
+				case TRIPLETS_DOWN:  return Canvas.DOWN; // Down
+				case TRIPLETS_LEFT:  return Canvas.LEFT; // Left
 				case TRIPLETS_RIGHT: return Canvas.RIGHT; // Right
-				case TRIPLETS_FIRE: return Canvas.FIRE; // Y
+				case TRIPLETS_FIRE:  return Canvas.FIRE; // Y
 				case TRIPLETS_SOFT1: return Canvas.KEY_SOFT_LEFT;
 				case TRIPLETS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
@@ -514,11 +527,11 @@ public class Mobile
 		{
 			switch (keycode) 
 			{
-				case MOTOV8_UP: return Canvas.UP; // Up
-				case MOTOV8_DOWN: return Canvas.DOWN; // Down
-				case MOTOV8_LEFT: return Canvas.LEFT; // Left
+				case MOTOV8_UP:    return Canvas.UP; // Up
+				case MOTOV8_DOWN:  return Canvas.DOWN; // Down
+				case MOTOV8_LEFT:  return Canvas.LEFT; // Left
 				case MOTOV8_RIGHT: return Canvas.RIGHT; // Right
-				case MOTOV8_FIRE: return Canvas.FIRE; // Y
+				case MOTOV8_FIRE:  return Canvas.FIRE; // Y
 				case MOTOV8_SOFT1: return Canvas.KEY_SOFT_LEFT;
 				case MOTOV8_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
@@ -527,22 +540,22 @@ public class Mobile
 		{
 			switch (keycode) 
 			{
-				case NOKIAKB_UP: return Canvas.UP; // Up
-				case NOKIAKB_DOWN: return Canvas.DOWN; // Down
-				case NOKIAKB_LEFT: return Canvas.LEFT; // Left
+				case NOKIAKB_UP:    return Canvas.UP; // Up
+				case NOKIAKB_DOWN:  return Canvas.DOWN; // Down
+				case NOKIAKB_LEFT:  return Canvas.LEFT; // Left
 				case NOKIAKB_RIGHT: return Canvas.RIGHT; // Right
-				case NOKIAKB_NUM9: return Canvas.GAME_D; // A
-				case NOKIAKB_NUM7: return Canvas.GAME_C; // B
+				case NOKIAKB_NUM9:  return Canvas.GAME_D; // A
+				case NOKIAKB_NUM7:  return Canvas.GAME_C; // B
 				case NOKIAKB_SOFT3: return Canvas.FIRE; // Y
-				case NOKIAKB_NUM1: return Canvas.GAME_A; // L
-				case NOKIAKB_NUM3: return Canvas.GAME_B; // R
-				case NOKIAKB_NUM5: return Canvas.FIRE;
-				case NOKIAKB_NUM2: return Canvas.UP;
-				case NOKIAKB_NUM8: return Canvas.DOWN;
-				case NOKIAKB_NUM4: return Canvas.LEFT;
-				case NOKIAKB_NUM6: return Canvas.RIGHT;
-				case NOKIAKB_NUM0: return Canvas.KEY_NUM0;
-				case NOKIAKB_STAR: return Canvas.KEY_STAR;
+				case NOKIAKB_NUM1:  return Canvas.GAME_A; // L
+				case NOKIAKB_NUM3:  return Canvas.GAME_B; // R
+				case NOKIAKB_NUM5:  return Canvas.FIRE;
+				case NOKIAKB_NUM2:  return Canvas.UP;
+				case NOKIAKB_NUM8:  return Canvas.DOWN;
+				case NOKIAKB_NUM4:  return Canvas.LEFT;
+				case NOKIAKB_NUM6:  return Canvas.RIGHT;
+				case NOKIAKB_NUM0:  return Canvas.KEY_NUM0;
+				case NOKIAKB_STAR:  return Canvas.KEY_STAR;
 				case NOKIAKB_POUND: return Canvas.KEY_POUND;
 				case NOKIAKB_SOFT1: return Canvas.KEY_SOFT_LEFT;
 				case NOKIAKB_SOFT2: return Canvas.KEY_SOFT_RIGHT;
@@ -552,9 +565,9 @@ public class Mobile
 		{
 			switch (keycode) 
 			{
-				case SAGEM_UP: return Canvas.UP; // Up
-				case SAGEM_DOWN: return Canvas.DOWN; // Down
-				case SAGEM_LEFT: return Canvas.LEFT; // Left
+				case SAGEM_UP:    return Canvas.UP; // Up
+				case SAGEM_DOWN:  return Canvas.DOWN; // Down
+				case SAGEM_LEFT:  return Canvas.LEFT; // Left
 				case SAGEM_RIGHT: return Canvas.RIGHT; // Right
 				case SAGEM_SOFT3: return Canvas.FIRE; // Y
 				case SAGEM_SOFT1: return Canvas.KEY_SOFT_LEFT;
@@ -572,6 +585,19 @@ public class Mobile
 				case SIEMENS_FIRE:  return Canvas.FIRE; // Y
 				case SIEMENS_SOFT1: return Canvas.KEY_SOFT_LEFT;
 				case SIEMENS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
+			}
+		}
+		if (sharp) 
+		{
+			switch (keycode) 
+			{
+				case SHARP_UP:    return Canvas.UP; // Up
+				case SHARP_DOWN:  return Canvas.DOWN; // Down
+				case SHARP_LEFT:  return Canvas.LEFT; // Left
+				case SHARP_RIGHT: return Canvas.RIGHT; // Right
+				case SHARP_FIRE:  return Canvas.FIRE; // Y
+				case SHARP_SOFT1: return Canvas.KEY_SOFT_LEFT;
+				case SHARP_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 
@@ -607,107 +633,29 @@ public class Mobile
 	public static final int getCanvasAction(int keycode) 
 	{
 		// NOTE: Canvas doesn't support SOFT keys by default. Those cases are all returning NOKIA softkeys to abstract lcdui's menu navigation
-		if (lg) 
-		{
-			switch (keycode) 
-			{
-				case LG_UP: return Canvas.UP; // Up
-				case LG_DOWN: return Canvas.DOWN; // Down
-				case LG_LEFT: return Canvas.LEFT; // Left
-				case LG_RIGHT: return Canvas.RIGHT; // Right
-				case LG_FIRE: return Canvas.FIRE; // Y
-				case LG_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case LG_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-		if (motorola) 
-		{
-			switch (keycode) 
-			{
-				case MOTOROLA_UP: return Canvas.UP; // Up
-				case MOTOROLA_DOWN: return Canvas.DOWN; // Down
-				case MOTOROLA_LEFT: return Canvas.LEFT; // Left
-				case MOTOROLA_RIGHT: return Canvas.RIGHT; // Right
-				case MOTOROLA_FIRE: return Canvas.FIRE; // Y
-				case MOTOROLA_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case MOTOROLA_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-		if (motoTriplets) 
-		{
-			switch (keycode) 
-			{
-				case TRIPLETS_UP: return Canvas.UP; // Up
-				case TRIPLETS_DOWN: return Canvas.DOWN; // Down
-				case TRIPLETS_LEFT: return Canvas.LEFT; // Left
-				case TRIPLETS_RIGHT: return Canvas.RIGHT; // Right
-				case TRIPLETS_FIRE: return Canvas.FIRE; // Y
-				case TRIPLETS_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case TRIPLETS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-		if (motoV8) 
-		{
-			switch (keycode) 
-			{
-				case MOTOV8_UP: return Canvas.UP; // Up
-				case MOTOV8_DOWN: return Canvas.DOWN; // Down
-				case MOTOV8_LEFT: return Canvas.LEFT; // Left
-				case MOTOV8_RIGHT: return Canvas.RIGHT; // Right
-				case MOTOV8_FIRE: return Canvas.FIRE; // Y
-				case MOTOV8_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case MOTOV8_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
 		if (nokiaKeyboard) 
 		{
 			switch (keycode) 
 			{
-				case NOKIAKB_UP: return Canvas.UP; // Up
-				case NOKIAKB_DOWN: return Canvas.DOWN; // Down
-				case NOKIAKB_LEFT: return Canvas.LEFT; // Left
+				case NOKIAKB_UP:    return Canvas.UP; // Up
+				case NOKIAKB_DOWN:  return Canvas.DOWN; // Down
+				case NOKIAKB_LEFT:  return Canvas.LEFT; // Left
 				case NOKIAKB_RIGHT: return Canvas.RIGHT; // Right
-				case NOKIAKB_NUM9: return Canvas.KEY_NUM9; // A
-				case NOKIAKB_NUM7: return Canvas.KEY_NUM7; // B
+				case NOKIAKB_NUM9:  return Canvas.KEY_NUM9; // A
+				case NOKIAKB_NUM7:  return Canvas.KEY_NUM7; // B
 				case NOKIAKB_SOFT3: return Canvas.FIRE; // Y
-				case NOKIAKB_NUM1: return Canvas.KEY_NUM1; // L
-				case NOKIAKB_NUM3: return Canvas.KEY_NUM3; // R
-				case NOKIAKB_NUM5: return Canvas.KEY_NUM5;
-				case NOKIAKB_NUM2: return Canvas.KEY_NUM2;
-				case NOKIAKB_NUM8: return Canvas.KEY_NUM8;
-				case NOKIAKB_NUM4: return Canvas.KEY_NUM4;
-				case NOKIAKB_NUM6: return Canvas.KEY_NUM6;
-				case NOKIAKB_NUM0: return Canvas.KEY_NUM0;
-				case NOKIAKB_STAR: return Canvas.KEY_STAR;
+				case NOKIAKB_NUM1:  return Canvas.KEY_NUM1; // L
+				case NOKIAKB_NUM3:  return Canvas.KEY_NUM3; // R
+				case NOKIAKB_NUM5:  return Canvas.KEY_NUM5;
+				case NOKIAKB_NUM2:  return Canvas.KEY_NUM2;
+				case NOKIAKB_NUM8:  return Canvas.KEY_NUM8;
+				case NOKIAKB_NUM4:  return Canvas.KEY_NUM4;
+				case NOKIAKB_NUM6:  return Canvas.KEY_NUM6;
+				case NOKIAKB_NUM0:  return Canvas.KEY_NUM0;
+				case NOKIAKB_STAR:  return Canvas.KEY_STAR;
 				case NOKIAKB_POUND: return Canvas.KEY_POUND;
 				case NOKIAKB_SOFT1: return Canvas.KEY_SOFT_LEFT;
 				case NOKIAKB_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-		if (sagem) 
-		{
-			switch (keycode) 
-			{
-				case SAGEM_UP: return Canvas.UP; // Up
-				case SAGEM_DOWN: return Canvas.DOWN; // Down
-				case SAGEM_LEFT: return Canvas.LEFT; // Left
-				case SAGEM_RIGHT: return Canvas.RIGHT; // Right
-				case SAGEM_SOFT3: return Canvas.FIRE; // Y
-				case SAGEM_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SAGEM_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-		if (siemens) 
-		{
-			switch (keycode) 
-			{
-				case SIEMENS_UP:    return Canvas.UP; // Up
-				case SIEMENS_DOWN:  return Canvas.DOWN; // Down
-				case SIEMENS_LEFT:  return Canvas.LEFT; // Left
-				case SIEMENS_RIGHT: return Canvas.RIGHT; // Right
-				case SIEMENS_FIRE:  return Canvas.FIRE; // Y
-				case SIEMENS_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SIEMENS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 
@@ -820,7 +768,7 @@ public class Mobile
 		nokiaKeyboard = false;
 		sagem = false;
 		siemens = false;
-		siemensold = false;
+		sharp = false;
 		if(phone.equals("LG"))            { lg = true;}
 		if(phone.equals("Motorola"))      { motorola = true;}
 		if(phone.equals("MotoTriplets"))  { motoTriplets = true;}
@@ -828,7 +776,7 @@ public class Mobile
 		if(phone.equals("NokiaKeyboard")) { nokiaKeyboard = true;}
 		if(phone.equals("Sagem"))         { sagem = true;}
 		if(phone.equals("Siemens"))       { siemens = true;}
-		if(phone.equals("SiemensOld"))    { siemensold = true;}
+		if(phone.equals("Sharp"))         { sharp = true;}
 
 		String midiSoundfont = config.settings.get("soundfont");
 		if(midiSoundfont.equals("Custom"))       { useCustomMidi = true; }

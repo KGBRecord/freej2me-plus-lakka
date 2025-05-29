@@ -190,9 +190,9 @@ public final class AWTGUI
 		new CheckboxMenuItem("Nokia Full Keyboard", false),
 		new CheckboxMenuItem("Sagem", false),
 		new CheckboxMenuItem("Siemens", false),
-		new CheckboxMenuItem("Siemens Old", false)
+		new CheckboxMenuItem("Sharp", false)
 	};
-	final String[] layoutValues = {"Standard", "LG", "Motorola", "MotoV8", "MotoTriplets", "NokiaKeyboard", "Sagem", "Siemens", "SiemensOld"};
+	final String[] layoutValues = {"Standard", "LG", "Motorola", "MotoV8", "MotoTriplets", "NokiaKeyboard", "Sagem", "Siemens", "Sharp"};
 	
 	final CheckboxMenuItem[] backlightOptions = 
 	{

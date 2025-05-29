@@ -192,7 +192,7 @@ struct retro_core_option_v2_definition core_options[] =
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
             { "Siemens",             NULL },
-            { "Siemens Old",         NULL },
+            { "Sharp",               NULL },
             { NULL, NULL },
         },
         "Default"
@@ -653,7 +653,7 @@ struct retro_core_option_definition core_options_v1 [] =
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
             { "Siemens",             NULL },
-            { "Siemens Old",         NULL },
+            { "Sharp",               NULL },
             { NULL, NULL },
         },
         "Default"
@@ -984,7 +984,7 @@ static const struct retro_variable vars[] =
     },
     { /* Phone Control Type */
         "freej2me_phone",
-        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Siemens Old" 
+        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Sharp" 
     },
     { /* LCD Backlight Color */
         "freej2me_backlightcolor",
