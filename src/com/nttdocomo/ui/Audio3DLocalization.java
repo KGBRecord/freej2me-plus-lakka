@@ -16,7 +16,5 @@
 */
 package com.nttdocomo.ui;
 
-public interface MediaSound extends MediaResource 
-{ 
-	public javax.microedition.media.Player getPlayer();
-}
+// This interface is implemented by CartesianPosition, PolarPosition and SoundMotion
+public interface Audio3DLocalization { }

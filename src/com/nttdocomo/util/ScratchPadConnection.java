@@ -28,6 +28,8 @@ import java.io.OutputStream;
 import java.util.Map;
 import java.util.HashMap;
 
+import com.nttdocomo.util.ScratchPadOutputStream;
+
 import org.recompile.mobile.Mobile;
 
 public class ScratchPadConnection implements javax.microedition.io.Connection 
@@ -48,7 +50,7 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 	{
 		this.name = name;
         if(!openedScratchPads.containsKey(name)) { openedScratchPads.put(name.split(";")[0], false); }
-		Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + "New ScratchPad Connection: "+ this.name);
+		Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + "New ScratchPad Connection: "+ this.name);
 	}
 
 	public ScratchPadConnection(String name, int mode) 
@@ -56,7 +58,7 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 		this.name = name; 
 		this.mode = mode;
         if(!openedScratchPads.containsKey(name)) { openedScratchPads.put(name.split(";")[0], false); }
-		Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + "New ScratchPad Connection: "+ this.name + ". mode " + this.mode);
+		Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + "New ScratchPad Connection: "+ this.name + ". mode " + this.mode);
 	}
 
 	public ScratchPadConnection(String name, int mode, boolean timeouts) 
@@ -65,7 +67,7 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 		this.mode = mode; 
 		this.timeouts = timeouts;
         if(!openedScratchPads.containsKey(name)) { openedScratchPads.put(name.split(";")[0], false); }
-		Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + "New ScratchPad Connection: "+ this.name + ". mode " + this.mode + ". timeout:" + (this.timeouts ? "true" : "false"));
+		Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + "New ScratchPad Connection: "+ this.name + ". mode " + this.mode + ". timeout:" + (this.timeouts ? "true" : "false"));
 	}
 
 	public void close() 
@@ -79,7 +81,8 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 	{
 		String[] parsedName = name.split(";");
 
-		pos = (parsedName[1].split(",").length > 0) ? (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64) : 64;
+		if(parsedName.length < 2 || parsedName[1].split(",").length < 1) {pos = 64; }
+		else { pos = (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64); }
 
 		if(openedScratchPads.get(parsedName[0]) == false) 
 		{
@@ -89,9 +92,13 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 			openedScratchPads.put(parsedName[0], true);
 		}
 
-		length = (parsedName[1].split(",").length > 1) ? Integer.parseInt(parsedName[1].split(",")[1].replace("length=", "")) : scratchPadData.length-pos-1;
+		if(parsedName.length < 2 || parsedName[1].split(",").length < 2) { length = scratchPadData.length-pos-1; }
+		else { length = Integer.parseInt(parsedName[1].split(",")[1].replace("length=", "")); }
+		
 
-		if(pos+length >= scratchPadData.length) { throw new EOFException("Cannot read out of bounds"); }
+		if(pos >= scratchPadData.length) { throw new EOFException("Cannot read out of bounds"); }
+
+		if(pos + length > scratchPadData.length) { length = scratchPadData.length-pos; }
 
 		byte[] returnData = new byte[length];
 		for (int i = 0; i < length; i++) 
@@ -100,14 +107,14 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 			returnData[i] = scratchPadData[index];
 		}
 		
-		if(Mobile.minLogLevel == Mobile.LOG_INFO) 
+		if(Mobile.minLogLevel == Mobile.LOG_DEBUG) 
 		{
 			StringBuilder hexString = new StringBuilder();
 			for (byte b : returnData) 
 			{
 				hexString.append(String.format("%02X ", b));
 			}
-			Mobile.log(Mobile.LOG_INFO, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Hex Data read: " + hexString.toString());
+			Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Hex Data read: " + hexString.toString());
 		}
 
 		return new ByteArrayInputStream(returnData);
@@ -117,10 +124,11 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 
 	public OutputStream openOutputStream() 
 	{
-		Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Opened for writing (untested)");
+		Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Opened for writing (doesn't actually write yet)");
         String[] parsedName = name.split(";");
 
-        pos = (parsedName[1].split(",").length > 0) ? (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64) : 64;
+        if(parsedName.length < 2 || parsedName[1].split(",").length < 1) {pos = 64; }
+		else { pos = (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64); }
 
         if(openedScratchPads.get(parsedName[0]) == false) 
         {
@@ -130,9 +138,10 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
             openedScratchPads.put(parsedName[0], true);
         }
 
-		length = (parsedName[1].split(",").length > 1) ? Integer.parseInt(parsedName[1].split(",")[1].replace("length=", "")) : scratchPadData.length-pos-1;
+		if(parsedName.length < 2 || parsedName[1].split(",").length < 2) { length = scratchPadData.length-pos-1; }
+		else { length = Integer.parseInt(parsedName[1].split(",")[1].replace("length=", "")); }
 
-		return new ByteArrayOutputStream(length);
+		return new ScratchPadOutputStream(scratchPadData, pos, length);
 	}
 
 }

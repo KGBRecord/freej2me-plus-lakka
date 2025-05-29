@@ -149,7 +149,6 @@ public abstract class Canvas extends Displayable
 
 	public void repaint(int x, int y, int width, int height)
 	{
-		Mobile.getPlatform().limitFps();
 		if(!Mobile.compatImmediateRepaints) 
 		{
 			if(!pendingRepaint) 
@@ -173,14 +172,18 @@ public abstract class Canvas extends Displayable
 			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
 			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
 
-			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, (!fullscreen && !commands.isEmpty()) ? height+barHeight : height); // Extend draw area if commands are visible
 		}
 		catch (Exception e) 
 		{
 			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
 			e.printStackTrace();
 		}
-		finally { pendingRepaint = false; }
+		finally 
+		{ 
+			Mobile.getPlatform().limitFps();
+			pendingRepaint = false; 
+		}
 	}
 
 	public void serviceRepaints() 
@@ -229,8 +232,8 @@ public abstract class Canvas extends Displayable
 		int restoreX = graphics.getTranslateX(), restoreY = graphics.getTranslateY();
 		int clipX = graphics.getClipX(), clipY = graphics.getClipY(), clipW = graphics.getClipWidth(), clipH = graphics.getClipHeight();
 
-		graphics.translate(-restoreX, -restoreY);
-		graphics.setClip(0, 0, graphics.getCanvas().getWidth(), graphics.getCanvas().getHeight());
+		graphics.setOrigin(0, 0);
+		graphics.clearClip();
 
 		graphics.setColor(Mobile.lcduiBGColor);
 		graphics.fillRect(0, height-barHeight, width, barHeight);
@@ -255,7 +258,7 @@ public abstract class Canvas extends Displayable
 			graphics.drawString(commands.get(1).getLabel(), xPos, height-barHeight, Graphics.LEFT);
 		}
 
-		graphics.translate(restoreX, restoreY);
+		graphics.setOrigin(restoreX, restoreY);
 		graphics.setClip(clipX, clipY, clipW, clipH);
 	}
 

@@ -393,6 +393,12 @@ public class MobilePlatform
 		}
 		if(val == 1) { DoJaKeyState |= mask; }
 		else { DoJaKeyState ^= mask; }
+
+		if(com.nttdocomo.ui.Display.getCurrent() != null && 
+		   com.nttdocomo.ui.Display.getCurrent() instanceof com.nttdocomo.ui.Canvas) 
+		{
+			((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).keyPressed(DoJaKeyState, val == 1);
+		}
 	}
 
 	private static void handleCommands(int key) 

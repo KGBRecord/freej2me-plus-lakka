@@ -14,9 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.ui.sound3d;
 
-public interface MediaSound extends MediaResource 
-{ 
-	public javax.microedition.media.Player getPlayer();
-}
+// TODO: Is this interface really empty?
+public interface SoundPosition { }

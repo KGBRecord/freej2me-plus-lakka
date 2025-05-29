@@ -23,27 +23,28 @@ public class Font
 {
 
 	public static final int FACE_MONOSPACE = 0x72000000;
-    public static final int FACE_PROPORTIONAL = 0x73000000;
-    public static final int FACE_SYSTEM = 0x71000000;
+	public static final int FACE_PROPORTIONAL = 0x73000000;
+	public static final int FACE_SYSTEM = 0x71000000;
 
-    public static final int SIZE_LARGE = 0x70000300;
-    public static final int SIZE_MEDIUM = 0x70000200;
-    public static final int SIZE_SMALL = 0x70000100;
+	public static final int SIZE_LARGE = 0x70000300;
+	public static final int SIZE_MEDIUM = 0x70000200;
+	public static final int SIZE_SMALL = 0x70000100;
 
-    public static final int STYLE_BOLD = 0x70110000;
-    public static final int STYLE_BOLDITALIC = 0x70130000;
-    public static final int STYLE_ITALIC = 0x70120000;
-    public static final int STYLE_PLAIN = 0x70100000;
+	public static final int STYLE_BOLD = 0x70110000;
+	public static final int STYLE_BOLDITALIC = 0x70130000;
+	public static final int STYLE_ITALIC = 0x70120000;
+	public static final int STYLE_PLAIN = 0x70100000;
 
-    public static final int TYPE_DEFAULT = 0x00000000;
-    public static final int TYPE_HEADING = 0x00000001;
+	public static final int TYPE_DEFAULT = 0x00000000;
+	public static final int TYPE_HEADING = 0x00000001;
 
-    protected static final int[] fontSizes = 
+	// Aside from the smallest screen res, DoJa will use slightly smaller fonts than MIDP.
+	protected static final int[] fontSizes = 
 	{
-		 8, 10, 12, // < 128 minimum px dimension
-		12, 14, 16, // < 176 minimum px dimension
-		14, 15, 17, // < 220 minimum px dimension
-		16, 18, 20, // >= 220 minimum px dimension
+		8, 10, 12, // < 128 minimum px dimension
+		11, 13, 14, // < 176 minimum px dimension
+		12, 13, 15, // < 220 minimum px dimension
+		14, 16, 18, // >= 220 minimum px dimension
 	};
 
 	// Helps LCDUI to better adjust for different screen sizes.
@@ -64,7 +65,7 @@ public class Font
 
 	public PlatformFont platformFont;
 
-    protected Font(int face, int style, int size)
+	protected Font(int face, int style, int size)
 	{
 		if(face != FACE_SYSTEM && face != FACE_PROPORTIONAL && face != FACE_MONOSPACE
 			&& style != STYLE_PLAIN && style != STYLE_ITALIC && style != STYLE_BOLD && style != STYLE_BOLDITALIC
@@ -90,59 +91,59 @@ public class Font
 		defaultDoJaFont = new Font(FACE_SYSTEM, STYLE_PLAIN, convertSize(SIZE_MEDIUM));   
 	}
 
-    public int getAscent() { return platformFont.getAscent();  }
+	public int getAscent() { return platformFont.getAscent();  }
 
-    public int getBBoxHeight(String str) { return 0; }
+	public int getBBoxHeight(String str) { return 0; }
 
-    public int getBBoxWidth(String str) { return 0; }
+	public int getBBoxWidth(String str) { return 0; }
 
-    public static Font getFont(int type) { return getDefaultFont(); }
+	public static Font getFont(int type) { return getDefaultFont(); }
 
-    public static Font getDefaultFont() 
-    {
-        if (defaultDoJaFont == null) 
+	public static Font getDefaultFont() 
+	{
+		if (defaultDoJaFont == null) 
 		{
 			defaultDoJaFont = new Font(FACE_SYSTEM, STYLE_PLAIN, convertSize(SIZE_MEDIUM)); 
 		}
 		return defaultDoJaFont;
-    }
+	}
 
 	public static void setDefaultFont(Font font) 
 	{
 		if(font != null) { defaultDoJaFont = font; }
 	}
 
-    public int getDescent() { return 0; }
+	public int getDescent() { return 0; }
 
-    public int getHeight() { return platformFont.getHeight(); }
+	public int getHeight() { return platformFont.getHeight(); }
 
-    public int getLineBreak(String str, int off, int len, int width) { return off + len; }
+	public int getLineBreak(String str, int off, int len, int width) { return off + len; }
 
-    public int stringWidth(String str) 
+	public int stringWidth(String str) 
 	{
 		if(str == null) { throw new NullPointerException("Cannot get stringWidth from a null String"); }
 
 		return platformFont.stringWidth(str); 
 	}
 
-    public int getFace() { return face; }
+	public int getFace() { return face; }
 
-    public int getSize() { return size; }
+	public int getSize() { return size; }
 
 	public int getPointSize() { return convertSize(size); }
 
 	public int getStyle() { return style; }
 
-    public int getLCDUIStyle() 
-    { 
-        if(style == STYLE_PLAIN) { return javax.microedition.lcdui.Font.STYLE_PLAIN; }
-        else if(style == STYLE_ITALIC) { return javax.microedition.lcdui.Font.STYLE_ITALIC; }
-        else if(style == STYLE_BOLD) { return javax.microedition.lcdui.Font.STYLE_BOLD; }
-        else if(style == STYLE_BOLDITALIC) { return javax.microedition.lcdui.Font.STYLE_UNDERLINED; }
-        else { return style; } 
-    }
+	public int getLCDUIStyle() 
+	{ 
+		if(style == STYLE_PLAIN) { return javax.microedition.lcdui.Font.STYLE_PLAIN; }
+		else if(style == STYLE_ITALIC) { return javax.microedition.lcdui.Font.STYLE_ITALIC; }
+		else if(style == STYLE_BOLD) { return javax.microedition.lcdui.Font.STYLE_BOLD; }
+		else if(style == STYLE_BOLDITALIC) { return javax.microedition.lcdui.Font.STYLE_UNDERLINED; }
+		else { return style; } 
+	}
 
-    private static int convertSize(int size)
+	private static int convertSize(int size)
 	{
 		switch(size)
 		{

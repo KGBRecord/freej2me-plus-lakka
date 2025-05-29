@@ -367,7 +367,7 @@ public class MIDletLoader extends URLClassLoader
 	// TODO: Convert to Jam descriptor parsing
 	public static void parseJamDescriptorInto(InputStream is, Map<String, String> keyValueMap) 
 	{
-		Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Parsing .JAM...");
+		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Parsing .JAM...");
 		String currentKey = null;
 		StringBuilder currentValue = new StringBuilder();
 	
@@ -387,8 +387,6 @@ public class MIDletLoader extends URLClassLoader
 						keyValueMap.put(currentKey, currentValue.toString().trim());
 						Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + currentKey + ") val:" + currentValue.toString().trim());
 						currentValue.setLength(0);
-
-						
 					}
 	
 					// Split on '=' to get the key and value (standard MIDlet manifests use ":" as the separator)
@@ -438,7 +436,7 @@ public class MIDletLoader extends URLClassLoader
 			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAR Manifest file not found or lacks MIDlet entry! Checking if it's a DoJa File");
 			
 			String jamURLString = baseUrl.toString().replace(".jar", ".jam");
-			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Path:" + jamURLString);
+			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Path:" + jamURLString);
 
 			try
 			{
@@ -446,7 +444,7 @@ public class MIDletLoader extends URLClassLoader
 				File jamFile = new File(jamURI);
 				if(jamFile.exists()) 
 				{
-					Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found!");
+					Mobile.log(Mobile.LOG_INFO, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found!");
 					URL jamURL = jamURI.toURL();
 					parseJamDescriptorInto(jamURL.openStream(), properties);
 				}
@@ -638,7 +636,11 @@ public class MIDletLoader extends URLClassLoader
 
 		boolean isSiemens = false;
 		// Remove the "resource:" token that some jars pass into this method. FreeJ2ME doesn't need it.
-		if(resource.contains("resource:")) { resource = resource.replaceAll("resource:", ""); isSiemens = true; }
+		if(resource.contains("resource:")) 
+		{ 
+			resource = resource.replaceAll("resource:", "");
+			if(!Mobile.isDoJa) { isSiemens = true;  }
+		}
 
 		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
 		while (resource.startsWith("//")) { resource = resource.substring(1); }
@@ -682,6 +684,7 @@ public class MIDletLoader extends URLClassLoader
 				count = stream.read(data);
 				if(count!=-1) { buffer.write(data, 0, count); }
 			}
+			
 			if(!isSiemens) { return new ByteArrayInputStream(buffer.toByteArray()); }
 			else { return new SiemensInputStream(buffer.toByteArray()); }
 		}
@@ -748,7 +751,7 @@ public class MIDletLoader extends URLClassLoader
 
 	public byte[] getIAppliScratchPadAsByteArray(String resource)
 	{
-		Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get ScratchPad As Byte Array: "+ resource);
+		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get ScratchPad As Byte Array: "+ resource);
 
 		// Remove the "resource:" token that some jars pass into this method. FreeJ2ME doesn't need it.
 		if(resource.contains("scratchpad:")) { resource = resource.replaceAll("scratchpad:", ""); }

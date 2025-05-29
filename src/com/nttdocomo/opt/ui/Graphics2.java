@@ -14,9 +14,10 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.opt.ui;
 
-public interface MediaSound extends MediaResource 
+// This class is used by some DoJa jars, but there's zero documentation on it
+public abstract class Graphics2 extends org.recompile.mobile.PlatformGraphics 
 { 
-	public javax.microedition.media.Player getPlayer();
+	public Graphics2(org.recompile.mobile.PlatformImage image) { super(image); }
 }

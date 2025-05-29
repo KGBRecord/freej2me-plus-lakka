@@ -24,9 +24,11 @@ public abstract class Frame
     public static final int SOFT_KEY_1 = 0;
     public static final int SOFT_KEY_2 = 1;
 
+    public String[] softLabels = {"", ""};
+
     public PlatformImage platformImage;
 	public Graphics graphics = null;
-    public boolean labelVisible = false;
+    public boolean labelVisible = true; // Default label visibility to enabled, apps can disable it if needed
 
 	public int width = 0;
 	public int height = 0;
@@ -39,7 +41,7 @@ public abstract class Frame
 		graphics = platformImage.getDoJaGraphics();
     }
 
-    public final int getHeight()  { return height; }
+    public final int getHeight()  { return height - ((labelVisible) ? Font.getDefaultFont().getHeight() : 0); }
 
     public final int getWidth() { return width; }
 
@@ -53,13 +55,11 @@ public abstract class Frame
     public void setSoftLabel(int key, String label) 
     {
         if (key != SOFT_KEY_1 && key != SOFT_KEY_2) { throw new IllegalArgumentException("Invalid soft key number."); }
-        // TODO
+        softLabels[key] = label;
     }
 
-    public void setSoftLabelVisible(boolean b) 
-    {
-        labelVisible = b;
-    }
+    public void setSoftLabelVisible(boolean b) { labelVisible = b; }
 
     public boolean isShown() { return Display.getCurrent() == this; }
+
 }

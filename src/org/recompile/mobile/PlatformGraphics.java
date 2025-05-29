@@ -35,13 +35,15 @@ import java.awt.image.ConvolveOp;
 import java.awt.image.DataBufferInt;
 import java.awt.image.Kernel;
 
+import com.nttdocomo.ui.UIException;
+
 public abstract class PlatformGraphics implements DirectGraphics
 {
 	protected BufferedImage canvas;
 	protected Graphics2D gc;
 	protected int[] canvasData;
 	protected int[] imgPixels;
-	protected PlatformImage lastImage;
+	protected PlatformImage baseImage, lastImage;
 
 	protected Color awtColor;
 
@@ -81,6 +83,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected byte strokeStyle = SOLID;
 
 	protected int dojaLockCount = 0;
+	protected byte dojaflipMode = 0;
+	protected boolean usePictoColor = false;
+	protected boolean contextDisposed = false;
 
 	/* 
 	 * Both DirectGraphics and Sprite's rotations are counter-clockwise, flipping
@@ -102,6 +107,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 	/* 
 	 * DoJa Constants
 	 */
+
+	// Colors
 	public static final byte BLACK   = 0;    // (0x00, 0x00, 0x00)
 	public static final byte BLUE    = 1;    // (0x00, 0x00, 0xff)
 	public static final byte LIME    = 2;    // (0x00, 0xff, 0x00)
@@ -119,15 +126,25 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public static final byte OLIVE   = 14;   // (0x80, 0x80, 0x00)
 	public static final byte SILVER  = 15;   // (0xc0, 0xc0, 0xc0)
 
+	// flip modes
+	public static final byte FLIP_NONE = 0;
+	public static final byte FLIP_HORIZONTAL = 1;
+	public static final byte FLIP_VERTICAL = 2;
+	public static final byte FLIP_ROTATE = 3;
+	public static final byte FLIP_ROTATE_LEFT = 4;
+	public static final byte FLIP_ROTATE_RIGHT = 5;
+	public static final byte FLIP_ROTATE_RIGHT_HORIZONTAL = 6;
+	public static final byte FLIP_ROTATE_RIGHT_VERTICAL = 7;
 
 	public PlatformGraphics(PlatformImage image)
 	{
+		this.baseImage = image;
 		canvas = image.getCanvas();
 		gc = canvas.createGraphics();
 
 		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
-		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
+		gc.setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 
 		setColor(0,0,0);
 		setStrokeStyle(SOLID);
@@ -154,8 +171,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 			resetTransY = getTranslateY();
 			firstReset = false;
 		}
-		translate(-translateX, -translateY);
-		translate(resetTransX, resetTransY);
+		if(!Mobile.compatTranslateToOriginOnReset) { setOrigin(resetTransX, resetTransY); }
+		else { setOrigin(0, 0); }
 		setClip(clipx, clipy, clipw, cliph);
 		setColor(0,0,0);
 		setFont(Font.getDefaultFont());
@@ -168,6 +185,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void clearRect(int x, int y, int width, int height)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		gc.clearRect(x, y, width, height);
 	}
 
@@ -221,6 +240,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		if (width < 0 || height < 0) { return; }
 		gc.drawArc(x, y, width, height, startAngle, arcAngle);
 	}
@@ -260,6 +281,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawImage(Image image, int x, int y)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
 		try
 		{
 			gc.drawImage(image.getCanvas(), x, y, null);
@@ -477,10 +499,16 @@ public abstract class PlatformGraphics implements DirectGraphics
 		}
 	}
 
-	public void drawLine(int x1, int y1, int x2, int y2) { gc.drawLine(x1, y1, x2, y2); }
+	public void drawLine(int x1, int y1, int x2, int y2) 
+	{ 
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+		
+		gc.drawLine(x1, y1, x2, y2); 
+	}
 
 	public void drawRect(int x, int y, int width, int height)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
 		if (width < 0 || height < 0) { return; }
 
 		gc.drawRect(x, y, width, height);
@@ -488,6 +516,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		if (width < 0 || height < 0) { return; }
 
 		gc.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
@@ -521,6 +551,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		if (width <= 0 || height <= 0) { return; }
 
 		gc.fillArc(x, y, width, height, startAngle, arcAngle);
@@ -528,6 +560,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void fillRect(int x, int y, int width, int height)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		if (width <= 0 || height <= 0) { return; }
 
 		gc.fillRect(x, y, width, height);
@@ -535,6 +569,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		if (width < 0 || height < 0) { return; }
 
 		gc.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
@@ -542,11 +578,15 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setColor(int rgb)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		setColor((rgb>>16) & 0xFF, (rgb>>8) & 0xFF, rgb & 0xFF);
 	}
 
 	public void setColor(int r, int g, int b)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		color = (r<<16) + (g<<8) + b;
 		awtColor = new Color(r, g, b);
 		gc.setColor(awtColor);
@@ -603,11 +643,13 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setClip(int x, int y, int width, int height)
 	{
-		gc.setClip(x, y, width, height);
+		if(!Mobile.isDoJa) { gc.setClip(x, y, width, height); }
 	}
 
 	public void clipRect(int x, int y, int width, int height)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		gc.clipRect(x, y, width, height);
 	}
 
@@ -814,6 +856,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawPolygon(int[] xPoints, int xOffset, int[] yPoints, int yOffset, int nPoints, int argbColor)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		int temp = color;
 		int[] x = new int[nPoints];
 		int[] y = new int[nPoints];
@@ -839,6 +883,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void fillPolygon(int[] xPoints, int xOffset, int[] yPoints, int yOffset, int nPoints, int argbColor)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		int temp = color;
 		int[] x = new int[nPoints];
 		int[] y = new int[nPoints];
@@ -1226,13 +1272,59 @@ public abstract class PlatformGraphics implements DirectGraphics
 		****************************
 	*/
 
+	public void dispose() 
+	{ 
+		contextDisposed = true;
+		canvasData = null;
+		imgPixels = null;
+		baseImage = null;
+		lastImage = null;
+		canvas = null;
+		gc.dispose();
+	}
+
+	// This has to create a copy of the current graphics context, translation, clip, etc included
+	public com.nttdocomo.ui.Graphics copy() 
+	{ 
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
+		com.nttdocomo.ui.Graphics newGc = new com.nttdocomo.ui.Graphics(this.baseImage);
+
+		newGc.translate(getTranslateX(), getTranslateY());
+		newGc.setClip(getClipX(), getClipY(), getClipWidth(), getClipHeight());
+		newGc.setARGBColor(gc.getColor().getRGB());
+		newGc.setStrokeStyle(getStrokeStyle());
+
+		return newGc;
+	}
+
+	public void copyArea(int x, int y, int width, int height, int dx, int dy) 
+	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
+		copyArea(x, y, width, height, dx, dy, 0);
+	}
+
+	// Text appears to be rendered with BOTTOM LEFT anchoring, at least, it's what most DoJa jars seem to like better
+	public void drawChars(char[] data, int x, int y, int offset, int length)
+	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
+		if(data == null) { throw new NullPointerException("Null char array received"); }
+		if(offset < 0 || length < 0 || offset+length >= data.length) { throw new StringIndexOutOfBoundsException("invalid length and/or position received"); }
+		drawChars(data, offset, length, x, y, BOTTOM | LEFT);
+	}
+
 	public void drawString(String str, int x, int y)
 	{
-		if(str!=null) { gc.drawString(str, x, y); }
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+		if(str!=null) { drawString(str, x, y, BOTTOM | LEFT); }
+		else { throw new NullPointerException("Null string received"); }
 	}
 
 	public void drawImage(com.nttdocomo.ui.Image image, int[] matrix) 
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
 		try 
 		{
 			float[] fmatrix = new float[matrix.length];
@@ -1250,6 +1342,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawImage(com.nttdocomo.ui.Image image, int[] matrix, int sx, int sy, int width, int height) 
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
 		try 
 		{
 			float[] fmatrix = new float[matrix.length];
@@ -1267,33 +1360,102 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawImage(com.nttdocomo.ui.Image image, int x, int y) 
 	{
-		try { gc.drawImage(image.getCanvas(), x, y, null); } 
-		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImage (x, y): " + e.getMessage()); }
+		drawScaledImage(image, x, y, image.getWidth(), image.getHeight(), 0, 0, image.getWidth(), image.getHeight());
 	}
 
 	public void drawImage(com.nttdocomo.ui.Image image, int dx, int dy, int sx, int sy, int width, int height) 
 	{
-		try { gc.drawImage(image.getCanvas(), dx, dy, dx + width, dy + height, sx, sy, sx + width, sy + height, null); } 
-		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImage (dx, dy, part): " + e.getMessage()); }
+		drawScaledImage(image, dx, dy, width, height, sx, sy, width, height);
+	}
+
+	private int[] adjustCoordinates(int imageWidth, int imageHeight, int sx, int sy, int width, int height, int transform) 
+	{
+		switch (transform) 
+		{
+			case FLIP_HORIZONTAL:
+				sx = imageWidth - sx - width; 
+				break;
+
+			case FLIP_VERTICAL:
+				sy = imageHeight - sy - height; 
+				break;
+
+			// TODO: From here on out, all cases are untested
+			case FLIP_ROTATE_RIGHT:
+				int tempX = sx;
+				sx = sy;
+				sy = imageHeight - tempX - height; 
+				int tempHeight = height;
+				height = width; 
+				width = tempHeight;
+				break;
+
+			case FLIP_ROTATE_LEFT:
+				int tempY = sy;
+				sy = imageWidth - sx - width; 
+				sx = tempY;
+				tempHeight = height;
+				height = width; 
+				width = tempHeight; 
+				break;
+
+			case FLIP_ROTATE:
+				sx = imageWidth - sx - width; 
+				sy = imageHeight - sy - height;
+				break;
+
+			case FLIP_ROTATE_RIGHT_VERTICAL:
+				sx = imageWidth - sx - width;
+				int temp = sy;
+				sy = sx; 
+				sx = imageHeight - temp - height; 
+				break;
+
+			case FLIP_ROTATE_RIGHT_HORIZONTAL:
+				sy = imageHeight - sy - height; 
+				temp = sx;
+				sx = imageHeight - temp - width; 
+				break;
+		}
+
+		// Return adjusted coordinates via reference parameters
+    	return new int[]{sx, sy, width, height};
 	}
 
 	public void setOrigin(int x, int y) 
 	{
-		translate(-getTranslateX(), -getTranslateY()); // Reset from previous translation
-		translate(x, y); // Set new origin for rendering operations
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+		
+		translate(x-getTranslateX(), y-getTranslateY()); // Reset from previous translation
+	}
+
+	public void clearClip() 
+	{ 
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+		
+		setClip(0, 0, canvas.getWidth(), canvas.getHeight()); 
 	}
 
 	public void setFont(com.nttdocomo.ui.Font dojaFont) 
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		if(dojaFont == null) { dojaFont = com.nttdocomo.ui.Font.getDefaultFont(); }
 		this.dojaFont = dojaFont;
 		gc.setFont(dojaFont.platformFont.awtFont);
 	}
 
-	public void lock() { dojaLockCount++; }
+	public void lock() 
+	{ 
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
+		dojaLockCount++; 
+	}
 
     public void unlock(boolean forced)
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		dojaLockCount = forced ? 0 : dojaLockCount-1;
 		
 		if (dojaLockCount == 0 && com.nttdocomo.ui.Display.getCurrent() instanceof com.nttdocomo.ui.Canvas) 
@@ -1306,38 +1468,47 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) { throw new IllegalArgumentException("RGB values must be between 0 and 255"); }
 
+		// TODO: DoJa 4.0 allows negative values, so we should use 0xFF for alpha
 		return (0 << 24) | (r << 16) | (g << 8) | b;
+	}
+
+	public static int getColorOfRGB(int a, int r, int g, int b) 
+	{
+		if (a < 0 || a > 255 || r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) { throw new IllegalArgumentException("RGB values must be between 0 and 255"); }
+
+		return (a << 24) | (r << 16) | (g << 8) | b;
 	}
 
 	public static int getColorOfName(int name) 
 	{
+		// TODO: DoJa 4.0 has transparency, so we should make this mask 0xFF000000 in such cases
 		int alpha = 0x0000000;
 		switch (name) 
 		{
-			case BLACK:     return 0x000000 | alpha; // (0x00, 0x00, 0x00)
-			case BLUE:      return 0x0000FF | alpha; // (0x00, 0x00, 0xff)
-			case LIME:      return 0x00FF00 | alpha; // (0x00, 0xff, 0x00)
-			case AQUA:      return 0x00FFFF | alpha; // (0x00, 0xff, 0xff)
-			case RED:       return 0xFF0000 | alpha; // (0xff, 0x00, 0x00)
-			case FUCHSIA:   return 0xFF00FF | alpha; // (0xff, 0x00, 0xff)
-			case YELLOW:    return 0xFFFF00 | alpha; // (0xff, 0xff, 0x00)
-			case WHITE:     return 0xFFFFFF | alpha; // (0xff, 0xff, 0xff)
-			case GRAY:      return 0x808080 | alpha; // (0x80, 0x80, 0x80)
-			case NAVY:      return 0x000080 | alpha; // (0x00, 0x00, 0x80)
-			case GREEN:     return 0x008000 | alpha; // (0x00, 0x80, 0x00)
-			case TEAL:      return 0x008080 | alpha; // (0x00, 0x80, 0x80)
-			case MAROON:    return 0x800000 | alpha; // (0x80, 0x00, 0x00)
-			case PURPLE:    return 0x800080 | alpha; // (0x80, 0x00, 0x80)
-			case OLIVE:     return 0x808000 | alpha; // (0x80, 0x80, 0x00)
-			case SILVER:    return 0xC0C0C0 | alpha; // (0xc0, 0xc0, 0xc0)
+			case BLACK:     return 0x00000000 | alpha; // (0x00, 0x00, 0x00)
+			case BLUE:      return 0x000000FF | alpha; // (0x00, 0x00, 0xff)
+			case LIME:      return 0x0000FF00 | alpha; // (0x00, 0xff, 0x00)
+			case AQUA:      return 0x0000FFFF | alpha; // (0x00, 0xff, 0xff)
+			case RED:       return 0x00FF0000 | alpha; // (0xff, 0x00, 0x00)
+			case FUCHSIA:   return 0x00FF00FF | alpha; // (0xff, 0x00, 0xff)
+			case YELLOW:    return 0x00FFFF00 | alpha; // (0xff, 0xff, 0x00)
+			case WHITE:     return 0x00FFFFFF | alpha; // (0xff, 0xff, 0xff)
+			case GRAY:      return 0x00808080 | alpha; // (0x80, 0x80, 0x80)
+			case NAVY:      return 0x00000080 | alpha; // (0x00, 0x00, 0x80)
+			case GREEN:     return 0x00008000 | alpha; // (0x00, 0x80, 0x00)
+			case TEAL:      return 0x00008080 | alpha; // (0x00, 0x80, 0x80)
+			case MAROON:    return 0x00800000 | alpha; // (0x80, 0x00, 0x00)
+			case PURPLE:    return 0x00800080 | alpha; // (0x80, 0x00, 0x80)
+			case OLIVE:     return 0x00808000 | alpha; // (0x80, 0x80, 0x00)
+			case SILVER:    return 0x00C0C0C0 | alpha; // (0xc0, 0xc0, 0xc0)
 			default: throw new IllegalArgumentException("Illegal color name: " + name);
 		}
 	}
 
-	public void clearClip() { setClip(0, 0, canvas.getWidth(), canvas.getHeight()); }
-
 	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) 
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		for (int i = 0; i < nPoints - 1; i++) 
 		{
 			drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
@@ -1346,6 +1517,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawPolyline(int[] xPoints, int[] yPoints, int offset, int count) 
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		for (int i = offset; i < offset + count - 1; i++) 
 		{
 			drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
@@ -1354,11 +1527,27 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawScaledImage(com.nttdocomo.ui.Image image, int dx, int dy, int width, int height, int sx, int sy, int swidth, int sheight) 
 	{
-		gc.drawImage(image.getCanvas(), dx, dy, dx + width, dy + height, sx, sy, sx + swidth, sy + sheight, null);
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
+		try 
+		{
+			if (dojaflipMode != FLIP_NONE) 
+			{
+				int[] adjustedCoordinates = adjustCoordinates(image.getCanvas().getWidth(), image.getCanvas().getHeight(), sx, sy, width, height, dojaflipMode);
+				sx     = adjustedCoordinates[0];
+				sy     = adjustedCoordinates[1];
+				width  = adjustedCoordinates[2];
+				height = adjustedCoordinates[3];
+			}
+			gc.drawImage(manipulateDoJaImage(image.getCanvas(), dojaflipMode), dx, dy, dx + width, dy + height, sx, sy, sx + swidth, sy + sheight, null);
+		}
+		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawScaledImage: " + e.getMessage()); }
 	}
 
 	public void drawSpriteSet(com.nttdocomo.ui.SpriteSet sprites) 
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		for (com.nttdocomo.ui.Sprite sprite : sprites.getSprites())  // TODO: Support flip modes
 		{
 			gc.drawImage(sprite.getImage().getCanvas(), sprite.getX(), sprite.getY(), null);
@@ -1367,8 +1556,80 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawImageMap(com.nttdocomo.ui.ImageMap map, int x, int y) 
 	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
 		map.setWindowLocation(x, y);
 		
 		map.draw((com.nttdocomo.ui.Graphics) this);
+	}
+
+	public void setFlipMode(int mode) 
+	{
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
+		switch(mode) 
+		{
+			case FLIP_HORIZONTAL:
+			case FLIP_NONE:
+			case FLIP_VERTICAL:
+			case FLIP_ROTATE:
+			case FLIP_ROTATE_LEFT:
+			case FLIP_ROTATE_RIGHT:
+			case FLIP_ROTATE_RIGHT_HORIZONTAL:
+			case FLIP_ROTATE_RIGHT_VERTICAL:
+				dojaflipMode = (byte) mode;
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid flip mode received: " + mode);
+		}
+	}
+
+	// These aren't documented, but some DoJa jars use them (space Manbow uses setRGBPixel right at the menu for example)
+	// They don't seem all too different from lcdui Image's set/getPixel(s) as far as logic goes
+	public void setPixel(int x, int y) { canvasData[y*canvas.getWidth()+x] = getColor(); }
+
+	public void setPixel(int x, int y, int color) 
+	{
+		int restorecolor = getColor();
+		setColor(color);
+		setPixel(x, y);
+		setColor(restorecolor);
+	}
+
+	public void setRGBPixel(int x, int y, int color) { this.setPixel(x, y, color); }
+
+	public void setPictoColorEnabled(boolean b) 
+	{ 
+		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+
+		usePictoColor = b; 
+	}
+
+	private static final BufferedImage manipulateDoJaImage(final BufferedImage image, final int manipulation)
+	{
+		// Return early if there's no manipulation to be done
+		if(manipulation == FLIP_NONE) { return image; }
+		
+		switch(manipulation)
+		{
+			case FLIP_HORIZONTAL:
+                return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR);
+			case FLIP_VERTICAL:
+                return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT180);
+			case FLIP_ROTATE_RIGHT:
+                return PlatformImage.transformImage(image, Sprite.TRANS_ROT270);
+			case FLIP_ROTATE:
+                return PlatformImage.transformImage(image, Sprite.TRANS_ROT180);
+			case FLIP_ROTATE_LEFT:
+                return PlatformImage.transformImage(image, Sprite.TRANS_ROT90);
+			case FLIP_ROTATE_RIGHT_VERTICAL:
+                return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT90);
+			case FLIP_ROTATE_RIGHT_HORIZONTAL:
+                return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT270);
+            default:
+				Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "manipulateImage "+manipulation+" not defined");
+		}
+
+		return image;
 	}
 }

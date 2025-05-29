@@ -27,6 +27,10 @@ public class Panel extends Frame
     private LayoutManager layoutManager;
     private List<Component> components;
 
+    private KeyListener kListener;
+    private SoftKeyListener sListener;
+    private ComponentListener cListener;
+
     public Panel() 
     {
         this.title = null; 
@@ -51,11 +55,11 @@ public class Panel extends Frame
         components.add(comp);
     }
 
-    public void setComponentListener(ComponentListener listener) { }
+    public void setComponentListener(ComponentListener listener) { cListener = listener; }
 
-    public void setSoftKeyListener(SoftKeyListener listener) { }
+    public void setSoftKeyListener(SoftKeyListener listener) { sListener = listener; }
 
-    public void setKeyListener(KeyListener listener) { }
+    public void setKeyListener(KeyListener listener) { kListener = listener; }
 
     public void setFocusManager(FocusManager fm) 
     {

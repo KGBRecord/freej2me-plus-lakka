@@ -37,6 +37,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 
+import javax.microedition.io.Connector;
+import com.nttdocomo.util.ScratchPadConnection;
+
 public class PlatformImage
 {
 	protected BufferedImage canvas;
@@ -110,10 +113,30 @@ public class PlatformImage
 	public PlatformImage(String name)
 	{
 		// Create Image from resource name
-		Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image From Resource Name");
+		
 		BufferedImage temp;
 
-		InputStream stream = Mobile.getPlatform().loader.getMIDletResourceAsStream(name);
+		InputStream stream = null;
+		if(!Mobile.isDoJa) 
+		{ 
+			Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image From Resource Name");
+			stream = Mobile.getPlatform().loader.getMIDletResourceAsStream(name); 
+		}
+		else // DoJa often tries to load images from scratchpad when calling its image creation methods
+		{
+			if (name.startsWith("scratchpad:")) 
+			{
+				
+				try 
+				{
+					Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "DoJa Image From Scratchpad");
+					ScratchPadConnection spConn = (ScratchPadConnection) Connector.open(name);
+					stream = ((ScratchPadConnection)spConn).openInputStream();
+				}
+				catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Failed to load DoJa Image From Scratchpad:" + e.getMessage()); }
+			}
+			else { stream = Mobile.getPlatform().loader.getMIDletResourceAsStream(name); }
+		}
 
 		if(stream == null) 
 		{

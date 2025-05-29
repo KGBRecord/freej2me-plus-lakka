@@ -14,9 +14,11 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.io;
 
-public interface MediaSound extends MediaResource 
+public class BufferedReader extends java.io.BufferedReader 
 { 
-	public javax.microedition.media.Player getPlayer();
+    public BufferedReader(java.io.Reader in) { super(in); }
+
+    public BufferedReader(java.io.Reader in, int size) { super(in, size); }
 }

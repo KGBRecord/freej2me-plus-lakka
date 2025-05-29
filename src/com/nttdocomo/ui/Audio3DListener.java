@@ -16,7 +16,9 @@
 */
 package com.nttdocomo.ui;
 
-public interface MediaSound extends MediaResource 
-{ 
-	public javax.microedition.media.Player getPlayer();
+import com.nttdocomo.util.EventListener;
+
+public interface Audio3DListener extends EventListener 
+{
+    void audioAction(Audio3D source, int type, int param);
 }

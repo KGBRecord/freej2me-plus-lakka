@@ -33,6 +33,8 @@ public final class TextBox extends Component implements Interactable
     private boolean editable;
     private boolean enabled;
 
+    private Font font = Font.getDefaultFont();
+
     public TextBox(String text, int columns, int rows, int mode) 
     {
         if (columns < 0 || rows < 0) { throw new IllegalArgumentException("Columns and rows must be non-negative"); }
@@ -60,6 +62,8 @@ public final class TextBox extends Component implements Interactable
 
         this.mode = mode;
     }
+
+    public void setFont(Font font) { this.font = font; }
 
     public void setEditable(boolean b) { this.editable = b; }
 }

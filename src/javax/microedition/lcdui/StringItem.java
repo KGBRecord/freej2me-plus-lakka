@@ -75,7 +75,7 @@ public class StringItem extends Item
 		return height;
 	}
 
-	protected static List<String> wrapText(String text, int width, Font font) 
+	public static List<String> wrapText(String text, int width, Font font) 
 	{
 		String[] lines = text.split("\n", -1);
 		List<String> wrappedLines = new ArrayList<>();

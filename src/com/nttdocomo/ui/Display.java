@@ -16,11 +16,14 @@
 */
 package com.nttdocomo.ui;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
 
 public class Display
 {
+    // Numeric Keys
     public static final int KEY_0 = 0x00;
     public static final int KEY_1 = 0x01;
     public static final int KEY_2 = 0x02;
@@ -33,25 +36,92 @@ public class Display
     public static final int KEY_9 = 0x09;
     public static final int KEY_ASTERISK = 0x0a;
     public static final int KEY_POUND = 0x0b;
+
+    // Directional Keys
     public static final int KEY_UP = 0x11;
     public static final int KEY_DOWN = 0x13;
     public static final int KEY_LEFT = 0x10;
     public static final int KEY_RIGHT = 0x12;
-    public static final int KEY_SELECT = 0x14;
+    public static final int KEY_LOWER_LEFT = 0x1d;
+    public static final int KEY_LOWER_RIGHT = 0x1c;
+    public static final int KEY_UPPER_LEFT = 0x1a;
+    public static final int KEY_UPPER_RIGHT = 0x1b;
+
+    // Soft Keys
     public static final int KEY_SOFT1 = 0x15;
     public static final int KEY_SOFT2 = 0x16;
 
+    // Camera Keys
+    public static final int KEY_CAMERA_SELECT = 0x3b;
+    public static final int KEY_CAMERA_ZOOM_IN = 0x39;
+    public static final int KEY_CAMERA_ZOOM_OUT = 0x3a;
+
+    // Miscellaneous Keys
+    public static final int KEY_CLEAR = 0x20;
+    public static final int KEY_GPS = 0x2a;
+    public static final int KEY_IAPP = 0x18;
+    public static final int KEY_MAIL = 0x21;
+    public static final int KEY_MEMO = 0x22;
+    public static final int KEY_MY_SELECT = 0x35;
+    public static final int KEY_PAGE_DOWN = 0x1f;
+    public static final int KEY_PAGE_UP = 0x1e;
+
+    // Roll Keys
+    public static final int KEY_ROLL_LEFT = 0x30;
+    public static final int KEY_ROLL_RIGHT = 0x31;
+
+    // Sub Keys
+    public static final int KEY_SUB1 = 0x32;
+    public static final int KEY_SUB2 = 0x33;
+    public static final int KEY_SUB3 = 0x34;
+
+    // Events
     public static final int KEY_PRESSED_EVENT = 0;
     public static final int KEY_RELEASED_EVENT = 1;
+    public static final int FINGER_MOVED_EVENT = 0x41;
+    public static final int POINTER_MOVED_EVENT = 0x40;
     public static final int MEDIA_EVENT = 8;
-    public static final int RESUME_VM_EVENT = 4;
     public static final int RESET_VM_EVENT = 5;
-    public static final int UPDATE_VM_EVENT = 6;
+    public static final int RESUME_VM_EVENT = 4;
     public static final int TIMER_EXPIRED_EVENT = 7;
+    public static final int UPDATE_VM_EVENT = 6;
+
+    // Maximum and Minimum constants
+    protected static final int MAX_OPTION_KEY = 0x3f;
+    protected static final int MIN_OPTION_KEY = 0x1a;
+    protected static final int MAX_VENDOR_EVENT = 127;
+    protected static final int MIN_VENDOR_EVENT = 64;
+    protected static final int MAX_VENDOR_KEY = 127;
+    protected static final int MIN_VENDOR_KEY = 64;
 
     protected static Frame current = null;
 
-    protected Display() { }
+    private static final AtomicReference<Runnable> paintEvent = new AtomicReference<>();
+	private Thread paintThread;
+
+	public Display()
+	{
+		paintThread = new Thread(this::processPaintCalls, "DoJaCanvasRepaints-Thread");
+		paintThread.start();
+	}
+
+	// Paint queue methods
+	public void postPaintRequest(Runnable r) { paintEvent.set(r); }
+
+	private void processPaintCalls() 
+	{		
+		while (true) 
+		{
+			Runnable call = paintEvent.getAndSet(null);
+
+			if(call != null) { call.run(); }
+			else 
+			{
+				try { Thread.sleep(16); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
+				catch (Exception e) { }
+			}
+		}
+	}
 
     public static Frame getCurrent() { return current; }
 

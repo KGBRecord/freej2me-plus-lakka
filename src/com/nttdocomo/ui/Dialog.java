@@ -16,6 +16,8 @@
 */
 package com.nttdocomo.ui;
 
+import java.util.List;
+
 import org.recompile.mobile.Mobile;
 
 public final class Dialog extends Frame 
@@ -34,6 +36,16 @@ public final class Dialog extends Frame
     private String title;
     private String message;
     private int dialogType;
+    private Font font = Font.getDefaultFont();
+
+    private List<String> lines;
+	private int lineSpacing;
+	private int margin;
+	private int scrollbarWidth;
+	private int scrollY = 0;
+	private int scrollHeight = 0;
+	private int clientHeight;
+	private boolean needsLayout = true;
 
     public Dialog(int type, String title) 
     {
@@ -46,6 +58,10 @@ public final class Dialog extends Frame
 
     public void setBackground(int color) { super.setBackground(color); }
 
+    public void setFont(Font font) { this.font = font; }
+
+    public void setSoftLabel(int key, String label) { }
+
     public void setText(String msg) 
     {
         this.message = (msg != null) ? msg : " ";
@@ -54,8 +70,71 @@ public final class Dialog extends Frame
     public int show() throws UIException 
     { 
         Mobile.log(Mobile.LOG_WARNING, Dialog.class.getPackage().getName() + "." + Dialog.class.getSimpleName() + ": " + title + " " + message + " Dialog type " + dialogType);
-        return BUTTON_YES; 
+        
+        if(dialogType == DIALOG_ERROR) 
+        {
+            setSoftLabel(SOFT_KEY_1, "OK");
+            setSoftLabel(SOFT_KEY_2, "");
+        }
+
+        renderScreen(0, 0, Display.getWidth(), Display.getHeight());
+        try { Thread.sleep(2500);}
+        catch(Exception e) {}
+        return BUTTON_OK; 
     }
 
-    public void setSoftLabel(int key, String label) { }
+    public String renderScreen(int x, int y, int width, int height) 
+    {
+		clientHeight = height;
+
+		if (message == null) {
+			return null;
+		}
+		if (needsLayout) 
+        {
+			lines = javax.microedition.lcdui.StringItem.wrapText(message, width - 2*margin - scrollbarWidth, javax.microedition.lcdui.Font.getDefaultFont());
+			needsLayout = false;
+			if (lines.isEmpty()) {
+				return "";
+			}
+
+			scrollHeight = (lines.size()*Font.getDefaultFont().getHeight() + (lines.size()-1)*lineSpacing) + 2*margin;
+			scrollY = 0;
+		}
+
+		if (lines.isEmpty()) {
+			return "";
+		}
+
+		graphics.setColor(Mobile.lcduiTextColor);
+
+		for(int l=0;l<lines.size();l++) {
+			int ystart = margin + l*Font.getDefaultFont().getHeight() + (l > 0 ? (l-1)*lineSpacing : 0);
+			int yend = ystart + Font.getDefaultFont().getHeight();
+
+			if (yend < scrollY || ystart >= scrollY+height) {
+				continue;
+			}
+
+			graphics.drawString(
+				lines.get(l),
+				x + margin,
+				y + ystart - scrollY,
+				Graphics.LEFT);
+		}
+		
+		double fact = (double)height/scrollHeight;
+		int yscrollStart = (int)Math.round(scrollY * fact);
+		int yscrollHeight = (int)Math.min(height, Math.round(height * fact));
+	
+		if (height < scrollHeight)
+		{
+			graphics.setColor(Mobile.lcduiBGColor);
+			graphics.fillRect(x + width - scrollbarWidth, y+yscrollStart, scrollbarWidth, yscrollHeight);
+		}
+		
+		return null;
+	}
+
+    
 }

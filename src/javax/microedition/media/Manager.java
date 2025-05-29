@@ -92,11 +92,11 @@ public class Manager
 	{
 		if(locator == null) { throw new IllegalArgumentException("Cannot create a player with a null locator"); }
 
-		InputStream stream = Mobile.getPlatform().loader.getResourceAsStream(locator);
+		InputStream stream = Mobile.getMIDletResourceAsStream(locator);
 
 		if(Mobile.dumpAudioStreams && !locator.equals(Manager.TONE_DEVICE_LOCATOR) && !locator.equals(Manager.MIDI_DEVICE_LOCATOR)) 
 		{
-			dumpAudioStream(stream, locator); // Using the locator, we can try find out what this is by parsing the file extension
+			stream = dumpAudioStream(stream, locator); // Using the locator, we can try find out what this is by parsing the file extension
 		}
 
 		Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Create Player "+locator);

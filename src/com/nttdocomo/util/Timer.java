@@ -17,50 +17,56 @@
 package com.nttdocomo.util;
 
 import com.nttdocomo.ui.UIException;
+import java.util.TimerTask;
 
 public final class Timer implements TimeKeeper 
 {
+
     private TimerListener listener;
     private int interval;
     private boolean repeat;
-    private boolean running;
+    private boolean isRunning;
+    private boolean isDisposed = false;
+    private java.util.Timer timer;
     
     public Timer() 
     {
         this.interval = 0;
         this.repeat = false; 
         this.listener = null; 
-        this.running = false;
+        this.isRunning = false;
+        this.timer = new java.util.Timer();
     }
 
     @Override
     public void dispose() 
     {
-        if (running) { stop(); }
-        running = false;
+        stop();
+        isDisposed = true;
+        listener = null;
+        timer = null;
     }
+
+	public int getMinTimeInterval() { return getResolution(); } // 1 ms is also the min time interval
 
     @Override
     public int getResolution() { return 1; } // 1 ms resolution
 
     public void setListener(TimerListener listener) 
     {
-        if (running) 
-        {
-            throw new UIException(1, "Cannot set listener while timer is running.");
-        }
+        if (isRunning) { throw new UIException(1, "Cannot set listener while timer is running."); }
         this.listener = listener;
     }
 
     public void setRepeat(boolean repeat) 
     {
-        if (running) { throw new UIException(1, "Cannot set repeat while timer is running."); }
+        if (isRunning) { throw new UIException(1, "Cannot set repeat while timer is running."); }
         this.repeat = repeat;
     }
 
     public void setTime(int interval) 
     {
-        if (running) { throw new UIException(1, "Cannot set time while timer is running."); }
+        if (isRunning) { throw new UIException(1, "Cannot set time while timer is running."); }
         if (interval < 0) { throw new IllegalArgumentException("Interval cannot be negative."); }
         this.interval = interval;
     }
@@ -68,16 +74,27 @@ public final class Timer implements TimeKeeper
     @Override
     public void start() 
     {
-        if (running) { throw new UIException(1, "Timer is already running."); }
-        running = true;
-        if (listener != null) { listener.timerExpired(this); }
+        if (isRunning) { throw new UIException(1, "Timer is already running."); }
+
+        TimerTask task = new TimerTask() 
+        {
+            @Override
+            public void run() 
+            {
+                if (listener != null) { listener.timerExpired(Timer.this); }
+                if (!repeat) { stop(); }
+            }
+        };
+
+        timer.schedule(task, interval, repeat ? interval : 0);
+        isRunning = true;
     }
 
     @Override
     public void stop() 
     {
-        if (!running) { return; }
-
-        running = false;
+        if (!isRunning) { return; }
+        timer.cancel();
+        isRunning = false;
     }
 }

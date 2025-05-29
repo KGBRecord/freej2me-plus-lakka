@@ -67,11 +67,15 @@ public abstract class IApplication
 	{
 		Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "Create DoJa IApplication");
         Mobile.iAppli = this;
-        appParam = properties.get("AppParam").split(" ");
+        if(properties.containsKey("AppParam")) { appParam = properties.get("AppParam").split(" "); }
         Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "arguments:" + Arrays.toString(appParam));
 	}
 
-    public final String[] getArgs()  { return appParam.clone(); }
+    public final String[] getArgs()  
+    { 
+        if(appParam != null) { return appParam.clone(); }
+        else { return new String[] {""}; }
+    }
 
     public int getLaunchType() { return LAUNCHED_FROM_MENU; }
 
@@ -86,6 +90,13 @@ public abstract class IApplication
     {
         return Mobile.iAppli; 
     }
+
+    public String getParameter(String name)
+	{
+		Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "getParameter:" + name);
+		
+		return null;
+	}
 
     public abstract void start();
 

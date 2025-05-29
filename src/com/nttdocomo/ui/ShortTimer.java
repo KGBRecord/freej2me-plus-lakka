@@ -16,6 +16,8 @@
 */
 package com.nttdocomo.ui;
 
+import java.util.TimerTask;
+
 public final class ShortTimer implements com.nttdocomo.util.TimeKeeper 
 {
     private boolean isRunning;
@@ -24,14 +26,17 @@ public final class ShortTimer implements com.nttdocomo.util.TimeKeeper
     private int id;
     private int time;
     private boolean repeat;
+    private java.util.Timer timer;
 
     protected ShortTimer() 
     {
         isRunning = false;
         isDisposed = false;
+        timer = new java.util.Timer();
     }
 
-    public static ShortTimer getShortTimer(Canvas canvas, int id, int time, boolean repeat) {
+    public static ShortTimer getShortTimer(Canvas canvas, int id, int time, boolean repeat) 
+    {
         if (canvas == null) { throw new NullPointerException("Canvas cannot be null"); }
         if (time < 0) { throw new IllegalArgumentException("Time must be non-negative"); }
                 
@@ -49,21 +54,35 @@ public final class ShortTimer implements com.nttdocomo.util.TimeKeeper
         if (isDisposed) { throw new UIException(1, "Timer has been disposed"); }
         if (isRunning) { throw new UIException(1, "Timer is already running"); }
 
+        TimerTask task = new TimerTask() 
+        {
+            @Override
+            public void run() 
+            {
+                if (!repeat) { stop(); }
+            }
+        };
+
+        timer.schedule(task, time, repeat ? time : 0);
         isRunning = true;
     }
 
-    public void stop() {
+    public void stop() 
+    {
         if (!isRunning) { return; }
-
         isRunning = false;
+        timer.cancel();
     }
 
     public void dispose() 
     {
-        if (isDisposed) { return; }
+        stop();
 
         isDisposed = true;
+        timer = null;
     }
 
     public int getResolution() { return 1; } // 1ms resolution
+
+    public int getMinTimeInterval() { return getResolution(); }
 }

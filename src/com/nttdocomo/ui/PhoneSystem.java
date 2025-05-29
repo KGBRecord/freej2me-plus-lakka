@@ -23,17 +23,83 @@ import javax.microedition.media.Manager;
 public class PhoneSystem 
 {
 
-    public static final int ATTR_BACKLIGHT_OFF = 0;
-    public static final int ATTR_BACKLIGHT_ON = 1;
-    public static final int ATTR_VIBRATOR_OFF = 0;
-    public static final int ATTR_VIBRATOR_ON = 1;
-    public static final int DEV_BACKLIGHT = 0;
-    public static final int DEV_VIBRATOR = 1;
     public static final int SOUND_INFO = 0;
     public static final int SOUND_WARNING = 1;
     public static final int SOUND_ERROR = 2;
     public static final int SOUND_ALARM = 3;
     public static final int SOUND_CONFIRM = 4;
+
+    // Area Information Attributes
+    public static final int ATTR_AREAINFO_COMMUNICATING = 5;
+    public static final int ATTR_AREAINFO_FOMA = 0;
+    public static final int ATTR_AREAINFO_HSDPA = 1;
+    public static final int ATTR_AREAINFO_OUTSIDE = 2;
+    public static final int ATTR_AREAINFO_ROAMINGOUT = 3;
+    public static final int ATTR_AREAINFO_SELFMODE = 4;
+    public static final int ATTR_AREAINFO_UNKNOWN = 99;
+
+    // Backlight Attributes
+    public static final int ATTR_BACKLIGHT_OFF = 0;
+    public static final int ATTR_BACKLIGHT_ON = 1;
+
+    // Battery Attributes
+    public static final int ATTR_BATTERY_CHARGING = 2;
+    public static final int ATTR_BATTERY_FULL = 1;
+    public static final int ATTR_BATTERY_PARTIAL = 0;
+
+    // Folding State Attributes
+    public static final int ATTR_FOLDING_CLOSE = 0;
+    public static final int ATTR_FOLDING_OPEN = 1;
+
+    // Mail Reception Status Attributes
+    public static final int ATTR_MAIL_AT_CENTER = 2;
+    public static final int ATTR_MAIL_NONE = 0;
+    public static final int ATTR_MAIL_RECEIVED = 1;
+
+    // Manner Mode Attributes
+    public static final int ATTR_MANNER_OFF = 0;
+    public static final int ATTR_MANNER_ON = 1;
+
+    // Message Reception Status Attributes
+    public static final int ATTR_MESSAGE_AT_CENTER = 2;
+    public static final int ATTR_MESSAGE_NONE = 0;
+    public static final int ATTR_MESSAGE_RECEIVED = 1;
+
+    // Screen Visibility Attributes
+    public static final int ATTR_SCREEN_INVISIBLE = 0;
+    public static final int ATTR_SCREEN_VISIBLE = 1;
+
+    // Service Area Attributes (Deprecated)
+    public static final int ATTR_SERVICEAREA_INSIDE = 11; // Deprecated
+    public static final int ATTR_SERVICEAREA_OUTSIDE = 12; // Deprecated
+
+    // Surround Sound Attributes
+    public static final int ATTR_SURROUND_OFF = 0;
+    public static final int ATTR_SURROUND_ON = 1;
+
+    // Vibrator Attributes
+    public static final int ATTR_VIBRATOR_OFF = 0;
+    public static final int ATTR_VIBRATOR_ON = 1;
+
+    // Device Attributes
+    public static final int DEV_BACKLIGHT = 0;
+    public static final int DEV_VIBRATOR = 1;
+    public static final int DEV_FOLDING = 2;
+    public static final int DEV_MAILBOX = 3;
+
+    public static final int DEV_BATTERY = 5;
+    
+    public static final int DEV_KEYPAD = 8;
+    public static final int DEV_AUDIO_SURROUND = 10;
+    public static final int DEV_AREAINFO = 11;
+   
+    
+    
+    
+    
+
+
+    private static int[] attributes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     private PhoneSystem() {}
 
@@ -41,7 +107,15 @@ public class PhoneSystem
     {
         if (!isValidAttribute(attr, value)) { throw new IllegalArgumentException("Invalid attribute or value."); }
 
-        Mobile.log(Mobile.LOG_DEBUG, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "I-Appli set " + (attr == 0 ? "backlight" : "vibrator") + " to:" + (value == 1));
+        Mobile.log(Mobile.LOG_DEBUG, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "I-Appli set attr " + attr + " value to:" + value);
+
+        attributes[attr] = value;
+    }
+
+    public static int getAttribute(int attr) 
+    {
+        if (!isValidAttribute(attr, 0)) { throw new IllegalArgumentException("Invalid attribute to get."); }
+        return attributes[attr];
     }
 
     public static void playSound(int type) 
@@ -59,16 +133,29 @@ public class PhoneSystem
 
     private static boolean isValidAttribute(int attr, int value) 
     {
-        if (attr == DEV_BACKLIGHT) 
+        switch (attr) 
         {
-            return value == ATTR_BACKLIGHT_OFF || value == ATTR_BACKLIGHT_ON;
-            
-        } 
-        else if (attr == DEV_VIBRATOR) 
-        {
-            return value == ATTR_VIBRATOR_OFF || value == ATTR_VIBRATOR_ON;
+            case DEV_BACKLIGHT:
+                return value == ATTR_BACKLIGHT_OFF || value == ATTR_BACKLIGHT_ON;
+            case DEV_VIBRATOR:
+                return value == ATTR_VIBRATOR_OFF || value == ATTR_VIBRATOR_ON;
+            case DEV_BATTERY:
+                return value == ATTR_BATTERY_CHARGING || value == ATTR_BATTERY_FULL || value == ATTR_BATTERY_PARTIAL;
+            case DEV_FOLDING:
+                return value == ATTR_FOLDING_CLOSE || value == ATTR_FOLDING_OPEN;
+            case DEV_MAILBOX:
+                return value == ATTR_MAIL_NONE || value == ATTR_MAIL_RECEIVED || value == ATTR_MAIL_AT_CENTER;
+            case DEV_AUDIO_SURROUND:
+                return value == ATTR_SURROUND_OFF || value == ATTR_SURROUND_ON;
+            case DEV_AREAINFO:
+                return value == ATTR_AREAINFO_COMMUNICATING || value == ATTR_AREAINFO_FOMA ||
+                    value == ATTR_AREAINFO_HSDPA || value == ATTR_AREAINFO_OUTSIDE ||
+                    value == ATTR_AREAINFO_ROAMINGOUT || value == ATTR_AREAINFO_SELFMODE ||
+                    value == ATTR_AREAINFO_UNKNOWN;
+            case DEV_KEYPAD:
+                return true; // TODO                
         }
-        return false; 
+        return false;
     }
 
     public static final boolean isAvailable(final int n) { return true; }
