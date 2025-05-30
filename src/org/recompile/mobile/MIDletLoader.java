@@ -80,6 +80,7 @@ public class MIDletLoader extends URLClassLoader
 	private static List<JarEntry> jarEntries = new ArrayList<>();
 
 	public String suitename;
+	public String vendorname;
 
 	private Class<?> mainClass;
 	private MIDlet midletInst;
@@ -495,6 +496,7 @@ public class MIDletLoader extends URLClassLoader
 						} 
 					}
 
+					vendorname = properties.get("MIDlet-Vendor");
 					Mobile.log(Mobile.LOG_INFO, "Loading MIDlet: " + name[i] +" | Main Class: " + className[i]);
 
 					reg = new Registry(className[i]);
@@ -514,6 +516,8 @@ public class MIDletLoader extends URLClassLoader
 
 			suitename = name[0];
 			suitename = suitename.replace(":","");
+
+			vendorname = "FreeJ2ME-DoJa";
 
 			Mobile.log(Mobile.LOG_INFO, "Loading I-Appli: " + name[0] +" | Main Class: " + className[0]);
 			reg = new Registry(className[0]);
@@ -858,6 +862,13 @@ public class MIDletLoader extends URLClassLoader
 	{
 		// We need to discern these messaging packages in order to return valid "Connection" classes for SMS
 		if (name.contains("javax.wireless.messaging")) { Mobile.usingMessagingAPI = true; }
+	}
+
+	// Used to build the RMS json, not much else
+	public String getProperty(String key) 
+	{ 
+		if(properties.containsKey(key)) { return properties.get(key); }
+		else { return ""; }
 	}
 
 
