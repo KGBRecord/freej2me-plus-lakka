@@ -616,7 +616,7 @@ public class RecordStore
 			return elements[index];
 		}
 
-		public boolean hasNextElement() { return index < count; }
+		public boolean hasNextElement() { return count > 0 && index < count; }
 
 		public boolean hasPreviousElement() { return index != 0 && count > 0; }
 
@@ -691,7 +691,7 @@ public class RecordStore
 			elements = new int[records.size()];
 			count = 0;
 
-			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Enumerator > " + (filter == null ? "Not Filtered" : "Filtered"));
+			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Enumerator > " + (filter == null ? "Not Filtered" : "Filtered") + " Size:" + records.size());
 
 			for (int i = 1; i < records.size(); i++) 
 			{
