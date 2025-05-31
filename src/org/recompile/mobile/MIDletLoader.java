@@ -75,7 +75,7 @@ public class MIDletLoader extends URLClassLoader
 	public static String[] name = new String[9];
 	private String[] className = new String[9];
 
-	private static URL baseUrl;
+	public static URL baseUrl;
 	private static JarFile jarFile;
 	private static List<JarEntry> jarEntries = new ArrayList<>();
 
@@ -517,7 +517,7 @@ public class MIDletLoader extends URLClassLoader
 			suitename = name[0];
 			suitename = suitename.replace(":","");
 
-			vendorname = "FreeJ2ME-DoJa";
+			vendorname = "Keitai-DoJa"; // Used to generate the basename for Scratchpad RMS copies
 
 			Mobile.log(Mobile.LOG_INFO, "Loading I-Appli: " + name[0] +" | Main Class: " + className[0]);
 			reg = new Registry(className[0]);

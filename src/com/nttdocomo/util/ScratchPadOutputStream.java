@@ -18,25 +18,33 @@ package com.nttdocomo.util;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import org.recompile.mobile.Mobile;
+
+import javax.microedition.rms.RecordStore;
 
 public class ScratchPadOutputStream extends OutputStream
 {
     byte[] data;
-    int pos, len;
+    int pos, len, spIndex;
 
-    ScratchPadOutputStream(byte[] data, int pos, int len) 
+    ScratchPadOutputStream(byte[] data, int pos, int len, int spIndex) 
     { 
         this.data = data;
         this.pos = pos;
-        this.len = len;
+        this.len = len+pos;
+        this.spIndex = spIndex;
     }
 
     @Override
     public void close() throws IOException 
     { 
-        try { super.close();  }
+        try 
+        { 
+            ScratchPadConnection.writeScratchPad(spIndex, data);
+            super.close();
+        }
         finally
         {
             data = null;
@@ -48,7 +56,6 @@ public class ScratchPadOutputStream extends OutputStream
     @Override
     public void flush() throws IOException 
     { 
-        // TODO: Write this somewhere
         super.flush();
         Mobile.log(Mobile.LOG_WARNING, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Flushed scratchPad data");
     }
@@ -57,14 +64,13 @@ public class ScratchPadOutputStream extends OutputStream
     public void write(byte[] b)
     {
         if (b == null) { throw new NullPointerException("Input byte array cannot be null."); }
-        
         write(b, 0, b.length);
     }
 
     @Override
     public void write(byte[] b, int off, int length) 
     {
-        Mobile.log(Mobile.LOG_WARNING, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Writing byte array from data index " + pos + " to " + (pos+len));
+        Mobile.log(Mobile.LOG_WARNING, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Writing byte array from data index " + pos + " to " + len);
         if (b == null) { throw new NullPointerException("Input byte array cannot be null."); }
         if (off < 0 || length < 0 || off >= b.length) { throw new IndexOutOfBoundsException("Invalid offset or length."); }
 

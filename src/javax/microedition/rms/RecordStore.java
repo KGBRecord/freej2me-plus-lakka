@@ -64,9 +64,11 @@ public class RecordStore
 
 	private int nextid = 0;
 
-	private Vector<byte[]> records; // Records contains the actual record data
+	private Vector<byte[]> records; // Records contains the actual record data (on DoJa, this saves the scratchPad data for the given index)
 	private Vector<Integer> recordIds; // recordIds contains the id of the record data in the respective "records" position (recordIds[4] = recordId value of records[4] which is != its actual position in the vector)
 	private Vector<Integer> recordTags; // recordTags contains the tags tied to each position of recordIDs
+
+	private int scratchPadIndex = 0; // DoJa-only, used to differentiate between multiple scratchpads when writing
 
 	private Vector<RecordListener> listeners;
 
@@ -521,7 +523,7 @@ public class RecordStore
 
 	public void setRecord(int recordId, byte[] newData, int offset, int numBytes, int tag) throws RecordStoreException, InvalidRecordIDException, SecurityException
 	{
-		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Set Record "+recordId+" in "+name + " with tag " + tag);
+		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Set Record "+recordId+" in "+name + " from " + offset + " to " + (offset+numBytes) +  " with tag " + tag);
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot set record on a closed Record Store"); }
 		if(Mobile.getPlatform().loader.suitename != this.suitename && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
 
@@ -733,10 +735,20 @@ public class RecordStore
 		public void reset() { index = -1; }
 	}
 
+	/* ************************************************************
+				DoJa-specific methods
+	    *********************************************************** */
+
+	public void setScratchPadIndex(int index) { scratchPadIndex = index; }
+
+	/* ************************************************************
+				Saving to and loading from disk
+	    *********************************************************** */
+
     public void saveRecordStore() 
 	{
 		final String ownerVersion = Mobile.isDoJa ? Mobile.getPlatform().loader.getProperty("AppVer") : Mobile.getPlatform().loader.getProperty("MIDlet-Version");
-        String recordName = Mobile.isDoJa ? ("ScratchPad-" + 0) : name; // TODO: For doja, get the sp index
+        String recordName = name; // TODO: For doja, get the sp index
 
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     	String lastModifiedDate = dateFormat.format(new Date(lastModified));
@@ -783,6 +795,7 @@ public class RecordStore
 				fos = new FileOutputStream(rmsPath + "/" + basename + "." + i);
 				fos.write(records.get(i));
 			}
+			fos.close();
         } 
 		catch (Exception e) 
 		{ 
@@ -1014,10 +1027,17 @@ public class RecordStore
 	// These two are used so that FreeJ2ME-Plus matches SquirrelJME's save layout
 	public static String generateBaseName(String owner, String name) 
 	{
-        String base64Encoded = Base64.getEncoder()
-                .encodeToString(name.getBytes())
-                .toLowerCase()
-                .replace('=', '_');
+        String base64Encoded = "";
+		
+		try 
+		{
+			base64Encoded = Base64.getEncoder()
+				.encodeToString(name.getBytes("UTF-8"))
+				.toLowerCase()
+				.replace('=', '_');
+		} 
+		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Failed to properly encode the recordStores disk name!"); }
+		
 
         return String.format("%08x%02d%s", ownerHashcode(owner, Mobile.getPlatform().loader.suitename), name.length(), base64Encoded);
     }
