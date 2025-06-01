@@ -247,6 +247,7 @@ public class Manager
 			if(type.toLowerCase().contains("mid") )     { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".mid"); }
 			else if(type.toLowerCase().contains("wav")) { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".wav"); }
 			else if(type.toLowerCase().contains("mp"))  { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".mp3"); }
+			else if(type.toLowerCase().contains("mld")) { dumpFile = new File(dumpPath + "Stream_" + streamMD5 + ".mld"); }
 			else if(type.toLowerCase().contains("mmf")) 
 			{
 				stream.mark(4);
