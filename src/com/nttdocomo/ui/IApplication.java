@@ -61,13 +61,15 @@ public abstract class IApplication
     public static final int LAUNCHED_MSG_UNSENT = 12;
 
     public static HashMap<String, String> properties;
-    String[] appParam;
+    public static String[] appParam, scratchPadSizes;
     
     protected IApplication()
 	{
 		Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "Create DoJa IApplication");
         Mobile.iAppli = this;
+        if(properties.containsKey("SPsize")) { scratchPadSizes = properties.get("SPsize").split(","); }
         if(properties.containsKey("AppParam")) { appParam = properties.get("AppParam").split(" "); }
+
         Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "arguments:" + Arrays.toString(appParam));
 	}
 

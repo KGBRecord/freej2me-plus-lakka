@@ -48,7 +48,7 @@ public class ScratchPadOutputStream extends OutputStream
         finally
         {
             data = null;
-            Mobile.log(Mobile.LOG_WARNING, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Closed scratchPad data");
+            Mobile.log(Mobile.LOG_DEBUG, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Closed scratchPad data");
         }
     }
         
@@ -57,7 +57,7 @@ public class ScratchPadOutputStream extends OutputStream
     public void flush() throws IOException 
     { 
         super.flush();
-        Mobile.log(Mobile.LOG_WARNING, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Flushed scratchPad data");
+        Mobile.log(Mobile.LOG_DEBUG, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Flushed scratchPad data");
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ScratchPadOutputStream extends OutputStream
     @Override
     public void write(byte[] b, int off, int length) 
     {
-        Mobile.log(Mobile.LOG_WARNING, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Writing byte array from data index " + pos + " to " + len);
+        Mobile.log(Mobile.LOG_DEBUG, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Writing byte array from data index " + pos + " to " + len);
         if (b == null) { throw new NullPointerException("Input byte array cannot be null."); }
         if (off < 0 || length < 0 || off >= b.length) { throw new IndexOutOfBoundsException("Invalid offset or length."); }
 
@@ -88,7 +88,7 @@ public class ScratchPadOutputStream extends OutputStream
     @Override
     public void write(int b)
     {
-        Mobile.log(Mobile.LOG_WARNING, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Writing byte value " + (byte) (b & 0xFF) + " to data index " + pos);
+        Mobile.log(Mobile.LOG_DEBUG, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Writing byte value " + (byte) (b & 0xFF) + " to data index " + pos);
         if (pos >= data.length) { return; }
 
         data[pos] = (byte) (b & 0xFF);

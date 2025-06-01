@@ -291,7 +291,7 @@ public class RecordStore
 		if(Mobile.getPlatform().loader.suitename != this.suitename && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
 		version++;
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Delete Record " + recordId);
-		records.set(recordIds.indexOf(recordId), null); // We cannot "remove" positions from this, as the vector length must be consistent with recordIds' available record IDs
+		records.remove(recordIds.indexOf(recordId));
 		recordTags.remove(recordIds.indexOf(recordId));
 		recordIds.remove(recordIds.indexOf(recordId));
 		saveRecordStore();
@@ -782,6 +782,9 @@ public class RecordStore
 
 		jsonBuilder.append("\n}"); // JSON has been properly created in memory, now save it to disk
 
+		// TODO: Delete any previously saved data before writing the updated records
+		deleteOutdatedRecords(rmsPath + "/", basename);
+
 		// Write the JSON data to disk, as well as the records' binary data
 		try
 		{
@@ -792,7 +795,7 @@ public class RecordStore
 			{
 				if(records.get(i) == null) { continue; } // Skip records that have been deleted and whose IDs are not to be used anymore
 				fos.close();
-				fos = new FileOutputStream(rmsPath + "/" + basename + "." + i);
+				fos = new FileOutputStream(rmsPath + "/" + basename + "." + recordIds.get(i));
 				fos.write(records.get(i));
 			}
 			fos.close();
@@ -896,7 +899,7 @@ public class RecordStore
 
 			for(int i = 1; i < recordIds.size(); i++) // Read Binary Data
 			{
-				FileInputStream binfis = new FileInputStream(filePath.substring(0, filePath.length()-4) + "." + i);
+				FileInputStream binfis = new FileInputStream(filePath.substring(0, filePath.length()-4) + "." + recordIds.get(i));
 				byte[] binData = new byte[binfis.available()];
 				binfis.read(binData);
 				records.add(binData);
@@ -1021,6 +1024,26 @@ public class RecordStore
 		
 		Mobile.log(Mobile.LOG_WARNING, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Record does not have a recordName field. Expect bugs!");
 		return null;
+	}
+
+	public void deleteOutdatedRecords(String rmsPath, String basename) 
+	{
+		File directory = new File(rmsPath);
+		
+		if (directory.exists() && directory.isDirectory()) 
+		{
+			// Get all files in the directory to then delete any that match the current record's basename
+			File[] files = directory.listFiles();
+			
+			if (files != null) 
+			{
+				for (File file : files) 
+				{
+					if (file.getName().startsWith(basename)) { file.delete(); }
+				}
+			}
+		} 
+		else { } // Dir does not exist, nothing to delete
 	}
 
 

@@ -114,7 +114,7 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 
 	public void close() 
 	{
-		this.name = null; // TODO: Clear scratchpad data, maybe write any pending data prior to it?
+		this.name = null; // TODO: Maybe close the recordStore tied to this connection's index.
 	}
 
 	public DataInputStream openDataInputStream() throws IOException, EOFException { return new DataInputStream(openInputStream()); }
@@ -123,22 +123,25 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 	{
 		String[] parsedName = name.split(";");
 
-		if(parsedName.length < 2 || parsedName[1].split(",").length < 1) {pos = 64; }
-		else { pos = (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64); }
+		if(parsedName.length < 2 || parsedName[1].split(",").length < 1) { pos = 0; }
+		else { pos = (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", ""))); }
 
-		if(openedScratchPads[spIndex].getNumRecords() == 0) // If there's no scratchpad data copy in the rms file 
+		if(spIndex == 0) { pos+=64; } // First scratchpad has a header of 64 bytes
+
+		if(openedScratchPads[spIndex].getNumRecords() == 0) // If there's no scratchpad data copy in the rms file, create it
 		{
 			try 
 			{ 
-				byte[] spData = loadScratchPadBinary(spIndex);
-				openedScratchPads[spIndex].addRecord(spData, 0, spData.length); 
-			} // create it
+				byte[] spData = loadScratchPadBinary();
+				openedScratchPads[spIndex].addRecord(spData, 0, spData.length);
+				
+			}
 			catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to add scratchpad data to record: " + e.getMessage()); }
 		}
 
 		try 
 		{
-			scratchPadData = openedScratchPads[spIndex].getRecord(spIndex+1);
+			scratchPadData = openedScratchPads[spIndex].getRecord(1); // Different scratchpads are different RecordStores, not recordIDs (data is always at recordID 1)
 			
 			if(parsedName.length < 2 || parsedName[1].split(",").length < 2) { length = scratchPadData.length-pos-1; }
 			else { length = Integer.parseInt(parsedName[1].split(",")[1].replace("length=", "")); }
@@ -165,25 +168,26 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 
 	public OutputStream openOutputStream() 
 	{
-		Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad Opened for writing (doesn't actually write yet)");
         String[] parsedName = name.split(";");
 
-        if(parsedName.length < 2 || parsedName[1].split(",").length < 1) {pos = 64; }
-		else { pos = (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", "")) + 64); }
+        if(parsedName.length < 2 || parsedName[1].split(",").length < 1) { pos = 0; }
+		else { pos = (Integer.parseInt(parsedName[1].split(",")[0].replace("pos=", ""))); }
 
-		if(openedScratchPads[spIndex].getNumRecords() == 0) // If there's no scratchpad data copy in the rms file 
+		if(spIndex == 0) { pos+=64; } // First scratchpad has a header of 64 bytes
+
+		if(openedScratchPads[spIndex].getNumRecords() < spIndex+1) // If there's no data copy of this scratchpad in the rms file, create it
 		{
 			try 
 			{ 
-				byte[] spData = loadScratchPadBinary(spIndex);
-				openedScratchPads[spIndex].addRecord(spData, 0, spData.length); 
-			} // create it
+				byte[] spData = loadScratchPadBinary();
+				openedScratchPads[spIndex].addRecord(spData, 0, spData.length);
+			}
 			catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to add scratchpad data to record: " + e.getMessage()); }
 		}
 
 		try 
 		{
-			scratchPadData = openedScratchPads[spIndex].getRecord(spIndex+1);
+			scratchPadData = openedScratchPads[spIndex].getRecord(1); // Different scratchpads are different RecordStores, not recordIDs (data is always at recordID 1)
 
 			if(parsedName.length < 2 || parsedName[1].split(",").length < 2) { length = scratchPadData.length-pos-1; }
 			else { length = Integer.parseInt(parsedName[1].split(",")[1].replace("length=", "")); }
@@ -194,38 +198,45 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 		return null;
 	}
 
-	public byte[] loadScratchPadBinary(int scratchPadIndex) 
+	public byte[] loadScratchPadBinary() 
 	{
-		String scratchPadPath = Mobile.getPlatform().loader.baseUrl.toString().replace(".jar", (".sp" + scratchPadIndex));
+		String scratchPadPath = Mobile.getPlatform().loader.baseUrl.toString().replace(".jar", (".sp" + spIndex));
 
 		try
 		{
 			File spFile = new File(new URI(scratchPadPath));
 
-			// With single scratchpad Indices, it could either be .sp0 or .sp (iDKDoJa converted)
-			if(!spFile.exists() && scratchPadIndex == 0) 
+			// TODO: Test the non iDKDoJa format, as single region scratchpads and multi-region ones (within a single .sp file) seem to work as they should.
+
+			// If the file doesn't exist with the expected scratchpad index, it might be a single scratchpad with one or more regions
+			if(!spFile.exists()) 
 			{
-				spFile = new File(new URI(scratchPadPath.replace(".sp0", ".sp")));
+				spFile = new File(new URI(scratchPadPath.replace(".sp" + spIndex, ".sp")));
 			}
 			InputStream stream = new FileInputStream(spFile);
 						
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			int count=0;
-			byte[] data = new byte[4096];
-			while (count!=-1)
-			{
-				count = stream.read(data);
-				if(count!=-1) { buffer.write(data, 0, count); }
-			}
+			byte[] data = new byte[stream.available()];
+
+			stream.read(data);
+
+			int spDataStart = (spIndex > 0 ? Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex-1])+64 : 0);
+			int spDataEnd = (spIndex > 0 ? Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex])+Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex-1])+64 : Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex])+64);
+			buffer.write(data, spDataStart, spDataEnd-spDataStart);
+			stream.close();
 			return buffer.toByteArray();
 		}
-		catch (Exception e) { return new byte[0]; }
+		catch (Exception e) 
+		{ 
+			Mobile.log(Mobile.LOG_ERROR, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to copy scratchpad data:" + e.getMessage());
+			return new byte[0]; 
+		}
 	}
 
 	public static void writeScratchPad(int index, byte[] data) 
 	{ 
 		try { openedScratchPads[index].setRecord(index+1, data, 0, data.length);  }
-		catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, ScratchPadOutputStream.class.getPackage().getName() + "." + ScratchPadOutputStream.class.getSimpleName() + ": " + " Failed to write and close scratchpad output:" + e.getMessage()); }
+		catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to write and close scratchpad output:" + e.getMessage()); }
 	}
 
 }
