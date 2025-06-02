@@ -174,8 +174,8 @@ class DoJaSoundPlayer implements Runnable
             switch (type) 
             {
                 case PhoneSystem.SOUND_INFO:
-                    Manager.playTone(0, 30, 127);
-                    Thread.sleep(40);
+                    Manager.playTone(0, 50, 127);
+                    Thread.sleep(50);
                     Manager.playTone(88, 90, 127);
                     Thread.sleep(60);
                     Manager.playTone(90, 90, 127);
@@ -184,8 +184,8 @@ class DoJaSoundPlayer implements Runnable
                     break;
             
                 case PhoneSystem.SOUND_WARNING:
-                    Manager.playTone(0, 30, 127);
-                    Thread.sleep(40);
+                    Manager.playTone(0, 50, 127);
+                    Thread.sleep(50);
                     Manager.playTone(86, 100, 127);
                     Thread.sleep(70);
                     Manager.playTone(83, 100, 127);
@@ -196,8 +196,8 @@ class DoJaSoundPlayer implements Runnable
                     break;
 
                 case PhoneSystem.SOUND_ERROR:
-                    Manager.playTone(0, 30, 127);
-                    Thread.sleep(40);
+                    Manager.playTone(0, 50, 127);
+                    Thread.sleep(50);
                     Manager.playTone(64, 120, 127);
                     Manager.playTone(72, 150, 127);
                     Thread.sleep(90);
@@ -211,8 +211,8 @@ class DoJaSoundPlayer implements Runnable
                     break;
 
                 case PhoneSystem.SOUND_ALARM:
-                    Manager.playTone(0, 30, 127);
-                    Thread.sleep(40);
+                    Manager.playTone(0, 50, 127);
+                    Thread.sleep(50);
                     Manager.playTone(88, 300, 127);
                     Thread.sleep(250);
                     Manager.playTone(82, 300, 127);
@@ -223,11 +223,11 @@ class DoJaSoundPlayer implements Runnable
                     break;
 
                 case PhoneSystem.SOUND_CONFIRM:
-                    Manager.playTone(0, 30, 127);
-                    Thread.sleep(40);
-                    Manager.playTone(84, 40, 127);
-                    Thread.sleep(40);
-                    Manager.playTone(91, 40, 127);
+                    Manager.playTone(0, 50, 127);
+                    Thread.sleep(50);
+                    Manager.playTone(84, 50, 127);
+                    Thread.sleep(50);
+                    Manager.playTone(91, 50, 127);
                     break;
 
                 default:
