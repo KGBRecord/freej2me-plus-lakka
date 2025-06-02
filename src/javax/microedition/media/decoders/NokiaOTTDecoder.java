@@ -244,7 +244,9 @@ public class NokiaOTTDecoder
 
 			// Read the pattern specifier
 			int patternSpecifier = readBits(8);
-			if (patternSpecifier == 0b00000000) { Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Using already-defined pattern."); } 
+			
+			// TODO: For specifier 0b00000000, we should probably re-read the previous pattern?
+			if (patternSpecifier == 0b00000000) { Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Using already-defined pattern. (NOT IMPLEMENTED)"); } 
 			else 
 			{
 				// This means we have a new pattern length
