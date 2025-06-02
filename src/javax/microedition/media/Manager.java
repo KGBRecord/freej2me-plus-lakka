@@ -54,6 +54,7 @@ public class Manager
 	
 	public static Synthesizer dedicatedSynth = null;
 	public static Receiver dedicatedReceiver = null;
+	public static MidiChannel channels[];
 	private static MidiChannel toneChannel;
 	private static Thread toneThread;
 
@@ -68,7 +69,8 @@ public class Manager
 			if(Mobile.useCustomMidi) { dedicatedSynth.loadAllInstruments(customSoundfont); }
 
 			dedicatedReceiver = dedicatedSynth.getReceiver();
-			toneChannel = dedicatedSynth.getChannels()[15]; // The last MIDI channel is often the least used, so use it for tones to minimize possible issues in case they play alongside sequenced data
+			channels = dedicatedSynth.getChannels();
+			toneChannel = channels[15]; // The last MIDI channel is often the least used, so use it for tones to minimize possible issues in case they play alongside sequenced data
 			Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Synthesizer for sequenced and tone data is ready.");
 		} 
 		catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); }
