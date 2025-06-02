@@ -16,6 +16,8 @@
 */
 package javax.microedition.lcdui;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
 import org.recompile.mobile.PlatformImage;
@@ -52,7 +54,7 @@ public abstract class Canvas extends Displayable
 	private int barHeight;
 	private boolean fullscreen = false;
 
-	private boolean pendingRepaint = false;
+	private AtomicBoolean pendingRepaint = new AtomicBoolean(false);
 
 	protected Canvas()
 	{
@@ -151,32 +153,23 @@ public abstract class Canvas extends Displayable
 	{
 		if(!Mobile.compatImmediateRepaints) 
 		{
-			if(!pendingRepaint) 
-			{ 
-				pendingRepaint = true;
-				Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
-			}
+			pendingRepaint.set(true);
+			Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
 		}
-		else {
-			Mobile.getDisplay().processPaintsNow();
+		else // Immediately process the paint call, followed by any pending Serial or setCurrent call
+		{
 			repaintRequest(x, y, width, height); 
+			Mobile.getDisplay().processPaintsNow();
 		}
 	}
 
 	public void repaintRequest(int x, int y, int width, int height) 
 	{
-		try 
-		{
-			if (!isShown() || listCommands) { pendingRepaint = false; return; }
+		if (!isShown() || listCommands) { return; }
+		
+		graphics.reset(x, y, width, height);
 
-			graphics.reset(x, y, width, height);
-			paint(graphics);
-			
-			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
-
-			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, (!fullscreen && !commands.isEmpty()) ? height+barHeight : height); // Extend draw area if commands are visible
-		}
+		try { paint(graphics); }
 		catch (Exception e) 
 		{
 			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
@@ -184,25 +177,37 @@ public abstract class Canvas extends Displayable
 		}
 		finally 
 		{ 
+			// The paint call has been processed and either succeeded or failed (doesn't matter), the following methods are for flushing to screen
+			// and as such, shouldn't really block execution
+			pendingRepaint.set(false);
+			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
+
+			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, (!fullscreen && !commands.isEmpty()) ? height+barHeight : height); // Extend draw area if commands are visible
 			Mobile.getPlatform().limitFps();
-			pendingRepaint = false; 
 		}
 	}
 
 	public void serviceRepaints() 
 	{
-		short waitTime = 0;
-		if(!isShown() && !pendingRepaint) { return; }
+		if(!isShown() && !pendingRepaint.get()) { return; }
 
-		// serviceRepaints has to force pending repaints to happen, so block until the pending repaint is serviced
-		while(pendingRepaint) 
+		if(!MobilePlatform.pressedKeys[19]) // If the fast-forward key is pressed, ignore the waiting and force a repaint immediately
 		{
-			try { Thread.sleep(1); waitTime++; }
-			catch (Exception e) { }
-
-			// We've waited long enough, the jar might be trying to paint on the same thread this is blocking, so force the repaint to happen
-			if(waitTime > 100 && pendingRepaint) { Mobile.getDisplay().processPaintsNow(); }
+			// serviceRepaints has to force pending repaints to happen, so block until they have time to be serviced normally, or multiple retries were attempted and unsuccessful
+			for(byte waitTime = 0; waitTime < 33; waitTime++) 
+			{
+				if(pendingRepaint.get()) 
+				{
+					try { Thread.sleep(1); } // Worst case scenario, this will sleep for a total of 33ms before serviceRepaints forces repaints to happen (30fps min force-refresh)
+					catch (Exception e) { }
+				}
+				else { return; } // Good, the pending repaint was serviced, unblock and return immediately.
+			}
 		}
+
+		// Assuming there's still pending repaints after the sleep interval, force them to happen
+		Mobile.getDisplay().processPaintsNow();	
 	}
 
 	public void setFullScreenMode(boolean mode)
@@ -274,6 +279,4 @@ public abstract class Canvas extends Displayable
 		if (listCommands) { super.render(); } 
 		else { repaint(); }
 	}
-
-	public void clearPendingRepaint() { pendingRepaint = false; }
 }

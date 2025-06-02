@@ -69,16 +69,13 @@ public abstract class Canvas extends Frame
 
 	public void repaintRequest(int x, int y, int width, int height) 
 	{
-		try 
-		{
-			if(!isShown()) { pendingRepaint = false; return; }
+		pendingRepaint = false;
 
-			paint(graphics);
-			// Draw command bar whenever soft labels are visible
-			if (labelVisible) { paintCommandsBar(); }
+		if(!isShown()) { return; }
+		
+		graphics.reset(x, y, width, height);
 
-			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, labelVisible ? height+barHeight : height); // Extend the draw area if we have the commands bar visible
-		}
+		try { paint(graphics); }
 		catch (Exception e) 
 		{
 			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
@@ -86,8 +83,11 @@ public abstract class Canvas extends Frame
 		}
 		finally 
 		{ 
+			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+			if (labelVisible) { paintCommandsBar(); }
+
+			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, labelVisible ? height+barHeight : height); // Extend the draw area if we have the commands bar visible
 			Mobile.getPlatform().limitFps();
-			pendingRepaint = false; 
 		}
 	}
 
