@@ -125,7 +125,7 @@ public class RecordStore
 
 		if(!file.exists()) 
 		{
-			Mobile.log(Mobile.LOG_WARNING, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": New recordStore file format not found, checking for legacy one...");
+			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": New recordStore file format not found, checking for legacy one...");
 			file = new File(rmsPath+"/"+name);
 			if(!file.exists()) 
 			{ 
