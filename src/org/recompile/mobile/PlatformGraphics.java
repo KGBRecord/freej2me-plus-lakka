@@ -747,6 +747,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 					int tmp = (ods + yj) / 8 * scanlength + oms;
 					for (int xj = 0; xj < width; xj++) 
 					{
+						if(tmp + xj >= pixels.length) { continue; } // Ignore if accessing out of bounds
 						c = ((pixels[tmp + xj] >> b) & 1);
 						if (transparencyMask != null) 
 						{
@@ -767,6 +768,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 					int ypos = yj * width;
 					for (int xj = 0; xj < width; xj++) 
 					{
+						if((line + xj) / 8 >= pixels.length) { continue; } // Ignore if accessing out of bounds
 						c = ((pixels[(line + xj) / 8] >> b) & 1);
 						if (transparencyMask != null) 
 						{
@@ -794,15 +796,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 		if (pixels == null) { throw new NullPointerException("drawPixels(int) received a null pixel array"); }
 		if (offset < 0 || offset >= pixels.length) { throw new ArrayIndexOutOfBoundsException("drawPixels(int) index out of bounds:" + width + " * " + height + "| len:" + pixels.length); }
 
-		if (scanlength > 0) 
-		{
-			if (offset + scanlength * (height - 1) + width > pixels.length) { throw new ArrayIndexOutOfBoundsException(); }
-		} 
-		else 
-		{
-			if (offset + width > pixels.length || offset + scanlength * (height - 1) < 0) { throw new ArrayIndexOutOfBoundsException(); }
-		}
-
 		// Create the temporary BufferedImage and get its DataBuffer to manipulate it directly.
 		BufferedImage temp = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		int[] data = ((DataBufferInt) temp.getRaster().getDataBuffer()).getData();
@@ -812,9 +805,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 			int srcIndex = offset + row * scanlength;
 			for (int col = 0; col < width; col++) 
 			{
-				int pixel = pixels[srcIndex + col];
-				if (!transparency) { pixel |= 0xFF000000; } // Set alpha to 255
-				data[row * width + col] = pixel;
+				if(srcIndex + col >= pixels.length) { continue; } // Ignore if accessing out of bounds
+				if (!transparency) { pixels[srcIndex + col] |= 0xFF000000; } // Set alpha to 255
+				data[row * width + col] = pixels[srcIndex + col];
 			}
 		}
 
@@ -828,15 +821,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 		if (pixels == null) { throw new NullPointerException("drawPixels(short) received a null pixel array"); }
 		if (offset < 0 || offset >= pixels.length) { throw new ArrayIndexOutOfBoundsException("drawPixels(short) index out of bounds:" + width + " * " + height + "| len:" + pixels.length); }
 
-		if (scanlength > 0) 
-		{
-			if (offset + scanlength * (height - 1) + width > pixels.length) { throw new ArrayIndexOutOfBoundsException(); }
-		} 
-		else 
-		{
-			if (offset + width > pixels.length || offset + scanlength * (height - 1) < 0) { throw new ArrayIndexOutOfBoundsException(); }
-		}
-
 		BufferedImage temp = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     	int[] data = ((DataBufferInt) temp.getRaster().getDataBuffer()).getData();
 		
@@ -846,6 +830,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			int srcIndex = offset + row * scanlength;
 			for (int col = 0; col < width; col++) 
 			{
+				if(srcIndex + col >= pixels.length) { continue; } // Ignore if accessing out of bounds
 				data[row * width + col] = pixelToColor(pixels[srcIndex + col], format);
 				if (!transparency) { data[row * width + col] = (data[row * width + col] & 0x00FFFFFF) | 0xFF000000; } // Set alpha to 255
 			}
