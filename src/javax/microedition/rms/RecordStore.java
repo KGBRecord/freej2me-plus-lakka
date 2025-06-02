@@ -232,7 +232,7 @@ public class RecordStore
 
 	public int addRecord(byte[] data, int offset, int numBytes, int tag) throws RecordStoreException, RecordStoreFullException, SecurityException
 	{
-		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Add Record "+nextid+ " to "+name + " with tag " + tag);
+		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Add Record "+nextid+ " to "+name + " with tag " + tag + ", length " + numBytes + " and data " + (data != null? Arrays.toString(data) : "null"));
 
 		if(!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot add record, as Record Store is not open"); }
 		if(Mobile.getPlatform().loader.suitename != this.suitename && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
@@ -372,8 +372,8 @@ public class RecordStore
 		if(!recordIds.contains(recordId)) { throw new InvalidRecordIDException("getRecord: Invalid Record ID: "+recordId); }
 
 		byte[] t = records.get(recordIds.indexOf(recordId));
-		if(t == null || t.length < 1) { throw new InvalidRecordIDException("getRecord: Invalid Record ID (empty): "+recordId); }
-		return t.clone();
+		if(t == null) { throw new InvalidRecordIDException("getRecord: Invalid Record ID (empty): "+recordId); }
+		return t.length == 0 ? null : t.clone();
 	}
 
 	public int getRecord(int recordId, byte[] buffer, int offset) throws InvalidRecordIDException, RecordStoreNotOpenException, RecordStoreException
@@ -382,11 +382,13 @@ public class RecordStore
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the record of a closed Record Store"); }
 		if(!recordIds.contains(recordId)) { throw new InvalidRecordIDException("getRecord: Invalid Record ID: "+recordId); }
 
+		// TODO: Maybe we should throw IndexOutOfBounds if the offset and the buffer's are invalid, but at this point i don't remember if there was a jar that wanted only part of a record or not
+
 		byte[] temp = getRecord(recordIds.indexOf(recordId));
 
 		int len = temp.length;
 
-		while (offset+len > buffer.length) { len--; }
+		len = Math.min(len, buffer.length - offset); // Return only the data that doesn't go out of bounds
 
 		for(int i=0; i<len; i++) { buffer[offset+i] = temp[i]; }
 
