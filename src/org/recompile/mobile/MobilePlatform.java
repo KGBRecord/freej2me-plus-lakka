@@ -186,9 +186,9 @@ public class MobilePlatform
 		if(!MIDletLoader.MIDletSelected) { MIDletLoader.keyPress(Mobile.getGameAction(keycode)); }
 		else if (!isPaused)
 		{
-			updateKeyState(Mobile.getGameAction(keycode), 1);
-			updateVodafoneKeyState(Mobile.getGameAction(keycode), 1);
-			updateDoJaKeyState(Mobile.getGameAction(keycode), 1);
+			updateKeyState(Mobile.getGameAction(keycode), true);
+			updateVodafoneKeyState(Mobile.getGameAction(keycode), true);
+			updateDoJaKeyState(Mobile.getGameAction(keycode), true);
 			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) 
 			{ 
 				displayable.keyPressed(keycode); 
@@ -201,9 +201,9 @@ public class MobilePlatform
 	{
 		if(!isPaused && MIDletLoader.MIDletSelected) 
 		{
-			updateKeyState(Mobile.getGameAction(keycode), 0);
-			updateVodafoneKeyState(Mobile.getGameAction(keycode), 0);
-			updateDoJaKeyState(Mobile.getGameAction(keycode), 0);
+			updateKeyState(Mobile.getGameAction(keycode), false);
+			updateVodafoneKeyState(Mobile.getGameAction(keycode), false);
+			updateDoJaKeyState(Mobile.getGameAction(keycode), false);
 			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
 		}
 	}
@@ -232,7 +232,7 @@ public class MobilePlatform
 		// TODO: DoJa
 	}
 
-	private static void updateKeyState(int key, int val)
+	private static void updateKeyState(int key, boolean pressed)
 	{
 		int mask=0;
 		switch (key)
@@ -252,12 +252,12 @@ public class MobilePlatform
 			case Canvas.DOWN:     mask = GameCanvas.DOWN_PRESSED;   break;
 			case Canvas.FIRE:     mask = GameCanvas.FIRE_PRESSED;   break;
 		}
-		if(val == 1) { keyState |= mask; }
+		if(pressed) { keyState |= mask; }
 		else { keyState ^= mask; }
 	}
 
 	// Original implementation by Yury Kharchenko (J2ME-Loader)
-	private static void updateVodafoneKeyState(int key, int val)
+	private static void updateVodafoneKeyState(int key, boolean pressed)
 	{
 		int mask=0;
 		switch (key) 
@@ -322,12 +322,12 @@ public class MobilePlatform
 			default:
 				mask = 0;
 		}
-		if(val == 1) { vodafoneKeyState |= mask; }
+		if(pressed) { vodafoneKeyState |= mask; }
 		else { vodafoneKeyState ^= mask; }
 	}
 
 	// For a reference of these shift values, look into com.nttdocomo.ui.Display
-	private static void updateDoJaKeyState(int key, int val)
+	private static void updateDoJaKeyState(int key, boolean pressed)
 	{
 		int mask=0;
 		switch (key) 
@@ -392,13 +392,24 @@ public class MobilePlatform
 			default:
 				mask = 0;
 		}
-		if(val == 1) { DoJaKeyState |= mask; }
-		else { DoJaKeyState ^= mask; }
 
-		if(com.nttdocomo.ui.Display.getCurrent() != null && 
-		   com.nttdocomo.ui.Display.getCurrent() instanceof com.nttdocomo.ui.Canvas) 
-		{
-			((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).keyPressed(DoJaKeyState, val == 1);
+		boolean canvasPresent = (com.nttdocomo.ui.Display.getCurrent() != null && com.nttdocomo.ui.Display.getCurrent() instanceof com.nttdocomo.ui.Canvas);
+		
+		if(pressed) 
+		{ 
+			DoJaKeyState |= mask;
+			if(canvasPresent) 
+			{
+				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_PRESSED_EVENT, DoJaKeyState);
+			}
+		}
+		else // Send the released event BEFORE changing the mask (or else this will always send 0 as the key value)
+		{ 
+			if(canvasPresent) 
+			{
+				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_RELEASED_EVENT, DoJaKeyState);
+			}
+			DoJaKeyState ^= mask; 
 		}
 	}
 

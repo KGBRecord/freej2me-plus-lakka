@@ -45,10 +45,7 @@ public abstract class Canvas extends Frame
 
     public abstract void paint(Graphics g);
 
-    public void processEvent(int type, int param) 
-	{ 
-		Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "DoJa Canvas Process event type:" + type + " , param:" + param);
-	}
+    public void processEvent(int type, int param) { }
 
     public void repaint() { repaint(0, 0, getWidth(), getHeight()); }
 
@@ -115,11 +112,5 @@ public abstract class Canvas extends Frame
 		graphics.setOrigin(restoreX, restoreY);
 		graphics.setClip(clipX, clipY, clipW, clipH);
 	}
-
-	public void keyPressed(int keyVal, boolean pressed) 
-    {
-		if(pressed) { processEvent(Display.KEY_PRESSED_EVENT, keyVal); }
-        else { processEvent(Display.KEY_RELEASED_EVENT, keyVal); }
-    }
 
 }
