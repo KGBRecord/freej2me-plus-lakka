@@ -80,6 +80,7 @@ public class MobilePlatform
 	public static boolean isPaused = false;
 
 	public String dataPath = "";
+	private static String kjxJadFileName = ""; // Static so that we can delete the extracted jar and jad files if needed
 
 	public volatile static int keyState = 0;
 	public volatile static int vodafoneKeyState = 0;
@@ -501,13 +502,13 @@ public class MobilePlatform
 				byte lenJadFileName = dis.readByte();
 				byte[] jadFileName = new byte[lenJadFileName];
 				dis.read(jadFileName, 0, lenJadFileName);
-				String strJadFileName = new String(jadFileName);
+				kjxJadFileName = new String(jadFileName);
 	
 				int bufSize = 2048;
 				byte[] buf = new byte[bufSize];
 	
 				// Write jad and parse its descriptors
-				tmpfile = new File(Mobile.tempKJXDir, strJadFileName);
+				tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName);
 				try (FileOutputStream fos = new FileOutputStream(tmpfile)) 
 				{
 					int restSize = lenJadFileContent;
@@ -527,7 +528,7 @@ public class MobilePlatform
 				}
 	
 				// Write jar
-				tmpfile = new File(Mobile.tempKJXDir, strJadFileName.substring(0, strJadFileName.length() -4) + ".jar");
+				tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName.substring(0, kjxJadFileName.length() -4) + ".jar");
 				try (FileOutputStream fos = new FileOutputStream(tmpfile)) {
 					int length = 0;
 					while((length = dis.read(buf)) > 0) {
@@ -538,13 +539,6 @@ public class MobilePlatform
 				// Send dumped jar path to loader
 				URL jar = tmpfile.toURI().toURL();
 				loader = new MIDletLoader(jar, descriptorProperties);
-
-				if(Mobile.deleteTemporaryKJXFiles) 
-				{
-					tmpfile.delete(); // Delete the temporary jad file
-					tmpfile = new File(Mobile.tempKJXDir, strJadFileName);
-					tmpfile.delete(); // Delete the temporary jar file
-				}
 				
 				return true;
 			} 
@@ -615,7 +609,17 @@ public class MobilePlatform
 
 	public void runJar()
 	{
-		try { loader.start(); }
+		try 
+		{ 
+			if(Mobile.deleteTemporaryKJXFiles) 
+			{
+				File tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName.substring(0, kjxJadFileName.length() -4) + ".jar");
+				tmpfile.delete(); // Delete the temporary jar file
+				tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName);
+				tmpfile.delete(); // Delete the temporary jad file
+			}
+			loader.start(); 
+		}
 		catch (Exception e)
 		{
 			Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Error Running Jar");

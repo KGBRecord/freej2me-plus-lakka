@@ -94,7 +94,7 @@ public class Mobile
 
 	// KDDI/KJX variables
 	public static final String tempKJXDir = "." + File.separatorChar + "FreeJ2MEDumps" + File.separatorChar + "KDDI" + File.separatorChar;
-	public static boolean deleteTemporaryKJXFiles = true; // Maybe turn this into a toggle later?
+	public static boolean deleteTemporaryKJXFiles = true;
 
 	//LCDUI colors
 	public static int lcduiBGColor = 0xFFFFFF;
