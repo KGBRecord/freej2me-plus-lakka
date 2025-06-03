@@ -20,8 +20,9 @@ jobs:
       id: shortsha
       run: |
         echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
-        echo "branch=$(echo ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}} | tr '/' '-')" >> "$GITHUB_ENV"
-
+        branch=$(echo ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}})
+        sanitized_branch=$(echo "$branch" | sed 's/[":<>|*?\\\/\r\n]//g')
+        echo "branch=$sanitized_branch" >> "$GITHUB_ENV"
         echo "Branch: ${{ env.branch }}"
         echo "Sha: ${{ env.sha_short }}"
     - uses: actions/upload-artifact@v4
