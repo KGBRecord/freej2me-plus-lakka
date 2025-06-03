@@ -21,8 +21,6 @@ import org.recompile.mobile.MobilePlatform;
 
 public abstract class Canvas extends Frame 
 {
-
-	private boolean pendingRepaint = false;
 	
 	private int barHeight;
 
@@ -58,19 +56,13 @@ public abstract class Canvas extends Frame
 	{
 		if(!Mobile.compatImmediateRepaints) 
 		{
-			if(!pendingRepaint) 
-			{ 
-				pendingRepaint = true;
-				Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
-			}
+			Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
 		}
 		else { repaintRequest(x, y, width, height); }
 	}
 
 	public void repaintRequest(int x, int y, int width, int height) 
 	{
-		pendingRepaint = false;
-
 		if(!isShown()) { return; }
 		
 		graphics.reset(x, y, width, height);

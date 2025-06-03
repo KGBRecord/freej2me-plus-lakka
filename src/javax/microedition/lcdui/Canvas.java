@@ -158,8 +158,8 @@ public abstract class Canvas extends Displayable
 		}
 		else // Immediately process the paint call, followed by any pending Serial or setCurrent call
 		{
-			repaintRequest(x, y, width, height); 
 			Mobile.getDisplay().processPaintsNow();
+			repaintRequest(x, y, width, height); 
 		}
 	}
 
