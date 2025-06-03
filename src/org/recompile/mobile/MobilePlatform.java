@@ -80,7 +80,7 @@ public class MobilePlatform
 	public static boolean isPaused = false;
 
 	public String dataPath = "";
-	private static String kjxJadFileName = ""; // Static so that we can delete the extracted jar and jad files if needed
+	private static String kjxJadFileName = null; // Static so that we can delete the extracted jar and jad files if needed
 
 	public volatile static int keyState = 0;
 	public volatile static int vodafoneKeyState = 0;
@@ -611,7 +611,7 @@ public class MobilePlatform
 	{
 		try 
 		{ 
-			if(Mobile.deleteTemporaryKJXFiles) 
+			if(Mobile.deleteTemporaryKJXFiles && kjxJadFileName != null) 
 			{
 				File tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName.substring(0, kjxJadFileName.length() -4) + ".jar");
 				tmpfile.delete(); // Delete the temporary jar file
