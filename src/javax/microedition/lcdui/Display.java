@@ -82,7 +82,7 @@ public class Display
 			if(call != null) { call.run(); }
 			else 
 			{
-				try { Thread.sleep(16); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
+				try { Thread.sleep(1); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
 				catch (Exception e) { }
 			}
 			

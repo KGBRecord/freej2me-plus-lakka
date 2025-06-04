@@ -93,7 +93,6 @@ public class MobilePlatform
 
 	public MobilePlatform(int width, int height)
 	{
-		Mobile.setDisplay(new Display());
 		resizeLCD(width, height);
 
 		painter = new Runnable()
@@ -119,14 +118,13 @@ public class MobilePlatform
 
 		lcd = new PlatformImage(width, height);
 
-		if(!Mobile.isDoJa) { gc = lcd.getMIDPGraphics(); }
-		else { gc = lcd.getDoJaGraphics(); }
+		// This works for DoJa as well, their graphics objects are direct extensions of PlatformGraphics
+		gc = (PlatformGraphics) lcd.getMIDPGraphics();
 		
 		/* 
 		 * Try to have the jar scale as well. If this doesn't work,
 		 * a simple restart is all it takes, just like before.
 		 */
-
 		if(!Mobile.isDoJa && Mobile.getDisplay() != null && Mobile.getDisplay().getCurrent() != null) 
 		{ 
 			Mobile.getDisplay().getCurrent().doSizeChanged(width, height);

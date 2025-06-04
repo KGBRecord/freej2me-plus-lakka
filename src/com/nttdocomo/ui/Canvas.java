@@ -53,13 +53,14 @@ public abstract class Canvas extends Frame
 	{
 		if(!Mobile.compatImmediateRepaints) 
 		{
-			Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
+			IApplication.display.postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
 		}
 		else { repaintRequest(x, y, width, height); }
 	}
 
 	public void repaintRequest(int x, int y, int width, int height) 
 	{
+
 		if(!isShown()) { return; }
 		
 		graphics.reset(x, y, width, height);

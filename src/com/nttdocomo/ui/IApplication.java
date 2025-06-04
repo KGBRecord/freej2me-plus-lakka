@@ -62,6 +62,8 @@ public abstract class IApplication
 
     public static HashMap<String, String> properties;
     public static String[] appParam, scratchPadSizes;
+
+    public static Display display = new Display();
     
     protected IApplication()
 	{

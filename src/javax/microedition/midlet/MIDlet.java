@@ -30,6 +30,7 @@ public abstract class MIDlet
 	protected MIDlet()
 	{
 		Mobile.log(Mobile.LOG_INFO, MIDlet.class.getPackage().getName() + "." + MIDlet.class.getSimpleName() + ": " + "Create MIDlet");
+		Mobile.setDisplay(new Display());
 		Mobile.midlet = this;
 	}
 

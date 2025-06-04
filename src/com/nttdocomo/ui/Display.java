@@ -117,13 +117,16 @@ public class Display
 			if(call != null) { call.run(); }
 			else 
 			{
-				try { Thread.sleep(16); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
+				try { Thread.sleep(1); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
 				catch (Exception e) { }
 			}
 		}
 	}
 
-    public static Frame getCurrent() { return current; }
+    public static Frame getCurrent() 
+    { 
+        synchronized(Display.class) { return current; }
+    }
 
     public static int getHeight() { return MobilePlatform.lcdHeight; }
 
@@ -135,12 +138,14 @@ public class Display
 
     public static void setCurrent(Frame frame) 
     {
-        
-        if (frame == null) { throw new NullPointerException("Frame cannot be null."); }
-        if (frame instanceof Dialog) { throw new IllegalArgumentException("Cannot set a dialog as the current frame."); }
-        
-        if(frame == current) { return; }
+        synchronized(Display.class) 
+        {
+            if (frame == null) { throw new NullPointerException("Frame cannot be null."); }
+            if (frame instanceof Dialog) { throw new IllegalArgumentException("Cannot set a dialog as the current frame."); }
+            
+            if(frame == current) { return; }
 
-        current = frame;
+            current = frame;
+        }
     }
 }
