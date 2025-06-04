@@ -1569,6 +1569,11 @@ public abstract class PlatformGraphics implements DirectGraphics
 		}
 	}
 
+	// These are used in some DoJa versions of Gradius, like Gradius II
+	public int getPixel(int x, int y) { return this.getRGBPixel(x, y); }
+
+	public int getRGBPixel(int x, int y) { return canvasData[y*canvas.getWidth()+x]; }
+
 	// These aren't documented, but some DoJa jars use them (space Manbow uses setRGBPixel right at the menu for example)
 	// They don't seem all too different from lcdui Image's set/getPixel(s) as far as logic goes
 	public void setPixel(int x, int y) { canvasData[y*canvas.getWidth()+x] = getColor(); }
@@ -1581,7 +1586,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		setColor(restorecolor);
 	}
 
-	public void setRGBPixel(int x, int y, int color) { this.setPixel(x, y, color); }
+	public void setRGBPixel(int x, int y, int color) { setPixel(x, y, color); }
 
 	public void setPictoColorEnabled(boolean b) 
 	{ 

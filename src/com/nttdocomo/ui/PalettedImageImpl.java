@@ -21,15 +21,16 @@ import java.io.InputStream;
 public class PalettedImageImpl extends PalettedImage 
 {
 
-    public PalettedImageImpl(int width, int height)
-    {
-        image = Image.createImage(width, height);
-    }
+	public PalettedImageImpl(int width, int height)
+	{
+		this.image = Image.createImage(width, height);
+	}
 
-    public PalettedImageImpl(byte[] data) 
-    {
-        this.palette = extractPalette(data);
-        this.imageData = data;
-    }
+	public PalettedImageImpl(byte[] data) 
+	{
+		this.image = Image.createImage(data, 0, data.length);
+		this.palette = extractPalette(data);
+		this.imageData = data;
+	}
 
 }
