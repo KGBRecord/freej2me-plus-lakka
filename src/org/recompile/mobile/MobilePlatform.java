@@ -186,7 +186,7 @@ public class MobilePlatform
 		{
 			updateKeyState(Mobile.getGameAction(keycode), true);
 			updateVodafoneKeyState(Mobile.getCanvasAction(keycode), true);
-			updateDoJaKeyState(Mobile.getGameAction(keycode), true);
+			updateDoJaKeyState(Mobile.getCanvasAction(keycode), true);
 			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) 
 			{ 
 				displayable.keyPressed(keycode); 
@@ -201,7 +201,7 @@ public class MobilePlatform
 		{
 			updateKeyState(Mobile.getGameAction(keycode), false);
 			updateVodafoneKeyState(Mobile.getCanvasAction(keycode), false);
-			updateDoJaKeyState(Mobile.getGameAction(keycode), false);
+			updateDoJaKeyState(Mobile.getCanvasAction(keycode), false);
 			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
 		}
 	}
@@ -348,13 +348,13 @@ public class MobilePlatform
 			case Canvas.KEY_NUM0:
 				mask = 1; 
 				break;
-			case Canvas.GAME_A:
+			case Canvas.KEY_NUM1:
 				mask = 1 << 1; 
 				break;
 			case Canvas.KEY_NUM2:
 				mask = 1 << 2; 
 				break;
-			case Canvas.GAME_B:
+			case Canvas.KEY_NUM3:
 				mask = 1 << 3; 
 				break;
 			case Canvas.KEY_NUM4:
@@ -366,13 +366,13 @@ public class MobilePlatform
 			case Canvas.KEY_NUM6:
 				mask = 1 << 6; 
 				break;
-			case Canvas.GAME_C:
+			case Canvas.KEY_NUM7:
 				mask = 1 << 7; 
 				break;
 			case Canvas.KEY_NUM8:
 				mask = 1 << 8; 
 				break;
-			case Canvas.GAME_D:
+			case Canvas.KEY_NUM9:
 				mask = 1 << 9; 
 				break;
 			case Canvas.KEY_STAR:
