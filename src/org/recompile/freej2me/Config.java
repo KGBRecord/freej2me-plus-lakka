@@ -154,6 +154,7 @@ public class Config
 				sysSettings.put("dumpGraphicsObjects", "off");
 				// AWT Inputs
 				updateAWTInputs();
+				saveConfig();
 			}
 		}
 		catch (Exception e)
@@ -291,20 +292,24 @@ public class Config
 				writer.write(key+":"+settings.get(key)+"\n");
 			}
 			writer.close();
+			fout.close();
 
-
-			/* Save system file, also sorted alphabetically */
-			sortedKeys = new ArrayList<>(sysSettings.keySet());
-        	Collections.sort(sortedKeys);
-
-			fout = new FileOutputStream(sFile);
-			writer = new BufferedWriter(new OutputStreamWriter(fout));
-
-			for (String key : sortedKeys)
+			/* Save system file (if it has been created already), also sorted alphabetically */
+			if(sFile != null) 
 			{
-				writer.write(key+":"+sysSettings.get(key)+"\n");
+				sortedKeys = new ArrayList<>(sysSettings.keySet());
+				Collections.sort(sortedKeys);
+
+				fout = new FileOutputStream(sFile);
+				writer = new BufferedWriter(new OutputStreamWriter(fout));
+
+				for (String key : sortedKeys)
+				{
+					writer.write(key+":"+sysSettings.get(key)+"\n");
+				}
+				writer.close();
+				fout.close();
 			}
-			writer.close();
 		}
 		catch (Exception e)
 		{
