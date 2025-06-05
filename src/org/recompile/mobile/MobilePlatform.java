@@ -80,6 +80,7 @@ public class MobilePlatform
 	public static boolean isPaused = false;
 
 	public String dataPath = "";
+	public String fileName = null;
 	private static String kjxJadFileName = null; // Static so that we can delete the extracted jar and jad files if needed
 
 	public volatile static int keyState = 0;
@@ -477,6 +478,7 @@ public class MobilePlatform
 		 * issues with MIDletLoader, so convert exclamations beforehand to not confuse it.
 		 */
 		fileName = fileName.replaceAll("!", "%21");
+		this.fileName = fileName;
 
 		if(fileName.toLowerCase().contains(".kjx")) // KDDI KJX parser, originally from J2ME-Loader by @ohayoyogi
 		{
@@ -620,6 +622,14 @@ public class MobilePlatform
 	{
 		try 
 		{ 
+			// Change encoding based on vendor (Only DoJa at the moment, MIDP already defaults to "ISO_8859_1")
+			if(Mobile.isDoJa) { Mobile.textEncoding = "Shift_JIS"; }
+
+			if(!System.getProperty("file.encoding").equals(Mobile.textEncoding)) 
+			{
+				Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "different encoding: " + System.getProperty("file.encoding") + " while it should be " + Mobile.textEncoding + ". Restarting freeJ2ME to apply new encoding");
+				Mobile.restartApp();
+			}
 			if(Mobile.deleteTemporaryKJXFiles && kjxJadFileName != null) 
 			{
 				File tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName.substring(0, kjxJadFileName.length() -4) + ".jar");

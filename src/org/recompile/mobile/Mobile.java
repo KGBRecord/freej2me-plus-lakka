@@ -21,6 +21,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.Arrays;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Canvas;
@@ -42,6 +49,9 @@ import com.nttdocomo.ui.IApplication;
 public class Mobile
 {
 	private static MobilePlatform platform;
+
+	// Default MIDP encoding, will be changed by DoJa and any other implementation that use a different encoding
+	public static String textEncoding = "ISO_8859_1";
 
 	private static Display display;
 
@@ -161,8 +171,11 @@ public class Mobile
 	// 3 = aggressive (also overrides System.currentTimeMillis and NanoTime)
 	public static byte unlockFramerateHack = 0;
 
-	// Fast-Forwarding flag
+	// Libretro flags
 	public static boolean isFastForwarding = false;
+	public static boolean libretroStarted = false;
+	public static byte libretroRestartRequested = 0; // Set when FreeJ2ME has to be restarted in some way (often to change character encoding)
+	public static byte libretroEncodingRequested = 0; // Encoding FreeJ2ME requested to be re-opened with (check the restartApp() method below)
 
 	// Vodafone has a use for this, but maybe this can be made into an actual viewport AA toggle
 	public static boolean isAAEnabled = false;
@@ -929,4 +942,70 @@ public class Mobile
 		// If no rotation has to be done, return false
 		return false;
 	}
+
+	public static void restartApp() 
+	{
+		try 
+		{
+			String java = System.getProperty("java.home") + "/bin/java";
+			String classPath = System.getProperty("java.class.path");
+
+			// Get the main class name
+			String mainClass = getMainClassFromJar("file:" + classPath);
+
+			String jarPath = platform.fileName.replace("file:", "");
+
+			jarPath = URLDecoder.decode(jarPath, textEncoding);
+
+			if(!MobilePlatform.isLibretro)
+			{
+				String[] commands = new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath};
+
+				System.out.println("commands:" + Arrays.toString(commands));
+				ProcessBuilder processBuilder = new ProcessBuilder(commands);
+				processBuilder.start();
+
+				System.exit(0);
+			}
+			else // Libretro governs loading the process up again and not the jar, so post a request for it to do so
+			{
+				new Thread(new Runnable() 
+				{
+					@Override
+					public void run() 
+					{
+						while(!libretroStarted) // Wait until the core starts actually talking to the jar
+						{ 
+							try { Thread.sleep(1);  }
+							catch (Exception e) { }
+						}
+						
+						if(textEncoding.equals("UTF-8"))              { libretroEncodingRequested = 0; }
+						else if(textEncoding.equals("ISO_8859_1"))    { libretroEncodingRequested = 1; }
+						else if(textEncoding.equals("Shift_JIS"))     { libretroEncodingRequested = 2; }
+						// TODO: Support other encodings
+
+						libretroRestartRequested = 1;
+					}
+				}, "RestartThread").start();
+			}
+		}
+		catch(Exception e) { log(Mobile.LOG_INFO, Mobile.class.getPackage().getName() + "." + Mobile.class.getSimpleName() + ": " + "Failed to restart FreeJ2ME: " + e.getMessage()); }
+	}
+
+	private static String getMainClassFromJar(String classPath) 
+	{
+        try 
+		{
+            URL jarUrl = new URL(classPath);
+			
+            try (JarFile jarFile = new JarFile(jarUrl.getFile())) 
+			{
+                Manifest manifest = jarFile.getManifest();
+                Attributes attributes = manifest.getMainAttributes();
+                return attributes.getValue("Main-Class");
+            }
+        } 
+		catch (Exception e) { return null; } // This normally shouldn't fail
+    }
 }

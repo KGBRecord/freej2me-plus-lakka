@@ -26,8 +26,15 @@
 /* Used as a limit to the string of core option updates to be sent to the Java app */
 #define PIPE_MAX_LEN 255
 
-
+// The max amount of phone keys currently supported (might increase since KDDI and SKT/SK-VM phones tend to have more)
 #define PHONE_KEYS 19
+
+static const char *supported_encodings[] = 
+{
+    "-Dfile.encoding=UTF-8",
+    "-Dfile.encoding=ISO_8859_1",
+    "-Dfile.encoding=Shift-JIS",
+};
 
 /* Input mapping variables and descriptions */
 static const struct retro_controller_description port_1[] =

@@ -166,7 +166,7 @@ public final class AWTGUI
 	final MenuItem resChangeMenuItem = new MenuItem("Change Phone Resolution");
 
 	final MenuItem openMenuItem = new MenuItem("Open JAR / JAD / KJX File");
-	final MenuItem closeMenuItem = new MenuItem("Close Jar (Stub)");
+	final MenuItem closeMenuItem = new MenuItem("Close Running Jar");
 	final MenuItem scrShot = new MenuItem("Take Screenshot (Ctrl+C)");
 	final MenuItem pauseRes = new MenuItem("Pause / Resume (Ctrl+X)");
 	final MenuItem exitMenuItem = new MenuItem("Exit FreeJ2ME");
@@ -1009,14 +1009,7 @@ public final class AWTGUI
 				}
 			}
 
-			else if(a.getActionCommand() == "Close") 
-			{
-				try
-				{
-					/* TODO: Try closing the loaded jar without closing FreeJ2ME */
-				}
-				catch (Throwable e) { Mobile.log(Mobile.LOG_ERROR, AWTGUI.class.getPackage().getName() + "." + AWTGUI.class.getSimpleName() + ": " + "Couldn't close jar"); }
-			}
+			else if(a.getActionCommand() == "Close") { FreeJ2ME.closeApp(); }
 
 			else if(a.getActionCommand() == "Screenshot") { ScreenShot.takeScreenshot(false); }
 

@@ -31,7 +31,7 @@
 #include <file/file_path.h>
 #include <retro_miscellaneous.h>
 
-#define NUM_ARGUMENTS 25
+#define NUM_ARGUMENTS 26
 
 const char *slash = path_default_slash();
 
@@ -127,6 +127,9 @@ bool restarting = false;
 bool useAnalogAsEntireKeypad = false; // Enhancement for games like Time Crisis Elite which use the keypad's diagonals exclusively, and not 2+4, 6+8, etc.
 float analogDeadzone = 0.10f; // Additional Deadzone over libretro for input reads
 
+bool resetRequested = false;
+unsigned int characterEncoding = 0; // Character encoding used by FreeJ2ME's jar. Normally starts with UTF-8
+
 unsigned char readBuffer[PIPE_READ_BUFFER_SIZE];
 
 unsigned int frameWidth = MAX_WIDTH;
@@ -135,7 +138,7 @@ unsigned int frameSize = MAX_WIDTH * MAX_HEIGHT;
 unsigned int frameBufferSize = MAX_WIDTH * MAX_HEIGHT * 3;
 unsigned int frame[MAX_WIDTH * MAX_HEIGHT];
 unsigned char frameBuffer[MAX_WIDTH * MAX_HEIGHT * 3];
-unsigned char frameHeader[13];
+unsigned char frameHeader[15]; // This is always frameHeader's length in Libretro.java -1 (we read the status byte separately)
 struct retro_game_info gameinfo;
 
 bool frameRequested = false;
@@ -678,29 +681,30 @@ void retro_init(void)
 	params = (char**)malloc(sizeof(char*) * NUM_ARGUMENTS);
 	params[0] = strdup("java");
 	params[1] = strdup("-jar");
-	params[2] = strdup("freej2me-lr.jar");
-	params[3] = strdup(resArg[0]);
-	params[4] = strdup(resArg[1]);
-	params[5] = strdup(rotateArg);
-	params[6] = strdup(phoneArg);
-	params[7] = strdup(fpsArg);
-	params[8] = strdup(soundArg);
-	params[9] = strdup(midiArg);
-	params[10] = strdup(dumpAudioArg);
-	params[11] = strdup(logLevelArg);
-	params[12] = strdup(spdHackNoAlphaArg);
-	params[13] = strdup(backlightArg);
-	params[14] = strdup(compatNonFatalNullImagesArg);
-	params[15] = strdup(compatTransToOriginOnGFXResetArg);
-	params[16] = strdup(fontArg);
-	params[17] = strdup(offsetArg);
-	params[18] = strdup(dumpGFXArg);
-	params[19] = strdup(tempKJXArg);
-	params[20] = strdup(m3gUntexArg);
-	params[21] = strdup(m3gWireArg);
-	params[22] = strdup(fpsunlockHack);
-	params[23] = strdup(compatImmediateRepaintArg);
-	params[24] = NULL; // Null-terminate the array
+	params[2] = strdup(supported_encodings[characterEncoding]);
+	params[3] = strdup("freej2me-lr.jar");
+	params[4] = strdup(resArg[0]);
+	params[5] = strdup(resArg[1]);
+	params[6] = strdup(rotateArg);
+	params[7] = strdup(phoneArg);
+	params[8] = strdup(fpsArg);
+	params[9] = strdup(soundArg);
+	params[10] = strdup(midiArg);
+	params[11] = strdup(dumpAudioArg);
+	params[12] = strdup(logLevelArg);
+	params[13] = strdup(spdHackNoAlphaArg);
+	params[14] = strdup(backlightArg);
+	params[15] = strdup(compatNonFatalNullImagesArg);
+	params[16] = strdup(compatTransToOriginOnGFXResetArg);
+	params[17] = strdup(fontArg);
+	params[18] = strdup(offsetArg);
+	params[19] = strdup(dumpGFXArg);
+	params[20] = strdup(tempKJXArg);
+	params[21] = strdup(m3gUntexArg);
+	params[22] = strdup(m3gWireArg);
+	params[23] = strdup(fpsunlockHack);
+	params[24] = strdup(compatImmediateRepaintArg);
+	params[25] = NULL; // Null-terminate the array
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
 
@@ -1083,7 +1087,7 @@ void retro_run(void)
 		/* read frame header */
 		frameRequested = false;
 		framesDropped = 0;
-		status = read_from_pipe(pRead[0], frameHeader, 13);
+		status = read_from_pipe(pRead[0], frameHeader, 15); // This is always frameHeader's length in Libretro.java -1 (we already read the previous status byte above into the "t" variable)
 
 		if(status>0)
 		{
@@ -1094,6 +1098,16 @@ void retro_run(void)
 			/* Read vibration event */
 			int preRumbleTime = ( (frameHeader[5]<<24) | (frameHeader[6]<<16) | (frameHeader[7]<<8) | (frameHeader[8]));
 			rumbleStrength = ( (frameHeader[9]<<24) | (frameHeader[10]<<16) | (frameHeader[11]<<8) | (frameHeader[12]));
+
+			/* Read if a restart request was sent (normally used to change character encoding) */
+			characterEncoding = frameHeader[14];
+
+			if(frameHeader[13] == 1)  // restart request received, honor it
+			{
+				log_fn(RETRO_LOG_INFO, "Received reset request of %d ms. Strength is 0x%04X\n", preRumbleTime, rumbleStrength); 
+				resetRequested = true;
+			}
+
 			if(preRumbleTime > 0) 
 			{ 
 				log_fn(RETRO_LOG_INFO, "Received Vibration event of %d ms. Strength is 0x%04X\n", preRumbleTime, rumbleStrength); 
@@ -1223,7 +1237,10 @@ void retro_run(void)
  	 * request through the pause button, this takes effect, since retro_run() runs for an entire
  	 * frame. This also means that frame advance is kinda supported, although not perfect.
  	 */
-	pauseFreeJ2ME(true);
+	if(resetRequested) { retro_reset(); }
+	else { pauseFreeJ2ME(true); }
+
+	
 }
 
 unsigned retro_get_region(void)
@@ -1262,6 +1279,7 @@ void retro_deinit(void)
 
 void retro_reset(void)
 {
+	resetRequested = false;
 	restarting = true;
 	booted = false;
 	retro_deinit();
@@ -1293,10 +1311,10 @@ int javaOpen(char *cmd, char **params)
 		log_fn(RETRO_LOG_INFO, "System Path: %s\n", systemPath);
 
 		log_fn(RETRO_LOG_INFO, "Setting up java app's process and pipes...\n");
-
-		log_fn(RETRO_LOG_INFO, "Opening: %s %s %s ...\n", *(params+0), *(params+1), *(params+2));
 	}
 	else { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME.\n"); restarting = false; }
+	
+	log_fn(RETRO_LOG_INFO, "Opening: %s %s %s %s ...\n", *(params+0), *(params+1), *(params+2), *(params+3));
 
 	int fd_stdin  = 0;
 	int fd_stdout = 1;
@@ -1401,10 +1419,10 @@ int javaOpen(char *cmd, char **params)
 	/* Try starting the child process. */
 	char cmdWin[PATH_MAX_LENGTH];
 	/* resArg[0], resArg[1], rotateArg, phoneArg, fpsArg, soundArg, midiArg */
-	sprintf(cmdWin, "javaw -jar %s", cmd);
+	sprintf(cmdWin, "javaw -jar %s %s", supported_encodings[characterEncoding], cmd);
 
 	log_fn(RETRO_LOG_INFO, "Opening: %s \n", cmdWin);
-	for (int i = 3; i < NUM_ARGUMENTS-1; i++)
+	for (int i = 4; i < NUM_ARGUMENTS-1; i++)
 	{
 		//log_fn(RETRO_LOG_INFO, "Processing arg %d: %s \n", i, *(params+i));
 		sprintf(cmdWin, "%s %s", cmdWin, *(params+i));

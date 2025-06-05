@@ -78,6 +78,25 @@ public class FreeJ2ME
 		FreeJ2ME.app = new FreeJ2ME(args);
 	}
 
+	public static void closeApp() 
+	{
+		try 
+		{
+            String java = System.getProperty("java.home") + "/bin/java";
+            String classPath = System.getProperty("java.class.path");
+
+            String[] commands = new String[] { java, "-Dfile.encoding=ISO_8859_1", "-cp", classPath, FreeJ2ME.class.getName() };
+
+            // Start a new instance
+            ProcessBuilder processBuilder = new ProcessBuilder(commands);
+            processBuilder.start();
+
+            // Exit the current instance
+            System.exit(0);
+        } 
+		catch (IOException e) { e.printStackTrace(); }
+	}
+
 	public FreeJ2ME(String args[])
 	{
 		// Setup Device //
@@ -326,7 +345,7 @@ public class FreeJ2ME
 			return loc;
 
 		File file = new File(loc);
-		if(! file.isFile())
+		if(!file.isFile())
 		{
 			Mobile.log(Mobile.LOG_ERROR, FreeJ2ME.class.getPackage().getName() + "." + FreeJ2ME.class.getSimpleName() + ": " + "File not found...");
 			System.exit(0);

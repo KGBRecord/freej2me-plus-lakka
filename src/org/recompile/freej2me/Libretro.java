@@ -39,7 +39,12 @@ public class Libretro
 	private boolean soundEnabled = true;
 
 	private byte[] frameBuffer = new byte[800*800*3];
-	private final byte[] frameHeader = new byte[]{(byte)0xFE, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	private final byte[] frameHeader = new byte[]{(byte)0xFE, 
+		0, 0, 0, 0, // Display data
+		0,          // Rotation enabled
+		0, 0, 0, 0, // Vibration duration
+		0, 0, 0, 0, // Vibration Strength
+		0, 0};      // Restart requested, and encoding requested
 
 	private int mousex;
 	private int mousey;
@@ -375,6 +380,8 @@ public class Libretro
 										Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "Couldn't load jar...");
 										System.exit(0);
 									}
+									
+									Mobile.libretroStarted = true;
 								break;
 
 								case 11: // set save path //
@@ -486,7 +493,7 @@ public class Libretro
 										frameHeader[2] = (byte)((lcdWidth)&0xFF);
 										frameHeader[3] = (byte)((lcdHeight>>8)&0xFF);
 										frameHeader[4] = (byte)((lcdHeight)&0xFF);
-										//frameHeader[5] = (byte)rotateDysplay; ( seen in settingsChanged() )
+
 										frameHeader[6] = (byte)((Mobile.vibrationDuration>>24) & 0xFF);
 										frameHeader[7] = (byte)((Mobile.vibrationDuration>>16) & 0xFF);
 										frameHeader[8] = (byte)((Mobile.vibrationDuration>>8) & 0xFF);
@@ -496,7 +503,11 @@ public class Libretro
 										frameHeader[11] = (byte)((Mobile.vibrationStrength>>16) & 0xFF);
 										frameHeader[12] = (byte)((Mobile.vibrationStrength>>8) & 0xFF);
 										frameHeader[13] = (byte)((Mobile.vibrationStrength) & 0xFF);
-										System.out.write(frameHeader, 0, 14);
+
+										frameHeader[14] = Mobile.libretroRestartRequested;
+										frameHeader[15] = Mobile.libretroEncodingRequested;
+
+										System.out.write(frameHeader, 0, 16);
 
 										/* Vibration duration should be set to zero to prevent constant sends of the same data, so update it here */
 										Mobile.vibrationDuration = 0;
