@@ -33,6 +33,7 @@ import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
+import javax.sound.midi.Sequencer;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
 import javax.microedition.media.protocol.DataSource;
@@ -51,9 +52,11 @@ public class Manager
 	private static boolean hasLoadedSoundfont = false;
 	private static File soundfontDir = new File("freej2me_system" + File.separatorChar + "customMIDI" + File.separatorChar);
 	private static Soundbank customSoundfont;
+	private static Soundbank defaultSoundbank = null;
 	
 	public static Synthesizer dedicatedSynth = null;
 	public static Receiver dedicatedReceiver = null;
+	public static Sequencer dedicatedSequencer = null;
 	public static MidiChannel channels[];
 	private static MidiChannel toneChannel;
 	private static Thread toneThread;
@@ -61,16 +64,29 @@ public class Manager
 	static 
 	{
 		try  
-		{
-			checkCustomMidi();
-			
+		{	
+			if(dedicatedSequencer != null) // We already went through here before, make sure to stop the sequencer and close the synth before changing the soundfont
+			{ 
+				dedicatedSequencer.stop(); 
+				dedicatedSynth.close();
+			}
+
 			dedicatedSynth = MidiSystem.getSynthesizer(); 
 			dedicatedSynth.open();
-			if(Mobile.useCustomMidi) { dedicatedSynth.loadAllInstruments(customSoundfont); }
+			defaultSoundbank = dedicatedSynth.getDefaultSoundbank();
+
+			checkCustomMidi();
+
+			dedicatedSynth.loadAllInstruments(customSoundfont);
 
 			dedicatedReceiver = dedicatedSynth.getReceiver();
 			channels = dedicatedSynth.getChannels();
 			toneChannel = channels[15]; // The last MIDI channel is often the least used, so use it for tones to minimize possible issues in case they play alongside sequenced data
+
+			dedicatedSequencer = MidiSystem.getSequencer(false);
+			dedicatedSequencer.getTransmitter().setReceiver(dedicatedReceiver);
+			dedicatedSequencer.open();
+
 			Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Synthesizer for sequenced and tone data is ready.");
 		} 
 		catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); }
@@ -303,15 +319,9 @@ public class Manager
 	private static final void checkCustomMidi() 
 	{
 		/* 
-			* Check if the user wants to run a custom MIDI soundfont. Also, there's no harm 
-			* in checking if the directory exists again. If it has already been loaded, jsut return.
-			*/
-		if(hasLoadedSoundfont) { return; }
-
-		/* 
-			* If the directory for custom soundfonts doesn't exist, create it, no matter if the user
-			* is going to use it or not.
-			*/
+		 * If the directory for custom soundfonts doesn't exist, create it, no matter if the user
+		 * is going to use it or not.
+		 */
 		if(!soundfontDir.isDirectory()) 
 		{
 			try 
@@ -340,16 +350,42 @@ public class Manager
 			{
 				// Load the first .sf2 font available, if there's none that's valid, don't set any and use JVM's default
 				customSoundfont = MidiSystem.getSoundbank(new File(soundfontDir, fontfile[0]));
-
-				hasLoadedSoundfont = true; // We have now loaded the custom midi soundfont, mark as such so we don't waste time entering here again
 			} 
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load soundfont into synth: " + e.getMessage());}
 		}
-		else if (!Mobile.useCustomMidi) { hasLoadedSoundfont = true; }
+		else if (!Mobile.useCustomMidi) 
+		{ 
+			customSoundfont = defaultSoundbank;
+		}
 		else 
 		{ 
 			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Custom MIDI enabled but there's no soundfont in" + (soundfontDir.getPath() + File.separatorChar)); 
-			hasLoadedSoundfont = true;
+			customSoundfont = defaultSoundbank;
 		}
+	}
+
+	public static void changeCustomMidi() 
+	{
+		try 
+		{
+			boolean wasPlaying = false;
+			checkCustomMidi();
+
+			if (dedicatedSequencer != null && dedicatedSequencer.isRunning()) 
+			{
+				dedicatedSequencer.stop();
+				wasPlaying = true;
+			}
+
+			// This is always called after the dedicatedSynth was created
+			dedicatedSynth.loadAllInstruments(customSoundfont);
+
+			// Restart the sequencer if needed
+			if (dedicatedSequencer != null && wasPlaying) 
+			{
+				dedicatedSequencer.start();
+			}
+		}
+		catch (Exception e) {Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to change MIDI soundfont: " + e.getMessage()); }
 	}
 }

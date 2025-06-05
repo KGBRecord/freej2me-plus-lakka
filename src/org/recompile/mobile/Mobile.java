@@ -872,6 +872,8 @@ public class Mobile
 		String midiSoundfont = config.settings.get("soundfont");
 		if(midiSoundfont.equals("Custom"))       { useCustomMidi = true; }
 		else if(midiSoundfont.equals("Default")) { useCustomMidi = false; }
+		
+		Manager.changeCustomMidi();
 
 		String lcdBacklightColor = config.settings.get("backlightcolor");
 		if(lcdBacklightColor.equals("Disabled"))    { maskIndex = 0; }

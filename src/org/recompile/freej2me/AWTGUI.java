@@ -581,9 +581,6 @@ public final class AWTGUI
 			{
 				if(useCustomMidi.getState()){ config.updateSoundfont("Custom"); hasPendingChange = true; }
 				else{ config.updateSoundfont("Default"); hasPendingChange = true; }
-
-				awtDialogs[3].setLocationRelativeTo(main);
-				awtDialogs[3].setVisible(true);
 			}
 		});
 

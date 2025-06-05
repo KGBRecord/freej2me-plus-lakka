@@ -80,6 +80,9 @@ public class PlatformPlayer implements Player
 	private static final midiPlayer[] midiPlayers = new midiPlayer[32];
 	private static Synthesizer synthesizer = Manager.dedicatedSynth;
 	private static Receiver receiver = Manager.dedicatedReceiver;
+	private static Sequencer sequencer = Manager.dedicatedSequencer;
+	private static MetaEventListener metaEventListener = null; // Will be populated with a static listener on first midi playback
+	private static MidiChannel[] midiChannels = Manager.channels;
 
 	private final byte NUM_CONTROLS = 4;
 
@@ -130,7 +133,7 @@ public class PlatformPlayer implements Player
 					{
 						// This is for Qualcomm's QCP format, it has to be checked before wav, because Qualcomm's PureVoice also has RIFF as its first bytes
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is Qualcomm PureVoice! (not supported yet)");
-						contentType = "audio/qcp (beta)";
+						contentType = "audio/qcp (stub)";
 						player = new audioplayer();
 						disableControls = true;
 					}
@@ -514,24 +517,22 @@ public class PlatformPlayer implements Player
 		private Sequence midiSequence;
 		public Synthesizer synthesizer;
 		public Receiver receiver;
-		private int numLoops = 0, synthIndex = 0;
-		private MetaEventListener metaListener = null;
+		private int numLoops = 0;
+		private long curTime = 0;
+		private boolean wasRunning = false;
 
 		public midiPlayer() // For when a Locator call (usually for tones) is issued
 		{
 			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Midi Player [locator] untested");
 
 			// Create an empty sequence, which should be overriden with whatever setSequence() receives.
-			try 
-			{ 
-				midi = MidiSystem.getSequencer(false);
-				midiSequence = new Sequence(Sequence.PPQ, 24); 
-			} 
+			try { midiSequence = new Sequence(Sequence.PPQ, 24); } 
 			catch (Exception e) {  Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load midi file:" + e.getMessage()); }
 			
 			PlatformPlayer.addPlayerToStack(this, null, null, null);
 			this.synthesizer = PlatformPlayer.synthesizer;
 			this.receiver = PlatformPlayer.receiver;
+			this.midi = PlatformPlayer.sequencer;
 		}
 
 		public midiPlayer(InputStream stream) 
@@ -540,56 +541,18 @@ public class PlatformPlayer implements Player
 			catch (Exception e) 
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load MIDI file: " + e.getMessage());
+				e.printStackTrace();
 			}
 
 			PlatformPlayer.addPlayerToStack(this, null, null, null);
 			this.synthesizer = PlatformPlayer.synthesizer;
 			this.receiver = PlatformPlayer.receiver;
+			this.midi = PlatformPlayer.sequencer;
 		}
 
 		public void realize() 
 		{
-			try 
-			{
-				midi = MidiSystem.getSequencer(false);
-				midi.getTransmitter().setReceiver(receiver);
-				midi.open();
-				midi.setSequence(midiSequence);
-
-				/* 
-				 * We have to listen for END_OF_MEDIA events, or else jars that rely on this
-				 * won't work in the expected way.
-				 */
-				if (metaListener == null) 
-				{
-					metaListener = new MetaEventListener() 
-					{
-						@Override
-						public void meta(MetaMessage meta) 
-						{
-							if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
-							{
-								state = Player.PREFETCHED;
-								notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
-								if(numLoops != 0) 
-								{
-									if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
-									setMediaTime(0);
-									start();
-								}
-							}
-						}
-					};
-					midi.addMetaEventListener(metaListener);
-				}
-
-				state = Player.REALIZED;
-			}
-			catch (Exception e) 
-			{
-				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not realize midi stream:" + e.getMessage());
-				state = Player.UNREALIZED; 
-			}
+			state = Player.REALIZED;
 		}
 
 		public void prefetch() { state = Player.PREFETCHED; }
@@ -598,11 +561,52 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				// Reload the sequence into the sequencer to prevent MIDI property carryovers
-				final long time = getMediaTime(); // We'll reload the sequence, so save it's current position to restore later.
+				setWasRunning(false); // If this player was running prior to being stopped by another stream, we need to resume it
+
+				for(int i = 0; i < midiPlayers.length; i++) // Pause any currently playing players that aren't this one
+				{
+					if(midiPlayers[i] != null && midiPlayers[i].getSequencer() != null && midiPlayers[i].isRunning()) 
+					{ 
+						midiPlayers[i].setWasRunning(true);
+						midiPlayers[i].stop(); 
+					}
+				}
+
+				// Reset the MetaEventListener so that it tracks the current midi sequence
+				midi.removeMetaEventListener(PlatformPlayer.metaEventListener);
+				PlatformPlayer.metaEventListener = new MetaEventListener() 
+				{
+					@Override
+					public void meta(MetaMessage meta) 
+					{
+						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
+						{
+							state = Player.PREFETCHED;
+							notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
+							curTime = getMediaTime();
+							if(numLoops != 0) 
+							{
+								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
+								setMediaTime(0);
+								start();
+							}
+							// No loops remaining, check if there was any previously running MIDI player, and set it to resume (UNTESTED, didn't find a jar that does this)
+							for(int i = 0; i < midiPlayers.length; i++) 
+							{
+								if(midiPlayers[i] != null && midiPlayers[i].getSequencer() != null && midiPlayers[i].wasRunning()) 
+								{ 
+									midiPlayers[i].start();
+								}
+							}
+						}
+					}
+				};
+				midi.addMetaEventListener(PlatformPlayer.metaEventListener);
+
 				midi.setSequence(midiSequence);
-				if(time >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
-				else { setMediaTime(time); } // Else, resume from where it stopped
+
+				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
+				else { setMediaTime(curTime); } // Else, resume from where it stopped
 
 				midi.start();
 				((volumeControl)getControl("VolumeControl")).setLevel(getVolume());
@@ -615,43 +619,19 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
+			getMediaTime();
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
 
 		public void deallocate() 
 		{ 
-			new Thread(new Runnable() 
-			{
-				@Override
-				public void run() 
-				{
-					if(metaListener != null) 
-					{
-						midi.removeMetaEventListener(metaListener);
-						metaListener = null;
-					}
-					if(midi != null) { midi.close(); }
-				}
-			}).start();
+			// Do nothing, basically. Every scarce resource is shared between midiPlayers
 		}
 
 		public void close() 
 		{
-			new Thread(new Runnable() 
-			{
-				@Override
-				public void run() 
-				{
-					if (metaListener != null) 
-					{
-						midi.removeMetaEventListener(metaListener);
-						metaListener = null;
-					}
-					if(midi != null) { midi.close(); }
-					midiSequence = null;
-				}
-			}).start();
+			midiSequence = null;
 		}
 
 		public void setLoopCount(int count)
@@ -683,7 +663,11 @@ public class PlatformPlayer implements Player
 			return getMediaTime();
 		}
 
-		public long getMediaTime() { return midi.getMicrosecondPosition(); }
+		public long getMediaTime() 
+		{ 
+			curTime = midi.getMicrosecondPosition(); 
+			return midi.getMicrosecondPosition(); 
+		}
 
 		public long getDuration() { return midi.getMicrosecondLength(); }
 
@@ -698,6 +682,10 @@ public class PlatformPlayer implements Player
 		}
 
 		public Sequencer getSequencer() { return midi; }
+
+		public boolean wasRunning() { return wasRunning; }
+
+		public void setWasRunning(boolean wasRunning) { this.wasRunning = wasRunning; }
 	}
 
 	private class SMAFPlayer extends audioplayer
@@ -707,8 +695,9 @@ public class PlatformPlayer implements Player
 		private Sequence midiSequence;
 		public Synthesizer synthesizer;
 		public Receiver receiver;
-		private int numLoops = 0, synthIndex = 0;
-		private MetaEventListener metaListener = null;
+		private int numLoops = 0;
+		private long curTime = 0;
+		private boolean wasRunning = false;
 
 		// Meanwhile, sampled data will be treated like "additional" instruments
 		private boolean isPlaying = false;
@@ -738,17 +727,13 @@ public class PlatformPlayer implements Player
 			}
 			this.synthesizer = PlatformPlayer.synthesizer;
 			this.receiver = PlatformPlayer.receiver;
+			this.midi = PlatformPlayer.sequencer;
 		}
 
 		public void realize() 
 		{
 			try 
 			{
-				midi = MidiSystem.getSequencer(false);
-				midi.getTransmitter().setReceiver(receiver);
-				midi.open();
-				midi.setSequence(midiSequence);
-
 				if(wavStreams != null) 
 				{
 					for(int i = 0; i < wavStreams.length; i++) 
@@ -756,33 +741,6 @@ public class PlatformPlayer implements Player
 						wavClips[i] = AudioSystem.getClip();
 						wavClips[i].open(wavStreams[i]);
 					} 
-				}
-
-				/* 
-				 * We have to listen for END_OF_MEDIA events for SMAF as well, even
-				 * if jars don't seem to rely on it as much.
-				 */
-				if (metaListener == null) 
-				{
-					metaListener = new MetaEventListener() 
-					{
-						@Override
-						public void meta(MetaMessage meta) 
-						{
-							if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
-							{
-								state = Player.PREFETCHED;
-								notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
-								if(numLoops != 0) 
-								{
-									if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
-									setMediaTime(0);
-									start();
-								}
-							}
-						}
-					};
-					midi.addMetaEventListener(metaListener);
 				}
 
 				state = Player.REALIZED;
@@ -801,11 +759,52 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				// Reload the sequence into the sequencer to prevent MIDI property carryovers
-				final long time = getMediaTime(); // We'll reload the sequence, so save it's current position to restore later.
+				setWasRunning(false); // If this player was running prior to being stopped by another stream, we need to resume it
+
+				for(int i = 0; i < midiPlayers.length; i++) // Pause any currently playing players that aren't this one
+				{
+					if(midiPlayers[i] != null && midiPlayers[i].getSequencer() != null && midiPlayers[i].isRunning()) 
+					{ 
+						midiPlayers[i].setWasRunning(true);
+						midiPlayers[i].stop(); 
+					}
+				}
+
+				// Reset the MetaEventListener so that it tracks the current midi sequence
+				midi.removeMetaEventListener(PlatformPlayer.metaEventListener);
+				PlatformPlayer.metaEventListener = new MetaEventListener() 
+				{
+					@Override
+					public void meta(MetaMessage meta) 
+					{
+						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
+						{
+							state = Player.PREFETCHED;
+							notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
+							curTime = getMediaTime();
+							if(numLoops != 0) 
+							{
+								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
+								setMediaTime(0);
+								start();
+							}
+							// No loops remaining, check if there was any previously running MIDI player, and set it to resume (UNTESTED, didn't find a jar that does this)
+							for(int i = 0; i < midiPlayers.length; i++) 
+							{
+								if(midiPlayers[i] != null && midiPlayers[i].getSequencer() != null && midiPlayers[i].wasRunning()) 
+								{ 
+									midiPlayers[i].start();
+								}
+							}
+						}
+					}
+				};
+				midi.addMetaEventListener(PlatformPlayer.metaEventListener);
+
 				midi.setSequence(midiSequence);
-				if(time >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
-				else { setMediaTime(time); } // Else, resume from where it stopped
+
+				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
+				else { setMediaTime(curTime); } // Else, resume from where it stopped
 
 				isPlaying = true;
 
@@ -839,15 +838,15 @@ public class PlatformPlayer implements Player
 					}
 				}
 		
-				// Sleep for 5ms to not hammer the CPU too hard with constant checks (this can cause issues if the sequence has sub-5ms pcm requests, but that would be egregious)
-				try { Thread.sleep(5); }
+				// Sleep for a bit to not hammer the CPU too hard with constant checks (this can cause issues if the sequence has sub-5ms pcm requests, but that would be egregious)
+				try { Thread.sleep(1); }
 				catch (InterruptedException e) { Thread.currentThread().interrupt(); }
 			}
 		}
 
 		private void playPcmStream(int pcmIndex) 
 		{
-			if (wavClips[pcmIndex] != null) 
+			if (pcmIndex < wavClips.length && wavClips[pcmIndex] != null) 
 			{
 				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); }
 				wavClips[pcmIndex].setFramePosition(0);
@@ -858,6 +857,7 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
+			getMediaTime();
 			if(wavClips != null) 
 			{
 				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); }
@@ -867,6 +867,7 @@ public class PlatformPlayer implements Player
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
 
+		// On SMAF, we only really deallocate the WAVClips
 		public void deallocate() 
 		{
 			new Thread(new Runnable() 
@@ -874,13 +875,6 @@ public class PlatformPlayer implements Player
 				@Override
 				public void run() 
 				{
-					if(metaListener != null) 
-					{
-						midi.removeMetaEventListener(metaListener);
-						metaListener = null;
-					}
-					if(midi != null) { midi.close(); }
-					
 					if(wavClips != null) 
 					{
 						for(int i = 0; i < wavClips.length; i++) 
@@ -902,12 +896,6 @@ public class PlatformPlayer implements Player
 				@Override
 				public void run() 
 				{
-					if (metaListener != null) 
-					{
-						midi.removeMetaEventListener(metaListener);
-						metaListener = null;
-					}
-					if(midi != null) { midi.close(); }
 					midiSequence = null;
 
 					if(wavClips != null) 
@@ -954,7 +942,11 @@ public class PlatformPlayer implements Player
 			return getMediaTime();
 		}
 
-		public long getMediaTime() { return midi.getMicrosecondPosition(); }
+		public long getMediaTime() 
+		{ 
+			curTime = midi.getMicrosecondPosition();
+			return midi.getMicrosecondPosition(); 
+		}
 
 		public long getDuration() { return midi.getMicrosecondLength(); }
 
@@ -969,6 +961,10 @@ public class PlatformPlayer implements Player
 		}
 
 		public Sequencer getSequencer() { return midi; }
+
+		public boolean wasRunning() { return wasRunning; }
+
+		public void setWasRunning(boolean wasRunning) { this.wasRunning = wasRunning; }
 	}
 
 	private class wavPlayer extends audioplayer
@@ -1353,11 +1349,9 @@ public class PlatformPlayer implements Player
 			// This is VERY costly, and might not even be correct as it relies on getProgramList and getBankList, which themselves are untested.
 			try
 			{
-				MidiChannel[] channels = player.synthesizer.getChannels();
-
-				if(channel < 0 || channel > channels.length) {throw new IllegalArgumentException("midiControl: Tried to call getProgram with invalid channel");}
+				if(channel < 0 || channel > midiChannels.length) {throw new IllegalArgumentException("midiControl: Tried to call getProgram with invalid channel");}
 		
-				int currentProgram = channels[channel].getProgram(); // This returns a {bank, program} pair, so only channel.getProgram() is not enough.
+				int currentProgram = midiChannels[channel].getProgram(); // This returns a {bank, program} pair, so only channel.getProgram() is not enough.
 				
 				// We got the program mapped to that channel, now to find the corresponding bank for this program
 				int[] banks = getBankList(false); // Retrieve the list of available banks
@@ -1480,14 +1474,11 @@ public class PlatformPlayer implements Player
 
 			try 
 			{
-				MidiChannel[] channels = player.synthesizer.getChannels();
-
-				if(channel < 0 || channel > channels.length || volume < 0 || volume > 127) {throw new IllegalArgumentException("midiControl: Tried to call setChannelVolume with invalid args");}
+				if(channel < 0 || channel > midiChannels.length || volume < 0 || volume > 127) {throw new IllegalArgumentException("midiControl: Tried to call setChannelVolume with invalid args");}
 
 				// Set the volume on the MIDI channel
 				channelVolume[channel] = volume; // For tracking purposes, whenever getChannelVolume is called.
-				channels[channel].controlChange(7, volume);
-				LockSupport.parkNanos(100_000); // Java Sound API is so horrible with MIDI volume changes, it can't even be described
+				midiChannels[channel].controlChange(7, volume);
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Midi setChannelVolume failed: " + e.getMessage());}
 		}
@@ -1560,14 +1551,14 @@ public class PlatformPlayer implements Player
 
 				if(sequencer.isRunning())
 				{
-					synchronized(sequencer) 
+					synchronized(this) 
 					{
-						MidiChannel channels[] = sequencer.synthesizer.getChannels();
 						// Set volume for all channels through Control Change command 7 (volume)
-						for (int channel = 0; channel < channels.length; channel++) 
+						for (int channel = 0; channel < midiChannels.length; channel++) 
 						{
-							LockSupport.parkNanos(75_000); // Java Sound API is so horrible with MIDI volume changes, it can't even be described
-							channels[channel].controlChange(7, level);
+							if(channel > 0) { LockSupport.parkNanos(50_000); }
+							midiChannels[channel].controlChange(7, midiVolume);
+							if(channel < midiChannels.length-1) { LockSupport.parkNanos(50_000); }
 						}
 					}
 				}
