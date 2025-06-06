@@ -100,7 +100,7 @@ public final class AWTGUI
 		new Button("Close"),
 		new Button("Apply"),
 		new Button("Cancel"),
-		new Button("Close FreeJ2ME"),
+		new Button("Restart Now"),
 		new Button("Restart later"),
 		new Button("Apply Inputs"),
 		new Button("Cancel")
@@ -166,6 +166,7 @@ public final class AWTGUI
 	final MenuItem resChangeMenuItem = new MenuItem("Change Phone Resolution");
 
 	final MenuItem openMenuItem = new MenuItem("Open JAR / JAD / KJX File");
+	final MenuItem restartMenuItem = new MenuItem("Restart Running Jar");
 	final MenuItem closeMenuItem = new MenuItem("Close Running Jar");
 	final MenuItem scrShot = new MenuItem("Take Screenshot (Ctrl+C)");
 	final MenuItem pauseRes = new MenuItem("Pause / Resume (Ctrl+X)");
@@ -462,6 +463,7 @@ public final class AWTGUI
 		awtDialogs[3].add(awtButtons[4]);
 		
 		openMenuItem.setActionCommand("Open");
+		restartMenuItem.setActionCommand("RestartNow");
 		closeMenuItem.setActionCommand("Close");
 		scrShot.setActionCommand("Screenshot");
 		pauseRes.setActionCommand("PauseResume");
@@ -471,7 +473,7 @@ public final class AWTGUI
 		awtButtons[1].setActionCommand("ApplyResChange");
 		awtButtons[2].setActionCommand("CancelResChange");
 		awtButtons[0].setActionCommand("CloseAboutMenu");
-		awtButtons[3].setActionCommand("CloseFreeJ2ME");
+		awtButtons[3].setActionCommand("RestartNow");
 		awtButtons[4].setActionCommand("RestartLater");
 		mapInputs.setActionCommand("MapInputs");
 		awtButtons[5].setActionCommand("ApplyInputs");
@@ -480,6 +482,7 @@ public final class AWTGUI
 		showPlayer.setActionCommand("ShowPlayer");
 		
 		openMenuItem.addActionListener(menuItemListener);
+		restartMenuItem.addActionListener(menuItemListener);
 		closeMenuItem.addActionListener(menuItemListener);
 		scrShot.addActionListener(menuItemListener);
 		pauseRes.addActionListener(menuItemListener);
@@ -591,8 +594,7 @@ public final class AWTGUI
 				if(useCustomFont.getState()){ config.updateTextFont("Custom"); hasPendingChange = true; }
 				else{ config.updateTextFont("Default"); hasPendingChange = true; }
 
-				awtDialogs[3].setLocationRelativeTo(main);
-				awtDialogs[3].setVisible(true);
+				showRestartDialog();
 			}
 		});
 
@@ -604,8 +606,7 @@ public final class AWTGUI
 				if(noAlphaOnBlankImages.getState()){ config.updateAlphaSpeedHack("on"); hasPendingChange = true; }
 				else{ config.updateAlphaSpeedHack("off"); hasPendingChange = true; }
 
-				awtDialogs[3].setLocationRelativeTo(main);
-				awtDialogs[3].setVisible(true);
+				showRestartDialog();
 			}
 		});
 
@@ -617,8 +618,7 @@ public final class AWTGUI
 				if(NonFatalNullImages.getState()){ config.updateCompatNonFatalNullImage("on"); hasPendingChange = true; }
 				else{ config.updateCompatNonFatalNullImage("off"); hasPendingChange = true; }
 
-				awtDialogs[3].setLocationRelativeTo(main);
-				awtDialogs[3].setVisible(true);
+				showRestartDialog();
 			}
 		});
 
@@ -849,6 +849,7 @@ public final class AWTGUI
 	{
 		//add menu items to menus
 		fileMenu.add(openMenuItem);
+		fileMenu.add(restartMenuItem);
 		fileMenu.add(closeMenuItem);
 		fileMenu.addSeparator();
 		fileMenu.add(scrShot);
@@ -966,7 +967,7 @@ public final class AWTGUI
 			// Get saved inputs from system config file.
 			System.arraycopy(config.inputKeycodes, 0, newInputKeycodes, 0, inputKeycodes.length);
 			for(int i = 0; i < inputButtons.length; i++) { inputButtons[i].setLabel(KeyEvent.getKeyText(newInputKeycodes[i])); }
-			
+
 			/* We only need to do this call once, when the jar first loads */
 			firstLoad = false;
 	}
@@ -1000,12 +1001,18 @@ public final class AWTGUI
 				if(filename == null) { Mobile.log(Mobile.LOG_DEBUG, AWTGUI.class.getPackage().getName() + "." + AWTGUI.class.getSimpleName() + ": " + "JAR/JAD Loading was cancelled"); }
 				else
 				{
-					try 
-					{
-						jarfile = new File(filePicker.getDirectory()+filename).toURI().toString();
-						loadJarFile(jarfile, true); 
-					}
-				 	catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, AWTGUI.class.getPackage().getName() + "." + AWTGUI.class.getSimpleName() + ": " + "Load error:" + e.getMessage()); }
+						try 
+						{
+							jarfile = new File(filePicker.getDirectory()+filename).toURI().toString();
+							
+							if(!hasLoadedFile()) { loadJarFile(jarfile); } // First jar being loaded, load straight away
+							else // Otherwise, this requires a restart.
+							{
+								Mobile.getPlatform().fileName = jarfile;
+								showRestartDialog();
+							}
+						}
+						catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, AWTGUI.class.getPackage().getName() + "." + AWTGUI.class.getSimpleName() + ": " + "Load error:" + e.getMessage()); }
 				}
 			}
 
@@ -1037,7 +1044,7 @@ public final class AWTGUI
 
 			else if (a.getActionCommand() == "CancelResChange") { awtDialogs[0].setVisible(false); }
 
-			else if(a.getActionCommand() == "CloseFreeJ2ME") { System.exit(0); }
+			else if(a.getActionCommand() == "RestartNow") { Mobile.restartApp(); }
 
 			else if(a.getActionCommand() == "RestartLater") { awtDialogs[3].setVisible(false); }
 
@@ -1062,11 +1069,11 @@ public final class AWTGUI
 		}
 	}
 
-	public void loadJarFile(String jarpath, boolean firstLoad) 
+	public void loadJarFile(String jarpath) 
 	{
 		jarfile = jarpath;
 		fileLoaded = true;
-		this.firstLoad = firstLoad;
+		firstLoad = true;
 	}
 
 	public MenuBar getMenuBar() { return menuBar; }
@@ -1082,4 +1089,10 @@ public final class AWTGUI
 	public String getJarPath() { return jarfile; }
 
 	public boolean hasJustLoaded() { return firstLoad; }
+
+	public void showRestartDialog() 
+	{
+		awtDialogs[3].setLocationRelativeTo(main);
+		awtDialogs[3].setVisible(true);	
+	}
 }

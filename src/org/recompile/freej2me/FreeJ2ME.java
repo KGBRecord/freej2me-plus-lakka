@@ -128,7 +128,7 @@ public class FreeJ2ME
 
 		if(args.length>=1) // Only now we can load the jar passed as argument
 		{
-			awtGUI.loadJarFile(getFormattedLocation(args[0]), true);
+			awtGUI.loadJarFile(getFormattedLocation(args[0]));
 		}
 
 		/* Inputs should only be registered if a jar has been loaded, otherwise AWT will throw NullPointerException */
@@ -568,26 +568,23 @@ public class FreeJ2ME
 				@SuppressWarnings("unchecked")
 				public void dragEnter(DropTargetDragEvent dtde) 
 				{
-					if(!awtGUI.hasLoadedFile()) 
+					try 
 					{
-						try 
+						if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) 
 						{
-							if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) 
-							{
-								// Get the files being dragged
-								Transferable transferable = dtde.getTransferable();
-								java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
-								
-								// Check if the file is supported
-								boolean supported = files.stream().anyMatch(file -> isSupportedFile(file.getName()));
-								if (supported) { fileSupported = true; } 
-								else { fileSupported = false; }
-							}
-						} catch (Exception e) { e.printStackTrace(); }
+							// Get the files being dragged
+							Transferable transferable = dtde.getTransferable();
+							java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+							
+							// Check if the file is supported
+							boolean supported = files.stream().anyMatch(file -> isSupportedFile(file.getName()));
+							if (supported) { fileSupported = true; } 
+							else { fileSupported = false; }
+						}
+					} catch (Exception e) { e.printStackTrace(); }
 
-						showDragMessage = true;
-						repaint();
-					}
+					showDragMessage = true;
+					repaint();
 				}
 	
 				@Override
@@ -614,10 +611,15 @@ public class FreeJ2ME
 						if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) 
 						{
 							java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
-							if (!files.isEmpty() && !awtGUI.hasLoadedFile() && fileSupported) 
+							if (!files.isEmpty() && fileSupported) 
 							{
 								// Load the dropped file
-								awtGUI.loadJarFile(files.get(0).toURI().toString(), true);
+								if(!awtGUI.hasLoadedFile()) { awtGUI.loadJarFile(files.get(0).toURI().toString()); }
+								else // Ask for a restart if a jar is already running
+								{
+									Mobile.getPlatform().fileName = files.get(0).toURI().toString();
+									awtGUI.showRestartDialog();
+								}
 							}
 						}
 					} 
