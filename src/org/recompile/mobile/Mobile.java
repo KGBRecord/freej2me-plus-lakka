@@ -961,7 +961,6 @@ public class Mobile
 			{
 				String[] commands = new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath};
 
-				System.out.println("commands:" + Arrays.toString(commands));
 				ProcessBuilder processBuilder = new ProcessBuilder(commands);
 				processBuilder.start();
 

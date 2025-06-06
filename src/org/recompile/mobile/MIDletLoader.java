@@ -318,7 +318,7 @@ public class MIDletLoader extends URLClassLoader
 		boolean hasMIDlet = false;
         String currentKey = null;
         StringBuilder currentValue = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) 
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"))) // Use the expanded UTF-8 charset for parsing standard MIDlets (chinese jars would have issues otherwise)
 		{
             String line;
             while ((line = br.readLine()) != null) 
