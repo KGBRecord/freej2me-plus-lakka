@@ -210,12 +210,18 @@ public final class AWTGUI
 	{
 		new CheckboxMenuItem("No Limit", true),
 		new CheckboxMenuItem("60 FPS", false),
+		new CheckboxMenuItem("55 FPS", false),
+		new CheckboxMenuItem("50 FPS", false),
+		new CheckboxMenuItem("45 FPS", false),
 		new CheckboxMenuItem("40 FPS", false),
+		new CheckboxMenuItem("35 FPS", false),
 		new CheckboxMenuItem("30 FPS", false),
+		new CheckboxMenuItem("25 FPS", false),
 		new CheckboxMenuItem("20 FPS", false),
-		new CheckboxMenuItem("15 FPS", false)
+		new CheckboxMenuItem("15 FPS", false),
+		new CheckboxMenuItem("10 FPS", false)
 	};
-	final String[] fpsValues = {"0", "60", "40", "30", "20", "15"};
+	final String[] fpsValues = {"0", "60", "55", "50", "45", "40", "35", "30", "25", "20", "15", "10"};
 
 	final CheckboxMenuItem[] fpsHackOptions = 
 	{

@@ -155,7 +155,7 @@ unsigned long int screenRes[2]; /* {width, height} */
 int rotateScreen; /* Acts as a boolean */
 int phoneType = 0; /* 0=Standard (Nokia/Sony/Samsung), 1=LG, 2=Motorola/SoftBank, 3=Motorola Triplets... refer to freej2me_libretro.h's "Phone Key Layout" */
 int backlightColor = 1; /* 0=Disabled, 1=Green, etc. */
-int gameFPS; /* Auto(0), 60, 30, 15 */
+int gameFPS; /* Auto(0), 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10 */
 int soundEnabled; /* also acts as a boolean */
 int customMidi; /* Also acts as a boolean */
 int customFont; /* Also acts as a boolean */
@@ -371,10 +371,16 @@ static void check_variables(bool first_time_startup)
 	{
 		if (!strcmp(var.value, "Auto"))    { gameFPS = 0;  }
 		else if (!strcmp(var.value, "60")) { gameFPS = 60; }
+		else if (!strcmp(var.value, "55")) { gameFPS = 55; }
+		else if (!strcmp(var.value, "50")) { gameFPS = 50; }
+		else if (!strcmp(var.value, "45")) { gameFPS = 45; }
 		else if (!strcmp(var.value, "40")) { gameFPS = 40; }
+		else if (!strcmp(var.value, "35")) { gameFPS = 35; }
 		else if (!strcmp(var.value, "30")) { gameFPS = 30; }
+		else if (!strcmp(var.value, "25")) { gameFPS = 25; }
 		else if (!strcmp(var.value, "20")) { gameFPS = 20; }
 		else if (!strcmp(var.value, "15")) { gameFPS = 15; }
+		else if (!strcmp(var.value, "10")) { gameFPS = 10; }
 	}
 
 
