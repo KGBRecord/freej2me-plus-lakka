@@ -883,10 +883,8 @@ public class Mobile
 		if(phone.equals("Sharp"))         { sharp = true;}
 
 		String midiSoundfont = config.settings.get("soundfont");
-		if(midiSoundfont.equals("Custom"))       { useCustomMidi = true; }
-		else if(midiSoundfont.equals("Default")) { useCustomMidi = false; }
-		
-		Manager.changeCustomMidi();
+		if(midiSoundfont.equals("Custom") && useCustomMidi == false)      { useCustomMidi = true;  Manager.changeCustomMidi(); }
+		else if(midiSoundfont.equals("Default") && useCustomMidi == true) { useCustomMidi = false; Manager.changeCustomMidi(); }
 
 		String lcdBacklightColor = config.settings.get("backlightcolor");
 		if(lcdBacklightColor.equals("Disabled"))    { maskIndex = 0; }
