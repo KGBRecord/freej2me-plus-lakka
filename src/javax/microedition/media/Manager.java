@@ -212,7 +212,6 @@ public class Manager
 
 		final byte restoreVolume = (byte) toneChannel.getController(7); // Save previous volume to restore later, as this synth is shared by everything that uses MIDI
 
-		System.out.println("restorevol:" + restoreVolume);
 		/* 
 		 * There's no need to calculate the note frequency as per the MIDP Manager docs,
 		 * they are pretty much the note numbers used by Java's Built-in MIDI library. 
