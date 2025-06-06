@@ -26,6 +26,7 @@
 #include <sys/wait.h>
 #elif _WIN32
 #include <windows.h>
+#include <tlhelp32.h>
 #endif
 #include "freej2me_libretro.h"
 #include <file/file_path.h>
@@ -93,7 +94,7 @@ struct retro_game_geometry Geometry;
 
 
 bool isRunning();
-int javaOpen(char *cmd, char **params);
+void javaOpen(char *cmd, char **params);
 
 #ifdef __linux__
 int javaProcess;
@@ -180,7 +181,7 @@ unsigned int spdFrameRateUnlock = 0; // Boolean
 /* Compatibility Settings section */
 unsigned int compatNonFatalNullImages      = 0; // Boolean
 unsigned int compatTransToOriginOnGFXReset = 0; // Boolean
-unsigned int compatImmediateRepaintCalls           = 0; // Boolean
+unsigned int compatImmediateRepaintCalls   = 0; // Boolean
 
 /* Libretro exposed config variables END */
 
@@ -602,24 +603,6 @@ static void check_variables(bool first_time_startup)
 	free(options_update);
 }
 
-/* Core exit function */
-
-void quit(int state)
-{
-#ifdef __linux__
-	kill(javaProcess, SIGKILL);
-	wait(NULL);
-#elif _WIN32
-	CloseHandle(pRead[0]);
-	CloseHandle(pRead[1]);
-	CloseHandle(pWrite[0]);
-	CloseHandle(pWrite[1]);
-	TerminateProcess(javaProcess.hProcess, state);
-	WaitForSingleObject(javaProcess.hProcess, 1000); // Wait at most 1 second for the process to be terminated
-	CloseHandle(javaProcess.hProcess);
-#endif
-}
-
 static void Keyboard(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers)
 {
 	unsigned char event[5] = {down, (keycode>>24)&0xFF, (keycode>>16)&0xFF, (keycode>>8)&0xFF, keycode&0xFF };
@@ -679,7 +662,11 @@ void retro_init(void)
 
 	/* Allocate memory for launch arguments */
 	params = (char**)malloc(sizeof(char*) * NUM_ARGUMENTS);
+#ifdef __linux__
 	params[0] = strdup("java");
+#elif _WIN32
+	params[0] = strdup("javaw");
+#endif
 	params[1] = strdup("-jar");
 	params[2] = strdup(supported_encodings[characterEncoding]);
 	params[3] = strdup("freej2me-lr.jar");
@@ -708,11 +695,7 @@ void retro_init(void)
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
 
-#ifdef __linux__
-	javaProcess = javaOpen(params[0], params);
-#elif _WIN32
-	javaOpen(params[2], params);
-#endif
+	javaOpen(params[0], params);
 
 	/* wait for java process */
 	int t = 0;
@@ -766,29 +749,25 @@ bool retro_load_game(const struct retro_game_info *info)
 	/* Tell java app to load and run game */
 	char romPath[PATH_MAX_LENGTH];
 
-	#ifdef __linux__
+#ifdef __linux__
 	realpath(info->path, romPath);
-	#elif _WIN32
+#elif _WIN32
 	_fullpath(romPath, info->path, PATH_MAX_LENGTH);
-	#endif
+#endif
 
 	len = strlen(romPath);
-	log_fn(RETRO_LOG_INFO, "Loading actual jar game from %s\n", romPath);
+	log_fn(RETRO_LOG_INFO, "Loading actual jar app from %s\n", romPath);
 
 	unsigned char loadevent[5] = { 0xA, (len>>24)&0xFF, (len>>16)&0xFF, (len>>8)&0xFF, len&0xFF };
 	write_to_pipe(pWrite[1], loadevent, 5);
 	write_to_pipe(pWrite[1], (unsigned char*) romPath, len);
 
-	log_fn(RETRO_LOG_INFO, "Sent game file and save paths to Java app.\n");
+	log_fn(RETRO_LOG_INFO, "Sent app file and save paths to Java app.\n");
 
 	return true;
 }
 
-void retro_unload_game(void)
-{
-	/* Quit */
-	quit(0);
-}
+void retro_unload_game(void) { /* FreeJ2ME closes the game by itself */ }
 
 // TODO: FreeJ2ME doesn't pause perfectly yet, biggest offender being the MIDI Sequencer.
 void pauseFreeJ2ME(bool pause) 
@@ -798,7 +777,7 @@ void pauseFreeJ2ME(bool pause)
 	if(pause) { kill(javaProcess, SIGSTOP); }
 	else { kill(javaProcess, SIGCONT); }
 #elif _WIN32
-	// NOTE: Untested, tries to suspend/resume java app's main thread.
+	// NOTE: Doesn't work properly, check the comment in retro_deinit() to understand why
 	if(pause) { SuspendThread(javaProcess.hThread); }
 	else { ResumeThread(javaProcess.hThread); }
 #endif
@@ -1102,11 +1081,8 @@ void retro_run(void)
 			/* Read if a restart request was sent (normally used to change character encoding) */
 			characterEncoding = frameHeader[14];
 
-			if(frameHeader[13] == 1)  // restart request received, honor it
-			{
-				log_fn(RETRO_LOG_INFO, "Received reset request of %d ms. Strength is 0x%04X\n", preRumbleTime, rumbleStrength); 
-				resetRequested = true;
-			}
+			// restart request received, honor it
+			if(frameHeader[13] == 1) { resetRequested = true; }
 
 			if(preRumbleTime > 0) 
 			{ 
@@ -1274,7 +1250,60 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 
 void retro_deinit(void)
 {
-	quit(0);
+#ifdef __linux__
+	kill(javaProcess, SIGKILL);
+	wait(NULL);
+#elif _WIN32
+	HANDLE hProcessSnap;
+	PROCESSENTRY32 pe32;
+	CloseHandle(pRead[0]);
+	CloseHandle(pRead[1]);
+	CloseHandle(pWrite[0]);
+	CloseHandle(pWrite[1]);	
+
+	/* 
+	* Since java on win32 has the "decency" to open a secondary process with another PID
+	* that is what runs freej2me's jar, the only way i (with my very limited windows
+	* knowledge) can think of to reliably close this is going nuclear: Terminate all javaw 
+	* processes related to javaProcess.
+	*/
+	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE) { return; }
+
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+
+	if (!Process32First(hProcessSnap, &pe32)) 
+	{
+		CloseHandle(hProcessSnap);
+		return;
+	}
+
+	// Iterate through all processes.
+	do 
+	{
+		if (pe32.th32ParentProcessID == javaProcess.dwProcessId) 
+		{
+			// Open the child process with TERMINATE permission.
+			HANDLE hChildProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
+			if (hChildProcess) 
+			{
+				// Terminate the child process.
+				TerminateProcess(hChildProcess, 0);
+				CloseHandle(hChildProcess);
+			}
+		}
+	} while (Process32Next(hProcessSnap, &pe32));
+
+	// Then terminate the parent process (the one we have the pointer to).
+	HANDLE hParentProcess = OpenProcess(PROCESS_TERMINATE, FALSE, javaProcess.dwProcessId);
+	if (hParentProcess) 
+	{
+		TerminateProcess(hParentProcess, 0);
+		CloseHandle(hParentProcess);
+	}
+
+	CloseHandle(hProcessSnap);
+#endif
 }
 
 void retro_reset(void)
@@ -1301,10 +1330,8 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {  }
 
 
 /* Java Process */
-int javaOpen(char *cmd, char **params)
+void javaOpen(char *cmd, char **params)
 {
-	int pid = 0;
-
 #ifdef __linux__
 	if(!restarting)
 	{
@@ -1316,6 +1343,7 @@ int javaOpen(char *cmd, char **params)
 	
 	log_fn(RETRO_LOG_INFO, "Opening: %s %s %s %s ...\n", *(params+0), *(params+1), *(params+2), *(params+3));
 
+	int pid = 0;
 	int fd_stdin  = 0;
 	int fd_stdout = 1;
 
@@ -1357,6 +1385,8 @@ int javaOpen(char *cmd, char **params)
 		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[COULD_NOT_START_MSG]);
 	}
 
+	javaProcess = pid;
+
 #elif _WIN32
 	SECURITY_ATTRIBUTES pipeSec;
 
@@ -1366,9 +1396,7 @@ int javaOpen(char *cmd, char **params)
 	ZeroMemory( &startInfo, sizeof(startInfo) );
 	ZeroMemory( &javaProcess, sizeof(javaProcess) );
 
-	startInfo.cb = sizeof(SECURITY_ATTRIBUTES);
-	pipeSec.nLength = sizeof(LPSECURITY_ATTRIBUTES);
-	pipeSec.lpSecurityDescriptor = NULL;
+	pipeSec.nLength = sizeof(pipeSec);
 	pipeSec.bInheritHandle = TRUE; /* Needed for IPC between java app and this core */
 
 	log_fn(RETRO_LOG_INFO, "Creating pipes...\n");
@@ -1414,34 +1442,36 @@ int javaOpen(char *cmd, char **params)
 	log_fn(RETRO_LOG_INFO, "Created pipes! \n");
 
 	log_fn(RETRO_LOG_INFO, "Trying to create process... \n");
-	log_fn(RETRO_LOG_INFO, "Process name: %s \n", cmd);
+	log_fn(RETRO_LOG_INFO, "Process name: %s \n", params[4]);
 
 	/* Try starting the child process. */
 	char cmdWin[PATH_MAX_LENGTH];
-	/* resArg[0], resArg[1], rotateArg, phoneArg, fpsArg, soundArg, midiArg */
-	sprintf(cmdWin, "javaw -jar %s %s", supported_encodings[characterEncoding], cmd);
 
-	log_fn(RETRO_LOG_INFO, "Opening: %s \n", cmdWin);
-	for (int i = 4; i < NUM_ARGUMENTS-1; i++)
+	strncpy(cmdWin, params[0], PATH_MAX_LENGTH - 1); // First argument needs no space separator
+
+	for (int i = 1; i < NUM_ARGUMENTS; i++) 
 	{
-		//log_fn(RETRO_LOG_INFO, "Processing arg %d: %s \n", i, *(params+i));
-		sprintf(cmdWin, "%s %s", cmdWin, *(params+i));
-	}
+        if (params[i] != NULL) 
+		{
+			strncat(cmdWin, " ", PATH_MAX_LENGTH - strlen(cmdWin) - 1);
+			strncat(cmdWin, params[i], PATH_MAX_LENGTH - strlen(cmdWin) - 1);
+        }
+    }
 
 	if(!restarting)
 	{
 		log_fn(RETRO_LOG_INFO, "System Path: %s\n", systemPath);
 
 		log_fn(RETRO_LOG_INFO, "Setting up java app's process and pipes...\n");
-
-		log_fn(RETRO_LOG_INFO, "Opening: %s ...\n", cmdWin);
 	}
 	else { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME.\n"); restarting = false; }
 
+	log_fn(RETRO_LOG_INFO, "Opening: '%s' ...\n", cmdWin);
+
 	GetStartupInfo(&startInfo);
 	startInfo.dwFlags = STARTF_USESTDHANDLES;
-	startInfo.hStdInput = pWrite[0];
-	startInfo.hStdOutput = pRead[1];
+	startInfo.hStdInput = pWrite[0]; // Child's stdin
+	startInfo.hStdOutput = pRead[1];  // Child's stdout
 	startInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 
 	if(!CreateProcess( NULL, /* Module name */
@@ -1458,13 +1488,18 @@ int javaOpen(char *cmd, char **params)
 		log_fn(RETRO_LOG_ERROR, "Couldn't create process, error: %lu\n", GetLastError() );
 		retro_deinit();
 	}
+
 	log_fn(RETRO_LOG_INFO, "Created process! PID=%d \n", javaProcess.dwProcessId);
+
+	// Close handles in parent process
+	CloseHandle(pWrite[0]); // Close unused write end for child
+	CloseHandle(pRead[1]);  // Close unused read end for child
+
+	CloseHandle(javaProcess.hThread); // Close the thread handle, not needed
 #endif
 
 	booted = true;
 	log_fn(RETRO_LOG_INFO, "Core and Java app started! Initializing game data... \n");
-
-	return pid;
 }
 
 
@@ -1473,8 +1508,9 @@ bool isRunning()
 #ifdef __linux__
 	int status;
 	if(waitpid(javaProcess, &status, WNOHANG) == 0) { return true; }
-	return false;
 
+	log_fn(RETRO_LOG_INFO, "Java app is not running anymore! Last known PID=%d \n", javaProcess);
+	return false;
 #elif _WIN32
 	/*
 	 * On win32, receiving a WAIT_TIMEOUT signal before timing out means the process is
