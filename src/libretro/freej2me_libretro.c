@@ -1338,7 +1338,6 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {  }
 /* Java Process */
 void javaOpen(char *cmd, char **params)
 {
-#ifdef __linux__
 	if(!restarting)
 	{
 		log_fn(RETRO_LOG_INFO, "System Path: %s\n", systemPath);
@@ -1349,6 +1348,7 @@ void javaOpen(char *cmd, char **params)
 	
 	log_fn(RETRO_LOG_INFO, "Opening: %s %s %s %s ...\n", *(params+0), *(params+1), *(params+2), *(params+3));
 
+#ifdef __linux__
 	int pid = 0;
 	int fd_stdin  = 0;
 	int fd_stdout = 1;
@@ -1448,31 +1448,20 @@ void javaOpen(char *cmd, char **params)
 	log_fn(RETRO_LOG_INFO, "Created pipes! \n");
 
 	log_fn(RETRO_LOG_INFO, "Trying to create process... \n");
-	log_fn(RETRO_LOG_INFO, "Process name: %s \n", params[4]);
-
-	/* Try starting the child process. */
+	
+	/* Try starting the child process. Windows requires the commandline argument to be a single string. */
 	char cmdWin[PATH_MAX_LENGTH];
 
-	strncpy(cmdWin, params[0], PATH_MAX_LENGTH - 1); // First argument needs no space separator
+	snprintf(cmdWin, PATH_MAX_LENGTH, "%s", params[0]); // First argument needs no space separator
 
 	for (int i = 1; i < NUM_ARGUMENTS; i++) 
 	{
-        if (params[i] != NULL) 
+		if (params[i] != NULL) 
 		{
-			strncat(cmdWin, " ", PATH_MAX_LENGTH - strlen(cmdWin) - 1);
-			strncat(cmdWin, params[i], PATH_MAX_LENGTH - strlen(cmdWin) - 1);
-        }
-    }
-
-	if(!restarting)
-	{
-		log_fn(RETRO_LOG_INFO, "System Path: %s\n", systemPath);
-
-		log_fn(RETRO_LOG_INFO, "Setting up java app's process and pipes...\n");
+			// Append a space and then the parameter
+			snprintf(cmdWin + strlen(cmdWin), PATH_MAX_LENGTH - strlen(cmdWin), " %s", params[i]);
+		}
 	}
-	else { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME.\n"); restarting = false; }
-
-	log_fn(RETRO_LOG_INFO, "Opening: '%s' ...\n", cmdWin);
 
 	GetStartupInfo(&startInfo);
 	startInfo.dwFlags = STARTF_USESTDHANDLES;
@@ -1528,4 +1517,3 @@ bool isRunning()
 	return false;
 #endif
 }
-
