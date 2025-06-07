@@ -78,12 +78,10 @@ public class Image extends PlatformImage
 
 	public static Image createImage(Image img, int x, int y, int width, int height, int transform)
 	{
-		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image from sub-image " + " img_w:" + Integer.toString(img.getWidth()) + " img_h:" + Integer.toString(img.getHeight()) + " x:" + Integer.toString(x) + " y:" + Integer.toString(y) + " width:" + Integer.toString(width) + " height:" + Integer.toString(height));
+		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image from sub-image " + " img_w:" + img.getWidth() + " img_h:" + img.getHeight() + " x:" + x + " y:" + y + " width:" + width + " height:" + height + " trans:" + transform);
 		if (img == null) { throw new NullPointerException(); }
 		if (x+width > img.getWidth() || y+height > img.getHeight()) {throw new IllegalArgumentException();}
 		if (width <= 0 || height <= 0) {throw new IllegalArgumentException();}
-
-		if(!img.isMutable() && (x+width == img.getWidth() && y+height == img.getHeight()) && transform == Sprite.TRANS_NONE) { return img; }
 
 		return new Image(img, x, y, width, height, transform);
 	}

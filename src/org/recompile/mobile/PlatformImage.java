@@ -46,9 +46,6 @@ public class PlatformImage
 	protected Graphics gc;
 	protected com.nttdocomo.ui.Graphics djgc;
 
-	protected int width;
-	protected int height;
-
 	private boolean isMutable = false;
 
 	private boolean is2bpp = false; // SIEMENS: False = 1bpp, True = 2bpp
@@ -74,9 +71,6 @@ public class PlatformImage
 	public PlatformImage(int Width, int Height)
 	{
 		// Create blank Image
-		width = Width;
-		height = Height;
-
 		if(Mobile.noAlphaOnBlankImages) { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_RGB); }
 		else { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB); }
 		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
@@ -100,9 +94,6 @@ public class PlatformImage
 		// Create Image with specific BG color
 		canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
 		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
-		
-		width = Width;
-		height = Height;
 		
 		gc = new Graphics(this);
 		Arrays.fill(canvasData, ARGBcolor);
@@ -160,11 +151,8 @@ public class PlatformImage
 					Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from Resource Name is NULL, ignoring due to Non Fatal Null Images being enabled.");
 				}
 			}
-			
-			width = (int)temp.getWidth();
-			height = (int)temp.getHeight();
 
-			canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
 			canvas.getGraphics().drawImage(temp, 0, 0, null);
 		}
 	}
@@ -186,11 +174,7 @@ public class PlatformImage
 			}
 		}
 
-		width = (int)temp.getWidth();
-		height = (int)temp.getHeight();
-
-		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
+		canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		canvas.getGraphics().drawImage(temp, 0, 0, null);
 	}
 
@@ -206,11 +190,8 @@ public class PlatformImage
 			}
 		}
 
-		width = source.getWidth();
-		height = source.getHeight();
-
 		// It's safe to assume that the source image will have the same type as the destination, so instead of drawImage we can just arraycopy the source to the destination
-		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		canvas = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		final int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		final int[] tempData = ((DataBufferInt) source.getCanvas().getRaster().getDataBuffer()).getData();
 		
@@ -235,11 +216,8 @@ public class PlatformImage
 				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from byte array is NULL, ignoring due to Non Fatal Null Images being enabled.");
 			}
 		}
-		
-		width = temp.getWidth();
-		height = temp.getHeight();
 
-		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		if(mutable) 
 		{ 
 			if(!Mobile.isDoJa) { gc = new Graphics(this); }
@@ -254,13 +232,10 @@ public class PlatformImage
 	public PlatformImage(int[] rgb, int Width, int Height, boolean processAlpha)
 	{
 		// createRGBImage (Data is ARGB pixel data)
-		width = Width;
-		height = Height;
+		if(Width < 1) { Width = 1; }
+		if(Height < 1) { Height = 1; }
 
-		if(width < 1) { width = 1; }
-		if(height < 1) { height = 1; }
-
-		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
 		int[] canvasPixels = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
 		// Process alpha if necessary
@@ -290,11 +265,8 @@ public class PlatformImage
 			// Copy pixel rows from the source image to the new sub-image
 			System.arraycopy(sourceData, sourceRow, subData, subRow, Math.min(Width, image.canvas.getWidth() - x));
 		}
-	
+
 		canvas = transformImage(sub, transform);
-		
-		width = (int) canvas.getWidth();
-		height = (int) canvas.getHeight();
 	}
 
 	// These constructors are exclusive to DoJa's Image classes
@@ -310,11 +282,8 @@ public class PlatformImage
 			}
 		}
 
-		width = source.getWidth();
-		height = source.getWidth();
-
 		// It's safe to assume that the source image will have the same type as the destination, so instead of drawImage we can just arraycopy the source to the destination
-		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		canvas = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		final int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		final int[] tempData = ((DataBufferInt) source.getCanvas().getRaster().getDataBuffer()).getData();
 		
@@ -324,14 +293,11 @@ public class PlatformImage
 	public PlatformImage(int Width, int Height, int[] data, int off) 
 	{
 		// Create DoJa image from int array starting from a given offset
-		width = Width;
-		height = Height;
-
-		canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
 		djgc = new com.nttdocomo.ui.Graphics(this);
 
 		int[] canvasPixels = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
-		System.arraycopy(data, off, canvasPixels, 0, width * height);
+		System.arraycopy(data, off, canvasPixels, 0, Width * Height);
 		
 		isMutable = true;
 	}
@@ -342,9 +308,9 @@ public class PlatformImage
     public boolean is2Bpp() { return is2bpp; }
 
 	// Common methods
-	public int getWidth() { return width; }
+	public int getWidth() { return canvas.getWidth(); }
 
-	public int getHeight() { return height; }
+	public int getHeight() { return canvas.getHeight(); }
 
 	public void getRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height) 
 	{

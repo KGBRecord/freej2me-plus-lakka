@@ -43,7 +43,7 @@ public class Image extends javax.microedition.lcdui.Image
 	{
         Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[], width, height) untested");
         //TODO: Might be incorrect
-		img = javax.microedition.lcdui.Image.createImage(bytes, width, height);
+		img = javax.microedition.lcdui.Image.createImage(bytes, canvas.getWidth(), canvas.getHeight());
 	}
 
     Image(byte[] bytes, int imageWidth, int imageHeight, boolean transparent) 
