@@ -118,7 +118,7 @@ public class MIDletLoader extends URLClassLoader
 
 		try
 		{
-			System.setProperty("microedition.platform", "j2me");
+			System.setProperty("microedition.platform", "FreeJ2ME-Plus");
 			System.setProperty("microedition.profiles", "MIDP-2.0");
 			System.setProperty("microedition.configuration", "CLDC-1.1");
 			System.setProperty("microedition.locale", "en-US");
@@ -126,11 +126,15 @@ public class MIDletLoader extends URLClassLoader
 			System.setProperty("microedition.io.file.FileConnection.version", "1.0");
 			System.setProperty("microedition.m3g.version", "1.1");
 			System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
+			System.setProperty("wireless.messaging.version", "1.0");
 			System.setProperty("device.imei", "000000000000000");
 			System.setProperty("com.siemens.IMEI", "000000000005152");
 			System.setProperty("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
 			System.setProperty("com.siemens.OSVersion", "11");
 			System.setProperty("microedition.media.version", "1.1");
+			System.setProperty("microedition.pim.version", "1.0");
+			System.setProperty("bluetooth.api.version", "1.0");
+			System.setProperty("microedition.sensor.version", "1.0");
 			System.setProperty("supports.mixing", "true");
 			System.setProperty("supports.audio.capture", "false");
 			System.setProperty("supports.video.capture", "false");
@@ -150,7 +154,7 @@ public class MIDletLoader extends URLClassLoader
 			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Manifest!");
 		}
 
-		properties.put("microedition.platform", "j2me");
+		properties.put("microedition.platform", "FreeJ2ME-Plus");
 		properties.put("microedition.profiles", "MIDP-2.0");
 		properties.put("microedition.configuration", "CLDC-1.1");
 		properties.put("microedition.locale", "en-US");
@@ -158,11 +162,15 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("microedition.io.file.FileConnection.version", "1.0");
 		properties.put("microedition.m3g.version", "1.1");
 		properties.put("wireless.messaging.sms.smsc", "+8613800010000");
+		properties.put("wireless.messaging.version", "1.0");
 		properties.put("device.imei", "000000000000000");
 		properties.put("com.siemens.IMEI", "000000000005152");
 		properties.put("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
 		properties.put("com.siemens.OSVersion", "11");
 		properties.put("microedition.media.version", "1.1");
+		properties.put("microedition.pim.version", "1.0");
+		properties.put("bluetooth.api.version", "1.0");
+		properties.put("microedition.sensor.version", "1.0");
 		properties.put("supports.mixing", "true");
 		properties.put("supports.audio.capture", "false");
 		properties.put("supports.video.capture", "false");
