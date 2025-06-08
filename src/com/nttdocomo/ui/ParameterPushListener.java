@@ -16,11 +16,9 @@
 */
 package com.nttdocomo.ui;
 
-public interface MediaResource 
+import com.nttdocomo.util.EventListener;
+
+public interface ParameterPushListener extends EventListener 
 {
-	public static String AUDIO_3D_RESOURCES = "3d.resources";
-	
-    public void use() throws com.nttdocomo.io.ConnectionException, UIException;
-    public void unuse();
-    public void dispose();
+    void parameterPushed(PushManager source);
 }

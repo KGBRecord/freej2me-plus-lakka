@@ -18,9 +18,19 @@ package com.nttdocomo.ui;
 
 public interface MediaImage extends MediaResource 
 {
-    public int getHeight();
+    String MP4_AUDIOTRACK = "mp4.audiotrack";
+    String MP4_TEXTTRACK = "mp4.texttrack";
+    String MP4_VIDEOTRACK = "mp4.videotrack";
 
-    public int getWidth();
-    
-    public Image getImage();
+    ExifData getExifData();
+
+    int getHeight();
+
+    Image getImage();
+
+    int getWidth();
+
+    void setExifData(ExifData exif);
+
+    void use(MediaResource overwritten, boolean useOnce) throws com.nttdocomo.io.ConnectionException;
 }

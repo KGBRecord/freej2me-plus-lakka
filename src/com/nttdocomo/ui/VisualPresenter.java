@@ -18,6 +18,15 @@ package com.nttdocomo.ui;
 
 public class VisualPresenter extends Component implements MediaPresenter 
 {
+    public static final int ATTR_AUDIO_OFF = 0;
+    public static final int ATTR_AUDIO_ON = 1;
+    public static final int ATTR_FORCE_FULLSCREEN_PLAYER = 5;
+    public static final int ATTR_FORCE_INLINE_PLAYER = 3;
+    public static final int ATTR_FORCE_NATIVE_PLAYER = 2;
+    public static final int ATTR_PREFER_FULLSCREEN_PLAYER = 4;
+    public static final int ATTR_PREFER_INLINE_PLAYER = 1;
+    public static final int ATTR_PREFER_NATIVE_PLAYER = 0;
+    public static final int AUDIO_MODE = 4;
     public static final int IMAGE_XPOS = 1;
     public static final int IMAGE_YPOS = 2;
     public static final int VISUAL_COMPLETE = 3;
@@ -28,7 +37,7 @@ public class VisualPresenter extends Component implements MediaPresenter
     private MediaImage mediaImage;
     private MediaListener mediaListener;
 
-    public VisualPresenter() { }
+    public VisualPresenter() { super(); }
 
     public void setData(MediaData data) 
     {
@@ -50,14 +59,16 @@ public class VisualPresenter extends Component implements MediaPresenter
         return mediaData;
     }
 
-    public void play() {
+    public void play() 
+    {
         if (mediaData == null) { throw new UIException(1, "Media data not set"); }
     }
 
     public void stop() { }
 
-    public void setAttribute(int attr, int val) {
-        if (attr != IMAGE_XPOS && attr != IMAGE_YPOS) { throw new IllegalArgumentException("Invalid attribute"); }
+    public void setAttribute(int attr, int val) 
+    {
+        if (attr < ATTR_AUDIO_OFF && attr > ATTR_FORCE_FULLSCREEN_PLAYER) { throw new IllegalArgumentException("Invalid attribute"); }
     }
 
     public void setMediaListener(MediaListener listener) { this.mediaListener = listener; }

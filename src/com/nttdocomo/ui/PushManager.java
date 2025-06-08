@@ -16,11 +16,17 @@
 */
 package com.nttdocomo.ui;
 
-public interface MediaResource 
+public class PushManager extends Object 
 {
-	public static String AUDIO_3D_RESOURCES = "3d.resources";
-	
-    public void use() throws com.nttdocomo.io.ConnectionException, UIException;
-    public void unuse();
-    public void dispose();
+    public String getParameter() 
+    {
+        return null;
+    }
+
+    public long getParameterPushedTime() 
+    {
+        return 0;
+    }
+
+    public void setParameterPushListener(ParameterPushListener listener) { }
 }

@@ -14,13 +14,52 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.device.location;
 
-public interface MediaResource 
+public class Degree extends Object 
 {
-	public static String AUDIO_3D_RESOURCES = "3d.resources";
-	
-    public void use() throws com.nttdocomo.io.ConnectionException, UIException;
-    public void unuse();
-    public void dispose();
+    public Degree(double degree) 
+    { 
+
+    }
+
+    public Degree(int degree, int minute, float second) 
+    {
+
+    }
+
+    public Degree(long degree) 
+    {
+
+    }
+
+    public int getDegreePart() 
+    {
+        return 0;
+    }
+
+    public int getMinutePart() 
+    {
+        return 0;
+    }
+
+    public int getCentisecondPart() 
+    {
+        return 0;
+    }
+
+    public float getSecondPart() 
+    {
+        return 0.0f;
+    }
+
+    public long getFixedPointNumber() 
+    {
+        return 0L;
+    }
+
+    public double getFloatingPointNumber() 
+    {
+        return 0.0;
+    }
 }

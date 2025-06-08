@@ -81,13 +81,12 @@ public final class ListBox extends Component implements Interactable
 
     public void select(int index) 
     {
-        if (index < 0 || index >= itemCount) {
-            throw new ArrayIndexOutOfBoundsException("Invalid index");
-        }
+        if (index < 0 || index >= itemCount) { throw new ArrayIndexOutOfBoundsException("Invalid index"); }
         selected[index] = true;
     }
 
-    public void deselect(int index) {
+    public void deselect(int index) 
+    {
         if (type == CHOICE) { throw new UIException(1, "Cannot deselect in CHOICE type"); }
         if (index < 0 || index >= itemCount) { throw new ArrayIndexOutOfBoundsException("Invalid index"); }
         selected[index] = false;

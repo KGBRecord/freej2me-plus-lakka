@@ -16,32 +16,64 @@
 */
 package com.nttdocomo.ui;
 
-public final class Ticker extends Component 
+public final class AnchorButton extends Component implements Interactable 
 {
-    private String text;
-	private com.nttdocomo.lang.XString xText;
+    public AnchorButton() { super(); }
 
-	public Ticker() { super(); }
+    public AnchorButton(Image image) 
+    {
+        super();
+        setImage(image);
+    }
 
-    public Ticker(String text) 
-	{
+    public AnchorButton(Image image, String text) 
+    {
+        super();
+        setImage(image);
+        setText(text);
+    }
+
+    public AnchorButton(Image image, com.nttdocomo.lang.XString xText) 
+    {
+        super();
+        setImage(image);
+        setText(xText);
+    }
+
+    public AnchorButton(String text) 
+    {
         super();
         setText(text);
     }
 
-    public Ticker(com.nttdocomo.lang.XString xText) 
-	{
+    public AnchorButton(com.nttdocomo.lang.XString xText) 
+    {
         super();
         setText(xText);
     }
 
+    public void requestFocus() 
+    {
+
+    }
+
+    public void setEnabled(boolean b) 
+    {
+
+    }
+
+    public void setImage(Image image) 
+    {
+
+    }
+
     public void setText(String text) 
-	{
-        this.text = (text != null) ? text : "";
+    {
+
     }
 
     public void setText(com.nttdocomo.lang.XString xText) 
-	{
-        this.xText = (xText != null) ? xText : null;
+    {
+
     }
 }

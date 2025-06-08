@@ -16,11 +16,30 @@
 */
 package com.nttdocomo.ui;
 
-public interface MediaResource 
+public class HTMLLayout implements LayoutManager 
 {
-	public static String AUDIO_3D_RESOURCES = "3d.resources";
-	
-    public void use() throws com.nttdocomo.io.ConnectionException, UIException;
-    public void unuse();
-    public void dispose();
+    public static final String CENTER = "CENTER";
+    public static final String LEFT = "LEFT";
+    public static final String P = "P";
+    public static final String RIGHT = "RIGHT";
+
+    public HTMLLayout() 
+    {
+    
+    }
+
+    public void begin(String tag) 
+    {
+    
+    }
+
+    public void br() 
+    {
+   
+    }
+
+    public void end() 
+    {
+    
+    }
 }

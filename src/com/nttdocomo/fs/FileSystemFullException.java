@@ -14,13 +14,11 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.fs;
 
-public interface MediaResource 
+public class FileSystemFullException extends java.io.IOException 
 {
-	public static String AUDIO_3D_RESOURCES = "3d.resources";
-	
-    public void use() throws com.nttdocomo.io.ConnectionException, UIException;
-    public void unuse();
-    public void dispose();
+    public FileSystemFullException() { super(); }
+
+    public FileSystemFullException(String msg) { super(msg); }
 }

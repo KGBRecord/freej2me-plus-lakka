@@ -42,7 +42,13 @@ public class MediaImageImpl implements com.nttdocomo.ui.MediaImage
 
     public void dispose() { doJaImage = null; }
 
-	public void use() throws com.nttdocomo.io.ConnectionException, com.nttdocomo.ui.UIException { }
+	public void setExifData(com.nttdocomo.ui.ExifData exif) { }
+
+	public com.nttdocomo.ui.ExifData getExifData() { return null; }
+
+	public void use() throws com.nttdocomo.io.ConnectionException { }
+
+	public void use(com.nttdocomo.ui.MediaResource overwritten, boolean useOnce) throws com.nttdocomo.io.ConnectionException { }
 
 	public void unuse() { }
 

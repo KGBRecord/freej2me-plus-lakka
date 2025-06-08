@@ -16,11 +16,28 @@
 */
 package com.nttdocomo.ui;
 
-public interface MediaResource 
+public final class ImageButton extends Component implements Interactable 
 {
-	public static String AUDIO_3D_RESOURCES = "3d.resources";
-	
-    public void use() throws com.nttdocomo.io.ConnectionException, UIException;
-    public void unuse();
-    public void dispose();
+    public ImageButton() { super(); }
+
+    public ImageButton(Image image) 
+    {
+        super();
+        setImage(image);
+    }
+
+    public void requestFocus() 
+    {
+    
+    }
+
+    public void setEnabled(boolean b) 
+    {
+    
+    }
+
+    public void setImage(Image image) 
+    {
+        
+    }
 }

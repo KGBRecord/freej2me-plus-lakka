@@ -27,6 +27,7 @@ public final class TextBox extends Component implements Interactable
     public static final int TRADITIONAL_HANZI = 3;
 
     private String text;
+    private com.nttdocomo.lang.XString xText;
     private int columns;
     private int rows;
     private int mode;
@@ -54,7 +55,11 @@ public final class TextBox extends Component implements Interactable
 
     public void setText(String text)  { this.text = (text != null) ? text : ""; }
 
+    public void setText(com.nttdocomo.lang.XString xText)  { this.xText = (xText != null) ? xText : null; }
+
     public String getText() { return text; }
+
+    public com.nttdocomo.lang.XString getXText() { return xText; }
 
     public void setInputMode(int mode) 
     {
