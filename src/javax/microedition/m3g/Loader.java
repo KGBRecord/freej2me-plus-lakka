@@ -54,14 +54,21 @@ public class Loader
 	private static final int JPEG_SOFn_DELTA = 7;
 	private static final int JPEG_INVALID_COLOUR_FORMAT = -1;
 
+	private static Vector<String> currentCycleReferences = new Vector<String>();
+
 	private Loader(byte[] data, int offset) throws IOException 
 	{
+		if(data == null) { throw new NullPointerException("Cannot load M3G object from null data"); }
+		if(offset >= data.length) { throw new IllegalArgumentException("Invalid offset for m3g data"); }
+		// TODO: Check for cyclic references here, although it might not be needed
+
 		dis = new DataInputStream(new ByteArrayInputStream(data));
 		if (offset > 0) { dis.skip(offset); }
 	}
 
 	public static Object3D[] load(byte[] data, int offset) 
 	{
+		Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Jar requested to load M3G object from byte data of size " + data.length + " starting at offset " + offset);
 		try { return new Loader(data, offset).load(); } 
 		catch (Exception e) 
 		{
@@ -73,23 +80,31 @@ public class Loader
 
 	private Loader(String name) throws IOException 
 	{
+		if(name == null) { throw new NullPointerException("Cannot load M3G object from null path"); }
+		if(currentCycleReferences.contains(name)) { throw new IOException("Detected a cyclic reference loop"); }
+
 		InputStream is;
-		if (name.startsWith("/")) { is = Mobile.getResourceAsStream(Loader.class, name); } 
+		if (name.startsWith("/")) { is = Mobile.getMIDletResourceAsStream(name); } 
 		else 
 		{
 			resDir.concat(name); // resDir will become a directory again down below if a relative path is passed here
 			Mobile.log(Mobile.LOG_WARNING, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loader(String) relative path untested. Trying Path: " + resDir + ".");
-			is = Mobile.getResourceAsStream(Loader.class, resDir);
+			is = Mobile.getMIDletResourceAsStream(resDir);
 		}
+
+		currentCycleReferences.addElement(name);
 
 		if (is == null) { throw new IOException("Can't load " + name); }
 		this.resName = name;
 		resDir = name.substring(0, name.lastIndexOf("/") + 1);
 		dis = new DataInputStream(new BufferedInputStream(is));
+
+		currentCycleReferences.removeElement(name);
 	}
 
 	public static Object3D[] load(String name) 
 	{
+		Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Jar requested to load M3G object from path " + name);
 		try { return new Loader(name).load(); } 
 		catch (Exception e) 
 		{
@@ -97,6 +112,12 @@ public class Loader
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	private Loader(byte[] data, Vector<Object3D> objects) 
+	{
+		this.dis = new DataInputStream(new ByteArrayInputStream(data));
+		this.objs = objects;
 	}
 
 	private Object3D[] loadPNG() throws IOException 
@@ -255,16 +276,9 @@ public class Loader
 		return true;
 	}
 
-	private Loader(byte[] data, Vector<Object3D> objects) 
-	{
-		this.dis = new DataInputStream(new ByteArrayInputStream(data));
-		this.objs = objects;
-	}
-
 	private void loadM3GSectionData() throws IOException 
 	{
 		// We don't really insert a null object at objs when starting and don't increase the index either (getObject() will correct this)
-
 		while (dis.available() > 0) 
 		{
 			int objectType = readByte();
@@ -797,32 +811,32 @@ public class Loader
 				{
 					if (uri.charAt(0) == '/')  // It's using absolute path
 					{
-						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G Resource from path " + uri + ".");
+						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G External Reference from path " + uri + ".");
 						objArray = Loader.load(uri);
 					}
 					else // It's using relative path, and since we have the reference name, get the directory from it
 					{
 						objArray = Loader.load(resName.substring(resName.lastIndexOf("/") + 1) + uri);
-						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G Resource from path " + resName.substring(resName.lastIndexOf("/") + 1) + uri + ".");
+						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G External Reference from path " + resName.substring(resName.lastIndexOf("/") + 1) + uri + ".");
 					}
 				} 
 				else // If we don't have the reference name
 				{
 					if (uri.charAt(0) == '/')  // It's using absolute path
 					{
-						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G Resource from path " + uri + ".");
+						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G External Reference from path " + uri + ".");
 						objArray = Loader.load(uri);
 					}
 					else // It's using relative path. Use the last path known to resDir (which should be the directory of the current file)
 					{
 						objArray = Loader.load(resDir + uri);
-						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G Resource from path " + resDir + uri + ".");
+						Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Loading M3G External Reference from path " + resDir + uri + ".");
 						
 						// Assuming the relative path in question doesn't return a valid file, it's possible that this is an absolute path but to a resource at the root of the Jar
 						if(objArray == null) 
 						{
 							objArray = Loader.load("/" + uri);
-							Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Couldn't load M3G Resource from path " + resDir + uri + ". Trying from /" + uri);
+							Mobile.log(Mobile.LOG_DEBUG, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "Couldn't load M3G External Reference from path " + resDir + uri + ". Trying from /" + uri);
 						}
 					}
 				}
@@ -908,9 +922,7 @@ public class Loader
 		}
 		dis.close();
 
-		Object3D[] obj = new Object3D[objs.size()];
-		for (int i = 0; i < objs.size(); i++) { obj[i] = (Object3D) objs.elementAt(i); }
-		return obj;
+		return new Object3D[]{objs.elementAt(objs.size()-1)};
 	}
 
 
@@ -938,9 +950,7 @@ public class Loader
 			e.printStackTrace();
 		}
 
-		Object3D[] obj = new Object3D[objs.size()];
-		for (int i = 0; i < objs.size(); i++) { obj[i] = (Object3D) objs.elementAt(i); }
-		return obj;
+		return null;
 	}
 
 	private int readByte() throws IOException 
@@ -1034,9 +1044,9 @@ public class Loader
 	private Object getObject(int index) 
 	{
 		// getObject is pretty much only used to get a reference for the object that's currently at the last index of objs, so we don't need to track each object's index
-		if(index-2 > objs.size()) // Since we don't add objects for indices 0 (null) and 1 (header), index has to be decreased by 2 here.
+		if(index-2 >= objs.size()) // Since we don't add objects for indices 0 (null) and 1 (header), index has to be decreased by 2 here.
 		{
-			Mobile.log(Mobile.LOG_ERROR, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "App tried to get and Object3D array that's higher than the currently parsed Object3D's index. Idx:" + index + " maxIdx:" + objs.size());
+			Mobile.log(Mobile.LOG_ERROR, Loader.class.getPackage().getName() + "." + Loader.class.getSimpleName() + ": " + "App tried to get an Object3D array that's higher than the currently parsed Object3D's index. Idx:" + index + " maxIdx:" + objs.size());
 			throw new IllegalArgumentException("Cannot get an M3G Object3D index that's higher than the current object's index"); 
 		}
 		if(index == 0 || index == 1) { return null; }
