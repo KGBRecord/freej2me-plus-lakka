@@ -94,7 +94,7 @@ Latest build:
 
 Launching the AWT frontend (freej2me.jar) will bring up a filepicker to select the MIDlet to run.
 
-Alternatively it can be launched from the command line: `java -jar freej2me.jar 'file:///path/to/midlet.jar' [fullscreen? 1=yes, 0=no] [width] [height] [scale]`
+Alternatively it can be launched from the command line: `java -jar freej2me.jar 'file:///path/to/midlet.jar' [fullscreen? 1=yes, 0=no] [width] [height] [scale] [keyLayout]`
 Although all arguments aside from the path are optional (even the path is optional, as FreeJ2ME-Plus will just open normally).
 
 The SDL2 frontend (freej2me-sdl.jar) accepts the same command-line arguments format, aside from the _scale_ option which is unavailable. **NOTE**: This flavor requires libSDL2 version 2.24.0-1 or newer in order to even launch. Make sure you have it installed in your system, or placed alongside the jar for it to load.

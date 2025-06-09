@@ -165,9 +165,16 @@ public class FreeJ2ME
 							}
 						break;
 						case KeyEvent.VK_F:
-							if(e.isControlDown())
+							if(e.isAltDown())
 							{
 								toggleFullscreen();
+							}
+						break;
+						case KeyEvent.VK_R: // Toggle rotation
+							if(e.isAltDown())
+							{
+								Mobile.config.settings.put("rotate",  (Mobile.rotateDisplay ? "off" : "on"));
+								settingsChanged();
 							}
 						break;
 					}
@@ -186,7 +193,7 @@ public class FreeJ2ME
 						}
 						else 
 						{
-							if(e.isControlDown())
+							if(e.isAltDown())
 							{
 								MobilePlatform.pressedKeys[mobikey] = true;
 							}
@@ -324,12 +331,25 @@ public class FreeJ2ME
 			Mobile.config.init();
 
 			/* Allows FreeJ2ME to set the width and height passed as cmd arguments. */
-			if(args.length>=3)
+			if(args.length>=4)
 			{
 				lcdWidth = Integer.parseInt(args[1]);
 				lcdHeight = Integer.parseInt(args[2]);
 				Mobile.config.settings.put("width",  ""+lcdWidth);
 				Mobile.config.settings.put("height", ""+lcdHeight);
+			}
+
+			if(args.length>=6) 
+			{
+				if(Integer.parseInt(args[5]) == 0) { Mobile.config.settings.put("phone",  "Standard"); }
+				if(Integer.parseInt(args[5]) == 1) { Mobile.config.settings.put("phone",  "LG"); }
+				if(Integer.parseInt(args[5]) == 2) { Mobile.config.settings.put("phone",  "Motorola"); }
+				if(Integer.parseInt(args[5]) == 3) { Mobile.config.settings.put("phone",  "MotoTriplets"); }
+				if(Integer.parseInt(args[5]) == 4) { Mobile.config.settings.put("phone",  "MotoV8"); }
+				if(Integer.parseInt(args[5]) == 5) { Mobile.config.settings.put("phone",  "NokiaKeyboard"); }
+				if(Integer.parseInt(args[5]) == 6) { Mobile.config.settings.put("phone",  "Sagem"); }
+				if(Integer.parseInt(args[5]) == 7) { Mobile.config.settings.put("phone",  "Siemens"); }
+				if(Integer.parseInt(args[5]) == 8) { Mobile.config.settings.put("phone",  "Sharp"); }
 			}
 
 			settingsChanged();
@@ -384,6 +404,7 @@ public class FreeJ2ME
 			lcd.clearScreen();
 		}
 		
+		awtGUI.updateOptions();
 	}
 
 	private int getMobileKey(int keycode)
