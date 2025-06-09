@@ -165,13 +165,13 @@ public class FreeJ2ME
 							}
 						break;
 						case KeyEvent.VK_F:
-							if(e.isAltDown())
+							if(e.isAltDown() && e.isControlDown())
 							{
 								toggleFullscreen();
 							}
 						break;
 						case KeyEvent.VK_R: // Toggle rotation
-							if(e.isAltDown())
+							if(e.isAltDown() && e.isControlDown())
 							{
 								Mobile.config.settings.put("rotate",  (Mobile.rotateDisplay ? "off" : "on"));
 								settingsChanged();
@@ -193,7 +193,7 @@ public class FreeJ2ME
 						}
 						else 
 						{
-							if(e.isAltDown())
+							if(e.isAltDown() && e.isControlDown())
 							{
 								MobilePlatform.pressedKeys[mobikey] = true;
 							}
@@ -463,7 +463,7 @@ public class FreeJ2ME
 			main.setLocationRelativeTo(null); // Center window on screen
         }
 
-		main.setBackground(freeJ2MEBGColor);
+		main.setBackground(Color.BLACK);
 		
 		try
 		{
