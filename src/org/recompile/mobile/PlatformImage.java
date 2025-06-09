@@ -307,6 +307,16 @@ public class PlatformImage
 
     public boolean is2Bpp() { return is2bpp; }
 
+	public void setMutable(boolean mutable) 
+	{
+		isMutable = mutable;
+		if(isMutable) 
+		{
+			if(!Mobile.isDoJa) { gc = new Graphics(this); }
+			else { djgc = new com.nttdocomo.ui.Graphics(this); }
+		}
+	}
+
 	// Common methods
 	public int getWidth() { return canvas.getWidth(); }
 

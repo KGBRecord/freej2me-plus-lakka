@@ -44,6 +44,7 @@ public class ExtendedImage extends com.siemens.mp.misc.NativeMem
 		image = Image.createImage(img);
 		width = image.getWidth();
 		height = image.getHeight();
+		image.setMutable(true);
 		gc = image.getGraphics();
 	}
 
