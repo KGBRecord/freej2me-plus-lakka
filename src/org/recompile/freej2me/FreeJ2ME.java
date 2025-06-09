@@ -85,7 +85,7 @@ public class FreeJ2ME
             String java = System.getProperty("java.home") + "/bin/java";
             String classPath = System.getProperty("java.class.path");
 
-            String[] commands = new String[] { java, "-Dfile.encoding=ISO_8859_1", "-cp", classPath, FreeJ2ME.class.getName() };
+            String[] commands = new String[] { java, "-Dfile.encoding="+Mobile.textEncoding, "-cp", classPath, FreeJ2ME.class.getName() };
 
             // Start a new instance
             ProcessBuilder processBuilder = new ProcessBuilder(commands);
@@ -100,15 +100,20 @@ public class FreeJ2ME
 	public FreeJ2ME(String args[])
 	{
 		// Setup Device //
-
-		if(args.length>=3)
+		boolean fullscreenAtStartup = false;
+		if(args.length>=2) 
 		{
-			Mobile.lcdWidth = Integer.parseInt(args[1]);
-			Mobile.lcdHeight = Integer.parseInt(args[2]);
+			fullscreenAtStartup = (Integer.parseInt(args[1]) == 1);
 		}
+
 		if(args.length>=4)
 		{
-			scaleFactor = Integer.parseInt(args[3]);
+			Mobile.lcdWidth = Integer.parseInt(args[2]);
+			Mobile.lcdHeight = Integer.parseInt(args[3]);
+		}
+		if(args.length>=5)
+		{
+			scaleFactor = Integer.parseInt(args[4]);
 		}
 
 		lcdWidth = Mobile.lcdWidth;
@@ -330,13 +335,14 @@ public class FreeJ2ME
 			settingsChanged();
 
 			Mobile.getPlatform().runJar();
-
 		}
 		else
 		{
 			Mobile.log(Mobile.LOG_ERROR, FreeJ2ME.class.getPackage().getName() + "." + FreeJ2ME.class.getSimpleName() + ": " + "Couldn't load jar...");
 		}
 
+		// Go fullscreen as soon as the jar is loaded from the commandline path above
+		if(fullscreenAtStartup) { toggleFullscreen(); }
 	}
 
 	private static String getFormattedLocation(String loc)
