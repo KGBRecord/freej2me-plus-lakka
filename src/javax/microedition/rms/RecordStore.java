@@ -792,15 +792,16 @@ public class RecordStore
 		{
 			FileOutputStream fos = new FileOutputStream(rmsPath + "/" + basename + ".rms");
             fos.write(jsonBuilder.toString().getBytes());
+			fos.close();
 
 			for(int i = 1; i < recordIds.size(); i++) // Write Binary Data
 			{
 				if(records.get(i) == null) { continue; } // Skip records that have been deleted and whose IDs are not to be used anymore
-				fos.close();
 				fos = new FileOutputStream(rmsPath + "/" + basename + "." + recordIds.get(i));
 				fos.write(records.get(i));
+				fos.close();
 			}
-			fos.close();
+			
         } 
 		catch (Exception e) 
 		{ 
@@ -842,6 +843,9 @@ public class RecordStore
 			FileInputStream fis = new FileInputStream(filePath);
 			Scanner scanner = new Scanner(fis, Mobile.isDoJa ? "Shift_JIS" : "UTF-8");
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
+
+			scanner.close();
+			fis.close();
 
 			String jsonString = jsonBuilder.toString();
 			// Remove outer braces
@@ -907,7 +911,6 @@ public class RecordStore
 				records.add(binData);
 				binfis.close();
 			}
-			fis.close();
 		} 
 		catch (Exception e) 
 		{ 
@@ -1002,6 +1005,9 @@ public class RecordStore
 			FileInputStream fis = new FileInputStream(filePath);
 			Scanner scanner = new Scanner(fis, Mobile.isDoJa ? "Shift_JIS" : "UTF-8");
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
+
+			scanner.close();
+			fis.close();
 
 			String jsonString = jsonBuilder.toString();
 			jsonString = jsonString.substring(1, jsonString.length() - 1).trim();
