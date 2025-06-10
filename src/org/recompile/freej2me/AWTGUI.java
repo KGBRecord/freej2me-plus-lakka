@@ -168,15 +168,15 @@ public final class AWTGUI
 	final MenuItem openMenuItem = new MenuItem("Open JAR / JAD / KJX File");
 	final MenuItem restartMenuItem = new MenuItem("Restart Running Jar");
 	final MenuItem closeMenuItem = new MenuItem("Close Running Jar");
-	final MenuItem scrShot = new MenuItem("Take Screenshot (Alt+C)");
-	final MenuItem pauseRes = new MenuItem("Pause / Resume (Alt+X)");
+	final MenuItem scrShot = new MenuItem("Take Screenshot (Ctrl+Alt+C)");
+	final MenuItem pauseRes = new MenuItem("Pause / Resume (Ctrl+Alt+X)");
 	final MenuItem exitMenuItem = new MenuItem("Exit FreeJ2ME");
 	final MenuItem mapInputs = new MenuItem("Manage Inputs");
 
 	final MenuItem showPlayer = new MenuItem("J2ME Media Player");
 
-	final CheckboxMenuItem fullScreen = new CheckboxMenuItem("Toggle Fullscreen (Alt+F)");
-	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("Rotate Screen (Alt+R)", false);
+	final CheckboxMenuItem fullScreen = new CheckboxMenuItem("Toggle Fullscreen (Ctrl+Alt+F)");
+	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("Rotate Screen (Ctrl+Alt+R)", false);
 	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("Enable Audio", false);
 	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("Use custom midi soundfont", false);
 	final CheckboxMenuItem useCustomFont = new CheckboxMenuItem("Use custom text font", false);
