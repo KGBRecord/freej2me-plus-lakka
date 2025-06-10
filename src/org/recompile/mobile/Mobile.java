@@ -173,6 +173,7 @@ public class Mobile
 
 	// Libretro flags
 	public static boolean isFastForwarding = false;
+	public static boolean isPaused = false;
 	public static boolean libretroStarted = false;
 	public static byte libretroRestartRequested = 0; // Set when FreeJ2ME has to be restarted in some way (often to change character encoding)
 	public static byte libretroEncodingRequested = 0; // Encoding FreeJ2ME requested to be re-opened with (check the restartApp() method below)

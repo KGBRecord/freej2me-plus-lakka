@@ -77,8 +77,6 @@ public class MobilePlatform
 	public MIDletLoader loader;
 	public static Displayable displayable;
 
-	public static boolean isPaused = false;
-
 	public String dataPath = "";
 	public String fileName = null;
 	private static String kjxJadFileName = null; // Static so that we can delete the extracted jar and jad files if needed
@@ -151,20 +149,20 @@ public class MobilePlatform
 			displayable = Mobile.getDisplay().getCurrent();
 			if (!(displayable instanceof Canvas)) { return; }
 			
-			if(!isPaused) 
+			if(!Mobile.isPaused) 
 			{
 				((Canvas) displayable).hideNotify();
 				
 				try { Mobile.midlet.callPauseApp(); } 
 				catch (Exception e) { e.printStackTrace(); }
 
-				isPaused = true;
+				Mobile.isPaused = true;
 
 				painter.run();
 			}
 			else 
 			{
-				isPaused = false;
+				Mobile.isPaused = false;
 				
 				((Canvas) displayable).showNotify();
 				
@@ -183,7 +181,7 @@ public class MobilePlatform
 	public static void keyPressed(int keycode)
 	{
 		if(!MIDletLoader.MIDletSelected) { MIDletLoader.keyPress(Mobile.getGameAction(keycode)); }
-		else if (!isPaused)
+		else if (!Mobile.isPaused)
 		{
 			updateKeyState(Mobile.getGameAction(keycode), true);
 			updateVodafoneKeyState(Mobile.getCanvasAction(keycode), true);
@@ -198,7 +196,7 @@ public class MobilePlatform
 
 	public static void keyReleased(int keycode)
 	{
-		if(!isPaused && MIDletLoader.MIDletSelected) 
+		if(!Mobile.isPaused && MIDletLoader.MIDletSelected) 
 		{
 			updateKeyState(Mobile.getGameAction(keycode), false);
 			updateVodafoneKeyState(Mobile.getCanvasAction(keycode), false);
@@ -209,25 +207,25 @@ public class MobilePlatform
 
 	public static void keyRepeated(int keycode)
 	{
-		if (!isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
 		// TODO: DoJa
 	}
 
 	public static void pointerDragged(int x, int y)
 	{
-		if (!isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
 		// TODO: DoJa
 	}
 
 	public static void pointerPressed(int x, int y)
 	{
-		if (!isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
 		// TODO: DoJa
 	}
 
 	public static void pointerReleased(int x, int y)
 	{
-		if (!isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
 		// TODO: DoJa
 	}
 
@@ -652,7 +650,7 @@ public class MobilePlatform
 
 	public final void flushGraphics(PlatformImage img, int x, int y, int width, int height)
 	{
-		if(!isPaused) 
+		if(!Mobile.isPaused) 
 		{
 			gc.flushGraphics(img, x, y, width, height);
 		
