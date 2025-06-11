@@ -424,6 +424,11 @@ public class FreeJ2ME
 				if(Integer.parseInt(args[5]) == 8) { Mobile.config.settings.put("phone",  "Sharp"); }
 			}
 
+			if(args.length>=7) 
+			{
+				Mobile.config.settings.put("fps", ""+Integer.parseInt(args[6])+"");
+			}
+
 			settingsChanged();
 
 			Mobile.getPlatform().runJar();
