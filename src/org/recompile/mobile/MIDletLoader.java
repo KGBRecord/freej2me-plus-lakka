@@ -96,6 +96,13 @@ public class MIDletLoader extends URLClassLoader
 	private static byte selectedMidlet = 0;
 	public static boolean MIDletSelected = false;
 
+	private static final String[] knownModelStrings = 
+	{
+		"nokia", "samsung", "siemens", "sharp", "sonyericsson", "sony ericsson", "motorola", "sagem", "lg",
+		"c65", "cv65", "cx65", "sx1", "n80", "e61", "n73", "n95", "gx10", "gx15", "gx20", "gx25", "gx30", "k300",
+		"k500", "s700", "k800", "k850" // TODO: Add more devices if any jar has sudden issues booting
+	};
+
 
 	public MIDletLoader(URL url, Map<String, String> descriptorProperties)
 	{
@@ -118,7 +125,7 @@ public class MIDletLoader extends URLClassLoader
 
 		try
 		{
-			System.setProperty("microedition.platform", "FreeJ2ME-Plus");
+			System.setProperty("microedition.platform", "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.");
 			System.setProperty("microedition.profiles", "MIDP-2.0");
 			System.setProperty("microedition.configuration", "CLDC-1.1");
 			System.setProperty("microedition.locale", "en-US");
@@ -154,7 +161,7 @@ public class MIDletLoader extends URLClassLoader
 			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Manifest!");
 		}
 
-		properties.put("microedition.platform", "FreeJ2ME-Plus");
+		properties.put("microedition.platform", "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.");
 		properties.put("microedition.profiles", "MIDP-2.0");
 		properties.put("microedition.configuration", "CLDC-1.1");
 		properties.put("microedition.locale", "en-US");
@@ -967,8 +974,7 @@ public class MIDletLoader extends URLClassLoader
 
 		private class ASMMethodVisitor extends MethodAdapter implements Opcodes
 		{
-			private boolean methodHasScreenDraw = false;
-			private org.objectweb.asm.Label exitLabel = new org.objectweb.asm.Label();
+			private boolean methodHasScreenDraw = false, foundPlatformCheck = false;
 
 			public ASMMethodVisitor(MethodVisitor visitor)
 			{
@@ -1021,6 +1027,31 @@ public class MIDletLoader extends URLClassLoader
 			public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) 
 			{
 				super.visitLocalVariable(name, desc, signature, start, end, index);
+			}
+
+			@Override
+			public void visitLdcInsn(Object value) 
+			{
+				// The loaded app might be going for a check against a specific phone model, prepare to override it
+				if (value instanceof String && ((String)value).toLowerCase().contains("microedition.platform")) 
+				{
+					foundPlatformCheck = true;
+				}
+				
+				if (foundPlatformCheck && value instanceof String) 
+				{
+					for (String keyword : knownModelStrings) 
+					{
+						if (((String)value).toLowerCase().contains(keyword)) // It is going for the check, replace the device string with FreeJ2ME-Plus'
+						{
+							Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Found excplicit platform model check... overriding.");
+							String replacementModel = "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.";
+							value = replacementModel.substring(0, Math.min(((String)value).length(), replacementModel.length()));
+							break;
+						}
+					}
+				}
+				super.visitLdcInsn(value);
 			}
 		}
 	}
