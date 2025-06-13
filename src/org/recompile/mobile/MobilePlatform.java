@@ -188,7 +188,7 @@ public class MobilePlatform
 			updateDoJaKeyState(Mobile.getCanvasAction(keycode), true);
 			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) 
 			{ 
-				displayable.keyPressed(keycode); 
+				Mobile.getDisplay().postInputEvent(() -> { displayable.keyPressed(keycode); }); 
 				handleCommands(Mobile.getCanvasAction(keycode));
 			}
 		}
@@ -201,31 +201,31 @@ public class MobilePlatform
 			updateKeyState(Mobile.getGameAction(keycode), false);
 			updateVodafoneKeyState(Mobile.getCanvasAction(keycode), false);
 			updateDoJaKeyState(Mobile.getCanvasAction(keycode), false);
-			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { displayable.keyReleased(keycode); }
+			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { Mobile.getDisplay().postInputEvent(() -> { displayable.keyReleased(keycode); }); }
 		}
 	}
 
 	public static void keyRepeated(int keycode)
 	{
-		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.keyRepeated(keycode); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { Mobile.getDisplay().postInputEvent(() -> { displayable.keyRepeated(keycode); }); }
 		// TODO: DoJa
 	}
 
 	public static void pointerDragged(int x, int y)
 	{
-		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerDragged(x, y); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { Mobile.getDisplay().postInputEvent(() -> { displayable.pointerDragged(x, y); }); }
 		// TODO: DoJa
 	}
 
 	public static void pointerPressed(int x, int y)
 	{
-		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerPressed(x, y); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { Mobile.getDisplay().postInputEvent(() -> { displayable.pointerPressed(x, y); }); }
 		// TODO: DoJa
 	}
 
 	public static void pointerReleased(int x, int y)
 	{
-		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { displayable.pointerReleased(x, y); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { Mobile.getDisplay().postInputEvent(() -> { displayable.pointerReleased(x, y); }); }
 		// TODO: DoJa
 	}
 
@@ -410,6 +410,7 @@ public class MobilePlatform
 		}
 	}
 
+	// MIDP Spec dictates that only Canvas (and CustomItem) keys should be serialized, so i'll assume that these commands don't need to as they're usually meant for other LCDUI displayables
 	private static void handleCommands(int key) 
 	{
 		boolean canvasFullscreen = false; // Default to false, as all other displayables can show commands at all times

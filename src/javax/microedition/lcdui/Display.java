@@ -44,75 +44,116 @@ public class Display
 
 	private Displayable current;
 
-	private static final Queue<Runnable> serialCalls = new LinkedList<>();
+	public static final Queue<Runnable> serializedEvents = new LinkedList<Runnable>(), inputEvents = new LinkedList<Runnable>();
 
-	private static final AtomicReference<Runnable> paintEvent = new AtomicReference<>();
-	private Thread paintThread;
-
-	private Runnable setCurrentRequest;
+	private Runnable setCurrentRequest, paintEvent;
 
 	private Thread flashThread;
 
-	public Display()
-	{
-		paintThread = new Thread(this::processPaintCalls, "CanvasRepaints-Thread");
-		paintThread.start();
-	}
+	public Display() { new Thread(this::processEvents, "EventProcessing-Thread").start(); }
 
 	// MIDlet serial call queue methods
-	public void callSerially(Runnable r) { synchronized (serialCalls) { serialCalls.add(r); } }
-
-	private void processSerialCalls() 
-	{
-		Runnable call;
-		synchronized (serialCalls) { call = serialCalls.poll(); }
-		
-		if(call != null) { call.run(); }
+	public void callSerially(Runnable r) 
+	{ 
+		synchronized (serializedEvents) 
+		{ 
+			serializedEvents.add(r); 
+			serializedEvents.notify();
+		} 
 	}
 
-	// Paint queue methods
-	public void postPaintRequest(Runnable r) { paintEvent.set(r); }
-
-	private void processPaintCalls() 
-	{		
-		while (true) 
+	// Paint events should be serialized as well (if the event queue is empty, we need to notify the event processing thread to resume)
+    public void postPaintRequest(Runnable r) 
+	{ 
+		paintEvent = r;
+		if(serializedEvents.isEmpty())
 		{
-			Runnable call = paintEvent.getAndSet(null);
-
-			if(call != null) { call.run(); }
-			else 
+			synchronized (serializedEvents) 
 			{
-				try { Thread.sleep(1); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
-				catch (Exception e) { }
+				serializedEvents.notify();
+			}
+		}
+	}
+
+	/* 
+	 * Input events should be added in a separate thread since FreeJ2ME-Plus is the one issuing them, different from paint events which only the app will request
+	 * Not doing this in a thread has the potential to freeze apps like Konami's Rush and Attack and Ratatouille.
+	 * 
+	 * Note that this also synchronizes on the serial queue, as input events will be processed in the same thread that serial calls and repaints are, to approximate
+	 * the spec's need for them all to be serialized in respect to each other (except inputs can't be truly serialized into serializedEvents because apps like
+	 * Heroes Lore: Wind of Soltia spam the queue very hard and make input processing completely unreliable)
+	 */
+	public void postInputEvent(Runnable r) 
+	{ 
+		new Thread(new Runnable() 
+		{
+			@Override
+			public void run() 
+			{
+				inputEvents.add(r);
+				if(serializedEvents.isEmpty())
+				{
+					synchronized (serializedEvents) 
+					{
+						serializedEvents.notify();
+					}
+				}
+			}
+		}).start();
+	}
+
+	private void processEvents() 
+	{
+		Runnable call = null;
+		while(true) 
+		{
+			synchronized (serializedEvents) 
+			{ 
+				while(serializedEvents.isEmpty() && paintEvent == null && inputEvents.isEmpty() && setCurrentRequest == null) // If we have no serial events to process, and no current displayable change, wait.
+				{
+					try { serializedEvents.wait(); }
+					catch (Exception e) { }
+				}
+				call = serializedEvents.poll(); 
+
+				// Process all pending inputs added since the previous loop, after any pending repaints and before any serial calls (it's what works best for all problematic apps so far)
+				synchronized(inputEvents) 
+				{
+					while(!inputEvents.isEmpty()) { inputEvents.poll().run(); }
+				}
+				
+				// Run paint event in sync with the serial queue, always before the serial call
+				if(paintEvent != null) 
+				{
+					paintEvent.run();
+					paintEvent = null;
+				}
 			}
 			
+			if(call != null) { call.run(); }
+
 			/* 
-			 * MIDP docs don't specify anything exact on when setCurrent should be processed, so let's assume it happens after the paint cycle but before serial calls,
-			 * which seems to work best with jars known to be annoying with the setCurrent, serial calls and serviceRepaints combo, like Ratatouille, Heroes Lore Wind of Soltia,
-			 * and Racing Fever 2.
+			 * MIDP docs don't specify anything exact on when setCurrent should be processed, it just says it is not guaranteed to happen before the "next event delivery"
+			 * so let's put it here.
 			 */
 			if(setCurrentRequest != null) 
 			{
 				setCurrentRequest.run();
 				setCurrentRequest = null;
 			}
-
-			processSerialCalls(); // serial calls should always happen AFTER the paint cycle
 		}
 	}
 
 	public void processPaintsNow() // Used by Canvas.serviceRepaints() to force repaints to be serviced
 	{
-		Runnable paintAction = paintEvent.getAndSet(null);
-		if (paintAction != null) { paintAction.run(); }
-
 		if(setCurrentRequest != null) 
 		{
 			setCurrentRequest.run();
 			setCurrentRequest = null;
 		}
 
-		processSerialCalls(); // serial calls should always happen AFTER the paint cycle
+		if(paintEvent != null) { paintEvent.run(); paintEvent = null; } // Only run Paint Events
+		else { return; }
 	}
 
 	public boolean flashBacklight(int duration) 
@@ -225,23 +266,15 @@ public class Display
 			{
 				prev = current;
 				if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
-
+				
 				current = next;
 
 				// Some versions of Harry Potter: Find Scabbers close themselves if its current displayable calls hideNotify at boot, but others do not work properly if hideNotify isn't called. 10/10 programming
-
 				// So what we do is swap the current displayable, and then call hideNotify on the now previous displayable
 				if (prev != null && prev instanceof Canvas) { prev.hideNotify(); }
 
-				if(current instanceof Canvas) { current.showNotify(); }
-				
-				// Make sure we're not holding a pending repaint before issuing a call to notifySetCurrent, otherwise it'll be ignored.
-				synchronized(paintEvent) 
-				{
-					if(paintEvent.get() != null) { paintEvent.getAndSet(null).run(); }
-				}
-				current.notifySetCurrent();
-				
+				if(current instanceof Canvas) { current.showNotify(); current.notifySetCurrent(); } // Canvas always queues its rendering internally
+				else { postPaintRequest(() -> { current.notifySetCurrent(); }); }
 
 				Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
 			}
@@ -252,6 +285,7 @@ public class Display
 			}
 			finally { Mobile.displayUpdated = true; }
 		});
+		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
 	public void setCurrent(Alert alert, Displayable next)
@@ -277,16 +311,21 @@ public class Display
 			}
 			finally { Mobile.displayUpdated = true; }
 		});
+		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
 	public void setCurrentItem(Item item) 
 	{
-		Form form = item.getOwner();
-		if (form != null) 
+		setCurrentRequest = (() -> 
 		{
-			if (form != current) { setCurrent(form); }
-			form.focusItem(item);
-		}
+			Form form = item.getOwner();
+			if (form != null) 
+			{
+				if (form != current) { setCurrent(form); }
+				form.focusItem(item);
+			}
+		});
+		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
 	public boolean vibrate(int duration)
@@ -295,5 +334,4 @@ public class Display
 		Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Vibrate");
 		return true;
 	}
-
 }

@@ -306,7 +306,7 @@ public abstract class Displayable
 	{
 		if (!isShown()) { return; }
 
-		Mobile.getDisplay().postPaintRequest(() -> { render(); });
+		render();
 	}
 
 }

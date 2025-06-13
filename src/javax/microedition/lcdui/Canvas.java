@@ -53,6 +53,7 @@ public abstract class Canvas extends Displayable
 
 	private int barHeight;
 	private boolean fullscreen = false;
+	private boolean servicing = false;
 
 	private AtomicBoolean pendingRepaint = new AtomicBoolean(false);
 
@@ -151,12 +152,19 @@ public abstract class Canvas extends Displayable
 
 	public void repaint(int x, int y, int width, int height)
 	{
+		// Also check if repaints are being serviced here, some jars like Garfield's House add repaint calls in a separate thread from that blocked by serviceRepaints
+		if (!isShown() || listCommands || servicing) { return; }
+
 		if(!Mobile.compatImmediateRepaints) 
 		{
-			pendingRepaint.set(true);
-			Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
+			synchronized(Mobile.getDisplay().serializedEvents) 
+			{				
+				Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); });
+				pendingRepaint.set(true);
+				Mobile.getDisplay().serializedEvents.notify();
+			}
 		}
-		else // Immediately process the paint call, followed by any pending Serial or setCurrent call
+		else // Immediately process the serial calls and the paint event
 		{
 			Mobile.getDisplay().processPaintsNow();
 			repaintRequest(x, y, width, height); 
@@ -165,11 +173,17 @@ public abstract class Canvas extends Displayable
 
 	public void repaintRequest(int x, int y, int width, int height) 
 	{
-		if (!isShown() || listCommands) { return; }
-		
-		graphics.reset(x, y, width, height);
+		// These can be called from another thread, at any time (even if the canvas is no longer visible), so ignore any repaints in cases where it isn't visible
+		if (!isShown() || listCommands) { pendingRepaint.set(false); return; }
 
-		try { paint(graphics); }
+		try 
+		{
+			synchronized(graphics) 
+			{
+				graphics.reset(x, y, width, height); 
+				paint(graphics); 
+			}
+		}
 		catch (Exception e) 
 		{
 			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
@@ -177,37 +191,46 @@ public abstract class Canvas extends Displayable
 		}
 		finally 
 		{ 
-			// The paint call has been processed and either succeeded or failed (doesn't matter), the following methods are for flushing to screen
-			// and as such, shouldn't really block execution
+			// The paint call has been processed and either succeeded or failed (doesn't matter, it was executed). Set the pending flag to false.
 			pendingRepaint.set(false);
-			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
-
-			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, (!fullscreen && !commands.isEmpty()) ? height+barHeight : height); // Extend draw area if commands are visible
-			Mobile.getPlatform().limitFps();
 		}
+
+		// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+		if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
+
+		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, (!fullscreen && !commands.isEmpty()) ? height+barHeight : height); // Extend draw area if commands are visible
+		Mobile.getPlatform().limitFps();
 	}
 
 	public void serviceRepaints() 
 	{
-		if(!isShown() && !pendingRepaint.get()) { return; }
-
+		if(!isShown() || !pendingRepaint.get()) { return; }
+	
+		servicing = true;
 		if(!MobilePlatform.pressedKeys[19]) // If the fast-forward key is pressed, ignore the waiting and force a repaint immediately
 		{
-			// serviceRepaints has to force pending repaints to happen, so block until they have time to be serviced normally, or multiple retries were attempted and unsuccessful
-			for(byte waitTime = 0; waitTime < 33; waitTime++) 
+			// serviceRepaints has to force pending repaints to happen, so initially wait until they have time to be serviced normally, or multiple retries were attempted and unsuccessful
+			for(byte waitTime = 0; waitTime < 16; waitTime++) 
 			{
 				if(pendingRepaint.get()) 
 				{
-					try { Thread.sleep(1); } // Worst case scenario, this will sleep for a total of 33ms before serviceRepaints forces repaints to happen (30fps min force-refresh)
+					try { Thread.sleep(1); } // Worst case scenario, this will sleep for a total of 16ms before serviceRepaints forces repaints to happen (60fps min force-refresh)
 					catch (Exception e) { }
 				}
-				else { return; } // Good, the pending repaint was serviced, unblock and return immediately.
+				else { break; } // Good, the pending repaint was serviced, break out of the loop
 			}
 		}
 
-		// Assuming there's still pending repaints after the sleep interval, force them to happen
-		Mobile.getDisplay().processPaintsNow();	
+		// If Repaints weren't serviced in a timely manner above, so the alternative is to force them to happen
+		synchronized(Mobile.getDisplay().serializedEvents) 
+		{
+			while(pendingRepaint.get())
+			{ 
+				Mobile.getDisplay().processPaintsNow(); 
+				if(Mobile.getDisplay().serializedEvents.size() == 0) { pendingRepaint.set(false); }
+			}
+		}
+		servicing = false;
 	}
 
 	public void setFullScreenMode(boolean mode)
