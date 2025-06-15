@@ -21,9 +21,7 @@ public class AudioTrackPresenter extends AudioPresenter
 
     protected AudioTrackPresenter() { }
 
-    public Audio3D getAudio3D() {
-        throw new UnsupportedOperationException();
-    }
+    public Audio3D getAudio3D() { return super.getAudio3D(); }
 
     public int getCurrentTime() { return super.getCurrentTime(); }
 

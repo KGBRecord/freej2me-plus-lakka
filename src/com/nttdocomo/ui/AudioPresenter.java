@@ -92,6 +92,9 @@ public class AudioPresenter implements MediaPresenter
         {
             listener.mediaAction(this, AUDIO_PLAYING, 0);
         }
+
+        mediaSound.getPlayer().setMediaTime(time);
+        mediaSound.getPlayer().start();
     }
 
     public void stop() 
@@ -100,14 +103,20 @@ public class AudioPresenter implements MediaPresenter
         {
             listener.mediaAction(this, AUDIO_STOPPED, 0);
         }
+
+        mediaSound.getPlayer().stop();
+        mediaSound.getPlayer().setMediaTime(0);
     }
 
+    // Despite the name, this is actually a resume call
     public void restart() 
     {
         if (listener != null) 
         {
             listener.mediaAction(this, AUDIO_RESTARTED, 0);
         }
+
+        mediaSound.getPlayer().start();
     }
 
     public void pause() 
@@ -116,11 +125,13 @@ public class AudioPresenter implements MediaPresenter
         {
             listener.mediaAction(this, AUDIO_PAUSED, 0);
         }
+
+        mediaSound.getPlayer().stop();
     }
 
-    public int getCurrentTime() { return 0; }
+    public int getCurrentTime() { return (int) (mediaSound.getPlayer().getMediaTime() / 1000); }
 
-    public int getTotalTime() { return 0; }
+    public int getTotalTime() { return (int) (mediaSound.getPlayer().getDuration() / 1000); }
 
     public void setData(MediaData data) { this.mediaData = data; }
 
