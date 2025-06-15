@@ -1044,7 +1044,7 @@ public class MIDletLoader extends URLClassLoader
 					{
 						if (((String)value).toLowerCase().contains(keyword)) // It is going for the check, replace the device string with FreeJ2ME-Plus'
 						{
-							Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Found excplicit platform model check... overriding.");
+							Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Found explicit platform '" + value +  "' model check... overriding.");
 							String replacementModel = "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.";
 							value = replacementModel.substring(0, Math.min(((String)value).length(), replacementModel.length()));
 							break;
