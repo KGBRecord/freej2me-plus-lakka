@@ -644,6 +644,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void setClip(int x, int y, int width, int height)
 	{
 		if(!Mobile.isDoJa) { gc.setClip(x, y, width, height); }
+		else { gc.setClip(x-getTranslateX(), y-getTranslateY(), width, height); }
 	}
 
 	public void clipRect(int x, int y, int width, int height)
