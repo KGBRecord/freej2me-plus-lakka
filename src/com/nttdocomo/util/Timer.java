@@ -31,11 +31,10 @@ public final class Timer implements TimeKeeper
     
     public Timer() 
     {
-        this.interval = 0;
+        this.interval = getMinTimeInterval();
         this.repeat = false; 
         this.listener = null; 
         this.isRunning = false;
-        this.timer = new java.util.Timer();
     }
 
     @Override
@@ -76,6 +75,7 @@ public final class Timer implements TimeKeeper
     {
         if (isRunning) { throw new UIException(1, "Timer is already running."); }
 
+        timer = new java.util.Timer();
         TimerTask task = new TimerTask() 
         {
             @Override

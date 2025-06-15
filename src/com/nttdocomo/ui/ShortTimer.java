@@ -30,9 +30,9 @@ public final class ShortTimer implements com.nttdocomo.util.TimeKeeper
 
     protected ShortTimer() 
     {
+        time = getMinTimeInterval();
         isRunning = false;
         isDisposed = false;
-        timer = new java.util.Timer();
     }
 
     public static ShortTimer getShortTimer(Canvas canvas, int id, int time, boolean repeat) 
@@ -54,11 +54,13 @@ public final class ShortTimer implements com.nttdocomo.util.TimeKeeper
         if (isDisposed) { throw new UIException(1, "Timer has been disposed"); }
         if (isRunning) { throw new UIException(1, "Timer is already running"); }
 
+        timer = new java.util.Timer();
         TimerTask task = new TimerTask() 
         {
             @Override
             public void run() 
             {
+                if(Display.getCurrent() instanceof Canvas) { ((Canvas)Display.getCurrent()).processEvent(Display.TIMER_EXPIRED_EVENT, id); }
                 if (!repeat) { stop(); }
             }
         };
