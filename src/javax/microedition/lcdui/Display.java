@@ -44,9 +44,9 @@ public class Display
 
 	private Displayable current;
 
-	public static final Queue<Runnable> serializedEvents = new LinkedList<Runnable>(), inputEvents = new LinkedList<Runnable>();
+	private static final Queue<Runnable> serializedEvents = new LinkedList<Runnable>(), inputEvents = new LinkedList<Runnable>();
 
-	private Runnable setCurrentRequest, paintEvent;
+	private static final AtomicReference<Runnable> setCurrentRequest = new AtomicReference<>(), paintEvent = new AtomicReference<>();
 
 	private Thread flashThread;
 
@@ -65,13 +65,10 @@ public class Display
 	// Paint events should be serialized as well (if the event queue is empty, we need to notify the event processing thread to resume)
     public void postPaintRequest(Runnable r) 
 	{ 
-		paintEvent = r;
-		if(serializedEvents.isEmpty())
+		synchronized(paintEvent) { paintEvent.set(r); }
+		synchronized (serializedEvents) 
 		{
-			synchronized (serializedEvents) 
-			{
-				serializedEvents.notify();
-			}
+			if(serializedEvents.isEmpty()) { serializedEvents.notify(); }
 		}
 	}
 
@@ -91,12 +88,9 @@ public class Display
 			public void run() 
 			{
 				inputEvents.add(r);
-				if(serializedEvents.isEmpty())
+				synchronized (serializedEvents) 
 				{
-					synchronized (serializedEvents) 
-					{
-						serializedEvents.notify();
-					}
+					if(serializedEvents.isEmpty()) { serializedEvents.notify(); }
 				}
 			}
 		}).start();
@@ -108,8 +102,8 @@ public class Display
 		while(true) 
 		{
 			synchronized (serializedEvents) 
-			{ 
-				while(serializedEvents.isEmpty() && paintEvent == null && inputEvents.isEmpty() && setCurrentRequest == null) // If we have no serial events to process, and no current displayable change, wait.
+			{
+				while(serializedEvents.isEmpty() && paintEvent.get() == null && inputEvents.isEmpty() && setCurrentRequest.get() == null) // If we have no serial events to process, and no current displayable change, wait.
 				{
 					try { serializedEvents.wait(); }
 					catch (Exception e) { }
@@ -119,15 +113,18 @@ public class Display
 				// Process all pending inputs added since the previous loop, after any pending repaints and before any serial calls (it's what works best for all problematic apps so far)
 				synchronized(inputEvents) 
 				{
-					while(!inputEvents.isEmpty()) { inputEvents.poll().run(); }
+					while(!inputEvents.isEmpty()) 
+					{ 
+						if(inputEvents.peek() != null) { inputEvents.poll().run(); }
+					}
 				}
 				
 				// Run paint event in sync with the serial queue, always before the serial call
-				if(paintEvent != null) 
+				synchronized(paintEvent) 
 				{
-					paintEvent.run();
-					paintEvent = null;
+					if(paintEvent.get() != null) { paintEvent.getAndSet(null).run(); }
 				}
+				
 			}
 			
 			if(call != null) { call.run(); }
@@ -136,24 +133,25 @@ public class Display
 			 * MIDP docs don't specify anything exact on when setCurrent should be processed, it just says it is not guaranteed to happen before the "next event delivery"
 			 * so let's put it here.
 			 */
-			if(setCurrentRequest != null) 
+			if(setCurrentRequest.get() != null) 
 			{
-				setCurrentRequest.run();
-				setCurrentRequest = null;
+				setCurrentRequest.getAndSet(null).run();
 			}
 		}
 	}
 
 	public void processPaintsNow() // Used by Canvas.serviceRepaints() to force repaints to be serviced
 	{
-		if(setCurrentRequest != null) 
+		if(setCurrentRequest.get() != null) 
 		{
-			setCurrentRequest.run();
-			setCurrentRequest = null;
+			setCurrentRequest.getAndSet(null).run();
 		}
 
-		if(paintEvent != null) { paintEvent.run(); paintEvent = null; } // Only run Paint Events
-		else { return; }
+		synchronized(paintEvent) 
+		{
+			if(paintEvent.get() != null) { paintEvent.getAndSet(null).run(); } // Only run Paint Events
+			else { return; }
+		}
 	}
 
 	public boolean flashBacklight(int duration) 
@@ -257,7 +255,7 @@ public class Display
 
 	public void setCurrent(Displayable next)
 	{
-		setCurrentRequest = (() -> 
+		setCurrentRequest.set((() -> 
 		{
 			Displayable prev;
 			if (next == null || current == next) { return; }
@@ -284,13 +282,13 @@ public class Display
 				e.printStackTrace();
 			}
 			finally { Mobile.displayUpdated = true; }
-		});
+		}));
 		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
 	public void setCurrent(Alert alert, Displayable next)
 	{
-		setCurrentRequest = (() -> 
+		setCurrentRequest.set((() -> 
 		{
 			if(alert == null || next == null) { throw new NullPointerException("Cannot pass a null alert or next displayable into setCurrent(Alert, Displayable)"); }
 			if(next instanceof Alert) { throw new IllegalArgumentException("Cannot pass an alert as the next screen of another alert in setCurrent(Alert, Displayable)"); }
@@ -310,13 +308,13 @@ public class Display
 				e.printStackTrace();
 			}
 			finally { Mobile.displayUpdated = true; }
-		});
+		}));
 		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
 	public void setCurrentItem(Item item) 
 	{
-		setCurrentRequest = (() -> 
+		setCurrentRequest.set((() -> 
 		{
 			Form form = item.getOwner();
 			if (form != null) 
@@ -324,7 +322,7 @@ public class Display
 				if (form != current) { setCurrent(form); }
 				form.focusItem(item);
 			}
-		});
+		}));
 		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 

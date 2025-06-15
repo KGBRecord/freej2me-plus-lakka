@@ -157,12 +157,12 @@ public abstract class Canvas extends Displayable
 
 		if(!Mobile.compatImmediateRepaints) 
 		{
-			synchronized(Mobile.getDisplay().serializedEvents) 
-			{				
-				Mobile.getDisplay().postPaintRequest(() -> { repaintRequest(x, y, width, height); });
-				pendingRepaint.set(true);
-				Mobile.getDisplay().serializedEvents.notify();
-			}
+			Mobile.getDisplay().postPaintRequest(() -> 
+			{ 
+				repaintRequest(x, y, width, height); 
+				pendingRepaint.set(false);
+			});
+			pendingRepaint.set(true);
 		}
 		else // Immediately process the serial calls and the paint event
 		{
@@ -174,7 +174,7 @@ public abstract class Canvas extends Displayable
 	public void repaintRequest(int x, int y, int width, int height) 
 	{
 		// These can be called from another thread, at any time (even if the canvas is no longer visible), so ignore any repaints in cases where it isn't visible
-		if (!isShown() || listCommands) { pendingRepaint.set(false); return; }
+		if (!isShown() || listCommands) { return; }
 
 		try 
 		{
@@ -188,11 +188,6 @@ public abstract class Canvas extends Displayable
 		{
 			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
 			e.printStackTrace();
-		}
-		finally 
-		{ 
-			// The paint call has been processed and either succeeded or failed (doesn't matter, it was executed). Set the pending flag to false.
-			pendingRepaint.set(false);
 		}
 
 		// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
@@ -221,15 +216,8 @@ public abstract class Canvas extends Displayable
 			}
 		}
 
-		// If Repaints weren't serviced in a timely manner above, so the alternative is to force them to happen
-		synchronized(Mobile.getDisplay().serializedEvents) 
-		{
-			while(pendingRepaint.get())
-			{ 
-				Mobile.getDisplay().processPaintsNow(); 
-				if(Mobile.getDisplay().serializedEvents.size() == 0) { pendingRepaint.set(false); }
-			}
-		}
+		// If Repaints weren't serviced in a timely manner above, the alternative is to force them to happen
+		Mobile.getDisplay().processPaintsNow(); 
 		servicing = false;
 	}
 
