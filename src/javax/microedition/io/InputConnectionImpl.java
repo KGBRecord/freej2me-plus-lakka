@@ -31,14 +31,14 @@ public class InputConnectionImpl implements InputConnection
 	public InputConnectionImpl(String name) 
 	{ 
 		this.name = name; 
-		Mobile.log(Mobile.LOG_WARNING, InputConnectionImpl.class.getPackage().getName() + "." + InputConnectionImpl.class.getSimpleName() + ": " + "New Connector: "+ this.name);
+		Mobile.log(Mobile.LOG_DEBUG, InputConnectionImpl.class.getPackage().getName() + "." + InputConnectionImpl.class.getSimpleName() + ": " + "New Connector: "+ this.name);
 	}
 
 	public InputConnectionImpl(String name, int mode) 
 	{ 
 		this.name = name; 
 		this.mode = mode;
-		Mobile.log(Mobile.LOG_WARNING, InputConnectionImpl.class.getPackage().getName() + "." + InputConnectionImpl.class.getSimpleName() + ": " + "New Connector: "+ this.name + ". mode " + this.mode);
+		Mobile.log(Mobile.LOG_DEBUG, InputConnectionImpl.class.getPackage().getName() + "." + InputConnectionImpl.class.getSimpleName() + ": " + "New Connector: "+ this.name + ". mode " + this.mode);
 	}
 
 	public InputConnectionImpl(String name, int mode, boolean timeouts) 
@@ -46,7 +46,7 @@ public class InputConnectionImpl implements InputConnection
 		this.name = name; 
 		this.mode = mode; 
 		this.timeouts = timeouts;
-		Mobile.log(Mobile.LOG_WARNING, InputConnectionImpl.class.getPackage().getName() + "." + InputConnectionImpl.class.getSimpleName() + ": " + "New Connector: "+ this.name + ". mode " + this.mode + ". timeout:" + (this.timeouts ? "true" : "false"));
+		Mobile.log(Mobile.LOG_DEBUG, InputConnectionImpl.class.getPackage().getName() + "." + InputConnectionImpl.class.getSimpleName() + ": " + "New Connector: "+ this.name + ". mode " + this.mode + ". timeout:" + (this.timeouts ? "true" : "false"));
 	}
 
 	public void close() 
