@@ -52,7 +52,7 @@ public abstract class Canvas extends Frame
 	public void repaint(int x, int y, int width, int height)
 	{
 		if(!Mobile.compatImmediateRepaints) 
-		{
+		{	
 			IApplication.display.postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
 		}
 		else { repaintRequest(x, y, width, height); }
@@ -62,23 +62,23 @@ public abstract class Canvas extends Frame
 	{
 
 		if(!isShown()) { return; }
-		
-		graphics.reset(x, y, width, height);
 
-		try { paint(graphics); }
+		try 
+		{ 
+			graphics.reset(x, y, width, height);
+			paint(graphics); 
+		}
 		catch (Exception e) 
 		{
 			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
 			e.printStackTrace();
 		}
-		finally 
-		{ 
-			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-			if (labelVisible) { paintCommandsBar(); }
 
-			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, labelVisible ? height+barHeight : height); // Extend the draw area if we have the commands bar visible
-			Mobile.getPlatform().limitFps();
-		}
+		// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+		if (labelVisible) { paintCommandsBar(); }
+
+		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, labelVisible ? height+barHeight : height); // Extend the draw area if we have the commands bar visible
+		Mobile.getPlatform().limitFps();
 	}
 
 	private void paintCommandsBar() 

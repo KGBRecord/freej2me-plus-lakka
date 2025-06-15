@@ -97,30 +97,40 @@ public class Display
     protected static Frame current = null;
 
     private static final AtomicReference<Runnable> paintEvent = new AtomicReference<>();
-	private Thread paintThread;
 
 	public Display()
 	{
-		paintThread = new Thread(this::processPaintCalls, "DoJaCanvasRepaints-Thread");
-		paintThread.start();
+		new Thread(this::processPaintCalls, "DoJaEventProcessing-Thread").start();
 	}
 
 	// Paint queue methods
-	public void postPaintRequest(Runnable r) { paintEvent.set(r); }
+	public void postPaintRequest(Runnable r) 
+    { 
+        paintEvent.set(r); 
+        synchronized(paintEvent) 
+        {
+            paintEvent.notify();
+        }
+    }
 
 	private void processPaintCalls() 
-	{		
-		while (true) 
-		{
-			Runnable call = paintEvent.getAndSet(null);
+	{
+        Runnable paint;
+        while (true) 
+        {
+            synchronized(paintEvent) 
+            {
+                while(paintEvent.get() == null)
+                {
+                    try { paintEvent.wait(); }
+                    catch (Exception e) { }
+                }
 
-			if(call != null) { call.run(); }
-			else 
-			{
-				try { Thread.sleep(1); } // Sleep to reduce cpu usage as we are under no obligation to return serial calls immediately, they just have to be serial
-				catch (Exception e) { }
-			}
-		}
+                paint = paintEvent.getAndSet(null);
+            }
+
+            if(paint != null) { paint.run(); }
+        }
 	}
 
     public static Frame getCurrent() 
