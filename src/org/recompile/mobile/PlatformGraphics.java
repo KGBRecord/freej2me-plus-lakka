@@ -59,15 +59,15 @@ public abstract class PlatformGraphics implements DirectGraphics
 		0,         0,         0,         0,         0,         0, 0
 	};
 
-	public static final byte BASELINE = 64;
-	public static final byte BOTTOM   = 32;
-	public static final byte DOTTED   = 1;
-	public static final byte HCENTER  = 1;
-	public static final byte LEFT     = 4;
-	public static final byte RIGHT    = 8;
-	public static final byte SOLID    = 0;
-	public static final byte TOP      = 16;
-	public static final byte VCENTER  = 2;
+	public static final int BASELINE = 64;
+	public static final int BOTTOM   = 32;
+	public static final int DOTTED   = 1;
+	public static final int HCENTER  = 1;
+	public static final int LEFT     = 4;
+	public static final int RIGHT    = 8;
+	public static final int SOLID    = 0;
+	public static final int TOP      = 16;
+	public static final int VCENTER  = 2;
 
 
 	protected int translateX = 0;
@@ -80,10 +80,10 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected int color = 0xFFFFFF;
 	protected Font font = Font.getDefaultFont();
 	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
-	protected byte strokeStyle = SOLID;
+	protected int strokeStyle = SOLID;
 
 	protected int dojaLockCount = 0;
-	protected byte dojaflipMode = 0;
+	protected int dojaflipMode = 0;
 	protected boolean usePictoColor = false;
 	protected boolean contextDisposed = false;
 
@@ -109,32 +109,32 @@ public abstract class PlatformGraphics implements DirectGraphics
 	 */
 
 	// Colors
-	public static final byte BLACK   = 0;    // (0x00, 0x00, 0x00)
-	public static final byte BLUE    = 1;    // (0x00, 0x00, 0xff)
-	public static final byte LIME    = 2;    // (0x00, 0xff, 0x00)
-	public static final byte AQUA    = 3;    // (0x00, 0xff, 0xff)
-	public static final byte RED     = 4;    // (0xff, 0x00, 0x00)
-	public static final byte FUCHSIA = 5;    // (0xff, 0x00, 0xff)
-	public static final byte YELLOW  = 6;    // (0xff, 0xff, 0x00)
-	public static final byte WHITE   = 7;    // (0xff, 0xff, 0xff)
-	public static final byte GRAY    = 8;    // (0x80, 0x80, 0x80)
-	public static final byte NAVY    = 9;    // (0x00, 0x00, 0x80)
-	public static final byte GREEN   = 10;   // (0x00, 0x80, 0x00)
-	public static final byte TEAL    = 11;   // (0x00, 0x80, 0x80)
-	public static final byte MAROON  = 12;   // (0x80, 0x00, 0x00)
-	public static final byte PURPLE  = 13;   // (0x80, 0x00, 0x80)
-	public static final byte OLIVE   = 14;   // (0x80, 0x80, 0x00)
-	public static final byte SILVER  = 15;   // (0xc0, 0xc0, 0xc0)
+	public static final int BLACK   = 0;    // (0x00, 0x00, 0x00)
+	public static final int BLUE    = 1;    // (0x00, 0x00, 0xff)
+	public static final int LIME    = 2;    // (0x00, 0xff, 0x00)
+	public static final int AQUA    = 3;    // (0x00, 0xff, 0xff)
+	public static final int RED     = 4;    // (0xff, 0x00, 0x00)
+	public static final int FUCHSIA = 5;    // (0xff, 0x00, 0xff)
+	public static final int YELLOW  = 6;    // (0xff, 0xff, 0x00)
+	public static final int WHITE   = 7;    // (0xff, 0xff, 0xff)
+	public static final int GRAY    = 8;    // (0x80, 0x80, 0x80)
+	public static final int NAVY    = 9;    // (0x00, 0x00, 0x80)
+	public static final int GREEN   = 10;   // (0x00, 0x80, 0x00)
+	public static final int TEAL    = 11;   // (0x00, 0x80, 0x80)
+	public static final int MAROON  = 12;   // (0x80, 0x00, 0x00)
+	public static final int PURPLE  = 13;   // (0x80, 0x00, 0x80)
+	public static final int OLIVE   = 14;   // (0x80, 0x80, 0x00)
+	public static final int SILVER  = 15;   // (0xc0, 0xc0, 0xc0)
 
 	// flip modes
-	public static final byte FLIP_NONE = 0;
-	public static final byte FLIP_HORIZONTAL = 1;
-	public static final byte FLIP_VERTICAL = 2;
-	public static final byte FLIP_ROTATE = 3;
-	public static final byte FLIP_ROTATE_LEFT = 4;
-	public static final byte FLIP_ROTATE_RIGHT = 5;
-	public static final byte FLIP_ROTATE_RIGHT_HORIZONTAL = 6;
-	public static final byte FLIP_ROTATE_RIGHT_VERTICAL = 7;
+	public static final int FLIP_NONE = 0;
+	public static final int FLIP_HORIZONTAL = 1;
+	public static final int FLIP_VERTICAL = 2;
+	public static final int FLIP_ROTATE = 3;
+	public static final int FLIP_ROTATE_LEFT = 4;
+	public static final int FLIP_ROTATE_RIGHT = 5;
+	public static final int FLIP_ROTATE_RIGHT_HORIZONTAL = 6;
+	public static final int FLIP_ROTATE_RIGHT_VERTICAL = 7;
 
 	public PlatformGraphics(PlatformImage image)
 	{
@@ -629,7 +629,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		} 
 		else { gc.setStroke(new BasicStroke(1.0f)); } // Solid stroke with width of 2 px
 
-		strokeStyle = (byte) stroke;
+		strokeStyle = stroke;
 	}
 
 	public int getStrokeStyle() { return strokeStyle;}
@@ -1563,7 +1563,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			case FLIP_ROTATE_RIGHT:
 			case FLIP_ROTATE_RIGHT_HORIZONTAL:
 			case FLIP_ROTATE_RIGHT_VERTICAL:
-				dojaflipMode = (byte) mode;
+				dojaflipMode = mode;
 				break;
 			default:
 				throw new IllegalArgumentException("Invalid flip mode received: " + mode);
