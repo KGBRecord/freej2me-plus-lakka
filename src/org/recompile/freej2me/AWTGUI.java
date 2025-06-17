@@ -108,10 +108,10 @@ public final class AWTGUI
 	
 
 	/* Log Level submenu */
-	Menu logLevel = new Menu("Log Level");
+	final Menu logLevel = new Menu("Log Level");
 
 	/* M3G Debug submenu */
-	Menu M3GDebug = new Menu("M3G Debugging");
+	final Menu M3GDebug = new Menu("M3G Debugging");
 
 	/* Input mapping keys */
 	final Button inputButtons[] = new Button[] 

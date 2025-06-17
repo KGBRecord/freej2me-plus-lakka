@@ -98,7 +98,7 @@ public class MobilePlatform
 		{
 			public void run()
 			{
-					// Placeholder //
+				// Placeholder //
 			}
 		};
 
@@ -656,7 +656,7 @@ public class MobilePlatform
 			gc.flushGraphics(img, x, y, width, height);
 		
 			if(!showFPS.equals("Off")) { showFPS();}
-			painter.run(); // Update the frontend's painter first to then process inputs
+			painter.run();
 		}
 	}
 
@@ -669,12 +669,6 @@ public class MobilePlatform
 		elapsedTime = System.nanoTime() - lastRenderTime;
 		sleepTime = (requiredFrametime - elapsedTime); // Sleep time in nanoseconds
 
-		/* 
-		 * TODO: Framerate still deviates a little from the intended lock 
-		 * 
-		 * Possible solution: Some kind of calibration mechanism to nudge the
-		 * actual lock closer to the user's display refresh rate.
-		 */
 		if (sleepTime > 0) { LockSupport.parkNanos(sleepTime); }
 
 		lastRenderTime = System.nanoTime();

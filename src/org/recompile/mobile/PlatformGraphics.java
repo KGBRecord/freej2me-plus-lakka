@@ -48,15 +48,15 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected Color awtColor;
 
 	// Gaussian blur kernel (7x7) for Motorola's FunLights
-	protected final float[] gaussianKernel = 
+	protected static final float[] gaussianKernel = 
 	{
 		1f / 159,  2f / 159,  3f / 159,  2f / 159,  1f / 159, 0, 0,
 		2f / 159,  5f / 159,  8f / 159,  5f / 159,  2f / 159, 0, 0,
 		3f / 159,  8f / 159, 12f / 159,  8f / 159,  3f / 159, 0, 0,
 		2f / 159,  5f / 159,  8f / 159,  5f / 159,  2f / 159, 0, 0,
 		1f / 159,  2f / 159,  3f / 159,  2f / 159,  1f / 159, 0, 0,
-		0,         0,         0,         0,         0,         0, 0,
-		0,         0,         0,         0,         0,         0, 0
+		0,         0,         0,         0,         0,        0, 0,
+		0,         0,         0,         0,         0,        0, 0
 	};
 
 	public static final int BASELINE = 64;
@@ -197,13 +197,13 @@ public abstract class PlatformGraphics implements DirectGraphics
 		x_dest = AnchorX(x_dest, width, anchor);
 		y_dest = AnchorY(y_dest, height, anchor);
 	
-		int tx = getTranslateX();
-		int ty = getTranslateY();
+		x_src += getTranslateX();
+		y_src += getTranslateY();
 	
 		// Check if the source area is within bounds before doing any draw operations
-		if (x_src + tx < 0 || y_src + ty < 0 || 
-			x_src + tx + width > canvas.getWidth() || 
-			y_src + ty + height > canvas.getHeight()) {
+		if (x_src < 0 || y_src < 0 || 
+			x_src + width > canvas.getWidth() || 
+			y_src + height > canvas.getHeight()) {
 			throw new IllegalArgumentException("Source area exceeds the bounds of the graphics object.");
 		}
 	
@@ -219,7 +219,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		{
 			for (int i = 0; i < width; i++) 
 			{
-				subPixels[j * width + i] = canvasData[(y_src + ty + j) * canvas.getWidth() + (x_src + tx + i)];
+				subPixels[j * width + i] = canvasData[(y_src + j) * canvas.getWidth() + (x_src + i)];
 			}
 		}
 	

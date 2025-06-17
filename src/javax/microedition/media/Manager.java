@@ -77,8 +77,6 @@ public class Manager
 
 			checkCustomMidi();
 
-			dedicatedSynth.loadAllInstruments(customSoundfont);
-
 			dedicatedReceiver = dedicatedSynth.getReceiver();
 			channels = dedicatedSynth.getChannels();
 			toneChannel = channels[15]; // The last MIDI channel is often the least used, so use it for tones to minimize possible issues in case they play alongside sequenced data

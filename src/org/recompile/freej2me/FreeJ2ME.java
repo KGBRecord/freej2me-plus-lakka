@@ -66,8 +66,8 @@ public class FreeJ2ME
 	private static final String extInputFilePath = "FreeJ2MEExternalKeyEvents.txt";
 	private static HashMap<String, Integer> extEventsMap = new HashMap<>();
 
-	public static Color freeJ2MEBGColor = new Color(0,0,64);
-	public static Color freeJ2MEDragColor = new Color(55, 55, 125);
+	public static final Color freeJ2MEBGColor = new Color(0,0,64);
+	public static final Color freeJ2MEDragColor = new Color(55, 55, 125);
 
 	public static boolean isFullscreen = false;
 
@@ -90,7 +90,7 @@ public class FreeJ2ME
             while (true) 
 			{
                 checkExtInputFile();
-                try { Thread.sleep(1); } 
+                try { Thread.sleep(4); } // External inputs poll at a 250fps rate, more than fast enough for just about everything
 				catch (InterruptedException e) { }
             }
         }, "ExternalInputs-Thread").start();
