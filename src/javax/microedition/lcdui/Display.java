@@ -55,17 +55,14 @@ public class Display
 	// MIDlet serial call queue methods
 	public void callSerially(Runnable r) 
 	{ 
-		synchronized (serializedEvents) 
-		{ 
-			serializedEvents.add(r); 
-			serializedEvents.notify();
-		} 
+		serializedEvents.add(r); 
+		synchronized (serializedEvents) { serializedEvents.notify(); }
 	}
 
 	// Paint events should be serialized as well (if the event queue is empty, we need to notify the event processing thread to resume)
     public void postPaintRequest(Runnable r) 
 	{ 
-		synchronized(paintEvent) { paintEvent.set(r); }
+		paintEvent.set(r);
 		synchronized (serializedEvents) 
 		{
 			if(serializedEvents.isEmpty()) { serializedEvents.notify(); }
@@ -101,57 +98,43 @@ public class Display
 		Runnable call = null;
 		while(true) 
 		{
+			/* 
+			 * MIDP docs don't specify anything exact on when setCurrent should be processed, it just says it is not guaranteed to happen before the "next event delivery"
+			 * so let's do it right before any events.
+			 */
+			call = setCurrentRequest.getAndSet(null);
+			if(call != null) { call.run(); }
+
 			synchronized (serializedEvents) 
 			{
-				while(serializedEvents.isEmpty() && paintEvent.get() == null && inputEvents.isEmpty() && setCurrentRequest.get() == null) // If we have no serial events to process, and no current displayable change, wait.
+				while(serializedEvents.isEmpty() && inputEvents.isEmpty() && paintEvent.get() == null  && setCurrentRequest.get() == null) // If we have no serial events to process, and no current displayable change, wait.
 				{
 					try { serializedEvents.wait(); }
 					catch (Exception e) { }
 				}
+				
 				call = serializedEvents.poll(); 
+				if(call != null) { call.run(); }
 
-				// Process all pending inputs added since the previous loop, after any pending repaints and before any serial calls (it's what works best for all problematic apps so far)
-				synchronized(inputEvents) 
-				{
-					while(!inputEvents.isEmpty()) 
-					{ 
-						if(inputEvents.peek() != null) { inputEvents.poll().run(); }
-					}
-				}
-				
-				// Run paint event in sync with the serial queue, always before the serial call
-				synchronized(paintEvent) 
-				{
-					if(paintEvent.get() != null) { paintEvent.getAndSet(null).run(); }
-				}
-				
+				// Run paint event in sync with the serial queue, always after the serial call
+				call = paintEvent.getAndSet(null);
+				if(call != null) { call.run(); }
 			}
-			
-			if(call != null) { call.run(); }
 
-			/* 
-			 * MIDP docs don't specify anything exact on when setCurrent should be processed, it just says it is not guaranteed to happen before the "next event delivery"
-			 * so let's put it here.
-			 */
-			if(setCurrentRequest.get() != null) 
-			{
-				setCurrentRequest.getAndSet(null).run();
+			// Process all pending inputs added since the previous thread loop, after any previously pending events were processed.
+			while(!inputEvents.isEmpty()) 
+			{ 
+				call = inputEvents.poll();
+				if(call != null) { call.run(); }
 			}
 		}
 	}
 
 	public void processPaintsNow() // Used by Canvas.serviceRepaints() to force repaints to be serviced
 	{
-		if(setCurrentRequest.get() != null) 
-		{
-			setCurrentRequest.getAndSet(null).run();
-		}
-
-		synchronized(paintEvent) 
-		{
-			if(paintEvent.get() != null) { paintEvent.getAndSet(null).run(); } // Only run Paint Events
-			else { return; }
-		}
+		Runnable call = paintEvent.getAndSet(null);
+		if(call != null) { call.run(); } // Only run Paint Events
+		else { return; }
 	}
 
 	public boolean flashBacklight(int duration) 
@@ -255,74 +238,86 @@ public class Display
 
 	public void setCurrent(Displayable next)
 	{
-		setCurrentRequest.set((() -> 
+		setCurrentRequest.set(new Runnable()
 		{
-			Displayable prev;
-			if (next == null || current == next) { return; }
-
-			try 
+			@Override
+			public void run() 
 			{
-				prev = current;
-				if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
-				
-				current = next;
+				Displayable prev;
+				if (next == null || current == next) { return; }
 
-				// Some versions of Harry Potter: Find Scabbers close themselves if its current displayable calls hideNotify at boot, but others do not work properly if hideNotify isn't called. 10/10 programming
-				// So what we do is swap the current displayable, and then call hideNotify on the now previous displayable
-				if (prev != null && prev instanceof Canvas) { prev.hideNotify(); }
+				try 
+				{
+					prev = current;
+					if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
+					
+					current = next;
 
-				if(current instanceof Canvas) { current.showNotify(); current.notifySetCurrent(); } // Canvas always queues its rendering internally
-				else { postPaintRequest(() -> { current.notifySetCurrent(); }); }
+					// Some versions of Harry Potter: Find Scabbers close themselves if its current displayable calls hideNotify at boot, but others do not work properly if hideNotify isn't called. 10/10 programming
+					// So what we do is swap the current displayable, and then call hideNotify on the now previous displayable
+					if (prev != null && prev instanceof Canvas) { prev.hideNotify(); }
 
-				Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
+					if(current instanceof Canvas) { current.showNotify(); current.notifySetCurrent(); } // Canvas always queues its rendering internally
+					else { postPaintRequest(() -> { current.notifySetCurrent(); }); }
+
+					Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
+				}
+				catch (Exception e)
+				{
+					Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(next)");
+					e.printStackTrace();
+				}
+				finally { Mobile.displayUpdated = true; }
 			}
-			catch (Exception e)
-			{
-				Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(next)");
-				e.printStackTrace();
-			}
-			finally { Mobile.displayUpdated = true; }
-		}));
+		});
 		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
 	public void setCurrent(Alert alert, Displayable next)
 	{
-		setCurrentRequest.set((() -> 
+		setCurrentRequest.set(new Runnable()
 		{
-			if(alert == null || next == null) { throw new NullPointerException("Cannot pass a null alert or next displayable into setCurrent(Alert, Displayable)"); }
-			if(next instanceof Alert) { throw new IllegalArgumentException("Cannot pass an alert as the next screen of another alert in setCurrent(Alert, Displayable)"); }
-
-			try
+			@Override
+			public void run() 
 			{
-				alert.setNextScreen(next);
+				if(alert == null || next == null) { throw new NullPointerException("Cannot pass a null alert or next displayable into setCurrent(Alert, Displayable)"); }
+				if(next instanceof Alert) { throw new IllegalArgumentException("Cannot pass an alert as the next screen of another alert in setCurrent(Alert, Displayable)"); }
 
-				current = next;
-				current.notifySetCurrent();
+				try
+				{
+					alert.setNextScreen(next);
 
-				Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current Alert "+current.width+", "+current.height);	
+					current = next;
+					current.notifySetCurrent();
+
+					Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current Alert "+current.width+", "+current.height);	
+				}
+				catch (Exception e)
+				{
+					Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(alert, next)");
+					e.printStackTrace();
+				}
+				finally { Mobile.displayUpdated = true; }
 			}
-			catch (Exception e)
-			{
-				Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Problem with setCurrent(alert, next)");
-				e.printStackTrace();
-			}
-			finally { Mobile.displayUpdated = true; }
-		}));
+		});
 		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
 	public void setCurrentItem(Item item) 
 	{
-		setCurrentRequest.set((() -> 
+		setCurrentRequest.set(new Runnable()
 		{
-			Form form = item.getOwner();
-			if (form != null) 
+			@Override
+			public void run() 
 			{
-				if (form != current) { setCurrent(form); }
-				form.focusItem(item);
+				Form form = item.getOwner();
+				if (form != null) 
+				{
+					if (form != current) { setCurrent(form); }
+					form.focusItem(item);
+				}
 			}
-		}));
+		});
 		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 

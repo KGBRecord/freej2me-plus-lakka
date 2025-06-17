@@ -164,9 +164,8 @@ public abstract class Canvas extends Displayable
 			});
 			pendingRepaint.set(true);
 		}
-		else // Immediately process the serial calls and the paint event
+		else // Immediately process the paint event
 		{
-			Mobile.getDisplay().processPaintsNow();
 			repaintRequest(x, y, width, height); 
 		}
 	}
