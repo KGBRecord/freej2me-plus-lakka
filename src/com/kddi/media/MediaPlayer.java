@@ -18,13 +18,8 @@ package com.kddi.media;
 
 public abstract class MediaPlayer implements MediaPlayerInterface 
 {
-    protected MediaPlayerBox box;
     protected int id;
-    protected MediaEventListener listener;
-    protected int pitch;
     protected MediaResource resource;
-    protected int tempo;
-    protected int volume;
     protected static final int INVALID_PLAYER = -1;
 
     protected MediaPlayer(MediaResource resource, MediaPlayerBox box) {}

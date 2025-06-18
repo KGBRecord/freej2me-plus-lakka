@@ -27,13 +27,9 @@ public class SMAFPlayer extends MediaPlayer
 {
     private PlatformPlayer _player;
 
-    protected MediaPlayerBox box;
     protected int id;
     protected MediaPlayerListener listener;
-    protected int pitch;
     protected Object resource;
-    protected int tempo;
-    protected int volume;
 
     protected SMAFPlayer(MediaResource resource, MediaPlayerBox box) 
     { 
@@ -41,61 +37,80 @@ public class SMAFPlayer extends MediaPlayer
 
         byte[] resourceDat = MediaManager.getResource(resource);
         InputStream stream = new ByteArrayInputStream(resourceDat);
-        try {
+
+        try 
+        { 
             this._player = new PlatformPlayer(stream, "");
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                stream.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            this._player.realize();
+            this._player.addMediaPlayerBox(box); // So that listener events know which box they're being fired from
+        } 
+        catch (Exception e) { e.printStackTrace(); } 
+        finally 
+        {
+            try { stream.close(); } 
+            catch (Exception e) { e.printStackTrace(); }
         }
     }
 
-    public static boolean canPlay(String dataType) {
+    public static boolean canPlay(String dataType) { return true; }
+
+    protected void dispose() 
+    { 
+        this._player.notifyListeners("deviceUnavailable", 0);
+        this._player.close(); 
+    }
+
+    protected boolean disposePlayer() 
+    {
+        dispose();
         return true;
     }
 
-    protected void dispose() {
-    }
+    public void pause() { this._player.stop(); }
 
-    protected boolean disposePlayer() { 
-        this._player.close();
-        return true;
-    }
+    public void play() { this.play(0); }
 
-    public int getPitch() { return pitch;  }
-
-    public int getTempo() { return tempo; }
-
-    public int getVolume() { return volume; }
-
-    public void pause() {
-        this._player.stop();
-    }
-
-    public void play() {
-        this.play(0);
-    }
-
-    public void play(int count) {
-        this._player.setLoopCount(count);
+    public void play(int count) 
+    {
+        this._player.setMediaTime(0);
+        this._player.setLoopCount(count);        
         this._player.start();
     }
 
-    public void resume() {
-        this._player.start();
-    }
+    public void resume() { this._player.start(); }
 
-    public void setPitch(int pitch) { pitch = Math.max(-6, Math.min(pitch, 6)); }
-
-    public void setTempo(int tempo) { tempo = Math.max(85, Math.min(tempo, 115)); }
-
-    public void setVolume(int volume) {  volume = Math.max(0, Math.min(volume, 100)); }
-
-    public void stop() {
+    public void stop() 
+    {
         this._player.stop();
+        this._player.setMediaTime(0);
     }
+
+    public int getPitch() { return 0;  }
+
+    public int getTempo() { return 100; }
+
+    public int getVolume() 
+    { 
+        return ((PlatformPlayer.volumeControl)this._player.getControl("VolumeControl")).getLevel();
+    }
+
+    // TODO: Pitch and Tempo changes, not sure if they're even used in KDDI, their Java run was rather short-lived
+    public void setPitch(int pitch) 
+    { 
+        pitch = Math.max(-6, Math.min(pitch, 6)); 
+    }
+
+    public void setTempo(int tempo) 
+    { 
+        tempo = Math.max(85, Math.min(tempo, 115)); 
+    }
+
+    public void setVolume(int volume) 
+    {  
+        ((PlatformPlayer.volumeControl)this._player.getControl("VolumeControl")).setLevel(volume);
+    }
+
+    public void addMediaEventListener(MediaEventListener l) { this._player.addPlayerListener(l); }
+
+    public void removeMediaEventListener(MediaEventListener l) { this._player.removePlayerListener(l); }
 }

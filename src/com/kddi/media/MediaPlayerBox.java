@@ -18,8 +18,8 @@ package com.kddi.media;
 
 import javax.microedition.lcdui.Canvas;
 
-public class MediaPlayerBox extends Canvas implements MediaPlayerInterface {
-    protected MediaEventListener _listener;
+public class MediaPlayerBox extends Canvas implements MediaPlayerInterface 
+{
     public static final int BACKGROUND = 0;
     public static final int FOREGROUND = 1;
     public static final int PAUSE = 2;
@@ -33,17 +33,15 @@ public class MediaPlayerBox extends Canvas implements MediaPlayerInterface {
     private MediaResource _resource;
     private MediaPlayer _player;
 
-    public MediaPlayerBox() {
-        this(null, FOREGROUND);
-    }
+    public MediaPlayerBox() { this(null, FOREGROUND); }
 
-    public MediaPlayerBox(int flag) {
-        this(null, flag);
-    }
+    public MediaPlayerBox(int flag) { this(null, flag); }
 
-    public MediaPlayerBox(MediaResource resource, int flag) {
-        if (flag != FOREGROUND && flag != BACKGROUND) {
-            throw new IllegalArgumentException("illegal flag[" + flag + "].");
+    public MediaPlayerBox(MediaResource resource, int flag) 
+    {
+        if (flag != FOREGROUND && flag != BACKGROUND) 
+        {
+            throw new IllegalArgumentException("illegal resource flag (" + flag + ").");
         }
 
         this.mode = flag;
@@ -53,88 +51,63 @@ public class MediaPlayerBox extends Canvas implements MediaPlayerInterface {
         if (resource != null) this.setResource(resource);
     }
 
-    public void addMediaEventListener(MediaEventListener l) {
-    }
+    public void addMediaEventListener(MediaEventListener l) { this._player.addMediaEventListener(l); }
 
-    public int getAttribute(int attr) {
-        return 0;
-    }
+    public int getAttribute(int attr) { return this._player.getAttribute(attr); }
 
-    protected int getMode() {
-        return this.mode;
-    }
+    protected int getMode() { return this.mode; }
 
-    public int getPitch() {
-        return this._player.pitch;
-    }
+    public int getPitch() { return this._player.getPitch(); }
 
-    protected MediaPlayer getPlayer() {
-        return this._player;
-    }
+    protected MediaPlayer getPlayer() { return this._player; }
 
-    public MediaResource getResource() {
-        return this._resource;
-    }
+    public MediaResource getResource() { return this._resource; }
 
-    public int getTempo() {
-        return 0;
-    }
+    public int getTempo() { return this._player.getTempo(); }
 
-    public int getVolume() {
-        return 0;
-    }
+    public int getVolume() { return this._player.getVolume(); }
 
-    public void hide() {
-    }
+    public void hide() { }
 
     protected MediaPlayer instantiatePlayer(MediaResource resource) {
         if (resource.getType() == MediaResource.SMAF_YAMAHA_MA1 ||
         resource.getType() == MediaResource.SMAF_YAMAHA_MA2 ||
         resource.getType() == MediaResource.SMAF_YAMAHA_MA3 || 
-        resource.getType() == MediaResource.SMAF_YAMAHA_MA5) {
-            return new SMAFPlayer(resource, this);
+        resource.getType() == MediaResource.SMAF_YAMAHA_MA5) 
+        {
+            this._player = new SMAFPlayer(resource, this);
+            return this._player;
         }
         return null;
     }
 
-    protected void paint(javax.microedition.lcdui.Graphics g) {
+    protected void paint(javax.microedition.lcdui.Graphics g) { }
+
+    public void pause() { this._player.pause(); }
+
+    public void play() { this._player.play(); }
+
+    public void play(int count) { this._player.play(count); }
+
+    public void removeMediaEventListener(MediaEventListener l) 
+    { 
+        this._player.removeMediaEventListener(l);
     }
 
-    public void pause() {
-        this._player.pause();
-    }
+    public void resume() { this._player.resume(); }
 
-    public void play() {
-        this._player.play();
-    }
-
-    public void play(int count) {
-        this._player.play(count);
-    }
-
-    public void removeMediaEventListener(MediaEventListener l) {
-    }
-
-    public void resume() {
-        this._player.resume();
-    }
-
-    public void setAttribute(int attr, int value) {
+    public void setAttribute(int attr, int value) 
+    {
         this._player.setAttribute(attr, value);
     }
 
-    public void setPitch(int pitch) {
-        this._player.setPitch(pitch);
-    }
+    protected void setPlayerAttributes() { }
 
-    protected void setPlayerAttributes() {
-    }
-
-    public void setResource(MediaResource resource) {
-        if (state != STOP) {
-            throw new IllegalStateException("state must be STOP");
-        }
-        if (this._resource != null) {
+    public void setResource(MediaResource resource) 
+    {
+        if (state != STOP) { throw new IllegalStateException("state must be STOP"); }
+        if (this._resource != null) 
+        {
             throw new IllegalStateException("resource must be unset before setting.");
         }
         if (resource == null) throw new NullPointerException();
@@ -142,29 +115,29 @@ public class MediaPlayerBox extends Canvas implements MediaPlayerInterface {
         // FIXME: Check the resource can be played.
         this._resource = resource;
         MediaManager.linkMediaResourceToMediaPlayerBox(resource, this);
-        if (_player != null) {
-            this._player.dispose();
-        }
+        if (_player != null) { this._player.dispose(); }
         this._player = instantiatePlayer(resource);
         this._player.setResource(resource);
     }
 
-    public void setTempo(int tempo) {
-        this._player.setTempo(tempo);
+    public void setPitch(int pitch) { this._player.setPitch(Math.max(-6, Math.min(pitch, 6))); }
+
+    public void setTempo(int tempo) { this._player.setTempo(Math.max(85, Math.min(tempo, 115))); }
+
+    public void setVolume(int volume) { this._player.setVolume(Math.max(0, Math.min(volume, 100))); }
+
+    public void show() 
+    { 
+        // TODO
     }
 
-    public void setVolume(int volume) {
-        this._player.setVolume(volume);
+    public void stop() 
+    {
+        if (this._player != null) { this._player.stop(); }
     }
 
-    public void show() {
-    }
-
-    public void stop() {
-        if (this._player != null) this._player.stop();
-    }
-
-    public void unsetResource(MediaResource resource) {
+    public void unsetResource(MediaResource resource) 
+    {
         MediaManager.unlinkMediaResource(resource, this);
         this._resource = null;
     }

@@ -622,7 +622,7 @@ public class MobilePlatform
 		try 
 		{ 
 			// Change encoding based on vendor (Only DoJa at the moment, MIDP already defaults to "ISO_8859_1")
-			if(Mobile.isDoJa) { Mobile.textEncoding = "Shift_JIS"; }
+			if(Mobile.isDoJa || Mobile.isKDDI) { Mobile.textEncoding = "Shift_JIS"; }
 
 			if(!System.getProperty("file.encoding").equals(Mobile.textEncoding)) 
 			{

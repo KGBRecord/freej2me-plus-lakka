@@ -94,6 +94,9 @@ public class PlatformPlayer implements Player
 
 	protected Vector<PlayerListener> listeners;
 	protected Vector<com.siemens.mp.media.PlayerListener> siemensListeners;
+	protected Vector<com.kddi.media.MediaEventListener> kddiListeners;
+
+	private com.kddi.media.MediaPlayerBox kddiPlayerBox;
 
 	private SoundListener nokiaListener;
 	private Sound nokiaSound;
@@ -105,6 +108,7 @@ public class PlatformPlayer implements Player
 	{
 		listeners = new Vector<PlayerListener>();
 		siemensListeners = new Vector<com.siemens.mp.media.PlayerListener>();
+		kddiListeners = new Vector<com.kddi.media.MediaEventListener>();
 		controls = new Control[NUM_CONTROLS];
 
 		contentType = type;
@@ -169,7 +173,7 @@ public class PlatformPlayer implements Player
 							}
 							player = new SMAFPlayer(SMAFDecoder.SequenceData, SMAFDecoder.pcmData.toArray(new InputStream[0]), new HashMap<>(SMAFDecoder.pcmDataPositions));
 						}
-						else { player = new audioplayer(); disableControls = true; } // Somehow the SMAF decoder failed, so retrieve a stub player
+						else { player = new audioplayer(); disableControls = true; } // Somehow the SMAF decoder failed, retrieve a stub player
 						
 					}
 					else if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
@@ -234,6 +238,7 @@ public class PlatformPlayer implements Player
 			player = new midiPlayer();
 			listeners = new Vector<PlayerListener>();
 			siemensListeners = new Vector<com.siemens.mp.media.PlayerListener>();
+			kddiListeners = new Vector<com.kddi.media.MediaEventListener>();
 			controls = new Control[NUM_CONTROLS];
 			controls[0] = new volumeControl(this.player); // Midi Player with Tones might not use this
 			controls[3] = new toneControl((midiPlayer) this.player);
@@ -244,6 +249,7 @@ public class PlatformPlayer implements Player
 			player = new audioplayer();
 			listeners = new Vector<PlayerListener>();
 			siemensListeners = new Vector<com.siemens.mp.media.PlayerListener>();
+			kddiListeners = new Vector<com.kddi.media.MediaEventListener>();
 			controls = new Control[3];
 		}
 	}
@@ -330,7 +336,26 @@ public class PlatformPlayer implements Player
 		siemensListeners.remove(playerListener);
 	}
 
-	private void notifyListeners(String event, Object eventData)
+	// KDDI listeners
+	public void addMediaPlayerBox(com.kddi.media.MediaPlayerBox box) { this.kddiPlayerBox = box; }
+
+	public void addPlayerListener(com.kddi.media.MediaEventListener playerListener) 
+	{
+		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot remove PlayerListener from a CLOSED player"); }
+		if(playerListener == null) { return; }
+
+		kddiListeners.add(playerListener);
+	}
+
+	public void removePlayerListener(com.kddi.media.MediaEventListener playerListener) 
+	{
+		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot remove PlayerListener from a CLOSED player"); }
+		if(playerListener == null) { return; }
+
+		kddiListeners.remove(playerListener);
+	}
+
+	public void notifyListeners(String event, Object eventData)
 	{
 		for(int i=0; i<listeners.size(); i++)
 		{
@@ -341,6 +366,19 @@ public class PlatformPlayer implements Player
 		{
 			siemensListeners.get(i).playerUpdate((com.siemens.mp.media.Player) this, event, eventData);
 			if(i == siemensListeners.size() - 1) { return; }
+		}
+
+		int kddiEvent = 0, kddiData = 0;
+		kddiData = (int) getMediaTime(); // This is an optional integer argument according to KDDI docs, but let's send the current media time nonetheless
+		if(event == PlayerListener.STARTED && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PLAY; }
+		if(event == PlayerListener.STARTED && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.RESUME; }
+		else if((event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.STOP; }
+		else if((event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PAUSE; }
+		
+		for(int i=0; i < kddiListeners.size(); i++) 
+		{
+			kddiListeners.get(i).stateChanged(this.kddiPlayerBox, kddiEvent, kddiData);
+			if(i == kddiListeners.size() - 1) { return; }
 		}
 
 		if(nokiaListener != null) 
@@ -519,7 +557,6 @@ public class PlatformPlayer implements Player
 		public Receiver receiver;
 		private int numLoops = 0;
 		private long curTime = 0;
-		private boolean wasRunning = false;
 
 		public midiPlayer() // For when a Locator call (usually for tones) is issued
 		{
@@ -561,17 +598,6 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				setWasRunning(false); // If this player was running prior to being stopped by another stream, we need to resume it
-
-				for(int i = 0; i < midiPlayers.length; i++) // Pause any currently playing players that aren't this one
-				{
-					if(midiPlayers[i] != null && midiPlayers[i].getSequencer() != null && midiPlayers[i].isRunning()) 
-					{ 
-						midiPlayers[i].setWasRunning(true);
-						midiPlayers[i].stop(); 
-					}
-				}
-
 				// Reset the MetaEventListener so that it tracks the current midi sequence
 				midi.removeMetaEventListener(PlatformPlayer.metaEventListener);
 				PlatformPlayer.metaEventListener = new MetaEventListener() 
@@ -589,14 +615,6 @@ public class PlatformPlayer implements Player
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
 								start();
-							}
-							// No loops remaining, check if there was any previously running MIDI player, and set it to resume (UNTESTED, didn't find a jar that does this)
-							for(int i = 0; i < midiPlayers.length; i++) 
-							{
-								if(midiPlayers[i] != null && midiPlayers[i].getSequencer() != null && midiPlayers[i].wasRunning()) 
-								{ 
-									midiPlayers[i].start();
-								}
 							}
 						}
 					}
@@ -682,10 +700,6 @@ public class PlatformPlayer implements Player
 		}
 
 		public Sequencer getSequencer() { return midi; }
-
-		public boolean wasRunning() { return wasRunning; }
-
-		public void setWasRunning(boolean wasRunning) { this.wasRunning = wasRunning; }
 	}
 
 	private class SMAFPlayer extends audioplayer
@@ -697,7 +711,6 @@ public class PlatformPlayer implements Player
 		public Receiver receiver;
 		private int numLoops = 0;
 		private long curTime = 0;
-		private boolean wasRunning = false;
 
 		// Meanwhile, sampled data will be treated like "additional" instruments
 		private boolean isPlaying = false;
@@ -759,17 +772,6 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				setWasRunning(false); // If this player was running prior to being stopped by another stream, we need to resume it
-
-				for(int i = 0; i < midiPlayers.length; i++) // Pause any currently playing players that aren't this one
-				{
-					if(midiPlayers[i] != null && midiPlayers[i].getSequencer() != null && midiPlayers[i].isRunning()) 
-					{ 
-						midiPlayers[i].setWasRunning(true);
-						midiPlayers[i].stop(); 
-					}
-				}
-
 				// Reset the MetaEventListener so that it tracks the current midi sequence
 				midi.removeMetaEventListener(PlatformPlayer.metaEventListener);
 				PlatformPlayer.metaEventListener = new MetaEventListener() 
@@ -787,14 +789,6 @@ public class PlatformPlayer implements Player
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
 								start();
-							}
-							// No loops remaining, check if there was any previously running MIDI player, and set it to resume (UNTESTED, didn't find a jar that does this)
-							for(int i = 0; i < midiPlayers.length; i++) 
-							{
-								if(midiPlayers[i] != null && midiPlayers[i].getSequencer() != null && midiPlayers[i].wasRunning()) 
-								{ 
-									midiPlayers[i].start();
-								}
 							}
 						}
 					}
@@ -839,8 +833,8 @@ public class PlatformPlayer implements Player
 				}
 		
 				// Sleep for a bit to not hammer the CPU too hard with constant checks (this can cause issues if the sequence has sub-5ms pcm requests, but that would be egregious)
-				try { Thread.sleep(1); }
-				catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+				try { Thread.sleep(5); }
+				catch (InterruptedException e) { }
 			}
 		}
 
@@ -961,10 +955,6 @@ public class PlatformPlayer implements Player
 		}
 
 		public Sequencer getSequencer() { return midi; }
-
-		public boolean wasRunning() { return wasRunning; }
-
-		public void setWasRunning(boolean wasRunning) { this.wasRunning = wasRunning; }
 	}
 
 	private class wavPlayer extends audioplayer
