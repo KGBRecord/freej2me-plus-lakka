@@ -51,7 +51,7 @@ public class Image extends PlatformImage
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image from image data ");
 		if (imageData == null) { throw new NullPointerException("Image data cannot be null"); }
-		if (imageOffset + imageLength >= imageData.length) { throw new ArrayIndexOutOfBoundsException("Access range goes out of Image data's bounds"); }
+		if (imageOffset + imageLength > imageData.length) { throw new ArrayIndexOutOfBoundsException("Access range goes out of Image data's bounds"); }
 
 		return new Image(imageData, imageOffset, imageLength, false);
 	}
@@ -60,7 +60,7 @@ public class Image extends PlatformImage
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image from image data with mutable flag ");
 		if (imageData == null) { throw new NullPointerException("Image data cannot be null"); }
-		if (imageOffset + imageLength >= imageData.length) { throw new ArrayIndexOutOfBoundsException("Access range goes out of Image data's bounds"); }
+		if (imageOffset + imageLength > imageData.length) { throw new ArrayIndexOutOfBoundsException("Access range goes out of Image data's bounds"); }
 
 		return new Image(imageData, imageOffset, imageLength, mutable);
 	}
@@ -80,7 +80,7 @@ public class Image extends PlatformImage
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image from sub-image " + " img_w:" + img.getWidth() + " img_h:" + img.getHeight() + " x:" + x + " y:" + y + " width:" + width + " height:" + height + " trans:" + transform);
 		if (img == null) { throw new NullPointerException("Source image cannot be null"); }
-		if (x+width >= img.getWidth() || y+height >= img.getHeight()) { throw new IllegalArgumentException("Access range goes out of Image data's bounds"); }
+		if (x+width > img.getWidth() || y+height > img.getHeight()) { throw new IllegalArgumentException("Access range goes out of Image data's bounds"); }
 		if (width <= 0 || height <= 0) { throw new IllegalArgumentException("Invalid width or height value for image"); }
 
 		return new Image(img, x, y, width, height, transform);
@@ -121,7 +121,7 @@ public class Image extends PlatformImage
 		Mobile.log(Mobile.LOG_DEBUG, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Create Image RGB " + width + ", " + height);
 		if (rgb == null) { throw new NullPointerException("RGB array cannot be null"); }
 		if (width <= 0 || height <= 0) { throw new IllegalArgumentException("Invalid width or height value for image"); }
-		if (width * height >= rgb.length) { throw new ArrayIndexOutOfBoundsException("Access range goes out of Image data's bounds"); }
+		if (width * height > rgb.length) { throw new ArrayIndexOutOfBoundsException("Access range goes out of Image data's bounds"); }
 		return new Image(rgb, width, height, processAlpha);
 	}
 
