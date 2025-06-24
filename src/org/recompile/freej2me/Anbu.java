@@ -184,17 +184,15 @@ public class Anbu
 				Mobile.config.settings.put("height", ""+lcdHeight);
 			}
 
-			// Start SDL
-			sdl = new SDL();
-
 			Mobile.config.saveConfig();
 			settingsChanged();
-			
-			sdl.start(args);
 
 			// Run jar
 			Mobile.getPlatform().runJar();
 
+			// Start SDL
+			sdl = new SDL();
+			sdl.start(args);
 		}
 		else
 		{
@@ -237,7 +235,7 @@ public class Anbu
 
 		public synchronized void start(String args[])
 		{
-			if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0 )
+			if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
 			{
 				Mobile.log(Mobile.LOG_ERROR, Anbu.class.getPackage().getName() + "." + Anbu.class.getSimpleName() + ": " + "Unable to initialize SDL");
 				stop();
@@ -247,7 +245,7 @@ public class Anbu
 			SDL_JoystickEventState(SDL_ENABLE);
 
 			lcdSurface = SDL_CreateRGBSurface(0, lcdWidth, lcdHeight, 32, 0, 0, 0, 0);
-
+			
 			SDLInitialized = true;
 		}
 
@@ -607,7 +605,7 @@ public class Anbu
 		 */
 		private synchronized void updateScreen() 
 		{
-			SDL_SetWindowSize(window, lcdWidth*scaleFactor , lcdHeight*scaleFactor);
+			SDL_SetWindowSize(window, lcdWidth*scaleFactor, lcdHeight*scaleFactor);
 			SDL_FreeSurface(lcdSurface);
 			lcdSurface = SDL_CreateRGBSurface(0, lcdWidth, lcdHeight, 32, 0, 0, 0, 0);
 			resolutionChanged = false;
