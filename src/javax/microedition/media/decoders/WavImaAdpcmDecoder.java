@@ -441,28 +441,36 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 		final int bytesPerSec = sampleRate * numChannels * (bitsPerSample / 8);
 		
 		/* NOTE: ChunkSize includes the header, so sampleDataLength + 44, which is the byte size of our header */
-
-		writeInt(buffer, 0, chunk);                 // ChunkID
-		writeInt(buffer, 4, sampleDataLength + 36); // ChunkSize
-		writeInt(buffer, 8, format);                // Format
-		writeInt(buffer, 12, subChunk1);            // SubchunkID (fmt)
-		writeInt(buffer, 16, subChunkSize);         // SubchunkSize
-		writeShort(buffer, 20, audioFormat);        // Audioformat
-		writeShort(buffer, 22, numChannels);        // NumChannels
-		writeInt(buffer, 24, sampleRate);           // SampleRate
-		writeInt(buffer, 28, bytesPerSec);          // ByteRate
-		writeShort(buffer, 32, frameSize);          // BlockAlign
-		writeShort(buffer, 34, bitsPerSample);      // BitsPerSample
-		writeInt(buffer, 36, subChunk2);            // Subchunk2ID (data)
-		writeInt(buffer, 40, sampleDataLength);     // Subchunk2 Size
+		writeIntBE(buffer, 0, chunk);                 // ChunkID
+		writeIntLE(buffer, 4, sampleDataLength + 36); // ChunkSize
+		writeIntBE(buffer, 8, format);                // Format
+		writeIntBE(buffer, 12, subChunk1);            // SubchunkID (fmt)
+		writeIntLE(buffer, 16, subChunkSize);         // SubchunkSize
+		writeShort(buffer, 20, audioFormat);          // Audioformat
+		writeShort(buffer, 22, numChannels);          // NumChannels
+		writeIntLE(buffer, 24, sampleRate);           // SampleRate
+		writeIntLE(buffer, 28, bytesPerSec);          // ByteRate
+		writeShort(buffer, 32, frameSize);            // BlockAlign
+		writeShort(buffer, 34, bitsPerSample);        // BitsPerSample
+		writeIntBE(buffer, 36, subChunk2);            // Subchunk2ID (data)
+		writeIntLE(buffer, 40, sampleDataLength);     // Subchunk2 Size
 	}
 
-	private static void writeInt(byte[] buffer, int index, int value) 
+	private static void writeIntLE(byte[] buffer, int index, int value) 
 	{
 		buffer[index] = (byte) (value & 0xFF);
 		buffer[index + 1] = (byte) ((value >> 8) & 0xFF);
 		buffer[index + 2] = (byte) ((value >> 16) & 0xFF);
 		buffer[index + 3] = (byte) ((value >> 24) & 0xFF);
+	}
+
+	// A few of the header fields are big endian
+	private static void writeIntBE(byte[] buffer, int index, int value) 
+	{
+		buffer[index] = (byte) ((value >> 24) & 0xFF);
+		buffer[index + 1] = (byte) ((value >> 16) & 0xFF);
+		buffer[index + 2] = (byte) ((value >> 8) & 0xFF);
+		buffer[index + 3] = (byte) (value & 0xFF);
 	}
 
 	private static void writeShort(byte[] buffer, int index, short value) 
