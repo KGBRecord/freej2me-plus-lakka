@@ -19,7 +19,6 @@ package javax.microedition.m3g;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 // package-private
 class Triangle

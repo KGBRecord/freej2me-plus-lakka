@@ -16,8 +16,6 @@
 */
 package javax.microedition.m3g;
 
-import java.util.Arrays;
-
 public class TriangleStripArray extends IndexBuffer
 {
 
@@ -28,9 +26,14 @@ public class TriangleStripArray extends IndexBuffer
 		/* Per JSR-184, throw NullPointerException if indices or stripLengths are null */
 		if(indices == null || stripLengths == null) { throw new NullPointerException("Tried to construct a TriangleStripArray with incomplete information."); }
 	
-		/* Also per JSR-184, throw IllegalArgumentException if: 
-		 * stripLengths is empty, any element in stripLengths is less than 3, or indices.length < sum(stripLengths). */
-		if(stripLengths.length == 0 || indices.length < Arrays.stream(stripLengths).sum() || hasLengthLessThan3(stripLengths))
+		/* 
+		 * Also per JSR-184, throw IllegalArgumentException if: 
+		 * stripLengths is empty, any element in stripLengths is less than 3, or indices.length < sum(stripLengths). 
+		 */
+		int totalStripLength = 0;
+		for (int length : stripLengths) { totalStripLength += length; }
+
+		if(stripLengths.length == 0 || indices.length < totalStripLength || hasLengthLessThan3(stripLengths))
 			{ throw new IllegalArgumentException("Cannot construct TriangleStripArray, incorrect parameters received."); }
 
 		/* also per JSR-184, throw IndexOutOfBoundsException if any element in indices is negative, or greater than 65535. */
@@ -51,7 +54,10 @@ public class TriangleStripArray extends IndexBuffer
 			{ throw new IllegalArgumentException("Cannot construct TriangleStripArray, incorrect parameters received."); }
 
 		/* Also per JSR-184, throw IndexOutOfBoundsException if any element in indices is negative, or if firstIndex + sum(stripLengths) is greater than 65535. */
-		if(firstIndex < 0 || firstIndex + java.util.Arrays.stream(stripLengths).sum() > 65535)
+		int totalStripLength = 0;
+		for (int length : stripLengths) { totalStripLength += length; }
+
+		if(firstIndex < 0 || firstIndex + totalStripLength > 65535)
 			{ throw new IndexOutOfBoundsException("Index provided to TriangleStripArray is out of bounds."); }
 
 		/* Setup the StripArray with implicit indices. */
