@@ -543,7 +543,7 @@ public class Graphics3D
 
 		// Create Triangle objects for clipping
 		Triangle[] trisScreen = Triangle.fromVertAndTris(vertClip, texVert, triIndices);
-		int renderableTriangles = 0; // Counter for non-culled triangles
+		int renderableTriangles = 0; // Counter for visible triangles
 
 		for (Triangle tri : trisScreen) 
 		{
@@ -562,7 +562,7 @@ public class Graphics3D
 			boolean cullTriangle = (cullingMode == PolygonMode.CULL_BACK && tri.isCounterClockwise()) ||
 								(cullingMode == PolygonMode.CULL_FRONT && !tri.isCounterClockwise());
 
-			if (!cullTriangle) // If the triangle shouldn't be culled nor clipped, we can add it to the list of
+			if (!cullTriangle)
 			{
 				// We now have to restore the renderable geometry back to its original coordinates, otherwise clipping won't work properly, and rendering will also be broken
 				for (int i = 0; i < 3; i++) 

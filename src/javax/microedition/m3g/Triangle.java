@@ -181,31 +181,24 @@ class Triangle
 
 	public Triangle project()
 	{
-		this.v[4*0 + 0] = this.v[4*0 + 0] / this.v[4*0 + 3];
-		this.v[4*0 + 1] = this.v[4*0 + 1] / this.v[4*0 + 3];
-		this.v[4*0 + 2] = this.v[4*0 + 2] / this.v[4*0 + 3];
-		this.v[4*0 + 3] = 1f;
-		this.v[4*1 + 0] = this.v[4*1 + 0] / this.v[4*1 + 3];
-		this.v[4*1 + 1] = this.v[4*1 + 1] / this.v[4*1 + 3];
-		this.v[4*1 + 2] = this.v[4*1 + 2] / this.v[4*1 + 3];
-		this.v[4*1 + 3] = 1f;
-		this.v[4*2 + 0] = this.v[4*2 + 0] / this.v[4*2 + 3];
-		this.v[4*2 + 1] = this.v[4*2 + 1] / this.v[4*2 + 3];
-		this.v[4*2 + 2] = this.v[4*2 + 2] / this.v[4*2 + 3];
-		this.v[4*2 + 3] = 1f;
+		for (int i = 0; i < 3; i++) 
+		{
+			int vertexIndex = 4 * i;
+			float w = this.v[vertexIndex + 3];
 
-		this.t[4*0 + 0] = this.t[4*0 + 0] / this.t[4*0 + 3];
-		this.t[4*0 + 1] = this.t[4*0 + 1] / this.t[4*0 + 3];
-		this.t[4*0 + 2] = this.t[4*0 + 2] / this.t[4*0 + 3];
-		this.t[4*0 + 3] = 1f;
-		this.t[4*1 + 0] = this.t[4*1 + 0] / this.t[4*1 + 3];
-		this.t[4*1 + 1] = this.t[4*1 + 1] / this.t[4*1 + 3];
-		this.t[4*1 + 2] = this.t[4*1 + 2] / this.t[4*1 + 3];
-		this.t[4*1 + 3] = 1f;
-		this.t[4*2 + 0] = this.t[4*2 + 0] / this.t[4*2 + 3];
-		this.t[4*2 + 1] = this.t[4*2 + 1] / this.t[4*2 + 3];
-		this.t[4*2 + 2] = this.t[4*2 + 2] / this.t[4*2 + 3];
-		this.t[4*2 + 3] = 1f;
+			// Project vertex
+			this.v[vertexIndex + 0] /= w; // x / w
+			this.v[vertexIndex + 1] /= w; // y / w
+			this.v[vertexIndex + 2] /= w; // z / w
+			this.v[vertexIndex + 3] = 1f;  // Set w to 1
+
+			// Project texture coordinates
+			w = this.t[vertexIndex + 3];
+			this.t[vertexIndex + 0] /= w; // u / w
+			this.t[vertexIndex + 1] /= w; // v / w
+			this.t[vertexIndex + 2] /= w; // r / w
+			this.t[vertexIndex + 3] = 1f;  // Set w to 1
+		}
 
 		return this;
 	}
