@@ -16,13 +16,12 @@
 */
 package javax.microedition.rms;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,7 +111,8 @@ public class RecordStore
 		// Check if the record directory exists, if not, create it.
 		try
 		{
-			Files.createDirectories(Paths.get(rmsPath));
+			File rmsDir = new File(rmsPath);
+			if (!rmsDir.exists()) { rmsDir.mkdirs(); }
 		}
 		catch (Exception e)
 		{
@@ -442,7 +442,11 @@ public class RecordStore
 		if(rmsPath==null)
 		{
 			rmsPath = Mobile.getPlatform().dataPath + "./rms/"+Mobile.getPlatform().loader.suitename;
-			try { Files.createDirectories(Paths.get(rmsPath)); }
+			try 
+			{ 
+				File rmsDir = new File(rmsPath);
+				if (!rmsDir.exists()) { rmsDir.mkdirs(); }
+			}
 			catch (Exception e) { }
 		}
 		
@@ -925,11 +929,21 @@ public class RecordStore
 		int offset = 0;
 		int reclen;
 
+		FileInputStream fis = null;
+		ByteArrayOutputStream bos = null;
+
 		file = new File(filePath);
 		try // Read Records
 		{
-			Path path = Paths.get(file.getAbsolutePath());
-			byte[] data = Files.readAllBytes(path);
+			fis = new FileInputStream(file);
+			bos = new ByteArrayOutputStream();
+			
+			byte[] buffer = new byte[1024];
+			int bytesRead;
+			
+			while ((bytesRead = fis.read(buffer)) != -1) { bos.write(buffer, 0, bytesRead); }
+			
+			byte[] data = bos.toByteArray();
 
 			if(data.length>=4)
 			{
@@ -992,6 +1006,15 @@ public class RecordStore
 			Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Problem Reading Record Store: "+filePath);
 			Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + e.getMessage());
 			throw(new RecordStoreException("Problem Reading Record Store: "+filePath));
+		}
+		finally 
+		{
+			try 
+			{
+				if (fis != null) { fis.close(); }
+				if (bos != null) { bos.close(); }
+			} 
+			catch (IOException e) { e.printStackTrace(); }
 		}
 	}
 

@@ -18,8 +18,8 @@ package com.nttdocomo.io;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 
 public class PrintWriter extends java.io.Writer 
 {
@@ -27,16 +27,16 @@ public class PrintWriter extends java.io.Writer
     private boolean autoFlush;
     private boolean errorFlag;
 
-    public PrintWriter(OutputStream out) { this(out, false); }
+    public PrintWriter(OutputStream out) throws UnsupportedEncodingException { this(out, false); }
 
-    public PrintWriter(OutputStream out, boolean autoFlush) 
+    public PrintWriter(OutputStream out, boolean autoFlush) throws UnsupportedEncodingException
     {
-        this(new java.io.OutputStreamWriter(out, StandardCharsets.UTF_8), autoFlush);
+        this(new java.io.OutputStreamWriter(out, "Shift_JIS"), autoFlush);
     }
 
-    public PrintWriter(Writer out) { this(out, false); }
+    public PrintWriter(Writer out) throws UnsupportedEncodingException { this(out, false); } 
 
-    public PrintWriter(Writer out, boolean autoFlush) 
+    public PrintWriter(Writer out, boolean autoFlush) throws UnsupportedEncodingException
     {
         if (out == null) { throw new NullPointerException("Output stream or writer cannot be null"); }
 

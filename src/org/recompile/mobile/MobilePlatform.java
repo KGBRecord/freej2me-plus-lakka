@@ -19,8 +19,6 @@ package org.recompile.mobile;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -635,7 +633,7 @@ public class MobilePlatform
 			if (isJad) 
 			{
 				String preparedFileName = fileName.substring(fileName.lastIndexOf(":") + 1).trim();
-				try { preparedFileName = URLDecoder.decode(preparedFileName, StandardCharsets.UTF_8.name()); } 
+				try { preparedFileName = URLDecoder.decode(preparedFileName, "UTF-8"); } 
 				catch (Exception e) 
 				{
 					System.err.println("Error decoding file name: " + e.getMessage());

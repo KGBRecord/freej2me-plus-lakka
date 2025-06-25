@@ -442,32 +442,33 @@ public final class WavImaAdpcmDecoder // TODO: YAMAHA ADPCM
 		
 		/* NOTE: ChunkSize includes the header, so sampleDataLength + 44, which is the byte size of our header */
 
-		/* ChunkID */
-		ByteBuffer.wrap(buffer, 0, 4).order(ByteOrder.BIG_ENDIAN).putInt(chunk);
-		/* ChunkSize (or File size, "RIFF" and "WAVE" fiels from the header are not considered) */
-		ByteBuffer.wrap(buffer, 4, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(sampleDataLength + 36);
-		/* Format (WAVE) */
-		ByteBuffer.wrap(buffer, 8, 4).order(ByteOrder.BIG_ENDIAN).putInt(format);
-		/* SubchunkID (fmt) */
-		ByteBuffer.wrap(buffer, 12, 4).order(ByteOrder.BIG_ENDIAN).putInt(subChunk1);
-		/* SubchunkSize (or format chunk size) */
-		ByteBuffer.wrap(buffer, 16, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(subChunkSize);
-		/* Audioformat */
-		ByteBuffer.wrap(buffer, 20, 2).order(ByteOrder.LITTLE_ENDIAN).putShort(audioFormat);
-		/* NumChannels (will be the same as source ADPCM) */
-		ByteBuffer.wrap(buffer, 22, 2).order(ByteOrder.LITTLE_ENDIAN).putShort((short) numChannels);
-		/* SampleRate (will be the same as source ADPCM) */
-		ByteBuffer.wrap(buffer, 24, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(sampleRate);
-		/* ByteRate (BytesPerSec) */
-		ByteBuffer.wrap(buffer, 28, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(bytesPerSec);
-		/* BlockAlign (Frame Size) */
-		ByteBuffer.wrap(buffer, 32, 2).order(ByteOrder.LITTLE_ENDIAN).putShort(frameSize);
-		/* BitsPerSample */
-		ByteBuffer.wrap(buffer, 34, 2).order(ByteOrder.LITTLE_ENDIAN).putShort(bitsPerSample);
-		/* Subchunk2ID (data) */
-		ByteBuffer.wrap(buffer, 36, 4).order(ByteOrder.BIG_ENDIAN).putInt(subChunk2);
-		/* Subchunk2 Size (sampledata length) */
-		ByteBuffer.wrap(buffer, 40, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(sampleDataLength);
+		writeInt(buffer, 0, chunk);                 // ChunkID
+		writeInt(buffer, 4, sampleDataLength + 36); // ChunkSize
+		writeInt(buffer, 8, format);                // Format
+		writeInt(buffer, 12, subChunk1);            // SubchunkID (fmt)
+		writeInt(buffer, 16, subChunkSize);         // SubchunkSize
+		writeShort(buffer, 20, audioFormat);        // Audioformat
+		writeShort(buffer, 22, numChannels);        // NumChannels
+		writeInt(buffer, 24, sampleRate);           // SampleRate
+		writeInt(buffer, 28, bytesPerSec);          // ByteRate
+		writeShort(buffer, 32, frameSize);          // BlockAlign
+		writeShort(buffer, 34, bitsPerSample);      // BitsPerSample
+		writeInt(buffer, 36, subChunk2);            // Subchunk2ID (data)
+		writeInt(buffer, 40, sampleDataLength);     // Subchunk2 Size
+	}
+
+	private static void writeInt(byte[] buffer, int index, int value) 
+	{
+		buffer[index] = (byte) (value & 0xFF);
+		buffer[index + 1] = (byte) ((value >> 8) & 0xFF);
+		buffer[index + 2] = (byte) ((value >> 16) & 0xFF);
+		buffer[index + 3] = (byte) ((value >> 24) & 0xFF);
+	}
+
+	private static void writeShort(byte[] buffer, int index, short value) 
+	{
+		buffer[index] = (byte) (value & 0xFF);
+		buffer[index + 1] = (byte) ((value >> 8) & 0xFF);
 	}
 
 	/* Decode the received IMA WAV ADPCM stream into a signed PCM16LE byte array, then return it to PlatformPlayer. */

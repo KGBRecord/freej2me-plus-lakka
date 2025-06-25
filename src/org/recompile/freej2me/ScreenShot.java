@@ -24,9 +24,6 @@ import javax.imageio.ImageIO;
 import java.lang.Exception;
 import java.util.Date;
 import java.text.SimpleDateFormat;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
 
 public class ScreenShot
 {
@@ -48,7 +45,8 @@ public class ScreenShot
 				String screenshotPath = Mobile.getPlatform().dataPath + "screenshots";
 				try
 				{
-					Files.createDirectories(Paths.get(screenshotPath));
+					File scrShotDir = new File(screenshotPath);
+					if (!scrShotDir.exists()) { scrShotDir.mkdirs(); }
 				}
 				catch (Exception e)
 				{

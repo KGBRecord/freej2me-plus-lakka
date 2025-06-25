@@ -28,9 +28,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.lang.ClassLoader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -110,7 +107,7 @@ public class MIDletLoader extends URLClassLoader
 
 		try 
 		{
-			String jarName = Paths.get(url.toURI()).getFileName().toString().replace('.', '_');
+			String jarName = new File(url.getFile()).getName().replace('.', '_');
 			suitename = jarName;
 			File file = new File(url.toURI());
             jarFile = new JarFile(file);

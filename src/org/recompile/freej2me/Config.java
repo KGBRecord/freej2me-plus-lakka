@@ -28,9 +28,6 @@ import java.io.FileReader;
 import java.io.FileOutputStream;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
 
 import javax.microedition.media.Manager;
 
@@ -108,8 +105,11 @@ public class Config
 		// Load Config //
 		try
 		{
-			Files.createDirectories(Paths.get(configPath));
-			Files.createDirectories(Paths.get(systemPath));
+			File configDir = new File(configPath);
+			if (!configDir.exists()) { configDir.mkdirs(); }
+
+			configDir = new File(systemPath);
+			if (!configDir.exists()) { configDir.mkdirs(); }
 		}
 		catch (Exception e)
 		{

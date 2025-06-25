@@ -16,26 +16,27 @@
 */
 package com.nttdocomo.util;
 
-import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
 
 public class Base64 
 {
 
-    public static String encode(String str) 
+    public static String encode(String str) throws UnsupportedEncodingException
     {
         if (str == null) { throw new NullPointerException("Input string cannot be null"); }
 
-        return encode(str.getBytes(StandardCharsets.UTF_8));
+        return encode(str.getBytes("UTF-8"));
     }
 
-    public static String encode(byte[] bytes) 
+    public static String encode(byte[] bytes) throws UnsupportedEncodingException
     {
         if (bytes == null) { throw new NullPointerException("Input byte array cannot be null"); }
 
         return bytes.length == 0 ? "" : java.util.Base64.getEncoder().encodeToString(bytes);
     }
 
-    public static String encode(byte[] bytes, int off, int len) {
+    public static String encode(byte[] bytes, int off, int len) throws UnsupportedEncodingException
+    {
         if (bytes == null) { throw new NullPointerException("Input byte array cannot be null"); }
         if (off < 0 || len < 0 || off + len > bytes.length) { throw new ArrayIndexOutOfBoundsException("Invalid offset or length"); }
 
@@ -46,19 +47,22 @@ public class Base64
         return len == 0 ? "" : java.util.Base64.getEncoder().encodeToString(newBytes);
     }
 
-    public static byte[] decode(String str) {
+    public static byte[] decode(String str) throws UnsupportedEncodingException
+    {
         if (str == null) { throw new NullPointerException("Input string cannot be null"); }
 
-        return decode(str.getBytes(StandardCharsets.UTF_8));
+        return decode(str.getBytes("UTF-8"));
     }
 
-    public static byte[] decode(byte[] bytes) {
+    public static byte[] decode(byte[] bytes) throws UnsupportedEncodingException
+    {
         if (bytes == null) { throw new NullPointerException("Input byte array cannot be null"); }
 
         return bytes.length == 0 ? new byte[0] : java.util.Base64.getDecoder().decode(bytes);
     }
 
-    public static byte[] decode(byte[] bytes, int off, int len) {
+    public static byte[] decode(byte[] bytes, int off, int len) throws UnsupportedEncodingException
+    {
         if (bytes == null) { throw new NullPointerException("Input byte array cannot be null"); }
         if (off < 0 || len < 0 || off + len > bytes.length) { throw new ArrayIndexOutOfBoundsException("Invalid offset or length"); }
 

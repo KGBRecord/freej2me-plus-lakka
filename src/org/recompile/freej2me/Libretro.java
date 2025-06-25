@@ -26,7 +26,6 @@ import java.util.TimerTask;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 
 import javax.microedition.midlet.MIDlet;
 
@@ -287,7 +286,7 @@ public class Libretro
 									buffer = new byte[code];
 									bytesRead = System.in.read(buffer);
 
-									path = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+									path = new String(buffer, 0, bytesRead, "UTF-8");
 
 									if(Mobile.getPlatform().load(getFormattedLocation(path.toString())))
 									{
@@ -388,7 +387,7 @@ public class Libretro
 									buffer = new byte[code];
 									bytesRead = System.in.read(buffer);
 
-									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead, "UTF-8");
 								break;
 
 								case 13:
@@ -396,7 +395,7 @@ public class Libretro
 									buffer = new byte[code];
 									bytesRead = System.in.read(buffer);
 									
-									String cfgvars = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+									String cfgvars = new String(buffer, 0, bytesRead, "UTF-8");
 									/* Tokens: [0]="FJ2ME_LR_OPTS:", [1]=width, [2]=height, [3]=rotate, [4]=phone, [5]=fps, ... */
 									cfgtokens = cfgvars.split("[| x]", 0);
 									/* 

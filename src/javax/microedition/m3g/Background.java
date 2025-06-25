@@ -16,75 +16,53 @@
 */
 package javax.microedition.m3g;
 
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.ByteOrder;
-
 import org.recompile.mobile.Mobile;
 
 public class Background extends Object3D
 {
 
 	public static final int BORDER = 32;
-	public static final int REPEAT = 33;
+    public static final int REPEAT = 33;
 
-	private int color = 0x00000000;
-	private int modex = BORDER;
-	private int modey = BORDER;
-	private int cropw;
-	private int croph;
-	private int cropx;
-	private int cropy;
+    private int color = 0x00000000;
+    private int modex = BORDER;
+    private int modey = BORDER;
+    private int cropw;
+    private int croph;
+    private int cropx;
+    private int cropy;
 
-	private Image2D image = null;
-	private boolean depthclear = true;
-	private boolean colorclear = true;
-	private Texture2D texture = null;
+    private Image2D image = null;
+    private boolean depthclear = true;
+    private boolean colorclear = true;
+    private Texture2D texture = null;
 
-	private FloatBuffer vertexBuffer;
-	private FloatBuffer textureBuffer;
-	// top right, top left, bottom right, bottom left coordinates
-	private float[] vertexArray = { 1.0f, 1.0f, 0.0f, -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, 0.0f, -1.0f, -1.0f, 0.0f };
-	private float[] textureArray;
+    // top right, top left, bottom right, bottom left coordinates
+    private float[] vertexArray = { 1.0f, 1.0f, 0.0f, -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, 0.0f, -1.0f, -1.0f, 0.0f };
+    private float[] textureArray = new float[4 * 2];
 
+    public Background() { }
 
-	public Background() 
-	{  
-		vertexBuffer = ByteBuffer.allocateDirect(4 * 3 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		vertexBuffer.put(vertexArray);
-		vertexBuffer.flip();
-		//	4 elements, 2 coordinates per element, float type
-		textureBuffer = ByteBuffer.allocateDirect(4 * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		textureArray = new float[4 * 2];
-	}
-
-	Object3D duplicateImpl() 
+    Object3D duplicateImpl() 
 	{
-		Background copy = new Background();
-		copy.color = color;
-		copy.image = image;
-		copy.modex = modex;
-		copy.modey = modey;
-		copy.cropx = cropx;
-		copy.cropy = cropy;
-		copy.cropw = cropw;
-		copy.croph = croph;
-		copy.depthclear = depthclear;
-		copy.colorclear = colorclear;
-		copy.texture = texture;
-		copy.vertexBuffer = ByteBuffer.allocateDirect(4 * 3 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		copy.textureBuffer =  ByteBuffer.allocateDirect(4 * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		
-		System.arraycopy(this.vertexArray, 0, copy.vertexArray, 0, vertexArray.length);
+        Background copy = new Background();
+        copy.color = color;
+        copy.image = image;
+        copy.modex = modex;
+        copy.modey = modey;
+        copy.cropx = cropx;
+        copy.cropy = cropy;
+        copy.cropw = cropw;
+        copy.croph = croph;
+        copy.depthclear = depthclear;
+        copy.colorclear = colorclear;
+        copy.texture = texture;
 
-		copy.vertexBuffer.put(copy.vertexArray);
-		copy.vertexBuffer.flip();
+        System.arraycopy(this.vertexArray, 0, copy.vertexArray, 0, vertexArray.length);
+        System.arraycopy(this.textureArray, 0, copy.textureArray, 0, textureArray.length);
 
-		textureArray = new float[4 * 2];
-		System.arraycopy(this.textureArray, 0, copy.textureArray, 0, textureArray.length);
-
-		return copy;
-	}
+        return copy;
+    }
 
 
 	public int getColor() { return color; }

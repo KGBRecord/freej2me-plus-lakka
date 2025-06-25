@@ -18,7 +18,7 @@ package javax.microedition.io;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -102,9 +102,9 @@ class HttpConnectionImpl implements HttpConnection
 
 	public long getLength() { return 0; }
 
-	public DataInputStream openDataInputStream() { return new DataInputStream(this.openInputStream()); }
+	public DataInputStream openDataInputStream() throws UnsupportedEncodingException { return new DataInputStream(this.openInputStream()); }
 
-	public InputStream openInputStream() { return new ByteArrayInputStream("resource://!blank".getBytes(StandardCharsets.UTF_8)); }
+	public InputStream openInputStream() throws UnsupportedEncodingException { return new ByteArrayInputStream("resource://!blank".getBytes("UTF-8")); }
 
 	public DataOutputStream openDataOutputStream() { return new DataOutputStream(this.openOutputStream()); }
 
