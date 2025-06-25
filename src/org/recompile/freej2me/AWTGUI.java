@@ -835,7 +835,7 @@ public final class AWTGUI
 			public void itemStateChanged(ItemEvent e) 
 			{
 				if(M3GWireframe.getState()) { config.updateM3GWireframe("on"); Mobile.M3GRenderWireframe = true; }
-				else { config.updateM3GWireframe("on"); Mobile.M3GRenderWireframe = false; }
+				else { config.updateM3GWireframe("off"); Mobile.M3GRenderWireframe = false; }
 			}
 		});
 
