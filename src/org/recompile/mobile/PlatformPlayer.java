@@ -68,8 +68,6 @@ import javax.microedition.media.Manager;
 
 /* SMAF decoding support */
 import javax.microedition.media.decoders.SMAFDecoder;
-/* MLD decoding support */
-import javax.microedition.media.decoders.MLDDecoder;
 /* IMA ADPCM WAV support */
 import javax.microedition.media.decoders.WavImaAdpcmDecoder;
 
