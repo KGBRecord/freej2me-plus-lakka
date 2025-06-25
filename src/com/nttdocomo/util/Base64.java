@@ -16,6 +16,8 @@
 */
 package com.nttdocomo.util;
 
+import org.recompile.mobile.Base64Util;
+
 import java.io.UnsupportedEncodingException;
 
 public class Base64 
@@ -32,7 +34,7 @@ public class Base64
     {
         if (bytes == null) { throw new NullPointerException("Input byte array cannot be null"); }
 
-        return bytes.length == 0 ? "" : java.util.Base64.getEncoder().encodeToString(bytes);
+        return bytes.length == 0 ? "" : Base64Util.encode(bytes);
     }
 
     public static String encode(byte[] bytes, int off, int len) throws UnsupportedEncodingException
@@ -44,7 +46,7 @@ public class Base64
 
         System.arraycopy(bytes, off, newBytes, 0, len);
 
-        return len == 0 ? "" : java.util.Base64.getEncoder().encodeToString(newBytes);
+        return len == 0 ? "" : Base64Util.encode(newBytes);
     }
 
     public static byte[] decode(String str) throws UnsupportedEncodingException
@@ -58,7 +60,7 @@ public class Base64
     {
         if (bytes == null) { throw new NullPointerException("Input byte array cannot be null"); }
 
-        return bytes.length == 0 ? new byte[0] : java.util.Base64.getDecoder().decode(bytes);
+        return bytes.length == 0 ? new byte[0] : Base64Util.decode(bytes);
     }
 
     public static byte[] decode(byte[] bytes, int off, int len) throws UnsupportedEncodingException
@@ -70,6 +72,6 @@ public class Base64
 
         System.arraycopy(bytes, off, newBytes, 0, len);
 
-        return len == 0 ? new byte[0] : java.util.Base64.getDecoder().decode(newBytes);
+        return len == 0 ? new byte[0] : Base64Util.decode(newBytes);
     }
 }

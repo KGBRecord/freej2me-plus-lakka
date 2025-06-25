@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +32,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Vector;
 
-
+import org.recompile.mobile.Base64Util;
 import org.recompile.mobile.Mobile;
 
 public class RecordStore
@@ -1085,8 +1084,7 @@ public class RecordStore
 		
 		try 
 		{
-			base64Encoded = Base64.getEncoder()
-				.encodeToString(name.getBytes("UTF-8"))
+			base64Encoded = Base64Util.encode(name.getBytes("UTF-8"))
 				.toLowerCase()
 				.replace('=', '_');
 		} 
