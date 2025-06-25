@@ -30,11 +30,11 @@ public class TriangleStripArray extends IndexBuffer
 	
 		/* Also per JSR-184, throw IllegalArgumentException if: 
 		 * stripLengths is empty, any element in stripLengths is less than 3, or indices.length < sum(stripLengths). */
-		if(stripLengths.length == 0 || indices.length < Arrays.stream(stripLengths).sum() || Arrays.stream(stripLengths).anyMatch(e -> e < 3))
+		if(stripLengths.length == 0 || indices.length < Arrays.stream(stripLengths).sum() || hasLengthLessThan3(stripLengths))
 			{ throw new IllegalArgumentException("Cannot construct TriangleStripArray, incorrect parameters received."); }
 
 		/* also per JSR-184, throw IndexOutOfBoundsException if any element in indices is negative, or greater than 65535. */
-		if(Arrays.stream(indices).anyMatch(e -> e < 0 || 65535 < e)) 
+		if(hasInvalidIndices(indices)) 
 			{ throw new IndexOutOfBoundsException("Index provided to TriangleStripArray is out of bounds."); }
 
 		/* Setup the StripArray with explicit indices. */
@@ -47,7 +47,7 @@ public class TriangleStripArray extends IndexBuffer
 		if(stripLengths == null) { throw new NullPointerException("Tried to construct TriangleStripArray with null stripLengths."); }
 	
 		/* Also per JSR-184, throw IllegalArgumentException if stripLengths.length == 0 or any element in stripLengths is less than 3. */
-		if(stripLengths.length == 0 || java.util.Arrays.stream(stripLengths).anyMatch(e -> e < 3)) 
+		if(stripLengths.length == 0 || hasLengthLessThan3(stripLengths)) 
 			{ throw new IllegalArgumentException("Cannot construct TriangleStripArray, incorrect parameters received."); }
 
 		/* Also per JSR-184, throw IndexOutOfBoundsException if any element in indices is negative, or if firstIndex + sum(stripLengths) is greater than 65535. */
@@ -69,7 +69,7 @@ public class TriangleStripArray extends IndexBuffer
 	private void updateFields(boolean isExplicit, int[] indices, int[] stripLengths) 
 	{
 		/* Update the number of indices from the parent by mapping all valid StripLength elements. */
-		super.indexCount = Arrays.stream(stripLengths).map(e -> (e - 2) * 3).sum();
+		super.indexCount = calculateIndexCount(stripLengths);
 
 		/* Update parent's indices by copying this object's indices to it. */
 		super.indices = new int[this.indexCount];
@@ -112,4 +112,37 @@ public class TriangleStripArray extends IndexBuffer
 		}
 	}
 
+	private int sum(int[] array) 
+	{
+		int total = 0;
+		for (int value : array) { total += value; }
+
+		return total;
+	}
+
+	private boolean hasLengthLessThan3(int[] array) 
+	{
+		for (int value : array) 
+		{
+			if (value < 3) { return true; }
+		}
+		return false;
+	}
+
+	private boolean hasInvalidIndices(int[] array) 
+	{
+		for (int value : array) 
+		{
+			if (value < 0 || value > 65535) { return true; }
+		}
+		return false;
+	}
+
+	private int calculateIndexCount(int[] stripLengths) 
+	{
+		int total = 0;
+		for (int length : stripLengths) { total += (length - 2) * 3; }
+		
+		return total;
+	}
 }

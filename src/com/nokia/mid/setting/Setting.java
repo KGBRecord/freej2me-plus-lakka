@@ -35,7 +35,7 @@ public final class Setting
     public static final int ACCEPT = 0x05;
     public static final int WIFIONLY = 0x06;
 
-    private static List<SettingListener> listeners = new ArrayList<>();
+    private static List<SettingListener> listeners = new ArrayList<SettingListener>();
 
     public static int getSetting(int index) 
     {

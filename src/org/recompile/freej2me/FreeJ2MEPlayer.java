@@ -127,14 +127,39 @@ public final class FreeJ2MEPlayer extends Dialog
             }
         });
 
-        UIButtons[5].addActionListener(e -> openFile(""));
-        UIButtons[3].addActionListener(e -> seekMediaBack());
-        UIButtons[1].addActionListener(e -> pauseMedia());
-        UIButtons[0].addActionListener(e -> playMedia());
-        UIButtons[2].addActionListener(e -> stopMedia());
-        UIButtons[4].addActionListener(e -> seekMediaForward());
+        UIButtons[5].addActionListener(new ActionListener() 
+        {
+            @Override
+            public void actionPerformed(ActionEvent e) { openFile(""); }
+        });
+        UIButtons[3].addActionListener(new ActionListener() 
+        {
+            @Override
+            public void actionPerformed(ActionEvent e) { seekMediaBack(); }
+        });
+        UIButtons[1].addActionListener(new ActionListener() 
+        {
+            @Override
+            public void actionPerformed(ActionEvent e) { pauseMedia(); }
+        });
+        UIButtons[0].addActionListener(new ActionListener() 
+        {
+            @Override
+            public void actionPerformed(ActionEvent e) { playMedia(); }
+        });
+        UIButtons[2].addActionListener(new ActionListener() 
+        {
+            @Override
+            public void actionPerformed(ActionEvent e) { stopMedia(); }
+        });
+        UIButtons[4].addActionListener(new ActionListener() 
+        {
+            @Override
+            public void actionPerformed(ActionEvent e) { seekMediaForward(); }
+        });
 
-        setDropTarget(new DropTarget(this, new DropTargetListener() {
+        setDropTarget(new DropTarget(this, new DropTargetListener() 
+        {
             @Override
             public void dragEnter(DropTargetDragEvent dtde) 
             { 
@@ -179,7 +204,8 @@ public final class FreeJ2MEPlayer extends Dialog
                         }
                     }
                     dtde.dropComplete(true);
-                } catch (Exception e) { System.out.println("Exception caught in Drag and Drop:" + e.getMessage()); }
+                } 
+                catch (Exception e) { System.out.println("Exception caught in Drag and Drop:" + e.getMessage()); }
                 finally 
                 {
                     dtde.dropComplete(true);
@@ -216,22 +242,37 @@ public final class FreeJ2MEPlayer extends Dialog
                 {
                     playbackTicker.setVisible(true);
                     progressBar.setVisible(true);
-                    long currentTime = mediaPlayer.getMediaTime();
-                    long duration = mediaPlayer.getDuration();
+                    final long currentTime = mediaPlayer.getMediaTime();
+                    final long duration = mediaPlayer.getDuration();
                     if(currentTime >= duration) 
                     {
-                        EventQueue.invokeLater(() -> updatePlaybackTicker(0, duration));
+                        EventQueue.invokeLater(new Runnable() 
+                        {
+                            @Override
+                            public void run() { updatePlaybackTicker(0, duration); }
+                        });
                         pauseMedia();
                     }
-                    else { EventQueue.invokeLater(() -> updatePlaybackTicker(currentTime, duration)); }
+                    else 
+                    { 
+                        EventQueue.invokeLater(new Runnable() 
+                        {
+                            @Override
+                            public void run() { updatePlaybackTicker(currentTime, duration); }
+                        });
+                    }
                 } 
                 else 
                 {
-                    EventQueue.invokeLater(() -> 
+                    EventQueue.invokeLater(new Runnable() 
                     {
-                        boolean isVisible = playbackTicker.isVisible();
-                        playbackTicker.setVisible(!isVisible);
-                        progressBar.setVisible(!isVisible);
+                        @Override
+                        public void run() 
+                        {
+                            boolean isVisible = playbackTicker.isVisible();
+                            playbackTicker.setVisible(!isVisible);
+                            progressBar.setVisible(!isVisible);
+                        }
                     });
                 }
             }
@@ -252,7 +293,7 @@ public final class FreeJ2MEPlayer extends Dialog
     // Helper method to format time from microseconds to mm:ss
     private String formatTime(long microseconds) 
     {
-        long seconds = microseconds / 1_000_000;
+        long seconds = microseconds / 1000000;
         long minutes = seconds / 60;
         seconds = seconds % 60;
         return String.format("%02d:%02d", minutes, seconds);

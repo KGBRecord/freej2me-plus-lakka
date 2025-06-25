@@ -28,8 +28,8 @@ public class SoundMotion implements com.nttdocomo.ui.Audio3DLocalization
 
     public SoundMotion() 
     {
-        positions = new ArrayList<>();
-        times = new ArrayList<>();
+        positions = new ArrayList<SoundPosition>();
+        times = new ArrayList<Integer>();
     }
 
     public void addPosition(int time, SoundPosition position) 

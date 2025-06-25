@@ -94,22 +94,22 @@ public class NokiaOTTDecoder
 				int commandType = readBits(8); // Check command type (first 7 bits + filler bit which is always 0)
 		
 				switch (commandType) {
-					case 0b01001010: // Ringing tone programming
+					case 0x4A: // Ringing tone programming
 						Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Ringing tone programming detected.");
 						parseRingingTone(track);
 						break;
-					case 0b01000100: // Unicode (not handled yet, and should have nothing appended into the media track)
+					case 0x44: // Unicode (not handled yet, and should have nothing appended into the media track)
 						Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Unicode detected.");
 						parseUnicode();
 						break;
-					case 0b00111010: // Sound
+					case 0x3A: // Sound
 						Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Sound detected.");
 						parseSound(track);
 						break;
-					case 0b00001010: // Cancel command, Does any actual OTT/OTA ringtone use this?
+					case 0xA: // Cancel command, Does any actual OTT/OTA ringtone use this?
 						Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Cancel command detected.");
 						break;
-					case 0b00000000: // This should happen at the end of every parsing procedure.
+					case 0x0: // This should happen at the end of every parsing procedure.
 						Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "End of ringtone programming!");
 						break;
 					default: // If this is the case, we can't parse the header, so just return outright
@@ -138,12 +138,12 @@ public class NokiaOTTDecoder
 		 */
 		int nextCheck = readBits(7);
 		
-		if(nextCheck == 0b0011101) 
+		if(nextCheck == 0x1D) 
 		{ 
 			Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Detected Sound!" );
 			parseSound(track);
 		} 
-		else if(nextCheck == 0b0100010) 
+		else if(nextCheck == 0x22) 
 		{
 			// Ideally, at this point this check should resolve to a <cancel-command-specifier>
 			Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Detected Unicode!" );
@@ -161,23 +161,23 @@ public class NokiaOTTDecoder
 
 		switch (songType) 
 		{
-			case 0b001: // Basic song type
+			case 0x1: // Basic song type
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Basic Song Detected!");
 				parseBasicSong(track);
 				break;
-			case 0b010: // Temporary song type
+			case 0x2: // Temporary song type
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Temporary Song Detected!");
 				parseTemporarySong(track);
 				break;
-			case 0b011: // MIDI song type
+			case 0x3: // MIDI song type
 				Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "MIDI Song Detected!");
 				parseMidiSong(track);
 				break;
-			case 0b100: // Digitized song type
+			case 0x4: // Digitized song type
 				Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Digitized Song Detected!");
 				parseDigitizedSong(track);
 				break;
-			case 0b101: // Polyphonic song type
+			case 0x5: // Polyphonic song type
 				Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Polyphonic Song Detected!");
 				parsePolyphonicSong(track);
 				break;
@@ -234,7 +234,7 @@ public class NokiaOTTDecoder
 
 		Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Pattern Header - ID: " + patternHeader + ", Pattern ID: " + patternId + ", Loop Value: " + loopValue);
 	
-		if(loopValue == 0b1111) { Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "OTA/OTT Tone Infinite Loop parsing is not implemented. Parsing pattern without loop..."); loopValue = 0; }
+		if(loopValue == 0xF) { Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "OTA/OTT Tone Infinite Loop parsing is not implemented. Parsing pattern without loop..."); loopValue = 0; }
 
 		int loopParsePosMark = parsePos; // Marker for the current pattern start position, as we'll re-read it as many times as there are loops, to simulate looping parts of a track on MIDI.
 
@@ -246,7 +246,7 @@ public class NokiaOTTDecoder
 			int patternSpecifier = readBits(8);
 			
 			// TODO: For specifier 0b00000000, we should probably re-read the previous pattern?
-			if (patternSpecifier == 0b00000000) { Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Using already-defined pattern. (NOT IMPLEMENTED)"); } 
+			if (patternSpecifier == 0x0) { Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Using already-defined pattern. (NOT IMPLEMENTED)"); } 
 			else 
 			{
 				// This means we have a new pattern length
@@ -273,23 +273,23 @@ public class NokiaOTTDecoder
 
 		switch (instructionType) 
 		{
-			case 0b000: // Pattern Header ID
+			case 0x0: // Pattern Header ID
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "New pattern found. Backtracking to read it.");
 				parsePos -= 3; // Parse Song Pattern will parse the pattern from the beginning, which also includes the 3 bits just read 
 				return;
-			case 0b001: // Note Instruction
+			case 0x1: // Note Instruction
 				parseNoteInstruction(track);
 				break;
-			case 0b010: // Scale Instruction
+			case 0x2: // Scale Instruction
 				parseScaleInstruction();
 				break;
-			case 0b011: // Style Instruction
+			case 0x3: // Style Instruction
 				parseStyleInstruction();
 				break;
-			case 0b100: // Tempo Instruction
+			case 0x4: // Tempo Instruction
 				parseTempoInstruction(track);
 				break;
-			case 0b101: // Volume Instruction
+			case 0x5: // Volume Instruction
 				parseVolumeInstruction(track);
 				break;
 			default:
@@ -346,19 +346,19 @@ public class NokiaOTTDecoder
 
 		switch (scaleValue) 
 		{
-			case 0b00:
+			case 0x0:
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Scale-1: A = 440 Hz");
 				noteScale = 0.5f;
 				break;
-			case 0b01:
+			case 0x1:
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Scale-2: A = 880 Hz (default)");
 				noteScale = 1f;
 				break;
-			case 0b10:
+			case 0x2:
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Scale-3: A = 1.76 kHz");
 				noteScale = 2f;
 				break;
-			case 0b11:
+			case 0x3:
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Scale-4: A = 3.52 kHz");
 				noteScale = 4f;
 				break;
@@ -374,19 +374,19 @@ public class NokiaOTTDecoder
 
 		switch (styleValue) 
 		{
-			case 0b00:
+			case 0x0:
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Natural Style (rest between notes)");
 				noteStyle = NATURAL_STYLE;
 				break;
-			case 0b01:
+			case 0x1:
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Continuous Style (no rest between notes)");
 				noteStyle = CONTINUOUS_STYLE;
 				break;
-			case 0b10:
+			case 0x2:
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Staccato Style (shorter notes)");
 				noteStyle = STACCATO_STYLE;
 				break;
-			case 0b11:
+			case 0x3:
 				Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "RESERVED");
 				break;
 			default:
@@ -403,38 +403,38 @@ public class NokiaOTTDecoder
 		// Map the binary value to actual BPM values based on the table provided by Smart Messaging v2.1.0/v3.0.0
 		switch (bpmValue) 
 		{
-			case 0b00000: bpm = 25; break;
-			case 0b00001: bpm = 28; break;
-			case 0b00010: bpm = 31; break;
-			case 0b00011: bpm = 35; break;
-			case 0b00100: bpm = 40; break;
-			case 0b00101: bpm = 45; break;
-			case 0b00110: bpm = 50; break;
-			case 0b00111: bpm = 56; break;
-			case 0b01000: bpm = 63; break;
-			case 0b01001: bpm = 70; break;
-			case 0b01010: bpm = 80; break;
-			case 0b01011: bpm = 90; break;
-			case 0b01100: bpm = 100; break;
-			case 0b01101: bpm = 112; break;
-			case 0b01110: bpm = 125; break;
-			case 0b01111: bpm = 140; break;
-			case 0b10000: bpm = 160; break;
-			case 0b10001: bpm = 180; break;
-			case 0b10010: bpm = 200; break;
-			case 0b10011: bpm = 225; break;
-			case 0b10100: bpm = 250; break;
-			case 0b10101: bpm = 285; break;
-			case 0b10110: bpm = 320; break;
-			case 0b10111: bpm = 355; break;
-			case 0b11000: bpm = 400; break;
-			case 0b11001: bpm = 450; break;
-			case 0b11010: bpm = 500; break;
-			case 0b11011: bpm = 565; break;
-			case 0b11100: bpm = 635; break;
-			case 0b11101: bpm = 715; break;
-			case 0b11110: bpm = 800; break;
-			case 0b11111: bpm = 900; break;
+			case 0x00: bpm = 25; break;
+			case 0x01: bpm = 28; break;
+			case 0x02: bpm = 31; break;
+			case 0x03: bpm = 35; break;
+			case 0x04: bpm = 40; break;
+			case 0x05: bpm = 45; break;
+			case 0x06: bpm = 50; break;
+			case 0x07: bpm = 56; break;
+			case 0x08: bpm = 63; break;
+			case 0x09: bpm = 70; break;
+			case 0x0A: bpm = 80; break;
+			case 0x0B: bpm = 90; break;
+			case 0x0C: bpm = 100; break;
+			case 0x0D: bpm = 112; break;
+			case 0x0E: bpm = 125; break;
+			case 0x0F: bpm = 140; break;
+			case 0x10: bpm = 160; break;
+			case 0x11: bpm = 180; break;
+			case 0x12: bpm = 200; break;
+			case 0x13: bpm = 225; break;
+			case 0x14: bpm = 250; break;
+			case 0x15: bpm = 285; break;
+			case 0x16: bpm = 320; break;
+			case 0x17: bpm = 355; break;
+			case 0x18: bpm = 400; break;
+			case 0x19: bpm = 450; break;
+			case 0x1A: bpm = 500; break;
+			case 0x1B: bpm = 565; break;
+			case 0x1C: bpm = 635; break;
+			case 0x1D: bpm = 715; break;
+			case 0x1E: bpm = 800; break;
+			case 0x1F: bpm = 900; break;
 			default: Mobile.log(Mobile.LOG_ERROR, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Unknown BPM value");
 		}
 
@@ -462,52 +462,52 @@ public class NokiaOTTDecoder
 		// Approximately map the parsed volume value range (0-15) to the usual MIDI range (0-127)
 		switch (volumeValue) 
 		{
-			case 0b0000: // tone-off
+			case 0x0: // tone-off
 				midiVolume = 0;
 				break;
-			case 0b0001:
+			case 0x1:
 				midiVolume = 48;
 				break;
-			case 0b0010:
+			case 0x2:
 				midiVolume = 56;
 				break;
-			case 0b0011:
+			case 0x3:
 				midiVolume = 64;
 				break;
-			case 0b0100:
+			case 0x4:
 				midiVolume = 72;
 				break;
-			case 0b0101:
+			case 0x5:
 				midiVolume = 80;
 				break;
-			case 0b0110:
+			case 0x6:
 				midiVolume = 88;
 				break;
-			case 0b0111: // This is the default volume level (7)
+			case 0x7: // This is the default volume level (7)
 				midiVolume = 92;
 				break;
-			case 0b1000:
+			case 0x8:
 				midiVolume = 100;
 				break;
-			case 0b1001:
+			case 0x9:
 				midiVolume = 104;
 				break;
-			case 0b1010:
+			case 0xA:
 				midiVolume = 108;
 				break;
-			case 0b1011:
+			case 0xB:
 				midiVolume = 112;
 				break;
-			case 0b1100:
+			case 0xC:
 				midiVolume = 116;
 				break;
-			case 0b1101:
+			case 0xD:
 				midiVolume = 120;
 				break;
-			case 0b1110:
+			case 0xE:
 				midiVolume = 124;
 				break;
-			case 0b1111:
+			case 0xF:
 			default:
 				midiVolume = 127;
 				break;
@@ -526,21 +526,21 @@ public class NokiaOTTDecoder
 		// Get the base frequency from the frequency table starting from C1
 		switch (noteValue) 
 		{
-			case 0b0000: 
+			case 0x0: 
 			Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Parsed Pause note. "); 
 			return -1; // Pause (no MIDI note)
-			case 0b0001: baseFrequency = 523; break;// C1
-			case 0b0010: baseFrequency = 554; break;// C#1 (D1b)
-			case 0b0011: baseFrequency = 587; break;// D1
-			case 0b0100: baseFrequency = 622; break;// D#1 (E1b, so on)
-			case 0b0101: baseFrequency = 659; break;// E1
-			case 0b0110: baseFrequency = 698; break;// F1
-			case 0b0111: baseFrequency = 740; break;// F#1
-			case 0b1000: baseFrequency = 784; break;// G1
-			case 0b1001: baseFrequency = 831; break;// G#1
-			case 0b1010: baseFrequency = 880; break;// A1
-			case 0b1011: baseFrequency = 932; break;// A#1
-			case 0b1100: baseFrequency = 988; break;// B(or H)1
+			case 0x1:  baseFrequency = 523; break;// C1
+			case 0x2:  baseFrequency = 554; break;// C#1 (D1b)
+			case 0x3:  baseFrequency = 587; break;// D1
+			case 0x4:  baseFrequency = 622; break;// D#1 (E1b, so on)
+			case 0x5:  baseFrequency = 659; break;// E1
+			case 0x6:  baseFrequency = 698; break;// F1
+			case 0x7:  baseFrequency = 740; break;// F#1
+			case 0x8:  baseFrequency = 784; break;// G1
+			case 0x9:  baseFrequency = 831; break;// G#1
+			case 0xA: baseFrequency = 880; break;// A1
+			case 0xB: baseFrequency = 932; break;// A#1
+			case 0xC: baseFrequency = 988; break;// B(or H)1
 			default:
 			Mobile.log(Mobile.LOG_WARNING, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Parsed Note: " + noteStrings[noteValue] + ". Returning a pause instead."); 
 			return -1; // Invalid note, but CaveCab tries to add notes with reserved values. Let's just return a pause instead of causing issues for midi playback.
@@ -574,28 +574,28 @@ public class NokiaOTTDecoder
 		int baseTicks = 24;
 		switch (noteDuration) 
 		{
-			case 0b000: baseTicks *= 4; break; // Full note
-			case 0b001: baseTicks *= 2; break; // 1/2 note
-			case 0b011: baseTicks /= 2; break; // 1/8 note
-			case 0b100: baseTicks /= 4; break; // 1/16 note
-			case 0b101: baseTicks /= 8; break; // 1/32 note
-			case 0b010:                        // 1/4 note (default)
+			case 0x0: baseTicks *= 4; break; // Full note
+			case 0x1: baseTicks *= 2; break; // 1/2 note
+			case 0x3: baseTicks /= 2; break; // 1/8 note
+			case 0x4: baseTicks /= 4; break; // 1/16 note
+			case 0x5: baseTicks /= 8; break; // 1/32 note
+			case 0x2:                        // 1/4 note (default)
 			default: break;                    // Default to 1/4 if reserved
 		}
 
 		// Adjust ticks based on duration specifier
 		switch (durationSpecifier) 
 		{
-			case 0b01: // Dotted note
+			case 0x1: // Dotted note
 				baseTicks = (int) (baseTicks * 1.5); // Increase duration by 50%
 				break;
-			case 0b10: // Double dotted note
+			case 0x2: // Double dotted note
 				baseTicks = (int) (baseTicks * 1.75); // Increase duration by 75%
 				break;
-			case 0b11: // 2/3 length
+			case 0x3: // 2/3 length
 				baseTicks = (int) (baseTicks * (2.0 / 3.0)); // Reduce duration to about 2/3
 				break;
-			case 0b00: // No special duration specifier
+			case 0x0: // No special duration specifier
 			default:   // This case should not happen but just ignore any duration changes if it does
 				break;
 		}

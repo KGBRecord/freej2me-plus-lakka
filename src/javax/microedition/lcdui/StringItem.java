@@ -70,7 +70,7 @@ public class StringItem extends Item
 
 			height = lines.size() > 0 ? (lines.size()*Font.getDefaultFont().getHeight() + (lines.size()-1)*lineSpacing) : 0;
 		} 
-		else if (text.isEmpty() && lines == null) { lines = new ArrayList<>(); }
+		else if (text.isEmpty() && lines == null) { lines = new ArrayList<String>(); }
 
 		return height;
 	}
@@ -78,7 +78,7 @@ public class StringItem extends Item
 	public static List<String> wrapText(String text, int width, Font font) 
 	{
 		String[] lines = text.split("\n", -1);
-		List<String> wrappedLines = new ArrayList<>();
+		List<String> wrappedLines = new ArrayList<String>();
 	
 		for (String line : lines) 
 		{

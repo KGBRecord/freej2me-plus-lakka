@@ -32,7 +32,7 @@ import org.recompile.mobile.Mobile;
 class HttpConnectionImpl implements HttpConnection 
 {
 
-	Map<String, String> requestProperty = new HashMap<>();
+	Map<String, String> requestProperty = new HashMap<String, String>();
 	private String url, requestMethod;
 
 	public HttpConnectionImpl(String url)  

@@ -64,7 +64,7 @@ public class FreeJ2ME
 	private int scaleFactor = 1;
 
 	private static final String extInputFilePath = "FreeJ2MEExternalKeyEvents.txt";
-	private static HashMap<String, Integer> extEventsMap = new HashMap<>();
+	private static HashMap<String, Integer> extEventsMap = new HashMap<String, Integer>();
 
 	public static final Color freeJ2MEBGColor = new Color(0,0,64);
 	public static final Color freeJ2MEDragColor = new Color(55, 55, 125);
@@ -85,15 +85,19 @@ public class FreeJ2ME
 		FreeJ2ME.app = new FreeJ2ME(args);
 
 		// After FreeJ2ME is properly opened, start the external input thread
-		new Thread(() -> 
+		new Thread(new Runnable() 
 		{
-            while (true) 
+			@Override
+			public void run() 
 			{
-                checkExtInputFile();
-                try { Thread.sleep(4); } // External inputs poll at a 250fps rate, more than fast enough for just about everything
-				catch (InterruptedException e) { }
-            }
-        }, "ExternalInputs-Thread").start();
+				while (true) 
+				{
+					checkExtInputFile();
+					try { Thread.sleep(4); } // External inputs poll at a 250fps rate, more than fast enough for just about everything
+					catch (InterruptedException e) { }
+				}
+			}
+		}, "ExternalInputs-Thread").start();
 	}
 
 	private static void checkExtInputFile() 
@@ -108,10 +112,11 @@ public class FreeJ2ME
 
     private static void readFile(String filePath)
 	{
-        HashMap<String, Integer> newEventsMap = new HashMap<>();
+        HashMap<String, Integer> newEventsMap = new HashMap<String, Integer>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) 
+        try
 		{
+			BufferedReader br = new BufferedReader(new FileReader(filePath));
             String line;
             while ((line = br.readLine()) != null) 
 			{
@@ -123,6 +128,7 @@ public class FreeJ2ME
                     newEventsMap.put(key, value);
                 }
             }
+			br.close();
         } catch (IOException e) { e.printStackTrace(); }
 
 		// No changes to the file, so no external input changes either, return early (so that these don't override any internal events).
@@ -135,89 +141,89 @@ public class FreeJ2ME
 		{
 			String key = entry.getKey();
 			Integer value = entry.getValue();
-			switch(key) 
+			switch(key.hashCode()) 
 			{
-				case "k0":  // 0
+				case 0x6B30:  // 0 - k0
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD0, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD0, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k1": // 1
+				case 0x6B31: // 1 - k1
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD1, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD1, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k2": // 2 (8 in keyboard numpad)
+				case 0x6B32: // 2 (8 in keyboard numpad) - k2
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD8, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD8, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k3": 
+				case 0x6B33: 
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD3, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD3, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k4": 
+				case 0x6B34: 
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD4, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD4, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k5": 
+				case 0x6B35: 
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD5, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD5, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k6": 
+				case 0x6B36: 
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD6, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD6, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k7":
+				case 0x6B37:
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD7, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD7, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k8":
+				case 0x6B38:
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD2, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD2, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k9":
+				case 0x6B39: // k9
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD9, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_NUMPAD9, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k*":
+				case 0x6B2A: // k*
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_E, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_E, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "k#":
+				case 0x6B23: // k#
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_R, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_R, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "ku": // Up
+				case 0x6B75: // Up - ku
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_UP, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_UP, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "kd": // Down
+				case 0x6B64: // Down - kd
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_DOWN, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_DOWN, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "kl": // Left
+				case 0x6B6C: // Left - kl
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_LEFT, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_LEFT, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "kr": // Right
+				case 0x6B72: // Right - kr
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_RIGHT, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_RIGHT, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "kc": // Fire 
+				case 0x6B63: // Fire - kc
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "ls": // leftSoft
+				case 0x6C73: // leftSoft - ls
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_Q, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_Q, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "rs": // rightSoft
+				case 0x7273: // rightSoft - rs
 					if(value == 1) { app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_W, KeyEvent.CHAR_UNDEFINED), true); }
 					else { app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_W, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "ff": // Fast-Forward
+				case 0x6666: // Fast-Forward - ff
 					if(value == 1 && !Mobile.isFastForwarding) { Mobile.isFastForwarding = true; app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, KeyEvent.CHAR_UNDEFINED), true); }
 					else if(value == 0 && Mobile.isFastForwarding) { Mobile.isFastForwarding = false; app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, KeyEvent.CHAR_UNDEFINED)); }
 					break;
-				case "ro": // Rotation
+				case 0x726F: // Rotation - ro
 					if(value == 1 && !Mobile.rotateDisplay) 
 					{
 						Mobile.config.settings.put("rotate",  "on");
@@ -229,7 +235,7 @@ public class FreeJ2ME
 						app.settingsChanged();
 					}
 					break;
-				case "pa": // Pause
+				case 0x7061: // Pause - pa
 					if(value == 1 && !Mobile.isPaused) { Mobile.isPaused = true; app.pressKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_X, KeyEvent.CHAR_UNDEFINED), true); }
 					else if(value == 0 && Mobile.isPaused) { Mobile.isPaused = false; app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_X, KeyEvent.CHAR_UNDEFINED)); }
 					break;
@@ -776,9 +782,15 @@ public class FreeJ2ME
 							java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
 							
 							// Check if the file is supported
-							boolean supported = files.stream().anyMatch(file -> isSupportedFile(file.getName()));
-							if (supported) { fileSupported = true; } 
-							else { fileSupported = false; }
+							boolean fileSupported = false;
+							for (File file : files) 
+							{
+								if (isSupportedFile(file.getName())) 
+								{
+									fileSupported = true;
+									break; 
+								}
+							}
 						}
 					} catch (Exception e) { e.printStackTrace(); }
 

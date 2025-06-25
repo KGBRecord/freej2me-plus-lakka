@@ -454,7 +454,7 @@ public class RecordStore
 			// Filter for .rms files only, otherwise this will return a longer array than expected since binary data is saved separately with the same name
 			if (files != null) 
 			{
-				List<String> outList = new ArrayList<>();
+				List<String> outList = new ArrayList<String>();
 				for (File file : files) 
 				{
 					if (file.isFile() && file.getName().endsWith(".rms")) 
@@ -838,7 +838,7 @@ public class RecordStore
 		
 		try 
 		{
-			Map<String, Object> jsonMap = new HashMap<>();
+			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(filePath);
 			Scanner scanner = new Scanner(fis, Mobile.isDoJa ? "Shift_JIS" : "UTF-8");
@@ -1000,7 +1000,7 @@ public class RecordStore
 	{
 		try 
 		{
-			Map<String, Object> jsonMap = new HashMap<>();
+			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(filePath);
 			Scanner scanner = new Scanner(fis, Mobile.isDoJa ? "Shift_JIS" : "UTF-8");

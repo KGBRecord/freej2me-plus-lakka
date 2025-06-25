@@ -34,7 +34,7 @@ public class Panel extends Frame
     public Panel() 
     {
         this.title = null; 
-        this.components = new ArrayList<>();
+        this.components = new ArrayList<Component>();
     }
 
     public void setTitle(String title) 

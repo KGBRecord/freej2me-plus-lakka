@@ -18,37 +18,29 @@ package com.nttdocomo.util;
 
 import com.nttdocomo.lang.XString;
 
-public interface Phone 
+public class Phone 
 {
     public static final String TEL_AV = "tel-av:";
     public static final String TERMINAL_ID = "terminal-id";
     public static final String UIM_VERSION = "uim-version";
     public static final String USER_ID = "user-id";
 
-	public static void call(String phoneNumber) {
-        if (phoneNumber == null) {
-            throw new NullPointerException("phoneNumber cannot be null");
-        }
-        if (!isValidPhoneNumber(phoneNumber)) {
-            throw new IllegalArgumentException("Invalid phone number");
-        }
-        // Implement call logic here
+	public static void call(String phoneNumber) 
+    {
+        if (phoneNumber == null) { throw new NullPointerException("phoneNumber cannot be null"); }
+        if (!isValidPhoneNumber(phoneNumber)) { throw new IllegalArgumentException("Invalid phone number"); }
     }
 
-    public static void call(XString phoneNumber) {
-        if (phoneNumber == null) {
-            throw new NullPointerException("phoneNumber cannot be null");
-        }
+    public static void call(XString phoneNumber) 
+    {
+        if (phoneNumber == null) { throw new NullPointerException("phoneNumber cannot be null"); }
         call(phoneNumber.toString());
     }
 
-    public static void call(String telType, XString phoneNumber) {
-        if (!TEL_AV.equals(telType)) {
-            throw new IllegalArgumentException("Invalid telType. Must be 'tel-av:'");
-        }
-        if (phoneNumber == null) {
-            throw new NullPointerException("phoneNumber cannot be null");
-        }
+    public static void call(String telType, XString phoneNumber) 
+    {
+        if (!TEL_AV.equals(telType)) { throw new IllegalArgumentException("Invalid telType. Must be 'tel-av:'"); }
+        if (phoneNumber == null) { throw new NullPointerException("phoneNumber cannot be null"); }
         call(phoneNumber.toString());
     }
 
@@ -56,17 +48,12 @@ public interface Phone
 	{
         if (key == null) { throw new NullPointerException("key cannot be null"); }
         if (key.isEmpty()) { throw new IllegalArgumentException("key cannot be empty"); }
-        switch (key) 
-		{
-            case TERMINAL_ID:
-                return getTerminalId();
-            case USER_ID:
-                return getUserId();
-            case UIM_VERSION:
-                return getUimVersion();
-            default:
-                return null;
-        }
+
+        if(key.equals(TERMINAL_ID)) { return getTerminalId(); }
+        if(key.equals(USER_ID)) { return getUserId(); }
+        if(key.equals(UIM_VERSION)) { return getUimVersion(); }
+
+        return null;
     }
 
     static boolean isValidPhoneNumber(String phoneNumber) { return true; }

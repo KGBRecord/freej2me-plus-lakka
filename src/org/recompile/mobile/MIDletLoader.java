@@ -77,7 +77,7 @@ public class MIDletLoader extends URLClassLoader
 
 	public static URL baseUrl;
 	private static JarFile jarFile;
-	private static List<JarEntry> jarEntries = new ArrayList<>();
+	private static List<JarEntry> jarEntries = new ArrayList<JarEntry>();
 
 	public String suitename;
 	public String vendorname;
@@ -117,7 +117,7 @@ public class MIDletLoader extends URLClassLoader
 			loadJarEntries();
 			baseUrl = url;
 		} 
-		catch (URISyntaxException | IOException e) 
+		catch (Exception e) 
 		{
 			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Failed to parse jar:" + e.getMessage());
 			e.printStackTrace();
@@ -333,8 +333,10 @@ public class MIDletLoader extends URLClassLoader
 		boolean hasMIDlet = false;
         String currentKey = null;
         StringBuilder currentValue = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"))) // Use the expanded UTF-8 charset for parsing standard MIDlets (chinese jars would have issues otherwise)
+        try
 		{
+			// Use the expanded UTF-8 charset for parsing standard MIDlets (chinese jars would have issues otherwise)
+			BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
             String line;
             while ((line = br.readLine()) != null) 
 			{
@@ -373,6 +375,7 @@ public class MIDletLoader extends URLClassLoader
 
 			// If no MIDlet was found above, we'll try loading this jar as a DoJa file, which has an accompanying .jam descriptor (this is fine because if a jad is present, it's loaded before this method is even called)
 			Mobile.isDoJa = !hasMIDlet;
+			br.close();
         } 
 		catch (IOException e) 
 		{
@@ -387,8 +390,9 @@ public class MIDletLoader extends URLClassLoader
 		String currentKey = null;
 		StringBuilder currentValue = new StringBuilder();
 	
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "Shift_JIS"))) // DoJa uses the Shift_JIS charset in its descriptor
+		try
 		{
+			BufferedReader br = new BufferedReader(new InputStreamReader(is, "Shift_JIS")); // DoJa uses the Shift_JIS charset in its descriptor
 			String line;
 			while ((line = br.readLine()) != null) 
 			{
@@ -422,6 +426,8 @@ public class MIDletLoader extends URLClassLoader
 
 				Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Adding prop:" + currentKey + " (" + currentKey + ") val:" + currentValue.toString().trim());
 			}
+
+			br.close();
 		} 
 		catch (IOException e) { Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Failed to parse descriptor:" + e.getMessage()); }
 	}

@@ -542,10 +542,10 @@ public class Graphics3D
 		if (texCoords != null) { textr.transform(texCoords, texVert, true); }
 
 		// Create Triangle objects for clipping
-		Triangle[] trisClip = Triangle.fromVertAndTris(vertClip, texVert, triIndices);
+		Triangle[] trisScreen = Triangle.fromVertAndTris(vertClip, texVert, triIndices);
 		int renderableTriangles = 0; // Counter for non-culled triangles
 
-		for (Triangle tri : trisClip) 
+		for (Triangle tri : trisScreen) 
 		{
 			for (int i = 0; i < 3; i++) // Go through vertices A, B and C
 			{ 
@@ -561,11 +561,10 @@ public class Graphics3D
 
 			boolean cullTriangle = (cullingMode == PolygonMode.CULL_BACK && tri.isCounterClockwise()) ||
 								(cullingMode == PolygonMode.CULL_FRONT && !tri.isCounterClockwise());
-			if (!cullTriangle) 
-			{
-				trisClip[renderableTriangles++] = tri; // Move non-culled triangles to the front of the array (culled stuff will be dropped in "trisScreen")
 
-				// We now have to restore the renderable geometry back to its original coordinates, otherwise rendering will be broken
+			if (!cullTriangle) // If the triangle shouldn't be culled nor clipped, we can add it to the list of
+			{
+				// We now have to restore the renderable geometry back to its original coordinates, otherwise clipping won't work properly, and rendering will also be broken
 				for (int i = 0; i < 3; i++) 
 				{
 					int index = i * 4;
@@ -574,15 +573,13 @@ public class Graphics3D
 					tri.v[index + 1] *= w; // y * w
 					tri.v[index + 2] *= w; // z * w
 				}
+
+				if(!tri.clip()) { trisScreen[renderableTriangles++] = tri.project(); } // Move visible triangles (not clipped nor culled) to the front of the array
 			}
 		}
-		
-		// Clip the remaining triangles (less work than clipping everything, THEN culling)
-		Triangle[] trisScreen = Arrays.stream(Arrays.copyOf(trisClip, renderableTriangles))
-						.flatMap(t -> t.clip())
-						.toArray(Triangle[]::new);
+	
 		// At this point the triangles in `trisScreen` are actually
-		// in Normalized Device Coordinates, but they will be tranformed
+		// projected to Normalized Device Coordinates, but they will be tranformed
 		// to Screen space in-place, hence the name.
 
 		// Reset transform
@@ -597,8 +594,8 @@ public class Graphics3D
 
 		// -> Screen space
 
-		// Perform viewport transform
-		Triangle.transform(trisScreen, tr, textr);
+		// Perform viewport transform only on renderable triangles (saves an Arrays.copyOf call)
+		Triangle.transform(trisScreen, renderableTriangles, tr, textr);
 
 		if (this.target instanceof Image2D)
 		{
@@ -613,7 +610,7 @@ public class Graphics3D
 
 			colorOrig = grp.getColor();
 
-			for (int tri_id = 0; tri_id < trisScreen.length; tri_id++)
+			for (int tri_id = 0; tri_id < renderableTriangles; tri_id++)
 			{
 
 				// If perspective correction is enabled, do it for texture coordinates

@@ -53,7 +53,7 @@ public abstract class Item
 
 	private String label;
 
-	private ArrayList<Command> commands = new ArrayList<>();
+	private ArrayList<Command> commands = new ArrayList<Command>();
 
 	private int layout;
 

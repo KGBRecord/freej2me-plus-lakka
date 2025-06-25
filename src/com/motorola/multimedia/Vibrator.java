@@ -94,7 +94,7 @@ public class Vibrator extends TimerTask implements Runnable
         setupVibration(MAX_VIBRATE_TIME, MAX_VIBRATE_TIME, 0);
     }
 
-    public static void setupVibration(int duration, int vibrateDuration, int pauseDuration) 
+    public static void setupVibration(final int duration, final int vibrateDuration, final int pauseDuration) 
     {
         Mobile.log(Mobile.LOG_WARNING, Vibrator.class.getPackage().getName() + "." + Vibrator.class.getSimpleName() + ": " + " Vibration (Untested): " + duration + "| " + vibrateDuration + " |" + pauseDuration);
 
@@ -102,51 +102,55 @@ public class Vibrator extends TimerTask implements Runnable
         {
             vibratorOff();
 
-            vibrationThread = new Thread(() -> 
+            vibrationThread = new Thread(new Runnable() 
             {
-                long stopTime = System.currentTimeMillis() + duration;
-
-                while(System.currentTimeMillis() <= stopTime) 
+                @Override
+                public void run() 
                 {
-                    if((System.currentTimeMillis() - stopTime + duration) % (vibrateDuration + pauseDuration) < vibrateDuration) 
+                    long stopTime = System.currentTimeMillis() + duration;
+
+                    while(System.currentTimeMillis() <= stopTime) 
                     {
-                        // If we are in the vibrateDuration time slice, allow vibrations
-                        try 
+                        if((System.currentTimeMillis() - stopTime + duration) % (vibrateDuration + pauseDuration) < vibrateDuration) 
                         {
-                            switch (currentVibrateTone) 
+                            // If we are in the vibrateDuration time slice, allow vibrations
+                            try 
                             {
-                                case VIBRATE_SHORT: // Short vibration
-                                    Mobile.getDisplay().vibrate(150); 
-                                    Thread.sleep(MIN_PAUSE_TIME+150);
-                                    break;
-                                case VIBRATE_LONG: // Long vibration
-                                    Mobile.getDisplay().vibrate(1000); 
-                                    Thread.sleep(MIN_PAUSE_TIME+1000);
-                                    break;
-                                case VIBRATE_2SHORT: // Two short vibrations with pause
-                                    Mobile.getDisplay().vibrate(150); 
-                                    Thread.sleep(650);
-                                    Mobile.getDisplay().vibrate(150); 
-                                    Thread.sleep(MIN_PAUSE_TIME+150);
-                                    break;
-                                case VIBRATE_SHORT_LONG:
-                                    Mobile.getDisplay().vibrate(150); 
-                                    Thread.sleep(650);
-                                    Mobile.getDisplay().vibrate(850); 
-                                    Thread.sleep(MIN_PAUSE_TIME+850);
-                                    break;
-                                case VIBRATE_SILENT:
-                                    vibratorOff(); // No vibration
-                                    break;
-                                default:
-                                    throw new IllegalArgumentException("Unknown vibration pattern");
+                                switch (currentVibrateTone) 
+                                {
+                                    case VIBRATE_SHORT: // Short vibration
+                                        Mobile.getDisplay().vibrate(150); 
+                                        Thread.sleep(MIN_PAUSE_TIME+150);
+                                        break;
+                                    case VIBRATE_LONG: // Long vibration
+                                        Mobile.getDisplay().vibrate(1000); 
+                                        Thread.sleep(MIN_PAUSE_TIME+1000);
+                                        break;
+                                    case VIBRATE_2SHORT: // Two short vibrations with pause
+                                        Mobile.getDisplay().vibrate(150); 
+                                        Thread.sleep(650);
+                                        Mobile.getDisplay().vibrate(150); 
+                                        Thread.sleep(MIN_PAUSE_TIME+150);
+                                        break;
+                                    case VIBRATE_SHORT_LONG:
+                                        Mobile.getDisplay().vibrate(150); 
+                                        Thread.sleep(650);
+                                        Mobile.getDisplay().vibrate(850); 
+                                        Thread.sleep(MIN_PAUSE_TIME+850);
+                                        break;
+                                    case VIBRATE_SILENT:
+                                        vibratorOff(); // No vibration
+                                        break;
+                                    default:
+                                        throw new IllegalArgumentException("Unknown vibration pattern");
+                                }
                             }
+                            catch (Exception e) { }
+                        } 
+                        else // Else, stop vibrating
+                        {
+                            Mobile.getDisplay().vibrate(0);
                         }
-                        catch (Exception e) { }
-                    } 
-                    else // Else, stop vibrating
-                    {
-                        Mobile.getDisplay().vibrate(0);
                     }
                 }
             });

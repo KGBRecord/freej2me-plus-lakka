@@ -96,11 +96,15 @@ public class Display
 
     protected static Frame current = null;
 
-    private static final AtomicReference<Runnable> paintEvent = new AtomicReference<>();
+    private static final AtomicReference<Runnable> paintEvent = new AtomicReference<Runnable>();
 
 	public Display()
 	{
-		new Thread(this::processPaintCalls, "DoJaEventProcessing-Thread").start();
+        new Thread(new Runnable() 
+		{
+			@Override
+			public void run() { processPaintCalls(); }
+		}, "DoJaEventProcessing-Thread").start();
 	}
 
 	// Paint queue methods

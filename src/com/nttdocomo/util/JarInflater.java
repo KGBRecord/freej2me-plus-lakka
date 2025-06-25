@@ -47,8 +47,8 @@ public class JarInflater
 
     private void inflate(JarInputStream jarInputStream) throws IOException 
     {
-        entries = new Hashtable<>();
-        data = new Hashtable<>();
+        entries = new Hashtable<String, JarEntry>();
+        data = new Hashtable<String, byte[]>();
         JarEntry jarEntry = jarInputStream.getNextJarEntry();
         byte[] buffer = new byte[1024];
 

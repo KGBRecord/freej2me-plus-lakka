@@ -821,10 +821,12 @@ public class Mobile
 		// Create system dir if not available yet and try writing to the log file
 		logFile.getParentFile().mkdirs();
 
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))) 
+		try
 		{
+			BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true));
 			writer.write(text);
 			writer.newLine();
+			writer.close();
 		} catch (IOException e) { System.out.println("Couldn't write to log file: " + e.getMessage()); e.printStackTrace(); }
 	}
 
@@ -995,12 +997,10 @@ public class Mobile
 		{
             URL jarUrl = new URL(classPath);
 			
-            try (JarFile jarFile = new JarFile(jarUrl.getFile())) 
-			{
-                Manifest manifest = jarFile.getManifest();
-                Attributes attributes = manifest.getMainAttributes();
-                return attributes.getValue("Main-Class");
-            }
+			JarFile jarFile = new JarFile(jarUrl.getFile());
+			Manifest manifest = jarFile.getManifest();
+			Attributes attributes = manifest.getMainAttributes();
+			return attributes.getValue("Main-Class");
         } 
 		catch (Exception e) { return null; } // This normally shouldn't fail
     }

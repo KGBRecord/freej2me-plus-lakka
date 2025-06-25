@@ -183,7 +183,7 @@ public class Manager
 		return new String[]{};
 	}
 	
-	public static void playTone(int note, int duration, int volume) throws MediaException
+	public static void playTone(final int note, int duration, int volume) throws MediaException
 	{
 		if(Mobile.sound == false) { return; }
 		
@@ -219,17 +219,20 @@ public class Manager
 		toneChannel.noteOn(note, effectiveDuration); // Make the decay just long enough for the note not to fade shorter than expected
 
 		/* Since it has to be non-blocking, wait for the specified duration in a separate Thread before stopping the note. */
-		toneThread = new Thread(() -> 
+		toneThread = new Thread(new Runnable() 
 		{
-			try { Thread.sleep(effectiveDuration); } 
-			catch (InterruptedException e) { }
-			toneChannel.noteOff(note);
-			toneChannel.controlChange(0,  restoreBankMSB);
-			toneChannel.controlChange(32, restoreBankLSB);
-			toneChannel.programChange(restoreInstrument);
-			toneChannel.controlChange(7, restoreVolume);
+			@Override
+			public void run() 
+			{
+				try { Thread.sleep(effectiveDuration); } 
+				catch (InterruptedException e) { }
+				toneChannel.noteOff(note);
+				toneChannel.controlChange(0,  restoreBankMSB);
+				toneChannel.controlChange(32, restoreBankLSB);
+				toneChannel.programChange(restoreInstrument);
+				toneChannel.controlChange(7, restoreVolume);
+			}
 		});
-		
 		toneThread.start();
 	}
 

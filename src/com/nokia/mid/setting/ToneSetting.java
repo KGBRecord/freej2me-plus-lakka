@@ -29,7 +29,7 @@ public final class ToneSetting
     public static final String RINGTONE_PATH = "/ringtone.ota";
     public static final String RINGTONE_SIM2_PATH = "/sim2ringtone.ota";
 
-    private static List<ToneSettingListener> listeners = new ArrayList<>();
+    private static List<ToneSettingListener> listeners = new ArrayList<ToneSettingListener>();
 
     public static String getToneSetting(int index) 
     {

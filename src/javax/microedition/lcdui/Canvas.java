@@ -150,18 +150,22 @@ public abstract class Canvas extends Displayable
 
 	public void repaint() { repaint(0, 0, width, height); } // Just a full canvas repaint
 
-	public void repaint(int x, int y, int width, int height)
+	public void repaint(final int x, final int y, final int width, final int height)
 	{
 		// Also check if repaints are being serviced here, some jars like Garfield's House add repaint calls in a separate thread from that blocked by serviceRepaints
 		if (!isShown() || listCommands || servicing) { return; }
 
 		if(!Mobile.compatImmediateRepaints) 
 		{
-			Mobile.getDisplay().postPaintRequest(() -> 
-			{ 
-				repaintRequest(x, y, width, height); 
-				pendingRepaint.set(false);
-			});
+			Mobile.getDisplay().postPaintRequest(new Runnable() 
+			{
+				@Override
+				public void run() 
+				{ 
+					repaintRequest(x, y, width, height); 
+					pendingRepaint.set(false);
+				}
+			}); 
 			pendingRepaint.set(true);
 		}
 		else // Immediately process the paint event
@@ -170,7 +174,7 @@ public abstract class Canvas extends Displayable
 		}
 	}
 
-	public void repaintRequest(int x, int y, int width, int height) 
+	public void repaintRequest(final int x, final int y, final int width, final int height) 
 	{
 		// These can be called from another thread, at any time (even if the canvas is no longer visible), so ignore any repaints in cases where it isn't visible
 		if (!isShown() || listCommands) { return; }

@@ -49,16 +49,20 @@ public abstract class Canvas extends Frame
 
     public void repaint() { repaint(0, 0, getWidth(), getHeight()); }
 
-	public void repaint(int x, int y, int width, int height)
+	public void repaint(final int x, final int y, final int width, final int height)
 	{
 		if(!Mobile.compatImmediateRepaints) 
 		{	
-			IApplication.display.postPaintRequest(() -> { repaintRequest(x, y, width, height); }); 
+			IApplication.display.postPaintRequest(new Runnable() 
+			{
+				@Override
+				public void run() { repaintRequest(x, y, width, height); }
+			}); 
 		}
 		else { repaintRequest(x, y, width, height); }
 	}
 
-	public void repaintRequest(int x, int y, int width, int height) 
+	public void repaintRequest(final int x, final int y, final int width, final int height) 
 	{
 
 		if(!isShown()) { return; }

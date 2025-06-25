@@ -93,10 +93,12 @@ public class File
 
     public static int debugWrite(String fileName, String infoString) throws IOException
     { 
-        try (FileWriter writer = new FileWriter(fileName, true)) 
+        try
         {
+            FileWriter writer = new FileWriter(fileName, true);
             writer.write(infoString + System.lineSeparator());
             writer.flush();
+            writer.close();
             return 1;
         } 
         catch (IOException e) { throw new IOException("Failed to write to the file: " + e.getMessage(), e); }

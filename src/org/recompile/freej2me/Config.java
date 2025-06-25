@@ -284,7 +284,7 @@ public class Config
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fout));
 
 			// Sort the config keys alphabetically before saving
-			List<String> sortedKeys = new ArrayList<>(settings.keySet());
+			List<String> sortedKeys = new ArrayList<String>(settings.keySet());
         	Collections.sort(sortedKeys);
 
 			for (String key : sortedKeys)
@@ -297,7 +297,7 @@ public class Config
 			/* Save system file (if it has been created already), also sorted alphabetically */
 			if(sFile != null) 
 			{
-				sortedKeys = new ArrayList<>(sysSettings.keySet());
+				sortedKeys = new ArrayList<String>(sysSettings.keySet());
 				Collections.sort(sortedKeys);
 
 				fout = new FileOutputStream(sFile);

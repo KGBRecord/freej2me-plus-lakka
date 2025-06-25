@@ -68,6 +68,8 @@ import javax.microedition.media.Manager;
 
 /* SMAF decoding support */
 import javax.microedition.media.decoders.SMAFDecoder;
+/* MLD decoding support */
+import javax.microedition.media.decoders.MLDDecoder;
 /* IMA ADPCM WAV support */
 import javax.microedition.media.decoders.WavImaAdpcmDecoder;
 
@@ -171,7 +173,7 @@ public class PlatformPlayer implements Player
 									}
 								}
 							}
-							player = new SMAFPlayer(SMAFDecoder.SequenceData, SMAFDecoder.pcmData.toArray(new InputStream[0]), new HashMap<>(SMAFDecoder.pcmDataPositions));
+							player = new SMAFPlayer(SMAFDecoder.SequenceData, SMAFDecoder.pcmData.toArray(new InputStream[0]), new HashMap<Integer, Integer>(SMAFDecoder.pcmDataPositions));
 						}
 						else { player = new audioplayer(); disableControls = true; } // Somehow the SMAF decoder failed, retrieve a stub player
 						
@@ -368,18 +370,22 @@ public class PlatformPlayer implements Player
 			if(i == siemensListeners.size() - 1) { return; }
 		}
 
-		int kddiEvent = 0, kddiData = 0;
-		kddiData = (int) getMediaTime(); // This is an optional integer argument according to KDDI docs, but let's send the current media time nonetheless
-		if(event == PlayerListener.STARTED && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PLAY; }
-		if(event == PlayerListener.STARTED && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.RESUME; }
-		else if((event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.STOP; }
-		else if((event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PAUSE; }
-		
-		for(int i=0; i < kddiListeners.size(); i++) 
+		if(kddiListeners.size() > 0) 
 		{
-			kddiListeners.get(i).stateChanged(this.kddiPlayerBox, kddiEvent, kddiData);
-			if(i == kddiListeners.size() - 1) { return; }
+			int kddiEvent = 0, kddiData = 0;
+			kddiData = (int) getMediaTime(); // This is an optional integer argument according to KDDI docs, but let's send the current media time nonetheless
+			if(event == PlayerListener.STARTED && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PLAY; }
+			if(event == PlayerListener.STARTED && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.RESUME; }
+			else if((event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.STOP; }
+			else if((event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PAUSE; }
+			
+			for(int i=0; i < kddiListeners.size(); i++) 
+			{
+				kddiListeners.get(i).stateChanged(this.kddiPlayerBox, kddiEvent, kddiData);
+				if(i == kddiListeners.size() - 1) { return; }
+			}
 		}
+		
 
 		if(nokiaListener != null) 
 		{
@@ -803,7 +809,11 @@ public class PlatformPlayer implements Player
 				isPlaying = true;
 
 				// Start a separate thread to handle SMAF's sequence + PCM playback
-				new Thread(this::handleSmafPlayback).start();				
+				new Thread(new Runnable() 
+				{
+					@Override
+					public void run() { handleSmafPlayback(); }
+				}).start();
 				
 				state = Player.STARTED;
 				notifyListeners(PlayerListener.STARTED, getMediaTime());
@@ -813,7 +823,7 @@ public class PlatformPlayer implements Player
 
 		private void handleSmafPlayback() 
 		{	
-			Set<Integer> playedPositions = new HashSet<>();
+			Set<Integer> playedPositions = new HashSet<Integer>();
 
 			midi.start();
 			((volumeControl)getControl("VolumeControl")).setLevel(getVolume());
@@ -1177,39 +1187,43 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				playerThread = new Thread(() -> 
+				playerThread = new Thread(new Runnable()
 				{
-					try 
+					@Override
+					public void run() 
 					{
-						mp3PlayerRunning = true;
-						while(mp3PlayerRunning) 
+						try 
 						{
-							if(getMediaTime() >= getDuration()) { setMediaTime(0); }
-							else { setMediaTime(getMediaTime()); } // Resume from when last stopped
-							mp3Player.play(); // This is thread-blocking, so the code below only executes after this has finished.
-
-							/* 
-							* Check if mp3Player is still valid and exit early, since this thread can be 
-							* interrupted and the player can also be closed abruptly. 
-							*/
-							if (mp3Player == null || !mp3PlayerRunning)  { return; }
-
-							if (!Thread.currentThread().isInterrupted()) 
+							mp3PlayerRunning = true;
+							while(mp3PlayerRunning) 
 							{
-								state = Player.PREFETCHED;
-								notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
-								if(mp3Player.getLoopCount() != 0) 
+								if(getMediaTime() >= getDuration()) { setMediaTime(0); }
+								else { setMediaTime(getMediaTime()); } // Resume from when last stopped
+								mp3Player.play(); // This is thread-blocking, so the code below only executes after this has finished.
+
+								/* 
+								* Check if mp3Player is still valid and exit early, since this thread can be 
+								* interrupted and the player can also be closed abruptly. 
+								*/
+								if (mp3Player == null || !mp3PlayerRunning)  { return; }
+
+								if (!Thread.currentThread().isInterrupted()) 
 								{
-									if(mp3Player.getLoopCount() > 0) { mp3Player.decreaseLoopCount(); } // If getLoopCount() = -1, we're looping indefinitely
+									state = Player.PREFETCHED;
+									notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
+									if(mp3Player.getLoopCount() != 0) 
+									{
+										if(mp3Player.getLoopCount() > 0) { mp3Player.decreaseLoopCount(); } // If getLoopCount() = -1, we're looping indefinitely
+										mp3Player.reset();
+										mp3Player.play();
+									}
 									mp3Player.reset();
-									mp3Player.play();
+									mp3PlayerRunning = false;
 								}
-								mp3Player.reset();
-								mp3PlayerRunning = false;
 							}
 						}
+						catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't start mpeg player:" + e.getMessage()); }
 					}
-					catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't start mpeg player:" + e.getMessage()); }
 				});
 
 				playerThread.start();
@@ -1303,7 +1317,7 @@ public class PlatformPlayer implements Player
 			if(custom) { Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getBankList() with custom bank not implemented, returning all banks."); }
 		
 			// Use a list to collect bank numbers
-			ArrayList<Integer> bankList = new ArrayList<>();
+			ArrayList<Integer> bankList = new ArrayList<Integer>();
 		
 			try 
 			{
@@ -1313,8 +1327,11 @@ public class PlatformPlayer implements Player
 				for (int i = 0; i < patches.length; i++) { bankList.add(patches[i].getBank()); }
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Error retrieving bank list: " + e.getMessage()); }
 		
-			// Convert the list to an int array to return
-			return bankList.stream().mapToInt(Integer::intValue).toArray();
+			// Return the array of banks
+			int[] bankArray = new int[bankList.size()];
+			for (int i = 0; i < bankList.size(); i++) { bankArray[i] = bankList.get(i); }
+
+			return bankArray;
 		}
 
 		public int getChannelVolume(int channel) 
@@ -1374,7 +1391,7 @@ public class PlatformPlayer implements Player
 
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getProgramList()");
 		
-			ArrayList<Integer> programList = new ArrayList<>();
+			ArrayList<Integer> programList = new ArrayList<Integer>();
 		
 			try 
 			{
@@ -1387,7 +1404,11 @@ public class PlatformPlayer implements Player
 				}
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Error retrieving program list: " + e.getMessage()); }
 
-			return programList.stream().mapToInt(Integer::intValue).toArray();
+			// Return the array of programs
+			int[] programArray = new int[programList.size()];
+			for (int i = 0; i < programList.size(); i++) { programArray[i] = programList.get(i); }
+
+			return programArray;
 		}
 
 		public String getProgramName(int bank, int prog)
@@ -1433,7 +1454,7 @@ public class PlatformPlayer implements Player
 
 					// Create the SysexMessage
 					SysexMessage sysexMessage = new SysexMessage(0xF0, sysExData, sysExData.length);
-					player.receiver.send(sysexMessage, player.getMediaTime() + 50_000L); // Send the message
+					player.receiver.send(sysexMessage, player.getMediaTime() + 50000L); // Send the message
 				}
 				else // If it is not, send data as a series of short messages (probably implemented incorrectly, and being untested only makes things worse)
 				{
@@ -1446,7 +1467,7 @@ public class PlatformPlayer implements Player
 						else if (msgLength == 2) { shortMessage.setMessage(data[i] & 0xFF, data[i + 1] & 0xFF, 0); } // Status byte + one data byte
 						else if (msgLength == 3) { shortMessage.setMessage(data[i] & 0xFF, data[i + 1] & 0xFF, data[i + 2] & 0xFF); } // Full short message
 
-						player.receiver.send(shortMessage, player.getMediaTime() + 50_000L);
+						player.receiver.send(shortMessage, player.getMediaTime() + 50000L);
 					}
 				}
 				return length; // Return the number of bytes sent
@@ -1508,7 +1529,7 @@ public class PlatformPlayer implements Player
 				midiMessage.setMessage(type, data1, data2);
 		
 				// Send the MIDI message to the receiver
-				player.receiver.send(midiMessage, player.getMediaTime() + 50_000L); // Send message after 50ms
+				player.receiver.send(midiMessage, player.getMediaTime() + 50000L); // Send message after 50ms
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to send short MIDI event: " + e.getMessage()); }
 		}
@@ -1546,9 +1567,9 @@ public class PlatformPlayer implements Player
 						// Set volume for all channels through Control Change command 7 (volume)
 						for (int channel = 0; channel < midiChannels.length; channel++) 
 						{
-							if(channel > 0) { LockSupport.parkNanos(50_000); }
+							if(channel > 0) { LockSupport.parkNanos(50000); }
 							midiChannels[channel].controlChange(7, midiVolume);
-							if(channel < midiChannels.length-1) { LockSupport.parkNanos(50_000); }
+							if(channel < midiChannels.length-1) { LockSupport.parkNanos(50000); }
 						}
 					}
 				}

@@ -23,7 +23,7 @@ import java.util.List;
 public class Registry 
 {
 
-    private static List<Registry> registries = new ArrayList<>();
+    private static List<Registry> registries = new ArrayList<Registry>();
     String registryName;
     String ID;
     String[] actions, suffixes, types;

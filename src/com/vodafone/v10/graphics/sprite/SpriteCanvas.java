@@ -26,7 +26,7 @@ import org.recompile.mobile.Mobile;
 
 public abstract class SpriteCanvas extends Canvas 
 {
-	private static ArrayList<CharacterCommand> commands = new ArrayList<>();
+	private static ArrayList<CharacterCommand> commands = new ArrayList<CharacterCommand>();
 	private Image spriteImage;
 	private Graphics spriteGraphics;
 	private int[] palettes;

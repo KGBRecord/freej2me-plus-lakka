@@ -168,73 +168,27 @@ public class TextBox extends Screen
 	{ 
 		mode = characterSubset;
 
-		switch (mode) 
-		{
-            case "MIDP_UPPERCASE_LATIN":
-                charSetIdx = 1;
-                break;
-            case "MIDP_LOWERCASE_LATIN":
-                charSetIdx = 2;
-                break;
-            case "NUMERIC":
-			case "IS_LATIN_DIGITS":
-                charSetIdx = 3;
-                break;
-			case "UCB_GREEK":
-                charSetIdx = 4;
-                break;
-            case "UCB_CYRILLIC":
-                charSetIdx = 5;
-                break;
-            case "UCB_ARMENIAN":
-                charSetIdx = 6;
-                break;
-			case "UCB_HEBREW":
-                charSetIdx = 7;
-                break;
-			case "UCB_ARABIC":
-                charSetIdx = 8;
-                break;
-            case "UCB_DEVANAGARI":
-                charSetIdx = 9;
-                break;
-            case "UCB_BENGALI":
-                charSetIdx = 10;
-                break;
-			case "UCB_THAI":
-                charSetIdx = 11;
-                break;
-			case "UCB_HIRAGANA":
-                charSetIdx = 12;
-                break;
-            case "UCB_KATAKANA":
-                charSetIdx = 13;
-                break;
-            case "USB_HANGUL_SYLLABLES":
-                charSetIdx = 14;
-                break;
-			case "IS_FULLWIDTH_DIGITS":
-                charSetIdx = 15;
-                break;
-            case "IS_FULLWIDTH_LATIN":
-                charSetIdx = 16;
-                break;
-			case "IS_HALFWIDTH_KATAKANA":
-                charSetIdx = 17;
-                break;
-            case "IS_HANJA":
-                charSetIdx = 18;
-                break;
-			case "IS_SIMPLIFIED_HANZI":
-                charSetIdx = 19;
-                break;
-			case "IS_TRADITIONAL_HANZI":
-                charSetIdx = 20;
-                break;
-            default:
-                charSetIdx = 0; // Default subset (BASIC_LATIN, IS_LATIN)
-                break;
-        }
+		if (mode.equals("MIDP_UPPERCASE_LATIN"))                           { charSetIdx = 1; }
+		else if (mode.equals("MIDP_LOWERCASE_LATIN"))                      { charSetIdx = 2; }
+		else if (mode.equals("NUMERIC") || mode.equals("IS_LATIN_DIGITS")) { charSetIdx = 3; }
+		else if (mode.equals("UCB_GREEK"))                                 { charSetIdx = 4; }
+		else if (mode.equals("UCB_CYRILLIC"))                              { charSetIdx = 5; }
+		else if (mode.equals("UCB_ARMENIAN"))                              { charSetIdx = 6; }
+		else if (mode.equals("UCB_HEBREW"))                                { charSetIdx = 7; }
+		else if (mode.equals("UCB_ARABIC"))                                { charSetIdx = 8; }
+		else if (mode.equals("UCB_DEVANAGARI"))                            { charSetIdx = 9; }
+		else if (mode.equals("UCB_BENGALI"))                               { charSetIdx = 10; }
+		else if (mode.equals("UCB_THAI"))                                  { charSetIdx = 11; }
+		else if (mode.equals("UCB_HIRAGANA"))                              { charSetIdx = 12; }
+		else if (mode.equals("UCB_KATAKANA"))                              { charSetIdx = 13; }
+		else if (mode.equals("USB_HANGUL_SYLLABLES"))                      { charSetIdx = 14; }
+		else if (mode.equals("IS_FULLWIDTH_DIGITS"))                       { charSetIdx = 15; }
+		else if (mode.equals("IS_FULLWIDTH_LATIN"))                        { charSetIdx = 16; }
+		else if (mode.equals("IS_HALFWIDTH_KATAKANA"))                     { charSetIdx = 17; }
+		else if (mode.equals("IS_HANJA"))                                  { charSetIdx = 18; } 
+		else if (mode.equals("IS_SIMPLIFIED_HANZI"))                       { charSetIdx = 19; } 
+		else if (mode.equals("IS_TRADITIONAL_HANZI"))                      { charSetIdx = 20; } 
+		else                                                               { charSetIdx = 0; } // Default subset (BASIC_LATIN, IS_LATIN)
 	}
 
 	public int setMaxSize(int maxSize) { max = maxSize; return max; }

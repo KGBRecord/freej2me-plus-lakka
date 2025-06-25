@@ -178,7 +178,7 @@ public class MobilePlatform
 		}
 	}
 
-	public static void keyPressed(int keycode)
+	public static void keyPressed(final int keycode)
 	{
 		if(!MIDletLoader.MIDletSelected) { MIDletLoader.keyPress(Mobile.getGameAction(keycode)); }
 		else if (!Mobile.isPaused)
@@ -188,44 +188,83 @@ public class MobilePlatform
 			updateDoJaKeyState(Mobile.getCanvasAction(keycode), true);
 			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null) 
 			{ 
-				Mobile.getDisplay().postInputEvent(() -> { displayable.keyPressed(keycode); }); 
+				Mobile.getDisplay().postInputEvent(new Runnable() 
+				{ 
+					@Override
+					public void run() { displayable.keyPressed(keycode); }
+				});
 				handleCommands(Mobile.getCanvasAction(keycode));
 			}
 		}
 	}
 
-	public static void keyReleased(int keycode)
+	public static void keyReleased(final int keycode)
 	{
 		if(!Mobile.isPaused && MIDletLoader.MIDletSelected) 
 		{
 			updateKeyState(Mobile.getGameAction(keycode), false);
 			updateVodafoneKeyState(Mobile.getCanvasAction(keycode), false);
 			updateDoJaKeyState(Mobile.getCanvasAction(keycode), false);
-			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) { Mobile.getDisplay().postInputEvent(() -> { displayable.keyReleased(keycode); }); }
+			if (!Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null && MIDletLoader.MIDletSelected) 
+			{ 
+				Mobile.getDisplay().postInputEvent(new Runnable() 
+				{ 
+					@Override
+					public void run() { displayable.keyReleased(keycode); }
+				});
+			}
 		}
 	}
 
-	public static void keyRepeated(int keycode)
+	public static void keyRepeated(final int keycode)
 	{
-		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { Mobile.getDisplay().postInputEvent(() -> { displayable.keyRepeated(keycode); }); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  
+		{ 
+			Mobile.getDisplay().postInputEvent(new Runnable() 
+			{ 
+				@Override
+				public void run() { displayable.keyRepeated(keycode); }
+			});
+		}
 		// TODO: DoJa
 	}
 
-	public static void pointerDragged(int x, int y)
+	public static void pointerDragged(final int x, final int y)
 	{
-		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { Mobile.getDisplay().postInputEvent(() -> { displayable.pointerDragged(x, y); }); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)
+		{ 
+			Mobile.getDisplay().postInputEvent(new Runnable() 
+			{ 
+				@Override
+				public void run() { displayable.pointerDragged(x, y);; }
+			});
+		}
 		// TODO: DoJa
 	}
 
-	public static void pointerPressed(int x, int y)
+	public static void pointerPressed(final int x, final int y)
 	{
-		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { Mobile.getDisplay().postInputEvent(() -> { displayable.pointerPressed(x, y); }); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)
+		{
+			Mobile.getDisplay().postInputEvent(new Runnable() 
+			{ 
+				@Override
+				public void run() { displayable.pointerPressed(x, y); }
+			});
+		}
 		// TODO: DoJa
 	}
 
-	public static void pointerReleased(int x, int y)
+	public static void pointerReleased(final int x, final int y)
 	{
-		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)  { Mobile.getDisplay().postInputEvent(() -> { displayable.pointerReleased(x, y); }); }
+		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)
+		{ 
+			Mobile.getDisplay().postInputEvent(new Runnable() 
+			{ 
+				@Override
+				public void run() { displayable.pointerReleased(x, y); }
+			});
+		}
 		// TODO: DoJa
 	}
 
@@ -470,7 +509,7 @@ public class MobilePlatform
 
 	public boolean load(String fileName) 
 	{
-        Map<String, String> descriptorProperties = new HashMap<>();
+        Map<String, String> descriptorProperties = new HashMap<String, String>();
 
 		/* 
 		 * Java treats "!/" sequences as a pointer to a file inside a jar, which will cause
@@ -519,8 +558,9 @@ public class MobilePlatform
 	
 				// Write jad and parse its descriptors
 				tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName);
-				try (FileOutputStream fos = new FileOutputStream(tmpfile)) 
+				try
 				{
+					FileOutputStream fos = new FileOutputStream(tmpfile);
 					int restSize = lenJadFileContent;
 					while(restSize > 0) 
 					{
@@ -528,22 +568,39 @@ public class MobilePlatform
 						fos.write(buf, 0, readSize);
 						restSize -= readSize;
 					}
+					fos.close();
+				}
+				catch(Exception e) 
+				{ 
+					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to prepare kjx jad data: " + e.getMessage());
+					return false;
 				}
 
-				try (InputStream targetStream = new FileInputStream(tmpfile)) { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); } 
+				try 
+				{ 
+					InputStream targetStream = new FileInputStream(tmpfile);
+					MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); 
+					targetStream.close();
+				}
 				catch (IOException e) 
 				{
-					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jad data: " + e.getMessage());
+					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load kjx jad data: " + e.getMessage());
 					return false;
 				}
 	
 				// Write jar
 				tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName.substring(0, kjxJadFileName.length() -4) + ".jar");
-				try (FileOutputStream fos = new FileOutputStream(tmpfile)) {
+				try 
+				{
+					FileOutputStream fos = new FileOutputStream(tmpfile);
 					int length = 0;
-					while((length = dis.read(buf)) > 0) {
-						fos.write(buf, 0, length);
-					}
+					while((length = dis.read(buf)) > 0) { fos.write(buf, 0, length); }
+					fos.close();
+				}
+				catch(Exception e) 
+				{ 
+					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load kjx jar data: " + e.getMessage());
+					return false;
 				}
 
 				// Send dumped jar path to loader
@@ -585,7 +642,11 @@ public class MobilePlatform
 					return false;
 				}
 
-				try (InputStream targetStream = new FileInputStream(preparedFileName)) { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); } 
+				try 
+				{ 
+					InputStream targetStream = new FileInputStream(preparedFileName);
+					MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); 
+				} 
 				catch (IOException e) 
 				{
 					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jad data: " + e.getMessage());
@@ -665,7 +726,7 @@ public class MobilePlatform
 		frameCount++;
 		if(Mobile.limitFPS == 0 || pressedKeys[19]) { lastRenderTime = System.nanoTime(); return; }
 
-		requiredFrametime = 1_000_000_000 / Mobile.limitFPS;
+		requiredFrametime = 1000000000 / Mobile.limitFPS;
 		elapsedTime = System.nanoTime() - lastRenderTime;
 		sleepTime = (requiredFrametime - elapsedTime); // Sleep time in nanoseconds
 
@@ -677,7 +738,7 @@ public class MobilePlatform
 	// For now, the logic here works by updating the framerate counter every second
 	private final void showFPS() 
 	{
-		if (System.nanoTime() - lastFpsTime >= 1_000_000_000) 
+		if (System.nanoTime() - lastFpsTime >= 1000000000) 
 		{ 
 			fps = frameCount; 
 			frameCount = 0; 

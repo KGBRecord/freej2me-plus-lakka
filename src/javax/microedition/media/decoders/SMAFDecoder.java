@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -44,11 +45,6 @@ public final class SMAFDecoder
 {
 
     private static final byte CRCSize = 2; // SMAF has 2 bytes for CRC at the end of the file chunk, which is the main data chunk
-
-    private static Map<Byte, Integer> huffmanFreqMap = new HashMap<>();
-    private static HuffmanTree huffmanTree;
-    private static HuffmanNode root;
-    private static Map<Byte, String> huffmanCodes = new HashMap<>();
 
     private static ChannelData[] channelData;
 
@@ -130,15 +126,17 @@ public final class SMAFDecoder
     private static String[] sequenceTypes = {"Stream Sequence", "Sub-Sequence (UNTESTED)"};
     private static String[] channelTypes = {"No Care", "Melody", "No Melody", "Rhythm"};
     private static String[] noteTypes = {"Invalid", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "Invalid", "Invalid", "Invalid"};
+    
+    @SuppressWarnings("unchecked")
     private static final List<SimpleEntry<Byte, String>> timebases = Arrays.asList(
-        new SimpleEntry<>((byte) 0, "1msec"),
-        new SimpleEntry<>((byte) 1, "2msec"),
-        new SimpleEntry<>((byte) 2, "4msec"),
-        new SimpleEntry<>((byte) 3, "5msec"),
-        new SimpleEntry<>((byte) 16, "10msec"),
-        new SimpleEntry<>((byte) 17, "20msec"),
-        new SimpleEntry<>((byte) 18, "40msec"),
-        new SimpleEntry<>((byte) 19, "50msec")
+        new SimpleEntry<Byte, String>((byte) 0, "1msec"),
+        new SimpleEntry<Byte, String>((byte) 1, "2msec"),
+        new SimpleEntry<Byte, String>((byte) 2, "4msec"),
+        new SimpleEntry<Byte, String>((byte) 3, "5msec"),
+        new SimpleEntry<Byte, String>((byte) 16, "10msec"),
+        new SimpleEntry<Byte, String>((byte) 17, "20msec"),
+        new SimpleEntry<Byte, String>((byte) 18, "40msec"),
+        new SimpleEntry<Byte, String>((byte) 19, "50msec")
     );
 
     // PCM-Specific variables
@@ -150,7 +148,7 @@ public final class SMAFDecoder
 
     public static List<InputStream> pcmData = null;
     public static InputStream SequenceData = null;
-    public static Map<Integer, Integer> pcmDataPositions = new HashMap<>();
+    public static Map<Integer, Integer> pcmDataPositions = new HashMap<Integer, Integer>();
 
     public static synchronized void decodeSMAF(byte[] data)
 	{
@@ -160,53 +158,37 @@ public final class SMAFDecoder
         preWrapLongestDuration = 0;
         handyChannelIdx = 0;
         decodePos = 0;
-        huffmanFreqMap.clear();
-        huffmanCodes.clear();
         channelData = new ChannelData[16];
         for (int j = 0; j < channelData.length; j++) { channelData[j] = new ChannelData(); }
-        huffmanTree = new HuffmanTree();
         sequence = null; // Clear the previous MIDI sequence
 
         // Clear previous decoded data objects
         if(pcmData != null) { pcmData.clear(); }
         pcmData = null;
         SequenceData = null;
-        pcmData = new ArrayList<>();
+        pcmData = new ArrayList<InputStream>();
         pcmDataPositions.clear();
 
         input = data;
+
+        
+        // TODO: Decode more of SMAF
+
     
         // Start parsing the file.
         decodeHeader(); // MMMD (file chunk header)
 
-        // After viewing some SMAF files with an hex editor, it seems that those three chunks can repeat multiple times (and that's for audio only, we still need to handle for graphics and PCM chunks)
-        while(((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 'T' && (char) data[decodePos+2] == 'R') ||
-            ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 's' && (char) data[decodePos+2] == 'p' && (char) data[decodePos+3] == 'I') || 
-            ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 't' && (char) data[decodePos+2] == 's' && (char) data[decodePos+3] == 'u') || 
-            ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 't' && (char) data[decodePos+2] == 's' && (char) data[decodePos+3] == 'q') ||
-            ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 't' && (char) data[decodePos+2] == 's' && (char) data[decodePos+3] == 'p') ||
-            ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 'w' && (char) data[decodePos+2] == 'a') ||
-            
-            // The ones below are specific to Sharp SMAf files, only seen those on them
-            ((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'M' && (char) input[decodePos+2] == 'M' && (char) input[decodePos+3] == 'G') ||
-            ((char) input[decodePos] == 'V' && (char) input[decodePos+1] == 'O' && (char) input[decodePos+2] == 'I' && (char) input[decodePos+3] == 'C')
-            )
+        boolean parsingData = true;
+        while(parsingData && decodePos < input.length-CRCSize) // -2, because CRC at the end uses 2 bytes
         {
-            if((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 'T' && (char) data[decodePos+2] == 'R') 
+            String chunkID = "" + (char) input[decodePos] + (char) input[decodePos+1] + (char) input[decodePos+2] + (char) input[decodePos+3];
+
+            if(chunkID.contains("MTR")) { decodeScoreTrackChunk(); }
+            else if(chunkID.contains("MspI")) { decodeSeekAndPhraseChunk(); }
+            else if(chunkID.contains("Mtsu")) { decodeSetupDataChunk(); }
+            else if(chunkID.contains("Mtsq"))
             {
-                decodeScoreTrackChunk(); // MTR
-            }
-            if((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 's' && (char) data[decodePos+2] == 'p' && (char) data[decodePos+3] == 'I') 
-            {
-                decodeSeekAndPhraseChunk(); // Mspi
-            }
-            if((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 't' && (char) data[decodePos+2] == 's' && (char) data[decodePos+3] == 'u') 
-            {
-                decodeSetupDataChunk(); // Mtsu
-            }
-            else if ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 't' && (char) data[decodePos+2] == 's' && (char) data[decodePos+3] == 'q') 
-            {
-                scoreTrackSequenceData(); // Mtsq
+                scoreTrackSequenceData();
                 // Handy Phone format states that more than 4 channels can be simulated by having multiple Score Track Sequences
                 if(formatType == 0x00) { handyChannelIdx += 4; }
 
@@ -219,29 +201,35 @@ public final class SMAFDecoder
                     */
                 if(handyChannelIdx > 12) { handyChannelIdx = 0; wrapInstruments = true;  }
             }
-
-            // PCM data
-            else if ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 't' && (char) data[decodePos+2] == 's' && (char) data[decodePos+3] == 'p') 
-            {
-                scoreTrackPCMData(); // Mtsp
-            }
-            else if ((char) data[decodePos] == 'M' && (char) data[decodePos+1] == 'w' && (char) data[decodePos+2] == 'a') 
+            else if(chunkID.contains("Mtsp")) { scoreTrackPCMData(); } // Unfinished as far as spec compliance goes, but works more often than not
+            else if(chunkID.contains("Mwa")) // Same as above (in fact, it pretty much ties with teh above)
             {
                 Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF PCM Chunk found. PCM support not complete yet. ");
-                pcmData.add(new ByteArrayInputStream(scoreTrackWaveData())); // Mwa
+                pcmData.add(new ByteArrayInputStream(scoreTrackWaveData()));
             }
-
-
-            // Sharp stuff
-            else if(((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'M' && (char) input[decodePos+2] == 'M' && (char) input[decodePos+3] == 'G')) 
-            {
+            else if(chunkID.contains("MMMG")) // TODO, seen in use in some jars meant for Sharp
+            { 
                 Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " This is a non-standard SMAF file usually found in Sharp phones! Trying to parse... ");
-                decodeSharpHeader();
+                decodeSharpHeader(); 
             }
-            else if(((char) input[decodePos] == 'V' && (char) input[decodePos+1] == 'O' && (char) input[decodePos+2] == 'I' && (char) input[decodePos+3] == 'C')) 
-            {
-                decodeSharpVOICChunk();
-            }
+            else if(chunkID.contains("VOIC")) { decodeSharpVOICChunk(); }
+            else { parsingData = false; }
+
+            /* TODOs 
+                case "ATR ":
+                case "AspI":
+                case "Atsu":
+                case "Atsq": 
+                case "Awa ":
+                case "GTR ":
+                case "Gtsu":
+                case "Gsq ":
+                case "Gftd":
+                case "Gimd":
+                case "MTSR":
+                case "Mssq":
+                
+            */
         }
 
         // Warn if the parser is somehow exiting earlier than the file's expected byte data size.
@@ -259,9 +247,6 @@ public final class SMAFDecoder
         {
             Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF file did not pass CRC check. There might be corruption or incorrect data on the decoded file as a result. ");
         }
-        
-
-        // TODO: Decode more of SMAF
 
         // Convert the resulting sequence to byte array and send to the player.
         try
@@ -407,7 +392,7 @@ public final class SMAFDecoder
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"VOICChunkSize: " + voicChunkSize);
     }
 
-    public static void decodeScoreTrackChunk() // TODO: Parsing issues here
+    public static void decodeScoreTrackChunk()
     {
         // We're at the Score Track Chunk, so let's decode the info about the audio data
         String mtr = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++]; // "MTR" actually uses 4 chars, the last one appears to always be 0x01
@@ -452,10 +437,10 @@ public final class SMAFDecoder
             {
                 if(i < 16) 
                 {
-                    channelData[i].keyControl = (byte) (input[decodePos] & 0b11000000);
-                    channelData[i].vibStatus = (input[decodePos] & 0b00100000) != 0;
-                    channelData[i].led = (input[decodePos] & 0b00010000) != 0;
-                    channelData[i].channelType = (byte) ((input[decodePos] & 0b00001100) >> 2);
+                    channelData[i].keyControl = (byte) (input[decodePos] & 0xC0);         // 0b11000000
+                    channelData[i].vibStatus = (input[decodePos] & 0x20) != 0;            // 0b00100000
+                    channelData[i].led = (input[decodePos] & 0x10) != 0;                  // 0b00010000
+                    channelData[i].channelType = (byte) ((input[decodePos] & 0x0C) >> 2); // 0b00001100
                     i++;
                 }
                 else { Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"channel limit reached, ignoring further channel data..."); }
@@ -514,7 +499,7 @@ public final class SMAFDecoder
         // We're at the Score Track Chunk, so let's decode the info about the audio data
         String mtsu = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
         int mtsuChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
-        List<Byte> exclusiveMessage = new ArrayList<>(); // Seems to relate to SysEx messages, maybe we don't need these?
+        List<Byte> exclusiveMessage = new ArrayList<Byte>(); // Seems to relate to SysEx messages, maybe we don't need these?
         int mtsuPos = 0;
 
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- '" + mtsu +"' SECTION --------------------------");
@@ -559,42 +544,30 @@ public final class SMAFDecoder
         {
             Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Huffman decoding is untested. Expect issues. ");
             
-            while (curPos < mtsqChunkSize)
+            // Step 1: We start by getting the decoded size (saved prior to the huffman-compressed data)
+            int decodedSize = ((input[decodePos++] & 0xFF) << 24) |
+                            ((input[decodePos++] & 0xFF) << 16) |
+                            ((input[decodePos++] & 0xFF) << 8) |
+                            (input[decodePos++] & 0xFF);
+
+            List<Node> huffmanNodes = new ArrayList<Node>();
+            while (curPos < mtsqChunkSize - 4) // We already read the size above, so we need to decrease the actual data to be read
             {
                 seqBytes[curPos] = input[decodePos++];
-                curPos ++;
+                curPos++;
             }
 
-            // Populate the Huffman Frequency Map
-            for (byte b : seqBytes) { huffmanFreqMap.put(b, huffmanFreqMap.getOrDefault(b, 0) + 1); }
+            Mobile.log(Mobile.LOG_INFO, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"orig len:" + seqBytes.length);
+            Mobile.log(Mobile.LOG_INFO, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"dec len:" + decodedSize);
 
-            root = huffmanTree.buildTree(huffmanFreqMap);
+            BitReader bitReader = new BitReader(seqBytes, 0); // Start after the size field
 
-            // Generate Huffman Codes
-            huffmanCodes.clear();
-            huffmanTree.generateCodes(root, "", huffmanCodes);
+            // Build the Huffman tree
+            HuffmanDecoder decoder = new HuffmanDecoder();
+            decoder.buildTree(bitReader);
 
-            // Decode using Huffman
-            byte[] decodedData = decodeHuffman(seqBytes);
-
-            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"orig len:" + seqBytes.length);
-            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"dec len:" + decodedData.length);
-
-            /*
-            System.out.print("orig:[");
-            for(int i = 0; i < seqBytes.length; i++) 
-            {
-                System.out.printf(" " + String.format("%02X", (seqBytes[i] & 0xFF)));
-            }
-            System.out.println("] origLen:" + seqBytes.length);
-            
-            System.out.print("Dec:[");
-            for(int i = 0; i < decodedData.length; i++) 
-            {
-                System.out.printf(" " + String.format("%02X", (decodedData[i] & 0xFF)));
-            }
-            System.out.println("]");
-            */
+            // Decode the data
+            byte[] decodedData = decoder.decode(seqBytes, decodedSize);
 
             try { convertSequenceEvents(decodedData); }
             catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Couldn't decode sequence events:" + e.getMessage()); e.printStackTrace(); }
@@ -863,7 +836,7 @@ public final class SMAFDecoder
                     }
                     else 
                     {
-                        List<Byte> exclusiveMessage = new ArrayList<>(); // Seems to relate to SysEx messages, maybe we don't need these?
+                        List<Byte> exclusiveMessage = new ArrayList<Byte>(); // Seems to relate to SysEx messages, maybe we don't need these?
                         while(data[offset] != (byte) 0xF7) // 0xF7 as the value marks the end of the SysEx message
                         {
                             exclusiveMessage.add(data[offset++]);   
@@ -947,7 +920,7 @@ public final class SMAFDecoder
            
                 if(status == 0xF0) // SysEx messages, maybe we don't need these?
                 {
-                    List<Byte> exclusiveMessage = new ArrayList<>();
+                    List<Byte> exclusiveMessage = new ArrayList<Byte>();
 
                     while(offset < data.length && data[offset] != (byte) 0xF7) // Like with formatType 0x00, 0xF7 as the value marks the end of the SysEx message
                     {
@@ -1006,8 +979,7 @@ public final class SMAFDecoder
                                 return;
                             }
                             
-                            // TODO: This might be incorrect as the SMAF documentation doesn't detail how the chip differentiates between PCM data and Sequence Data to play
-                            // All it notes is that a piano has 88 notes and in midi it goes all the way up to 108 (which is where this "20" value comes from, as anything lower supposedly is a PCM file)
+                            // TODO: This might be incorrect as the SMAF documentation doesn't detail how the chip differentiates between PCM data and Sequence Data to play, for now notes are played alongside the PCM index
                             if(noteNumber < 20)
                             {
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value " + noteNumber + " to channel " + channel + " at duration " + totalDuration);
@@ -1129,45 +1101,6 @@ public final class SMAFDecoder
         }
     }
 
-    private static byte[] decodeHuffman(byte[] seqBytes) 
-    {
-        StringBuilder bitString = new StringBuilder();
-    
-        // Convert bytes to bits
-        for (byte b : seqBytes) 
-        {
-            for (int i = 7; i >= 0; i--) { bitString.append((b >> i) & 1); }
-        }
-    
-        List<Byte> decodedBytes = new ArrayList<>();
-        StringBuilder currentCode = new StringBuilder();
-    
-        // Decode using Huffman codes
-        for (char bit : bitString.toString().toCharArray()) 
-        {
-            currentCode.append(bit);
-            boolean found = false;
-    
-            for (Map.Entry<Byte, String> entry : huffmanCodes.entrySet()) 
-            {
-                if (entry.getValue().equals(currentCode.toString())) // We found a matching code
-                {
-                    decodedBytes.add(entry.getKey());
-                    currentCode.setLength(0);
-                    found = true;
-                    break;
-                }
-            }
-        }
-    
-        // Convert the decoded List<Byte> back to a byte array
-        byte[] result = new byte[decodedBytes.size()];
-        for (int i = 0; i < decodedBytes.size(); i++) { result[i] = decodedBytes.get(i); }
-    
-    
-        return result;
-    }
-
     // Handy Phone format has a separate set of instruments for the drum bank (any time the bank change goes over 127), we cannot convert instruments to MIDI 1:1 in those cases
     private static byte handyPhoneBankToMidi(byte handyInst, byte channel)
     {
@@ -1272,81 +1205,6 @@ class ChannelData
     }
 }
 
-class HuffmanNode implements Comparable<HuffmanNode> 
-{
-    byte data;      // The byte value (only for leaf nodes)
-    int frequency;  // Frequency of the byte
-    HuffmanNode left;   // Left child
-    HuffmanNode right;  // Right child
-
-    // Constructor for leaf nodes
-    public HuffmanNode(byte data, int frequency) 
-    {
-        this.data = data;
-        this.frequency = frequency;
-        this.left = null;
-        this.right = null;
-    }
-
-    // Constructor for internal nodes
-    public HuffmanNode(int frequency, HuffmanNode left, HuffmanNode right) 
-    {
-        this.data = 0; // Not used for internal nodes
-        this.frequency = frequency;
-        this.left = left;
-        this.right = right;
-    }
-
-    @Override
-    public int compareTo(HuffmanNode other) 
-    {
-        return Integer.compare(this.frequency, other.frequency);
-    }
-}
-
-class HuffmanTree 
-{
-    // Build the Huffman tree from a frequency map
-    public HuffmanNode buildTree(Map<Byte, Integer> frequencyMap) 
-    {
-        PriorityQueue<HuffmanNode> priorityQueue = new PriorityQueue<>();
-
-        // Create leaf nodes for each byte and add to the priority queue
-        for (Map.Entry<Byte, Integer> entry : frequencyMap.entrySet()) 
-        {
-            priorityQueue.add(new HuffmanNode(entry.getKey(), entry.getValue()));
-        }
-
-        // Build the tree
-        while (priorityQueue.size() > 1) 
-        {
-            HuffmanNode left = priorityQueue.poll();
-            HuffmanNode right = priorityQueue.poll();
-            HuffmanNode parent = new HuffmanNode(left.frequency + right.frequency, left, right);
-            priorityQueue.add(parent);
-        }
-
-        return priorityQueue.poll(); // The root of the tree
-    }
-
-    // Generate Huffman codes from the Huffman tree
-    public void generateCodes(HuffmanNode root, String code, Map<Byte, String> huffmanCodes) 
-    {
-        if (root == null) return;
-
-        // Leaf node
-        if (root.left == null && root.right == null) 
-        {
-            huffmanCodes.put(root.data, code);
-            return;
-        }
-
-        // Traverse left and right
-        generateCodes(root.left, code + "0", huffmanCodes);
-        generateCodes(root.right, code + "1", huffmanCodes);
-    }
-}
-
 class SmafCRC 
 {
     private static final int CHAR_BIT = 8;
@@ -1390,5 +1248,124 @@ class SmafCRC
         int calculatedCRC = makeCRC(fileChunk.length - 2, fileChunk);
 
         return calculatedCRC == providedCRC;
+    }
+}
+
+class Node 
+{
+    Node left;
+    Node right;
+    byte value; // Only used for leaf nodes
+    boolean isLeaf;
+
+    Node(boolean isLeaf) {
+        this.isLeaf = isLeaf;
+    }
+}
+
+// Huffman decoding largely based on how MMFtool does it
+class BitReader 
+{
+    private byte[] data;
+    private int byteOffset;
+    private int bitOffset;
+
+    public BitReader(byte[] data, int startOffset) 
+    {
+        this.data = data;
+        this.byteOffset = startOffset;
+        this.bitOffset = 0;
+    }
+
+    // Read a single bit
+    public int readBit() 
+    {
+        if (byteOffset >= data.length) { return -1; } // We're at EOF
+        
+        int bit = (data[byteOffset] >> (7 - bitOffset)) & 0x01;
+
+        // Move to the next bit
+        bitOffset++;
+        if (bitOffset == 8) 
+        {
+            bitOffset = 0;
+            byteOffset++;
+        }
+
+        return bit;
+    }
+
+    public int readBits(int n) 
+    {
+        int bits = 0;
+        for (int i = 0; i < n; i++) 
+        {
+            int bit = readBit();
+            if (bit == -1) { return -1; } // Reached EOF
+            bits = (bits << 1) | bit; // Shift left and add the new bit
+        }
+        return bits;
+    }
+}
+
+class HuffmanDecoder 
+{
+    private Node root;
+
+    // Method to read the Huffman tree recursively
+    private int readTree(BitReader bf, List<Node> nodes) 
+    {
+        int b = bf.readBit(); // Read one bit
+        if (b == -1) { return -1; }
+
+        if (b == 1) // Internal node
+        { 
+            Node internalNode = new Node(false);
+            int index = nodes.size();
+            nodes.add(internalNode);
+
+            // Recursively read left and right children
+            internalNode.left = nodes.get(readTree(bf, nodes));
+            internalNode.right = nodes.get(readTree(bf, nodes));
+            return index; // Return the index of the new internal node
+        } 
+        else // Leaf node
+        { 
+            int leafValue = bf.readBits(8); // Read the byte value for the leaf
+            Node leafNode = new Node(true);
+            leafNode.value = (byte) leafValue; // Store the actual value
+            nodes.add(leafNode);
+            return nodes.size() - 1; // Return the index of the new leaf
+        }
+    }
+
+    // Build the Huffman tree from the bit stream
+    public void buildTree(BitReader bf) 
+    {
+        List<Node> nodes = new ArrayList<Node>();
+        int rootIndex = readTree(bf, nodes);
+        root = nodes.get(rootIndex); // Set the root node
+    }
+
+    // Decode the encoded data
+    public byte[] decode(byte[] encodedData, int decodedSize) 
+    {
+        byte[] decodedData = new byte[decodedSize];
+        int decodedIndex = 0;
+        int bitIndex = 0; // Track current bit index in encodedData
+
+        while (decodedIndex < decodedSize) 
+        {
+            Node currentNode = root;
+            while (!currentNode.isLeaf) 
+            {
+                int bit = (encodedData[bitIndex / 8] >> (7 - (bitIndex % 8))) & 0x01; // Read the bit
+                currentNode = (bit == 0) ? currentNode.left : currentNode.right;
+                bitIndex++;
+            }
+            decodedData[decodedIndex++] = currentNode.value; // We reached a leaf, store the decoded value
+        }
+
+        return decodedData;
     }
 }

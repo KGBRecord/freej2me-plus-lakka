@@ -46,21 +46,28 @@ public class Display
 
 	private static final Queue<Runnable> serializedEvents = new LinkedList<Runnable>(), inputEvents = new LinkedList<Runnable>();
 
-	private static final AtomicReference<Runnable> setCurrentRequest = new AtomicReference<>(), paintEvent = new AtomicReference<>();
+	private static final AtomicReference<Runnable> setCurrentRequest = new AtomicReference<Runnable>(), paintEvent = new AtomicReference<Runnable>();
 
 	private Thread flashThread;
 
-	public Display() { new Thread(this::processEvents, "EventProcessing-Thread").start(); }
+	public Display() 
+	{ 
+		new Thread(new Runnable() 
+		{
+			@Override
+			public void run() { processEvents(); }
+		}, "EventProcessing-Thread").start();
+	}
 
 	// MIDlet serial call queue methods
-	public void callSerially(Runnable r) 
+	public void callSerially(final Runnable r) 
 	{ 
 		serializedEvents.add(r); 
 		synchronized (serializedEvents) { serializedEvents.notify(); }
 	}
 
 	// Paint events should be serialized as well (if the event queue is empty, we need to notify the event processing thread to resume)
-    public void postPaintRequest(Runnable r) 
+    public void postPaintRequest(final Runnable r) 
 	{ 
 		paintEvent.set(r);
 		synchronized (serializedEvents) 
@@ -77,7 +84,7 @@ public class Display
 	 * the spec's need for them all to be serialized in respect to each other (except inputs can't be truly serialized into serializedEvents because apps like
 	 * Heroes Lore: Wind of Soltia spam the queue very hard and make input processing completely unreliable)
 	 */
-	public void postInputEvent(Runnable r) 
+	public void postInputEvent(final Runnable r) 
 	{ 
 		new Thread(new Runnable() 
 		{
@@ -140,7 +147,7 @@ public class Display
 		else { return; }
 	}
 
-	public boolean flashBacklight(int duration) 
+	public boolean flashBacklight(final int duration) 
 	{
 		try 
 		{
@@ -149,12 +156,16 @@ public class Display
 				flashThread.interrupt();
 				Mobile.renderLCDMask = false;
 			}
-			flashThread = new Thread(() -> 
+			flashThread = new Thread(new Runnable()
 			{
-				Mobile.renderLCDMask = true;
-				try { Thread.sleep((duration == Integer.MAX_VALUE) ? Long.MAX_VALUE : duration); } // If backlight is Int MAX_VALUE, that means it should stay on.
-				catch(Exception e) {}
-				Mobile.renderLCDMask = false;
+				@Override
+				public void run() 
+				{
+					Mobile.renderLCDMask = true;
+					try { Thread.sleep((duration == Integer.MAX_VALUE) ? Long.MAX_VALUE : duration); } // If backlight is Int MAX_VALUE, that means it should stay on.
+					catch(Exception e) {}
+					Mobile.renderLCDMask = false;
+				}
 			});
 			flashThread.start();
 		}
@@ -162,7 +173,7 @@ public class Display
 		return true;
 	}
 
-	public boolean vodafoneFlashBacklight(int duration, int offDuration, int reps) 
+	public boolean vodafoneFlashBacklight(final int duration, final int offDuration, final int reps) 
 	{
 		try 
 		{
@@ -171,19 +182,22 @@ public class Display
 				flashThread.interrupt();
 				Mobile.renderLCDMask = false;
 			}
-			flashThread = new Thread(() -> 
+			flashThread = new Thread(new Runnable()
 			{
-				for(int i = 0; i < reps; i++) 
+				@Override
+				public void run() 
 				{
-					Mobile.renderLCDMask = true;
-					try { Thread.sleep(duration);}
-					catch(Exception e) {}
+					for(int i = 0; i < reps; i++) 
+					{
+						Mobile.renderLCDMask = true;
+						try { Thread.sleep(duration);}
+						catch(Exception e) {}
 
-					Mobile.renderLCDMask = false;
-					try { Thread.sleep(offDuration); }
-					catch(Exception e) {}
+						Mobile.renderLCDMask = false;
+						try { Thread.sleep(offDuration); }
+						catch(Exception e) {}
+					}
 				}
-				
 			});
 			flashThread.start();
 		}
@@ -239,7 +253,7 @@ public class Display
 
 	public int numColors() { return 16777216; }
 
-	public void setCurrent(Displayable next)
+	public void setCurrent(final Displayable next)
 	{
 		setCurrentRequest.set(new Runnable()
 		{
@@ -261,7 +275,14 @@ public class Display
 					if (prev != null && prev instanceof Canvas) { prev.hideNotify(); }
 
 					if(current instanceof Canvas) { current.showNotify(); current.notifySetCurrent(); } // Canvas always queues its rendering internally
-					else { postPaintRequest(() -> { current.notifySetCurrent(); }); }
+					else 
+					{ 
+						postPaintRequest(new Runnable()
+						{
+							@Override
+							public void run() { current.notifySetCurrent(); }
+						}); 
+					}
 
 					Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
 				}
@@ -275,7 +296,7 @@ public class Display
 		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
-	public void setCurrent(Alert alert, Displayable next)
+	public void setCurrent(final Alert alert, final Displayable next)
 	{
 		setCurrentRequest.set(new Runnable()
 		{
@@ -304,7 +325,7 @@ public class Display
 		synchronized(serializedEvents) { serializedEvents.notify(); }
 	}
 
-	public void setCurrentItem(Item item) 
+	public void setCurrentItem(final Item item) 
 	{
 		setCurrentRequest.set(new Runnable()
 		{

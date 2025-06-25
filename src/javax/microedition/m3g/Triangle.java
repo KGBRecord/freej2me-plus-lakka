@@ -16,7 +16,9 @@
 */
 package javax.microedition.m3g;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 // package-private
@@ -141,27 +143,28 @@ class Triangle
 	float rC() { return this.t[4*2 + 2]; }
 	float qC() { return this.t[4*2 + 3]; }
 
-	Stream<Triangle> clip() 
-	{	
-		return Arrays.stream(new Triangle[] { this })
-			.filter(Triangle::isValid)
-			.flatMap(t -> 
-			{	
-				// Clip against each plane sequentially
-				if (t.clipPlane(xp[0], xp[1]) == null)  { return Stream.empty(); }
-				if (t.clipPlane(xn[0], xn[1]) == null)  { return Stream.empty(); }
-				if (t.clipPlane(yp[0], yp[1]) == null)  { return Stream.empty(); }
-				if (t.clipPlane(yn[0], yn[1]) == null)  { return Stream.empty(); }
-				if (t.clipPlane(zp[0], zp[1]) == null)  { return Stream.empty(); }
-				if (t.clipPlane(zn[0], zn[1]) == null)  { return Stream.empty(); }
-	
-				return Stream.of(t.project()); // If it passed all planes, it means it's at least partially visible, project it
-			});
+	public boolean clip() 
+	{		
+		if (isValid()) 
+		{			
+			// Clip against each plane sequentially
+			if (this.clipPlane(xp[0], xp[1]) != null &&
+				this.clipPlane(xn[0], xn[1]) != null &&
+				this.clipPlane(yp[0], yp[1]) != null &&
+				this.clipPlane(yn[0], yn[1]) != null &&
+				this.clipPlane(zp[0], zp[1]) != null &&
+				this.clipPlane(zn[0], zn[1]) != null) 
+			{				
+				return false; // If it passed all planes, it means it's at least partially visible, don't clip
+			}
+		}
+		
+		return true;
 	}
 
-	static void transform(Triangle[] triangles, Transform trVert, Transform trTex)
+	static void transform(Triangle[] triangles, int visibleTris, Transform trVert, Transform trTex)
 	{
-		for (int i = 0; i < triangles.length; i++)
+		for (int i = 0; i < visibleTris; i++)
 		{
 			trVert.transform(triangles[i].v);
 			if (triangles[i].t != null && trTex != null) { trTex.transform(triangles[i].t); }
@@ -176,7 +179,7 @@ class Triangle
 			this.wC() >= M3GMath.EPSILON;
 	}
 
-	private Triangle project()
+	public Triangle project()
 	{
 		this.v[4*0 + 0] = this.v[4*0 + 0] / this.v[4*0 + 3];
 		this.v[4*0 + 1] = this.v[4*0 + 1] / this.v[4*0 + 3];
