@@ -450,9 +450,10 @@ public class MIDletLoader extends URLClassLoader
 		}
 		else { Mobile.isDoJa = properties.containsKey("MIDlet-1") ? false : true; } // Else we assume it as DoJa if a JAD file wasn't found, or if it was found but it, like the manifest, doesn't have the MIDlet token
 
-		String microeditionProfile = properties.get("MicroEdition-Profile");
-		if (microeditionProfile.startsWith("KDDIP")) {
-			Mobile.isKDDI = true;
+		if(properties.containsKey("MicroEdition-Profile")) 
+		{
+			String microeditionProfile = properties.get("MicroEdition-Profile");
+			if (microeditionProfile.startsWith("KDDIP")) { Mobile.isKDDI = true; }
 		}
 
 		if(Mobile.isDoJa) // No manifest found in the jar, or the manifest doesn't have a midlet specified. Maybe it's a DoJa file that has an accompanying .jam?
