@@ -94,15 +94,27 @@ public abstract class Canvas extends Frame
 		graphics.setOrigin(0, 0);
 		graphics.clearClip();
 
-		graphics.setColor(Mobile.lcduiBGColor);
+		// Fade the command bar if there's one second left to hide it
+		long fadeStart = 1000000000L;
+		if (MobilePlatform.timeToUnfocus < fadeStart) 
+		{
+			graphics.setAlphaRGB(((byte)(0xFF * Math.max(0, Math.min(1, MobilePlatform.timeToUnfocus / 1000000000.0))) << 24) | Mobile.lcduiBGColor);
+		} 
+		else { graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiBGColor); }
+
 		graphics.fillRect(0, height-barHeight, width, barHeight);
 
-		int textCenter;
-		int xPos;
-
-		graphics.setColor(Mobile.lcduiTextColor);
+		if (MobilePlatform.timeToUnfocus < fadeStart) 
+		{
+			graphics.setAlphaRGB(((byte)(0xFF * Math.max(0, Math.min(1, MobilePlatform.timeToUnfocus / 1000000000.0))) << 24) | Mobile.lcduiTextColor);
+		} 
+		else { graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiTextColor); }
 		graphics.drawLine(0, height-barHeight, width, height-barHeight);
 		graphics.drawLine(width/2, height-barHeight, width/2, height);
+
+		// Command text drawing
+		int textCenter;
+		int xPos;
 
 		String label = softLabels[0] != null ? softLabels[0] : "";
 		textCenter = (graphics.getGraphics2D().getFontMetrics().stringWidth(label))/2;

@@ -59,6 +59,7 @@ public abstract class Displayable
 
 	public void addCommand(Command cmd)
 	{
+		MobilePlatform.showCommandBar();
 		if(commands.contains(cmd)) { return; }
 		if(cmd == null) { throw new NullPointerException("Cannot insert a null command"); }
 		synchronized(commands) { commands.add(cmd); }
@@ -67,6 +68,7 @@ public abstract class Displayable
 
 	public void removeCommand(Command cmd) 
 	{
+		MobilePlatform.showCommandBar();
 		if(cmd == null) { return; }
 		synchronized(commands) { commands.remove(cmd); }
 		_invalidate(); 

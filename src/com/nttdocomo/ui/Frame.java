@@ -17,6 +17,7 @@
 package com.nttdocomo.ui;
 
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 import org.recompile.mobile.PlatformImage;
 
 public abstract class Frame
@@ -54,6 +55,7 @@ public abstract class Frame
 
     public void setSoftLabel(int key, String label) 
     {
+        MobilePlatform.showCommandBar();
         if (key != SOFT_KEY_1 && key != SOFT_KEY_2) { throw new IllegalArgumentException("Invalid soft key number."); }
         softLabels[key] = label;
     }

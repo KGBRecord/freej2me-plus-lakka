@@ -70,6 +70,10 @@ public class MobilePlatform
 	private long lastFpsTime = System.nanoTime();
     private int fps = 0;
 
+	// Canvas command bar focus
+	public static boolean focusCommandBar = true;
+	public static long timeToUnfocus = 3000000000L; // Command bar is visible for 3 seconds
+
 	public static boolean isLibretro = false;
 
 	public MIDletLoader loader;
@@ -469,14 +473,29 @@ public class MobilePlatform
 				}
 				else if (key == Canvas.KEY_SOFT_LEFT) 
 				{
-					displayable.doLeftCommand();
-					displayable.currentCommand = 0;
+					if(!focusCommandBar) 
+					{
+						showCommandBar();
+					}
+					else 
+					{
+						showCommandBar();
+						displayable.doLeftCommand();
+						displayable.currentCommand = 0;
+					}
 				}
 				else if (key == Canvas.KEY_SOFT_RIGHT) 
 				{
-					displayable.listCommands = false;
-					displayable.doRightCommand();
-					displayable.currentCommand = 0;
+					if(!focusCommandBar) 
+					{
+						showCommandBar();
+					}
+					else 
+					{
+						showCommandBar();
+						displayable.doRightCommand();
+						displayable.currentCommand = 0;
+					}
 				}
 
 				displayable._invalidate(); 
@@ -488,11 +507,27 @@ public class MobilePlatform
 				{
 					if (key == Canvas.KEY_SOFT_LEFT) 
 					{
-						displayable.doLeftCommand();
+						if(!focusCommandBar) 
+						{
+							showCommandBar();
+						}
+						else 
+						{
+							showCommandBar();
+							displayable.doLeftCommand();
+						}
 					} 
 					else if (key == Canvas.KEY_SOFT_RIGHT) 
 					{
-						displayable.doRightCommand();
+						if(!focusCommandBar) 
+						{
+							showCommandBar();
+						}
+						else 
+						{
+							showCommandBar();
+							displayable.doRightCommand();
+						}
 					}
 				}
 			}
@@ -713,9 +748,15 @@ public class MobilePlatform
 		if(!Mobile.isPaused) 
 		{
 			gc.flushGraphics(img, x, y, width, height);
-		
+
 			if(!showFPS.equals("Off")) { showFPS();}
 			painter.run();
+
+			if(focusCommandBar) 
+			{
+				timeToUnfocus -= (System.nanoTime()-lastRenderTime);
+				if(timeToUnfocus <= 0) { focusCommandBar = false; }
+			}
 		}
 	}
 
@@ -783,4 +824,10 @@ public class MobilePlatform
 	}
 
 	public void setShowFPS(String show) { showFPS = show; }
+
+	public static void showCommandBar() 
+	{
+		focusCommandBar = true;
+		timeToUnfocus = 3000000000L;
+	}
 }
