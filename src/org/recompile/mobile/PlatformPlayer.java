@@ -1757,7 +1757,12 @@ public class PlatformPlayer implements Player
 				else if (eventType == ToneControl.SET_VOLUME) 
 				{
 					noteVolume = sequence[index++];
-					try { track.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 7, noteVolume), currentTick)); }
+					try 
+					{ 
+						ShortMessage volumeMessage = new ShortMessage();
+						volumeMessage.setMessage(ShortMessage.CONTROL_CHANGE, 0, 7, noteVolume);
+						track.add(new MidiEvent(volumeMessage, currentTick)); 
+					}
 					catch (InvalidMidiDataException e) {Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Invalid SET_VOLUME event: " + e.getMessage());}
 				}
 				else if(eventType == ToneControl.TEMPO) 

@@ -52,12 +52,20 @@ public class DualTone
 			Track trackB = midiSequence.createTrack();
 
 			// Like siemens' MelodyComposer, use a square wave instrument here.
-			trackA.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1), 0)); // Bank change MSB (Bank 1)
-			trackA.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0), 1)); // Bank change LSB
-			trackA.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0), 0));
-			trackB.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1), 0)); // Bank change MSB (Bank 1)
-			trackB.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0), 1)); // Bank change LSB
-			trackB.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0), 0));
+			ShortMessage bankMSB = new ShortMessage();
+			ShortMessage bankLSB = new ShortMessage();
+			ShortMessage programChange = new ShortMessage();
+
+			bankMSB.setMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1); // Bank change MSB (Bank 1)
+			bankLSB.setMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0); // Bank change LSB
+			programChange.setMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0); // 80 is the Square Wave / Lead 1 instrument, which we'll use to get closer to what this should sound like
+
+			trackA.add(new MidiEvent(bankMSB, 0));
+			trackA.add(new MidiEvent(bankLSB, 1));
+			trackA.add(new MidiEvent(programChange, 0));
+			trackB.add(new MidiEvent(bankMSB, 0));
+			trackB.add(new MidiEvent(bankLSB, 1));
+			trackB.add(new MidiEvent(programChange, 0));
 
 			// Start from tick 0, and move onwards after reading each note pair's duration.
             long currentTick = 0;

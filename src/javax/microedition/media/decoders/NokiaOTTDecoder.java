@@ -80,9 +80,17 @@ public class NokiaOTTDecoder
 			// Create a new sequence and track for the converted tone
 			Sequence sequence = new Sequence(Sequence.PPQ, 24);
 			Track track = sequence.createTrack();
-			track.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1), 0)); // Bank change MSB (Bank 1)
-			track.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0), 1)); // Bank change LSB
-			track.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0), 0)); // 80 is the Square Wave / Lead 1 instrument, which we'll use to get closer to what this should sound like
+			ShortMessage bankMSB = new ShortMessage();
+			ShortMessage bankLSB = new ShortMessage();
+			ShortMessage programChange = new ShortMessage();
+
+			bankMSB.setMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1); // Bank change MSB (Bank 1)
+			bankLSB.setMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0); // Bank change LSB
+			programChange.setMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0); // 80 is the Square Wave / Lead 1 instrument, which we'll use to get closer to what this should sound like
+
+			track.add(new MidiEvent(bankMSB, 0));
+			track.add(new MidiEvent(bankLSB, 1));
+			track.add(new MidiEvent(programChange, 0));
 		
 			// Validate command length
 			int commandLength = readBits(8); // Command Length is 8 bits, so get them from the bit array.
@@ -319,18 +327,33 @@ public class NokiaOTTDecoder
 			{
 				if(noteStyle == STACCATO_STYLE) // Simulate shorter notes for a subtle staccato effect by making NOTE_OFF end before the next note's NOTE_ON
 				{
-					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
-					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick + (int) (ticks * 0.70f) )); // NOTE_OFF
+					ShortMessage noteOn = new ShortMessage();
+					noteOn.setMessage(ShortMessage.NOTE_ON, 0, midiNote, 93);
+					track.add(new MidiEvent(noteOn, curTick));
+
+					ShortMessage noteOff = new ShortMessage();
+					noteOff.setMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0);
+					track.add(new MidiEvent(noteOff, curTick + (int) (ticks * 0.70f)));
 				}
 				else if (noteStyle == CONTINUOUS_STYLE) // Try to add a small overlap between notes to connect them a bit better, making NOTE_OFF go a bit beyond the next note's NOTE_ON
 				{
-					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
-					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick+ (int) (ticks * 1.1f) )); // NOTE_OFF
+					ShortMessage noteOn = new ShortMessage();
+					noteOn.setMessage(ShortMessage.NOTE_ON, 0, midiNote, 93);
+					track.add(new MidiEvent(noteOn, curTick));
+					
+					ShortMessage noteOff = new ShortMessage();
+					noteOff.setMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0);
+					track.add(new MidiEvent(noteOff, curTick + (int) (ticks * 1.1f)));
 				}
 				else // NATURAL just adds notes as is.
 				{
-					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, 93), curTick)); // NOTE_ON
-					track.add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0), curTick+ticks)); // NOTE_OFF
+					ShortMessage noteOn = new ShortMessage();
+					noteOn.setMessage(ShortMessage.NOTE_ON, 0, midiNote, 93);
+					track.add(new MidiEvent(noteOn, curTick));
+					
+					ShortMessage noteOff = new ShortMessage();
+					noteOff.setMessage(ShortMessage.NOTE_OFF, 0, midiNote, 0);
+					track.add(new MidiEvent(noteOff, curTick+ticks));
 				}
 			}
 			
@@ -515,7 +538,12 @@ public class NokiaOTTDecoder
 		Mobile.log(Mobile.LOG_DEBUG, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Volume Instruction: " + volumeValue);
 
 		// Add a MIDI volume change event into the current tick position.
-		try { track.add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, 7, midiVolume), curTick)); } 
+		try 
+		{ 
+			ShortMessage volumeEvent = new ShortMessage();
+			volumeEvent.setMessage(ShortMessage.CONTROL_CHANGE, 0, 7, midiVolume);
+			track.add(new MidiEvent(volumeEvent, curTick));
+		} 
 		catch (InvalidMidiDataException e) { Mobile.log(Mobile.LOG_ERROR, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + "Error on volume change event:" + e.getMessage()); }
 	}
 	
