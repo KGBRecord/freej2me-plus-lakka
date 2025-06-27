@@ -69,7 +69,8 @@ import javax.microedition.media.Manager;
 /* SMAF decoding support */
 import javax.microedition.media.decoders.SMAFDecoder;
 /* IMA ADPCM WAV support */
-import javax.microedition.media.decoders.WavImaAdpcmDecoder;
+import javax.microedition.media.decoders.WAVTools;
+import javax.microedition.media.decoders.WAVImaADPCMDecoder;
 
 /* audio/mpeg support */
 import javazoom.jl.player.MPEGPlayer;
@@ -850,7 +851,7 @@ public class PlatformPlayer implements Player
 		{
 			if (pcmIndex < wavClips.length && wavClips[pcmIndex] != null) 
 			{
-				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); }
+				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); wavClips[i].flush(); }
 				wavClips[pcmIndex].setFramePosition(0);
 				wavClips[pcmIndex].start();
 			}
@@ -986,15 +987,15 @@ public class PlatformPlayer implements Player
 			try 
 			{
 				stream.mark(60);
-				wavHeaderData = WavImaAdpcmDecoder.readHeader(stream);
+				wavHeaderData = WAVTools.readHeader(stream);
 				stream.reset();
 
 				if(wavHeaderData[0] == 1) // standard PCM WAV
 				{
-					wavHeaderData = WavImaAdpcmDecoder.readHeader(stream);
+					wavHeaderData = WAVTools.readHeader(stream);
 					byte[] wavAudioData = new byte[stream.available()];
 					stream.read(wavAudioData, 0, stream.available());
-					tmpStream = WavImaAdpcmDecoder.upsample(wavAudioData, wavHeaderData[1], WavImaAdpcmDecoder.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4]);
+					tmpStream = WAVTools.upsample(wavAudioData, wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4]);
 				}
 				else if(wavHeaderData[0] == 7) // Microsoft GSM
 				{
@@ -1002,12 +1003,12 @@ public class PlatformPlayer implements Player
 				}
 				else if(wavHeaderData[0] == 17) // IMA ADPCM
 				{
-					tmpStream = WavImaAdpcmDecoder.decodeImaAdpcm(stream, wavHeaderData);
+					tmpStream = WAVImaADPCMDecoder.decodeImaAdpcm(stream, wavHeaderData);
 
 					if(Mobile.minLogLevel == Mobile.LOG_DEBUG) /* Print the decoded stream's header for analysis */
 					{
 						InputStream headerRead = new ByteArrayInputStream(tmpStream);
-						WavImaAdpcmDecoder.readHeader(headerRead);
+						WAVTools.readHeader(headerRead);
 						headerRead = null;
 					}
 				}
@@ -1015,7 +1016,7 @@ public class PlatformPlayer implements Player
 				{
 					tmpStream = new byte[stream.available()];
 					stream.read(tmpStream, 0, stream.available());
-					WavImaAdpcmDecoder.buildHeader(tmpStream, (short) wavHeaderData[2], wavHeaderData[1], (short) 16); // Force it to the PCM wav type
+					WAVTools.buildHeader(tmpStream, (short) wavHeaderData[2], wavHeaderData[1], (short) 16); // Force it to the PCM wav type
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "WAV Format is " + wavHeaderData[0] + " Trying to load as PCM WAV.");
 				}
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prepare wav stream:" + e.getMessage());}
@@ -1075,6 +1076,7 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			wavClip.stop();
+			wavClip.flush();
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}

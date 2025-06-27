@@ -65,11 +65,7 @@ public abstract class GameCanvas extends Canvas
 		flushGraphics(0, 0, getWidth(), getHeight());
 	}
 
-	public int getKeyStates() // found in use
-	{
-		int t = MobilePlatform.keyState;
-		return t;
-	}
+	public int getKeyStates() { return MobilePlatform.keyState; }
 
 	@Override
 	public void doSizeChanged(int w, int h) { super.sizeChanged(w, h); }

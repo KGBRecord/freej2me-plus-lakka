@@ -594,9 +594,9 @@ public final class SMAFDecoder
         int mwaChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
         
         byte waveType = (byte) (input[decodePos++] & 0xFF);
-        byte channelType = (byte) ((waveType >> 4) & 0x01);
-        byte dataFormat = (byte) ((waveType >> 5) & 0x03);
-        byte baseBit = (byte) ((waveType >> 2) & 0x03);
+        byte channelType = (byte) ((waveType >> 7) & 0x01);
+        byte dataFormat = (byte) ((waveType >> 4) & 0x07);
+        byte baseBit = (byte) (waveType & 0x0F);
         byte samplingFreqMSB = (byte) (input[decodePos++] & 0xFF);
         byte samplingFreqLSB = (byte) (input[decodePos++] & 0xFF);
         short samplingFrequency = (short) (((samplingFreqMSB & 0xFF) << 8) | (samplingFreqLSB & 0xFF)); // I really doubt this will ever go over 48000Hz (hell, even 22050Hz since it's J2ME), so a short should suffice
@@ -609,8 +609,6 @@ public final class SMAFDecoder
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "baseBit: " + pcmBaseBits[baseBit]);
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "samplingFrequency: " + samplingFrequency);
 
-        
-        
         if(!((char) input[decodePos] == 'A' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R')) 
         {
             // We have no PCM Audio Track Chunk, prepare to parse and, if needed, decode the PCM data directly
@@ -620,22 +618,22 @@ public final class SMAFDecoder
 
             if(dataFormat == (byte) 0x00) // 2's complement PCM WAV
             {
-                if(baseBit == (byte) 0x00) { return WavImaAdpcmDecoder.convert4BitWav(waveData, channelType+1, samplingFrequency, true);}
-                if(baseBit == (byte) 0x01) { return WavImaAdpcmDecoder.convert8BitWav(waveData, channelType+1, samplingFrequency, true);}
-                if(baseBit == (byte) 0x02) { return WavImaAdpcmDecoder.convert12BitWav(waveData, channelType+1, samplingFrequency, true);}
-                if(baseBit == (byte) 0x03) { return WavImaAdpcmDecoder.convert16BitWav(waveData, channelType+1, samplingFrequency, true);}
+                if(baseBit == (byte) 0x00) { return WAVTools.convert4BitWav(waveData, channelType+1, samplingFrequency, true);}
+                if(baseBit == (byte) 0x01) { return WAVTools.convert8BitWav(waveData, channelType+1, samplingFrequency, true);}
+                if(baseBit == (byte) 0x02) { return WAVTools.convert12BitWav(waveData, channelType+1, samplingFrequency, true);}
+                if(baseBit == (byte) 0x03) { return WAVTools.convert16BitWav(waveData, channelType+1, samplingFrequency, true);}
             }
             else if(dataFormat == (byte) 0x01) // Binary Offset PCM WAV
             {
-                if(baseBit == (byte) 0x00) { return WavImaAdpcmDecoder.convert4BitWav(waveData, channelType+1, samplingFrequency, false);}
-                if(baseBit == (byte) 0x01) { return WavImaAdpcmDecoder.convert8BitWav(waveData, channelType+1, samplingFrequency, false);}
-                if(baseBit == (byte) 0x02) { return WavImaAdpcmDecoder.convert12BitWav(waveData, channelType+1, samplingFrequency, false);}
-                if(baseBit == (byte) 0x03) { return WavImaAdpcmDecoder.convert16BitWav(waveData, channelType+1, samplingFrequency, false);}
+                if(baseBit == (byte) 0x00) { return WAVTools.convert4BitWav(waveData, channelType+1, samplingFrequency, false);}
+                if(baseBit == (byte) 0x01) { return WAVTools.convert8BitWav(waveData, channelType+1, samplingFrequency, false);}
+                if(baseBit == (byte) 0x02) { return WAVTools.convert12BitWav(waveData, channelType+1, samplingFrequency, false);}
+                if(baseBit == (byte) 0x03) { return WAVTools.convert16BitWav(waveData, channelType+1, samplingFrequency, false);}
             } 
-            else if(dataFormat == (byte) 0x02) // YAMAHA ADPCM
+            else if(dataFormat == (byte) 0x02) // YAMAHA ADPCM (TODO: SMAF seems to only use ADPCM-B?)
             {
-                Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"PCM data uses YAMAHA ADPCM. Decoding for this is not implemented!");
-                return null;
+                Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"PCM data uses YAMAHA ADPCM. Decoding for this is not fully tested!");
+                return WAVYamahaADPCMDecoder.ADPCMBDecode(waveData, samplingFrequency, channelType+1);
             }
             else { Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Invalid PCM data format!"); return null;}
         }
