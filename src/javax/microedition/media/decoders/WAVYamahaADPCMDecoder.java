@@ -45,9 +45,9 @@ public class WAVYamahaADPCMDecoder
         -1, -1, -1, -1, 2, 5, 7, 9
     };
 
-    private static int clamp(int x, int low, int high) { return (x > high) ? high : (x < low) ? low : x; }
+    private static final int clamp(int x, int low, int high) { return (x > high) ? high : (x < low) ? low : x; }
 
-    private static int ADPCMAStep(int step, int[] history, int[] stepHist) 
+    private static final int ADPCMAStep(int step, int[] history, int[] stepHist) 
     {
         int stepSize = ADPCMA_STEP_TABLE[stepHist[0]];
         int delta = (DELTA_TABLE[step & 15] * stepSize) >> 3;
@@ -59,7 +59,7 @@ public class WAVYamahaADPCMDecoder
         return out;
     }
 
-    private static int ADPCMBStep(int step, int[] history, int[] stepSize) 
+    private static final int ADPCMBStep(int step, int[] history, int[] stepSize) 
     {
         int sign = step & 8;
         int delta = step & 7;
@@ -74,62 +74,53 @@ public class WAVYamahaADPCMDecoder
         return newval;
     }
 
-    public static byte[] ADPCMADecode(byte[] buffer, int originalSampleRate, int numChannels) 
+    public static final byte[] ADPCMADecode(byte[] buffer, int originalSampleRate, int numChannels) 
     {
         int[] history    = {0};
         int[] stepHist   = {0}; // Changed to int[] for consistency
-        byte[] outBuffer = new byte[buffer.length * 4]; // 4 bytes for each input byte (yamaha and ima adpcm goes from 4 bits to 16)
+        byte[] outBuffer = new byte[buffer.length * 4]; // 4 bytes for each input byte (yamaha and ima adpcm go from 4 bits to 16)
 
         int outputIndex = 0;
-        int inputIndex = 0;
-        byte nibble = 0;
 
-        for (int i = 0; i < buffer.length * 2; i++) 
+        for (int i = 0; i < buffer.length; i++) 
         {
-            // Extract the step based on the current nibble state
-            int step = (buffer[inputIndex] << nibble) >> 4; 
-            if (nibble == 4) { inputIndex++; }
-
-            // Decode the ADPCM sample
-            int decodedSample = ADPCMAStep(step & 0x0F, history, stepHist) << 4;
-
-            // Store the decoded sample in the output buffer
-            outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);       // LSB
+            // lower nibble
+            int step = (buffer[i] & 0x0F);
+            int decodedSample = ADPCMAStep(step, history, stepHist) << 4;
+            outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
 
-            // Toggle nibble state
-            nibble ^= 4;
+            // upper nibble
+            step = (buffer[i] >> 4) & 0x0F;
+            decodedSample = ADPCMAStep(step, history, stepHist) << 4;
+            outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
+            outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
         }
 
         return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16);
     }
 
-    public static byte[] ADPCMBDecode(byte[] buffer, int originalSampleRate, int numChannels) 
+    public static final byte[] ADPCMBDecode(byte[] buffer, int originalSampleRate, int numChannels) 
     {
         int[] history    = {0}; // History as an array for mutability
         int[] stepSize   = {127}; // Step size as an array for mutability
         byte[] outBuffer = new byte[buffer.length * 4]; // 4 bytes per input byte
 
-        int outputIndex = 0; // Index for the output buffer
-        int inputIndex = 0; // Track the input buffer index
-        byte nibble = 0; // Track which nibble to process
+        int outputIndex = 0;
 
-        for (int i = 0; i < buffer.length * 2; i++) 
+        for (int i = 0; i < buffer.length; i++) 
         {
-            // Extract the step based on the current nibble state
-            int step = (buffer[inputIndex] << nibble) >> 4;
-
-            if (nibble == 4) { inputIndex++; }
-
-            // Decode the ADPCM sample
-            int decodedSample = ADPCMBStep(step & 0x0F, history, stepSize);
-
-            // Store the decoded sample in the output buffer
-            outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);       // LSB
+            // lower nibble
+            int step = (buffer[i] & 0x0F);
+            int decodedSample = ADPCMBStep(step, history, stepSize);
+            outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
 
-            // Toggle nibble state
-            nibble ^= 4; // Toggle between 0 and 4
+            // upper nibble
+            step = (buffer[i] >> 4) & 0x0F;
+            decodedSample = ADPCMBStep(step, history, stepSize);
+            outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
+            outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
         }
 
         return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16);
