@@ -473,29 +473,15 @@ public class MobilePlatform
 				}
 				else if (key == Canvas.KEY_SOFT_LEFT) 
 				{
-					if(!focusCommandBar) 
-					{
-						showCommandBar();
-					}
-					else 
-					{
-						showCommandBar();
-						displayable.doLeftCommand();
-						displayable.currentCommand = 0;
-					}
+					showCommandBar();
+					displayable.doLeftCommand();
+					displayable.currentCommand = 0;
 				}
 				else if (key == Canvas.KEY_SOFT_RIGHT) 
 				{
-					if(!focusCommandBar) 
-					{
-						showCommandBar();
-					}
-					else 
-					{
-						showCommandBar();
-						displayable.doRightCommand();
-						displayable.currentCommand = 0;
-					}
+					showCommandBar();
+					displayable.doRightCommand();
+					displayable.currentCommand = 0;
 				}
 
 				displayable._invalidate(); 
@@ -507,27 +493,13 @@ public class MobilePlatform
 				{
 					if (key == Canvas.KEY_SOFT_LEFT) 
 					{
-						if(!focusCommandBar) 
-						{
-							showCommandBar();
-						}
-						else 
-						{
-							showCommandBar();
-							displayable.doLeftCommand();
-						}
+						showCommandBar();
+						displayable.doLeftCommand();
 					} 
 					else if (key == Canvas.KEY_SOFT_RIGHT) 
 					{
-						if(!focusCommandBar) 
-						{
-							showCommandBar();
-						}
-						else 
-						{
-							showCommandBar();
-							displayable.doRightCommand();
-						}
+						showCommandBar();
+						displayable.doRightCommand();
 					}
 				}
 			}
