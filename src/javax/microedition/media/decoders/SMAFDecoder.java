@@ -51,8 +51,6 @@ public final class SMAFDecoder
     private static byte formatType = 0;
     private static byte handyChannelIdx = 0;
 
-    private static byte defaultVelocity = 64;
-
     private static byte TimeBase_D;
     private static byte TimeBase_G;
 
@@ -148,6 +146,7 @@ public final class SMAFDecoder
     public static List<InputStream> pcmData = null;
     public static InputStream SequenceData = null;
     public static Map<Integer, Integer> pcmDataPositions = new HashMap<Integer, Integer>();
+    public static Map<Integer, Integer> pcmDataVelocities = new HashMap<Integer, Integer>();
 
     public static synchronized void decodeSMAF(byte[] data)
 	{
@@ -167,6 +166,7 @@ public final class SMAFDecoder
         SequenceData = null;
         pcmData = new ArrayList<InputStream>();
         pcmDataPositions.clear();
+        pcmDataVelocities.clear();
 
         input = data;
 
@@ -897,7 +897,7 @@ public final class SMAFDecoder
                     // Create MIDI note event
                     Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note event " + noteTypes[noteNumber] + (4+octave+channelData[channel].octaveShift) + " to channel " + channel);
                     ShortMessage noteOn = new ShortMessage();
-                    noteOn.setMessage(ShortMessage.NOTE_ON, channel, midiNoteNumber, defaultVelocity);
+                    noteOn.setMessage(ShortMessage.NOTE_ON, channel, midiNoteNumber, channelData[channel].velocity);
                     midiEvent = new MidiEvent(noteOn, totalDuration);
                     channels[channel].add(midiEvent); // Add the note event to the corresponding channel
 
@@ -999,6 +999,7 @@ public final class SMAFDecoder
                             {
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value " + noteNumber + " to channel " + channel + " at duration " + totalDuration);
                                 pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
+                                pcmDataVelocities.put(totalDuration+gateTime, (int) channelData[channel].velocity);
                             }
                             else { Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + channel); }
                             
@@ -1042,8 +1043,9 @@ public final class SMAFDecoder
                             
                             if(noteNumber < 20)
                             {
-                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value" + noteNumber + " with new velocity to channel " + channel + " at duration " + totalDuration);
+                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value" + noteNumber + " with new velocity " + channelData[channel].velocity + " to channel " + channel + " at duration " + totalDuration);
                                 pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
+                                pcmDataVelocities.put(totalDuration+gateTime, (int) channelData[channel].velocity);
                             }
                             else { Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " with new velocity to channel " + channel); }
                             
@@ -1220,9 +1222,8 @@ public final class SMAFDecoder
 
 class ChannelData 
 {
-    public byte keyControl, channelType;
     public boolean keyControlBasic, led, vibStatus, usingDrumBank;
-    public byte octaveShift, velocity;
+    public byte keyControl, channelType, octaveShift, velocity;
 
     ChannelData() 
     {
@@ -1232,7 +1233,7 @@ class ChannelData
         vibStatus = false;
         octaveShift = 0;
         usingDrumBank = false;
-        velocity = 0;
+        velocity = 64; // Default SMAF channel velocity is 64
     }
 }
 

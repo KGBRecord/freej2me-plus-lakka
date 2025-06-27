@@ -172,7 +172,7 @@ public class PlatformPlayer implements Player
 									}
 								}
 							}
-							player = new SMAFPlayer(SMAFDecoder.SequenceData, SMAFDecoder.pcmData.toArray(new InputStream[0]), new HashMap<Integer, Integer>(SMAFDecoder.pcmDataPositions));
+							player = new SMAFPlayer(SMAFDecoder.SequenceData, SMAFDecoder.pcmData.toArray(new InputStream[0]), new HashMap<Integer, Integer>(SMAFDecoder.pcmDataPositions), new HashMap<Integer, Integer>(SMAFDecoder.pcmDataVelocities));
 						}
 						else { player = new audioplayer(); disableControls = true; } // Somehow the SMAF decoder failed, retrieve a stub player
 						
@@ -721,9 +721,9 @@ public class PlatformPlayer implements Player
 		private boolean isPlaying = false;
 		private AudioInputStream[] wavStreams = null;
 		private Clip[] wavClips = null;
-		private Map<Integer, Integer> pcmPositions;
+		private Map<Integer, Integer> pcmPositions, pcmVelocities;
 
-		public SMAFPlayer(InputStream midiStream, InputStream[] wavStreams, Map<Integer, Integer> pcmPositions)
+		public SMAFPlayer(InputStream midiStream, InputStream[] wavStreams, Map<Integer, Integer> pcmPositions, Map<Integer, Integer> pcmVelocities)
 		{
 			try 
 			{
@@ -732,6 +732,7 @@ public class PlatformPlayer implements Player
 				{
 					this.wavStreams = new AudioInputStream[wavStreams.length];
 					this.pcmPositions = pcmPositions;
+					this.pcmVelocities = pcmVelocities;
 					wavClips = new Clip[wavStreams.length];
 					for(int i = 0; i < wavStreams.length; i++) 
 					{
@@ -836,7 +837,7 @@ public class PlatformPlayer implements Player
 					if (position < mediaTime && !playedPositions.contains(position)) 
 					{
 						int pcmIndex = pcmPositions.get(position);
-						playPcmStream(pcmIndex);
+						playPcmStream(pcmIndex, pcmVelocities.get(position));
 						playedPositions.add(position); // Mark this position as played, otherwise it'll repeat when it shouldn't
 					}
 				}
@@ -847,11 +848,21 @@ public class PlatformPlayer implements Player
 			}
 		}
 
-		private void playPcmStream(int pcmIndex) 
+		private void playPcmStream(int pcmIndex, int velocity) 
 		{
 			if (pcmIndex < wavClips.length && wavClips[pcmIndex] != null) 
 			{
 				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); wavClips[i].flush(); }
+
+				// Set volume based on matched "velocity" value
+				FloatControl volumeControl = (FloatControl) wavClips[pcmIndex].getControl(FloatControl.Type.MASTER_GAIN);
+				
+				// Calculate volume based on velocity
+				float dB = -30.0f + ((velocity / 100.0f) * (30.0f));
+								
+				// Set the volume
+				volumeControl.setValue(dB);
+
 				wavClips[pcmIndex].setFramePosition(0);
 				wavClips[pcmIndex].start();
 			}
@@ -1578,8 +1589,8 @@ public class PlatformPlayer implements Player
 			{
 				wavPlayer wav = (wavPlayer) player;
 
-				/* We have to map 0 <= value <= 100 to a clip's range of -20dB to 0dB  */
-				float dB = isMuted() ? -80.0f : -20.0f + ((level / 100.0f) * (20.0f));
+				/* We have to map 0 <= value <= 100 to a clip's range of -30dB to 0dB  */
+				float dB = isMuted() ? -80.0f : -30.0f + ((level / 100.0f) * (30.0f));
 
 				FloatControl volumeControl = (FloatControl) wav.wavClip.getControl(FloatControl.Type.MASTER_GAIN);
 				volumeControl.setValue(dB);
