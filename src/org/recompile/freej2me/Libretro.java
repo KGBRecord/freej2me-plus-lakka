@@ -26,6 +26,7 @@ import java.util.TimerTask;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLDecoder;
 
 import javax.microedition.midlet.MIDlet;
 
@@ -288,7 +289,7 @@ public class Libretro
 
 									path = new String(buffer, 0, bytesRead, "UTF-8");
 
-									if(Mobile.getPlatform().load(getFormattedLocation(path.toString())))
+									if(Mobile.getPlatform().load(getFormattedLocation(URLDecoder.decode(path.toString(), Mobile.textEncoding))))
 									{
 										// Check config
 										Mobile.config.init();

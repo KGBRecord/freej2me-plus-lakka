@@ -954,8 +954,6 @@ public class Mobile
 
 			String jarPath = platform.fileName.replace("file:", "");
 
-			jarPath = URLDecoder.decode(jarPath, textEncoding);
-
 			if(!MobilePlatform.isLibretro)
 			{
 				String[] commands = new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath};

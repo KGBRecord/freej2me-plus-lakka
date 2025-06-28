@@ -49,6 +49,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -298,7 +299,8 @@ public class FreeJ2ME
 
 		if(args.length>=1) // Only now we can load the jar passed as argument
 		{
-			awtGUI.loadJarFile(getFormattedLocation(args[0]));
+			try { awtGUI.loadJarFile(getFormattedLocation(URLDecoder.decode(args[0], Mobile.textEncoding))); }
+			catch(Exception e) { }
 		}
 
 		/* Inputs should only be registered if a jar has been loaded, otherwise AWT will throw NullPointerException */

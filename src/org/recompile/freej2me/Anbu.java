@@ -80,6 +80,7 @@ import static io.github.libsdl4j.api.keycode.SDL_Keycode.*; // We can import all
 import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -131,7 +132,8 @@ public class Anbu
 
 		if(args.length>=1)
 		{
-			file = getFormattedLocation(args[0]);
+			try { file = getFormattedLocation(URLDecoder.decode(args[0], Mobile.textEncoding)); }
+			catch(Exception e) { }
 			Mobile.log(Mobile.LOG_DEBUG, Anbu.class.getPackage().getName() + "." + Anbu.class.getSimpleName() + ": " + file);
 		}
 		if(args.length>=3)
