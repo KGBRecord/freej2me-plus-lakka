@@ -17,6 +17,7 @@
 package javax.microedition.media.decoders;
 
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -177,7 +178,7 @@ public class WAVTools
 	 * Builds a WAV header that describes the decoded ADPCM file on the first 44 bytes. 
 	 * Data: little-endian, 16-bit, signed, same sample rate and channels as source IMA ADPCM.
 	 */
-	public static final void buildHeader(byte[] buffer, final short numChannels, final int sampleRate, final short numBits) 
+	public static final void buildHeader(byte[] buffer, final short numChannels, final int sampleRate, final short numBits, final int sampleDataLength) 
 	{ 
 		final short bitsPerSample = numBits;   /* 16-bit or 8-bit PCM */
 		final short audioFormat = 1;           /* WAV linear PCM */
@@ -188,23 +189,10 @@ public class WAVTools
 		final int subChunk2 = 0x64617461;      /* 'data' */ 
 
 		/* 
-		 * We'll have 16 bits per sample, so each sample has 2 bytes, with that we just divide
-		 * the size of the byte buffer (minus the header) by (bitsPerSample/8) times the amount of channels.
-		*/
-		final int samplesPerChannel = (buffer.length - PCMHEADERSIZE) / ((bitsPerSample / 8) * numChannels);
-
-		/* 
 		 * Frame size is fairly standard, and PCM's fixed sample size makes it so the frameSize is either 2 bytes 
 		 * for mono, or 4 bytes for stereo.
 		 */
 		final short frameSize = (short) (numChannels * (bitsPerSample / 8));
-
-		/* 
-		 * Previously only took into account mono streams. And since we know the framesize and
-		 * the amount of samples per channel, in a format that has a fixed amount of bits per sample,
-		 * we can account for multiple audio channels on sampleDataLength with a simpler calculus:
-		 */
-		final int sampleDataLength = (samplesPerChannel * numChannels) * frameSize;
 
 		/* 
 		 * Represents how many bytes are streamed per second. With all of the data above, it's trivial to
@@ -212,9 +200,9 @@ public class WAVTools
 		 */
 		final int bytesPerSec = sampleRate * numChannels * (bitsPerSample / 8);
 		
-		/* NOTE: ChunkSize includes the header, so sampleDataLength + 44, which is the byte size of our header */
+		/* NOTE: ChunkSize is the total file size - 8 bytes */
 		writeIntBE(buffer, 0, chunk);                 // ChunkID
-		writeIntLE(buffer, 4, sampleDataLength + 36); // ChunkSize
+		writeIntLE(buffer, 4, buffer.length - 8);     // ChunkSize
 		writeIntBE(buffer, 8, format);                // Format
 		writeIntBE(buffer, 12, subChunk1);            // SubchunkID (fmt)
 		writeIntLE(buffer, 16, subChunkSize);         // SubchunkSize
@@ -278,28 +266,24 @@ public class WAVTools
 		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 8);
 	}
 
-	// This one pretty much just converts from binary offset to 2's complement if needed, and builds a header
+	// This one pretty much just converts from 2's complement to binary offset if needed, and builds a header (8-bit wav are unsigned binary offset instead of signed 2's complement like 16+ bits)
 	public static final byte[] convert8BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
 	{
-		byte[] convertedWav = new byte[input.length];
-
-		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 8);
-
-		for (int i = 0; i < input.length; i++) 
+		if (is2Complement) 
 		{
-			if (is2Complement) { convertedWav[i] = (byte) (input[i] ^ 0x80); } 
-			else { convertedWav[i] = (byte) (input[i]); }
+			for (int i = 0; i < input.length; i++) 
+			{
+				input[i] = (byte) (input[i] ^ 0x80);
+			}
 		}
-
-		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 8);
+		
+		return upsample(input, sampleRate, hostSampleRate, (short) numChannels, (short) 8);
 	}
 
 	// TODO: Does this kind of WAV even exist?
 	public static final byte[] convert12BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
 	{
 		byte[] convertedWav = new byte[(int)(1.5 * input.length) + 1]; // Add an extra byte for safety
-
-		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 16);
 
 		for (int i = 0; i < input.length / 3; i++) 
 		{
@@ -326,14 +310,12 @@ public class WAVTools
 	{
 		byte[] convertedWav = new byte[input.length];
 
-		buildHeader(convertedWav, (short) numChannels, sampleRate, (short) 16);
-
 		for (int i = 0; i < input.length / 2; i++) 
 		{
 			int sampleIndex = i * 2;
 			short sample = (short) ((input[sampleIndex] & 0xFF) | (input[sampleIndex + 1] << 8));
 
-			if (is2Complement) { sample ^= 0x8000; }
+			if (!is2Complement) { sample ^= 0x8000; }
 
 			convertedWav[sampleIndex] = (byte) (sample & 0xFF);
 			convertedWav[sampleIndex + 1] = (byte) ((sample >> 8) & 0xFF);
@@ -344,12 +326,30 @@ public class WAVTools
 
 	public static byte[] upsample(byte[] input, int originalSampleRate, int newSampleRate, short numChannels, short numBits) 
 	{
-		int inputLength = input.length, paddedSamples = 0;
-		int newLength = (int) ((inputLength * (double) newSampleRate) / originalSampleRate);
-		byte[] upsampled = new byte[PCMHEADERSIZE + newLength]; // Allocate for header + upsampled audio data
+		int inputLength = input.length;
 
-		buildHeader(upsampled, numChannels, newSampleRate, numBits);
-		
+		// Check and remove any padding bytes before upsampling
+		for(int i = input.length-1; i >= 0; i--) 
+		{
+			if(input[i] == 0) { inputLength--; }
+			else { break; } // No more padding bytes found, so break early
+		}
+
+		int newLength = (int) (inputLength * ((double) newSampleRate / originalSampleRate));
+		byte[] upsampled;
+
+		// No upsampling needed, just prepend a header to the data (this method is used as the final output of other PCM decoders)
+		if(originalSampleRate == newSampleRate)
+		{
+			upsampled = new byte[PCMHEADERSIZE + newLength];
+			System.arraycopy(input, 0, upsampled, PCMHEADERSIZE, newLength);
+			buildHeader(upsampled, numChannels, newSampleRate, numBits, newLength);
+
+			return upsampled;
+		}
+
+		upsampled = new byte[PCMHEADERSIZE + newLength]; // Allocate for header + upsampled audio data
+
 		double ratio = (double) originalSampleRate / newSampleRate;
 
 		// Upsample the audio data based on how many bits per sample it has
@@ -380,6 +380,8 @@ public class WAVTools
 			}
 		}
 
+		buildHeader(upsampled, numChannels, newSampleRate, numBits, newLength);
+		
 		return upsampled;
 	}
 

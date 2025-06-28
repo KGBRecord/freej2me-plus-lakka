@@ -1027,7 +1027,6 @@ public class PlatformPlayer implements Player
 				{
 					tmpStream = new byte[stream.available()];
 					stream.read(tmpStream, 0, stream.available());
-					WAVTools.buildHeader(tmpStream, (short) wavHeaderData[2], wavHeaderData[1], (short) 16); // Force it to the PCM wav type
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "WAV Format is " + wavHeaderData[0] + " Trying to load as PCM WAV.");
 				}
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prepare wav stream:" + e.getMessage());}
