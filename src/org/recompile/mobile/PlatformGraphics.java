@@ -463,13 +463,13 @@ public abstract class PlatformGraphics implements DirectGraphics
 		// Directly manipulate the canvasData
 		for (int j = 0; j < height; j++) // The array's x and y positions start from 0, as the offset is what dictates where the data should start being read from
 		{
-			if ((y + j - getTranslateY()) < clipY || (y + j - getTranslateY()) >= clipHeight) { continue; }
+			if ((y + j - getTranslateY()) < clipY || (y + j - getTranslateY()) >= clipHeight || (y + j) >= canvas.getHeight()) { continue; }
 			rowOffset = offset + (j * scanlength); // Calculate the starting index for the current row
 			destRow = (y + j) * canvasWidth;
 	
 			for (int i = 0; i < width; i++)
 			{
-				if ((x + i - getTranslateX()) < clipX || (x + i - getTranslateX()) >= clipWidth) { continue; }
+				if ((x + i - getTranslateX()) < clipX || (x + i - getTranslateX()) >= clipWidth || (x + i) >= canvasWidth) { continue; }
 
 				pixelIndex = rowOffset + i; // Source index in rgbData
 				destIndex = destRow + x + i;
