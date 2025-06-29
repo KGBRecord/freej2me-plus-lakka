@@ -859,7 +859,8 @@ public class PlatformPlayer implements Player
 				
 				// Calculate volume based on velocity
 				float dB = -30.0f + ((velocity / 100.0f) * (30.0f));
-								
+				
+				if(dB > 6.0f) { dB = 6.0f; }
 				// Set the volume
 				volumeControl.setValue(dB);
 
