@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.recompile.mobile.Mobile;
 
-public final class WAVImaADPCMDecoder // TODO: YAMAHA ADPCM
+public final class WAVImaADPCMDecoder
 {
 
 	/* Information about this audio format: https://wiki.multimedia.cx/index.php/IMA_ADPCM */
@@ -73,7 +73,6 @@ public final class WAVImaADPCMDecoder // TODO: YAMAHA ADPCM
 		byte curChannel;
 		int inputIndex = 0, outputIndex = 0;
 		short decodedSample;
-		boolean hasMalformedBlock = false;
 
 		if(numChannels == 2) { Mobile.log(Mobile.LOG_WARNING, WAVImaADPCMDecoder.class.getPackage().getName() + "." + WAVImaADPCMDecoder.class.getSimpleName() + ": " + "Stereo IMA ADPCM decoding is untested.");  }
 
@@ -82,8 +81,7 @@ public final class WAVImaADPCMDecoder // TODO: YAMAHA ADPCM
 		 * data into a single one, with 44 additional bytes in place to accomodate for the new header that will be created afterwards.
 		 *
 		 * For this reason, make it so the initial size for output is 4 times the size of the ADPCM input + the space required for the
-		 * header it will have. In case of malformed headers or preamble reads, we'll just have to subtract its size based on the point 
-		 * that the outputIndex has stopped when doing the Arrays.copyOf() call, and a few extra adjustments.
+		 * header it will have.
 		 */
 		final byte[] output = new byte[inputSize * 4];
 
@@ -115,13 +113,6 @@ public final class WAVImaADPCMDecoder // TODO: YAMAHA ADPCM
 				 * use for us.
 				 */
 
-				// Check byte 2 of the preamble beforehand and notify if there's any problem. If there is, we stop decoding as anything afterwards will be decoded into garbage.
-				if((input[inputIndex + 2]) > 88 || (input[inputIndex + 2]) < 0) 
-				{ 
-					Mobile.log(Mobile.LOG_WARNING, WAVImaADPCMDecoder.class.getPackage().getName() + "." + WAVImaADPCMDecoder.class.getSimpleName() + ": " + "Malformed block header (Mono/L-Channel). Decoded stream might sound incorrect.");
-					hasMalformedBlock = true;
-					break;
-				}
 				/* Bytes 0 and 1 describe the chunk's initial predictor value (little-endian), clamp it even in case of issues such as to try and preserve the decoded stream's quality. */
 				predictedSample[LEFTCHANNEL] = (short) Math.max(Short.MIN_VALUE, Math.min(((input[inputIndex])) | ((input[inputIndex+1]) << 8), Short.MAX_VALUE));
 				/* Byte 2 is the chunk's initial index on the step_size_table. Clamp as well */
@@ -130,12 +121,6 @@ public final class WAVImaADPCMDecoder // TODO: YAMAHA ADPCM
 				
 				if (numChannels == 2) /* If we're dealing with stereo IMA ADPCM: */
 				{
-					if((input[inputIndex + 2]) > 88 || (input[inputIndex + 2]) < 0) 
-					{ 
-						Mobile.log(Mobile.LOG_WARNING, WAVImaADPCMDecoder.class.getPackage().getName() + "." + WAVImaADPCMDecoder.class.getSimpleName() + ": " + "Malformed block header (R-Channel). Decoded stream might sound incorrect.");
-						hasMalformedBlock = true;
-						break;
-					}
 					predictedSample[RIGHTCHANNEL] = (short) Math.max(Short.MIN_VALUE, Math.min(((input[inputIndex])) | ((input[inputIndex+1]) << 8), Short.MAX_VALUE));
 					tableIndex[RIGHTCHANNEL] = (byte) Math.max(0, Math.min(input[inputIndex+2], 88));
 					inputIndex += 4;
@@ -203,19 +188,7 @@ public final class WAVImaADPCMDecoder // TODO: YAMAHA ADPCM
 			}
 		}
 
-		/* Whenever a malformed block is found, there's a pretty good chance that the decoder has created at least 
-		 * a whole adpcm frame of garbage, which is framesize*4 in the PCM array's terms. Still, throw a reduction
-		 * of frameSize * 6 in its size to further reduce noise. However, this might cut a bit into the stream's
-		 * audio since we might skip a bit of it (hence why the message says it might sound incorrect)
-		*/
-		int malformedBlockCorrection = (frameSize * 6) * (hasMalformedBlock ? 1 : 0);
-
-		/* 
-		 * TODO: This is maybe inconsequential, but the decoder is leaving a bit of garbage at the end 
-		 * of the output even when correct (at max framesize*2, or half of a decoded PCM frame).
-		 * This unconditional framesize*2 reduction on the final array's size is a workaround for it.
-		 */
-		return Arrays.copyOf(output, outputIndex - frameSize*2 - malformedBlockCorrection);
+		return output;
 	}
 
 	/* This method will decode a single IMA ADPCM sample to linear PCM_S16LE sample. */
@@ -260,10 +233,10 @@ public final class WAVImaADPCMDecoder // TODO: YAMAHA ADPCM
 		/* Remove the header from the stream, we shouldn't "decode" it as if it was a sample */
 		stream.skip(IMAHEADERSIZE);
 
-		final byte[] input = new byte[stream.available()];
-		WAVTools.readInputStreamData(stream, input, 0, stream.available());
+		// wavHeaderData[5] contains the correct data length specified by the IMA header that may not match the file's size due to padding and alignment, which is why we use it instead of stream.available().
+		final byte[] input = new byte[wavHeaderData[5]];
+		WAVTools.readInputStreamData(stream, input, 0, wavHeaderData[5]);
 
-		return WAVTools.upsample(decodeADPCM(input, input.length, (short) wavHeaderData[2], wavHeaderData[3]), wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) 16);
+		return WAVTools.upsample(decodeADPCM(input, wavHeaderData[5], (short) wavHeaderData[2], wavHeaderData[3]), wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) 16);
 	}
 }
-

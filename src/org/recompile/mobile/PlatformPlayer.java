@@ -983,7 +983,7 @@ public class PlatformPlayer implements Player
 		private byte[] tmpStream;
 		private AudioInputStream wavStream;
 		private Clip wavClip;
-		private int[] wavHeaderData = new int[5];
+		private int[] wavHeaderData = new int[6];
 		private int numLoops = 0;
 		private LineListener lineListener = null;
 

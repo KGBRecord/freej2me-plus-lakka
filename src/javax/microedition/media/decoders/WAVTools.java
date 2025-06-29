@@ -140,7 +140,7 @@ public class WAVTools
 		 * We need the audio format to check if it's ADPCM or PCM, and the file's 
 		 * dataSize, SampleRate and audioChannels to decode ADPCM and build a new header. 
 		 */
-		return new int[] {audioFormat, sampleRate, audioChannels, frameSize, bitsPerSample};
+		return new int[] {audioFormat, sampleRate, audioChannels, frameSize, bitsPerSample, dataLen};
 	}
 
 	/* Read a 16-bit little-endian unsigned integer from input.*/
