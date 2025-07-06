@@ -237,6 +237,8 @@ public final class WAVImaADPCMDecoder
 		final byte[] input = new byte[wavHeaderData[5]];
 		WAVTools.readInputStreamData(stream, input, 0, wavHeaderData[5]);
 
-		return WAVTools.upsample(decodeADPCM(input, wavHeaderData[5], (short) wavHeaderData[2], wavHeaderData[3]), wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) 16);
+		byte[] decodedData = decodeADPCM(input, wavHeaderData[5], (short) wavHeaderData[2], wavHeaderData[3]);
+
+		return WAVTools.upsample(decodedData, wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) 16, decodedData.length);
 	}
 }

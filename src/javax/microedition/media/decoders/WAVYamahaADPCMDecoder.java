@@ -16,7 +16,7 @@
 */
 package javax.microedition.media.decoders;
 
-public class WAVYamahaADPCMDecoder 
+public final class WAVYamahaADPCMDecoder 
 {
 
     // Code adapted from https://github.com/superctr/adpcm, licensed as Public Domain
@@ -97,7 +97,7 @@ public class WAVYamahaADPCMDecoder
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
         }
 
-        return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16);
+        return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16, outBuffer.length);
     }
 
     public static final byte[] ADPCMBDecode(byte[] buffer, int originalSampleRate, int numChannels) 
@@ -123,6 +123,6 @@ public class WAVYamahaADPCMDecoder
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
         }
 
-        return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16);
+        return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16, outBuffer.length);
     }
 }

@@ -29,7 +29,7 @@ import javax.sound.sampled.SourceDataLine;
 
 import org.recompile.mobile.Mobile;
 
-public class WAVTools 
+public final class WAVTools 
 {
 
     private static final byte PCMHEADERSIZE = 44;
@@ -216,7 +216,7 @@ public class WAVTools
 		writeIntLE(buffer, 40, sampleDataLength);     // Subchunk2 Size
 	}
 
-	private static void writeIntLE(byte[] buffer, int index, int value) 
+	private static final void writeIntLE(byte[] buffer, int index, int value) 
 	{
 		buffer[index] = (byte) (value & 0xFF);
 		buffer[index + 1] = (byte) ((value >> 8) & 0xFF);
@@ -225,7 +225,7 @@ public class WAVTools
 	}
 
 	// A few of the header fields are big endian
-	private static void writeIntBE(byte[] buffer, int index, int value) 
+	private static final void writeIntBE(byte[] buffer, int index, int value) 
 	{
 		buffer[index] = (byte) ((value >> 24) & 0xFF);
 		buffer[index + 1] = (byte) ((value >> 16) & 0xFF);
@@ -233,7 +233,7 @@ public class WAVTools
 		buffer[index + 3] = (byte) (value & 0xFF);
 	}
 
-	private static void writeShort(byte[] buffer, int index, short value) 
+	private static final void writeShort(byte[] buffer, int index, short value) 
 	{
 		buffer[index] = (byte) (value & 0xFF);
 		buffer[index + 1] = (byte) ((value >> 8) & 0xFF);
@@ -263,7 +263,7 @@ public class WAVTools
 			convertedWav[i * 2 + 1] = (byte) (lowerNibble < 8 ? lowerNibble * 17 : (lowerNibble - 8) * 17);
 		}
 
-		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 8);
+		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 8, convertedWav.length);
 	}
 
 	// This one pretty much just converts from 2's complement to binary offset if needed, and builds a header (8-bit wav are unsigned binary offset instead of signed 2's complement like 16+ bits)
@@ -277,7 +277,7 @@ public class WAVTools
 			}
 		}
 		
-		return upsample(input, sampleRate, hostSampleRate, (short) numChannels, (short) 8);
+		return upsample(input, sampleRate, hostSampleRate, (short) numChannels, (short) 8, input.length);
 	}
 
 	// TODO: Does this kind of WAV even exist?
@@ -303,7 +303,7 @@ public class WAVTools
 				convertedWav[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
 			}
 		}
-		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 16);
+		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 16, convertedWav.length);
 	}
 
 	public static final byte[] convert16BitWav(byte[] input, int numChannels, int sampleRate, boolean is2Complement) 
@@ -321,20 +321,11 @@ public class WAVTools
 			convertedWav[sampleIndex + 1] = (byte) ((sample >> 8) & 0xFF);
 		}
 
-		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 16);
+		return upsample(convertedWav, sampleRate, hostSampleRate, (short) numChannels, (short) 16, convertedWav.length);
 	}
 
-	public static byte[] upsample(byte[] input, int originalSampleRate, int newSampleRate, short numChannels, short numBits) 
+	public static final byte[] upsample(byte[] input, int originalSampleRate, int newSampleRate, short numChannels, short numBits, int inputLength) 
 	{
-		int inputLength = input.length;
-
-		// Check and remove any padding bytes before upsampling
-		for(int i = input.length-1; i >= 0; i--) 
-		{
-			if(input[i] == 0) { inputLength--; }
-			else { break; } // No more padding bytes found, so break early
-		}
-
 		int newLength = (int) (inputLength * ((double) newSampleRate / originalSampleRate));
 		byte[] upsampled;
 
@@ -385,7 +376,7 @@ public class WAVTools
 		return upsampled;
 	}
 
-	public static int getDefaultAudioSampleRate() 
+	public static final int getDefaultAudioSampleRate() 
 	{
 		Mixer.Info[] mixers = AudioSystem.getMixerInfo();
 		for (Mixer.Info mixerInfo : mixers) 

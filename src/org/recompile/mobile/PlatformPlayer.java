@@ -1007,7 +1007,7 @@ public class PlatformPlayer implements Player
 					wavHeaderData = WAVTools.readHeader(stream);
 					byte[] wavAudioData = new byte[stream.available()];
 					stream.read(wavAudioData, 0, stream.available());
-					tmpStream = WAVTools.upsample(wavAudioData, wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4]);
+					tmpStream = WAVTools.upsample(wavAudioData, wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4], wavHeaderData[5]);
 				}
 				else if(wavHeaderData[0] == 7) // Microsoft GSM
 				{
