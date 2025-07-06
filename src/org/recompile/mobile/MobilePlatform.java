@@ -193,9 +193,11 @@ public class MobilePlatform
 				Mobile.getDisplay().postInputEvent(new Runnable() 
 				{ 
 					@Override
-					public void run() { displayable.keyPressed(keycode); }
+					public void run() 
+					{ 
+						if(!handleCommands(Mobile.getCanvasAction(keycode))) { displayable.keyPressed(keycode); }
+					}
 				});
-				handleCommands(Mobile.getCanvasAction(keycode));
 			}
 		}
 	}
@@ -452,39 +454,43 @@ public class MobilePlatform
 	}
 
 	// MIDP Spec dictates that only Canvas (and CustomItem) keys should be serialized, so i'll assume that these commands don't need to as they're usually meant for other LCDUI displayables
-	private static void handleCommands(int key) 
+	private static boolean handleCommands(int key) 
 	{
 		boolean canvasFullscreen = false; // Default to false, as all other displayables can show commands at all times
 		if(displayable instanceof Canvas) { canvasFullscreen = ((Canvas)displayable).getFullScreen(); }
 
-		if(!canvasFullscreen)
+		if(!canvasFullscreen && !displayable.commands.isEmpty())
 		{
 			if (displayable.listCommands) 
-			{ 
+			{
 				if(key == Canvas.KEY_NUM2 || key == Canvas.UP) 
 				{
 					displayable.currentCommand--;
 					if(displayable.currentCommand<0) { displayable.currentCommand = displayable.commands.size()-1; }
+					displayable._invalidate();
+					return true;
 				}
 				else if(key == Canvas.KEY_NUM8 || key == Canvas.DOWN) 
 				{
 					displayable.currentCommand++;
 					if(displayable.currentCommand>=displayable.commands.size()) { displayable.currentCommand = 0; }
+					displayable._invalidate(); 
+					return true;
 				}
-				else if (key == Canvas.KEY_SOFT_LEFT) 
+				else if (key == Canvas.KEY_SOFT_LEFT) // Left and Right soft commands do not need an explicit invalidate call
 				{
 					showCommandBar();
 					displayable.doLeftCommand();
 					displayable.currentCommand = 0;
+					return true;
 				}
 				else if (key == Canvas.KEY_SOFT_RIGHT) 
 				{
 					showCommandBar();
 					displayable.doRightCommand();
 					displayable.currentCommand = 0;
+					return true;
 				}
-
-				displayable._invalidate(); 
 			}
 			else 
 			{
@@ -495,17 +501,18 @@ public class MobilePlatform
 					{
 						showCommandBar();
 						displayable.doLeftCommand();
+						return true;
 					} 
 					else if (key == Canvas.KEY_SOFT_RIGHT) 
 					{
 						showCommandBar();
 						displayable.doRightCommand();
+						return true;
 					}
 				}
 			}
 		}
-		
-		
+		return false;
 	}
 
 /*
