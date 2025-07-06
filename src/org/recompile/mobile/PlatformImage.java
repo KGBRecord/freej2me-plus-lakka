@@ -101,7 +101,7 @@ public class PlatformImage
 		isMutable = true;
 	}
 
-	public PlatformImage(String name)
+	public PlatformImage(String name) throws IOException
 	{
 		// Create Image from resource name
 		
@@ -132,7 +132,7 @@ public class PlatformImage
 		if(stream == null) 
 		{
 			// We should really throw an exception here, but House M.D is one game that explicitly tries to load null images without proper exception handling 
-			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from resource, as the returned image is null."); }
+			if(!Mobile.compatNonFatalNullImages) { throw new IOException("Can't load image from resource, as the returned image is null."); }
 			else 
 			{
 				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from Resource Name is NULL, ignoring due to Non Fatal Null Images being enabled.");
@@ -141,11 +141,11 @@ public class PlatformImage
 		else
 		{
 			try { temp = ImageIO.read(stream); } 
-			catch (IOException e) { throw new IllegalArgumentException("Failed to read image from resource:" + e.getMessage()); }
+			catch (IOException e) { throw new IOException("Failed to read image from resource:" + e.getMessage()); }
 			
 			if(temp == null) 
 			{ 
-				if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from resource, as the returned image is null."); }
+				if(!Mobile.compatNonFatalNullImages) { throw new IOException("Can't load image from resource, as the returned image is null."); }
 				else 
 				{
 					Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from Resource Name is NULL, ignoring due to Non Fatal Null Images being enabled.");
@@ -157,17 +157,17 @@ public class PlatformImage
 		}
 	}
 
-	public PlatformImage(InputStream stream)
+	public PlatformImage(InputStream stream) throws IOException
 	{
 		// Create Image from InputStream
 		Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image From Stream");
 		BufferedImage temp;
 		try { temp = ImageIO.read(stream); } 
-		catch (IOException e) { throw new IllegalArgumentException("Failed to read image from InputStream:" + e.getMessage()); }
+		catch (IOException e) { throw new IOException("Failed to read image from InputStream:" + e.getMessage()); }
 		
 		if(temp == null) 
 		{ 
-			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from stream, as the stream is null."); }
+			if(!Mobile.compatNonFatalNullImages) { throw new IOException("Can't load image from stream."); }
 			else 
 			{
 				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from stream is NULL, ignoring due to Non Fatal Null Images being enabled.");
@@ -210,7 +210,7 @@ public class PlatformImage
 		
 		if(temp == null) 
 		{ 
-			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from byte array, as the returned image is null."); }
+			if(!Mobile.compatNonFatalNullImages) { throw new IllegalArgumentException("Can't load image from byte array, as the returned image is null."); }
 			else 
 			{
 				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from byte array is NULL, ignoring due to Non Fatal Null Images being enabled.");
@@ -324,6 +324,8 @@ public class PlatformImage
 
 	public void getRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height) 
 	{
+		if (width <= 0 || height <= 0) { return; } // No pixels to copy
+
 		if (rgbData == null) 
 		{ 
 			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't use getRGB, as the returned image is null."); }
@@ -332,7 +334,6 @@ public class PlatformImage
 				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "tried to use getRGB on NULL image, ignoring due to Non Fatal Null Images being enabled.");
 			}
 		}
-		if (width <= 0 || height <= 0) { return; } // No pixels to copy
 		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
 		{
 			throw new IllegalArgumentException("getRGB Requested area exceeds bounds of the image");

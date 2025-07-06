@@ -32,9 +32,9 @@ public class Image extends PlatformImage
 
 	protected Image(int Width, int Height) { super(Width, Height); }
 
-	protected Image(String name) { super(name); }
+	protected Image(String name) throws IOException { super(name); }
 
-	protected Image(InputStream stream) { super(stream); }
+	protected Image(InputStream stream) throws IOException { super(stream); }
 	
 	protected Image(int Width, int Height, int ARGBcolor) { super(Width, Height, ARGBcolor); }
 
