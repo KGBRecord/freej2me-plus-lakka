@@ -91,7 +91,7 @@ public final class MediaManager
         return new MediaImageImpl(in);
     }
     
-    public static MediaImage getImage(String location) 
+    public static MediaImage getImage(String location) throws java.io.IOException
     {
         Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getImage str: " + location);
         return new MediaImageImpl(location);

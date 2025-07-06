@@ -16,6 +16,7 @@
 */
 package com.nttdocomo.ui;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.recompile.mobile.Mobile;
@@ -41,9 +42,9 @@ public abstract class Image extends PlatformImage
 
 	protected Image(byte[] data, int offset, int length) { super(data, offset, length, true); }
 
-	protected Image(String location) { super(location); }
+	protected Image(String location) throws IOException { super(location); }
 
-	protected Image(InputStream input) { super(input); }
+	protected Image(InputStream input) throws IOException { super(input); }
 
 	public static Image createImage(Image source) 
 	{

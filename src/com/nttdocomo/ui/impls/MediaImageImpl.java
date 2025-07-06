@@ -16,6 +16,7 @@
 */
 package com.nttdocomo.ui.impls;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import com.nttdocomo.io.ConnectionException;
@@ -28,9 +29,9 @@ public class MediaImageImpl implements com.nttdocomo.ui.MediaImage
 
 	public MediaImageImpl(int width, int height) { doJaImage = new ImageImpl(width, height); }
 
-	public MediaImageImpl(String str) { doJaImage = new ImageImpl(str); }
+	public MediaImageImpl(String str) throws IOException { doJaImage = new ImageImpl(str); }
 
-	public MediaImageImpl(InputStream inputStream) { doJaImage = new ImageImpl(inputStream); }
+	public MediaImageImpl(InputStream inputStream) throws IOException { doJaImage = new ImageImpl(inputStream); }
 
 	public MediaImageImpl(byte[] data) { doJaImage = new ImageImpl(data, 0, data.length); }
 

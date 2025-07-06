@@ -16,6 +16,7 @@
 */
 package com.nttdocomo.ui.impls;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.recompile.mobile.PlatformImage;
@@ -30,7 +31,7 @@ public class ImageImpl extends com.nttdocomo.ui.Image
 
 	public ImageImpl(byte[] data, int offset, int length) { super(data, offset, length); }
 
-	public ImageImpl(String location) { super(location); }
+	public ImageImpl(String location) throws IOException { super(location); }
 
-	public ImageImpl(InputStream input) { super(input); }
+	public ImageImpl(InputStream input) throws IOException { super(input); }
 }
