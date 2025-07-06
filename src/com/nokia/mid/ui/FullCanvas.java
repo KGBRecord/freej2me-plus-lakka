@@ -19,6 +19,8 @@ package com.nokia.mid.ui;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 
+import org.recompile.mobile.Mobile;
+
 public abstract class FullCanvas extends javax.microedition.lcdui.Canvas
 {
 
@@ -33,12 +35,7 @@ public abstract class FullCanvas extends javax.microedition.lcdui.Canvas
 	public static final int KEY_UP_ARROW = -1;
 
 
-	protected FullCanvas()
-	{
-		super();
-		//Mobile.log(FullCanvas.class.getPackage().getName() + "." + FullCanvas.class.getSimpleName() + ": " + "Nokia FullCanvas");
-		setFullScreenMode(true);
-	}
+	protected FullCanvas() { super(); }
 
 	/* According to the Nokia UI docs, commands shouldn't be supported here, and all these should do is throw IllegalStateExceptions  */
 	public void addCommand(Command cmd) { throw new IllegalStateException(); }
