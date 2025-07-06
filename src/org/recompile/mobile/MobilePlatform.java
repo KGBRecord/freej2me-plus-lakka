@@ -456,10 +456,15 @@ public class MobilePlatform
 	// MIDP Spec dictates that only Canvas (and CustomItem) keys should be serialized, so i'll assume that these commands don't need to as they're usually meant for other LCDUI displayables
 	private static boolean handleCommands(int key) 
 	{
-		boolean canvasFullscreen = false; // Default to false, as all other displayables can show commands at all times
-		if(displayable instanceof Canvas) { canvasFullscreen = ((Canvas)displayable).getFullScreen(); }
+		boolean canvasFullscreen = false, notCanvas = true; // Default to false, as all other displayables can show commands at all times
+		
+		if(displayable instanceof Canvas) 
+		{ 
+			canvasFullscreen = ((Canvas)displayable).getFullScreen(); 
+			notCanvas = false; 
+		}
 
-		if(!canvasFullscreen && !displayable.commands.isEmpty())
+		if((!canvasFullscreen && !displayable.commands.isEmpty()) || notCanvas)
 		{
 			if (displayable.listCommands) 
 			{
