@@ -268,13 +268,15 @@ public class Display
 					prev = current;
 					if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
 					
+					// Call upon showNotify right before the new canvas is made visible
+					if (next instanceof Canvas) { next.showNotify(); }
+
 					current = next;
 
-					// Some versions of Harry Potter: Find Scabbers close themselves if its current displayable calls hideNotify at boot, but others do not work properly if hideNotify isn't called. 10/10 programming
-					// So what we do is swap the current displayable, and then call hideNotify on the now previous displayable
+					// Call upon hideNotify right after removing the previous canvas from the display
 					if (prev != null && prev instanceof Canvas) { prev.hideNotify(); }
 
-					if(current instanceof Canvas) { current.showNotify(); current.notifySetCurrent(); } // Canvas always queues its rendering internally
+					if(current instanceof Canvas) { current.notifySetCurrent(); } // Canvas always queues its rendering internally
 					else 
 					{ 
 						postPaintRequest(new Runnable()
