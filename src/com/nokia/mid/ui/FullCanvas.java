@@ -35,7 +35,7 @@ public abstract class FullCanvas extends javax.microedition.lcdui.Canvas
 	public static final int KEY_UP_ARROW = -1;
 
 
-	protected FullCanvas() { super(); }
+	protected FullCanvas() { super.setFullScreenMode(true); }
 
 	/* According to the Nokia UI docs, commands shouldn't be supported here, and all these should do is throw IllegalStateExceptions  */
 	public void addCommand(Command cmd) { throw new IllegalStateException(); }
