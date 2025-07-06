@@ -246,7 +246,7 @@ public abstract class Canvas extends Displayable
 		if (Mobile.isKDDI) {
 			return (height - ((!fullscreen ) ? barHeight : 0));
 		}
-		return height - ((!fullscreen && !commands.isEmpty()) ? barHeight : 0);
+		return height;
 	}
 
 	public boolean getFullScreen() { return fullscreen; }
