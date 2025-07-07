@@ -562,6 +562,20 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_compatoverrideplatcheck",
+        "Compatibility Settings > Override Mobile Platform checks",
+        "Override Mobile Platform checks",
+        "Some applications check against specific platform strings (such as 'Nokia', 'Siemens S60'), whenever this happens, FreeJ2ME's platform string doesn't match what they expect so they refuse to run. This setting overrides any platform strings by FreeJ2ME's own. This option helps far more than breaks, so it's on by default",
+        "Some applications check against specific platform strings (such as 'Nokia', 'Siemens S60'), whenever this happens, FreeJ2ME's platform string doesn't match what they expect so they refuse to run. This setting overrides any platform strings by FreeJ2ME's own. This option helps far more than breaks, so it's on by default",
+        "compat_settings",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "M3G Debug Settings > Draw only vertex colors",
         "Draw only vertex colors",
@@ -963,6 +977,17 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
+        "freej2me_compatoverrideplatcheck",
+        "Override Mobile Platform checks",
+        "Some applications check against specific platform strings (such as 'Nokia', 'Siemens S60'), whenever this happens, FreeJ2ME's platform string doesn't match what they expect so they refuse to run. This setting overrides any platform strings by FreeJ2ME's own. This option helps far more than breaks, so it's on by default",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "Draw only vertex colors",
         "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
@@ -1092,6 +1117,10 @@ static const struct retro_variable vars[] =
     { /* Process canvas repaint calls immediately */
         "freej2me_compatimmediaterepaintcalls",
         "Process canvas repaint calls immediately; off|on"
+    },
+    { /* Override Mobile Platform checks */
+        "freej2me_compatoverrideplatcheck",
+        "Override Mobile Platform checks; on|off",
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",

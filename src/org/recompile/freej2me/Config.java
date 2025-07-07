@@ -97,9 +97,8 @@ public class Config
 		};
 	}
 
-	public void init()
+	public void init(String appname)
 	{
-		String appname = Mobile.getPlatform().loader.suitename;
 		configPath = Mobile.getPlatform().dataPath + "./config/"+appname;
 		configFile = configPath + "/game.conf";
 		// Load Config //
@@ -137,6 +136,7 @@ public class Config
 				settings.put("compatnonfatalnullimage", "off");
 				settings.put("compattranstooriginonreset", "off");
 				settings.put("compatimmediaterepaints", "off");
+				settings.put("compatoverrideplatchecks", "on");
 				settings.put("fpshack", "Disabled");
 				saveConfig();
 			}
@@ -199,6 +199,7 @@ public class Config
 			if(!settings.containsKey("compatnonfatalnullimage")) { settings.put("compatnonfatalnullimage", "off"); }
 			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", "off"); }
 			if(!settings.containsKey("compatimmediaterepaints")) { settings.put("compatimmediaterepaints", "off"); }
+			if(!settings.containsKey("compatoverrideplatchecks")) { settings.put("compatoverrideplatchecks", "on"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
 
 			// System settings
@@ -267,6 +268,8 @@ public class Config
 			inputKeycodes[19] = Integer.parseInt(sysSettings.get("input_FastForward"));
 			inputKeycodes[20] = Integer.parseInt(sysSettings.get("input_Screenshot"));
 			inputKeycodes[21] = Integer.parseInt(sysSettings.get("input_PauseResume"));
+
+			onChange.run();
 		}
 		catch (Exception e)
 		{
@@ -412,6 +415,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatimmediaterepaints "+value);
 		settings.put("compatimmediaterepaints", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateCompatOverridePlatformChecks(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatoverrideplatchecks "+value);
+		settings.put("compatoverrideplatchecks", value);
 		saveConfig();
 		onChange.run();
 	}

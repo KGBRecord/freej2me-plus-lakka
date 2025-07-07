@@ -626,6 +626,7 @@ public class MobilePlatform
 				// Send dumped jar path to loader
 				URL jar = tmpfile.toURI().toURL();
 				loader = new MIDletLoader(jar, descriptorProperties);
+				Mobile.config.init(loader.suitename);
 				
 				return true;
 			} 
@@ -687,6 +688,8 @@ public class MobilePlatform
 			{
 				URL jar = new URL(fileName);
 				loader = new MIDletLoader(jar, descriptorProperties);
+				Mobile.config.init(loader.suitename);
+
 				return true;
 			} 
 			catch (Exception e) 

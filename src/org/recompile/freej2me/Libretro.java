@@ -162,17 +162,18 @@ public class Libretro
 		Mobile.unlockFramerateHack = (byte) Integer.parseInt(args[19]);
 
 		/* Compat setting to process repaints immediately */
-		if(Integer.parseInt(args[12]) == 0) { Mobile.compatImmediateRepaints = false; }
+		if(Integer.parseInt(args[20]) == 0) { Mobile.compatImmediateRepaints = false; }
 		else { Mobile.compatImmediateRepaints = true; }
+
+		/* Compat setting to override mobile platform checks */
+		if(Integer.parseInt(args[21]) == 0) { Mobile.compatOverridePlatformChecks = false; }
+		else { Mobile.compatOverridePlatformChecks = true; }
 
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
-		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight));
+		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight), new Runnable() { public void run() { settingsChanged(); } });
 		lcdData = ((DataBufferInt) Mobile.getPlatform().getLCD().getRaster().getDataBuffer()).getData();
-
-		Mobile.config = new Config();
-		Mobile.config.onChange = new Runnable() { public void run() { settingsChanged(); } };
 
 		lio = new LibretroIO();
 
@@ -292,7 +293,6 @@ public class Libretro
 									if(Mobile.getPlatform().load(getFormattedLocation(URLDecoder.decode(path.toString(), Mobile.textEncoding))))
 									{
 										// Check config
-										Mobile.config.init();
 
 										/* Override configs with the ones passed through commandline */
 										Mobile.config.settings.put("scrwidth",  ""+lcdWidth);
@@ -336,7 +336,10 @@ public class Libretro
 										else                                       { Mobile.config.settings.put("compattranstooriginonreset", "on"); }
 
 										if(!Mobile.compatImmediateRepaints) { Mobile.config.settings.put("compatimmediaterepaints", "off"); }
-										else                                 { Mobile.config.settings.put("compatimmediaterepaints", "on"); }
+										else                                { Mobile.config.settings.put("compatimmediaterepaints", "on"); }
+
+										if(!Mobile.compatOverridePlatformChecks) { Mobile.config.settings.put("compatoverrideplatchecks", "off"); }
+										else                                     { Mobile.config.settings.put("compatoverrideplatchecks", "on"); }
 
 										if(!Mobile.useCustomTextFont)  { Mobile.config.settings.put("textfont", "Default"); }
 										else                           { Mobile.config.settings.put("textfont", "Custom");  }
@@ -473,6 +476,9 @@ public class Libretro
 
 									if(Integer.parseInt(cfgtokens[21])==0) { Mobile.config.settings.put("compatimmediaterepaints", "off");  }
 									else { Mobile.config.settings.put("compatimmediaterepaints", "on"); }
+
+									if(Integer.parseInt(cfgtokens[22])==0) { Mobile.config.settings.put("compatoverrideplatchecks", "off");  }
+									else { Mobile.config.settings.put("compatoverrideplatchecks", "on"); }
 
 
 									Mobile.config.saveConfig();

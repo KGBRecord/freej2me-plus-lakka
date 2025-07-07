@@ -546,7 +546,6 @@ public class MIDletLoader extends URLClassLoader
 			Mobile.log(Mobile.LOG_INFO, "Loading I-Appli: " + name[0] +" | Main Class: " + className[0]);
 			reg = new Registry(className[0]);
 		}		
-		
 	}
 
 
@@ -1045,7 +1044,7 @@ public class MIDletLoader extends URLClassLoader
 				// The loaded app might be going for a check against a specific phone model, prepare to override it
 				if (value instanceof String && ((String)value).toLowerCase().contains("microedition.platform")) 
 				{
-					foundPlatformCheck = true;
+					if(Mobile.compatOverridePlatformChecks) { foundPlatformCheck = true; }
 				}
 				
 				if (foundPlatformCheck && value instanceof String) 

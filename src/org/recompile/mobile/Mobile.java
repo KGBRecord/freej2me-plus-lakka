@@ -131,9 +131,10 @@ public class Mobile
 	public static byte funLightRegionSize = 8;
 
 	// Compatibility settings
-	public static boolean compatNonFatalNullImages       = false; // Fixes some versions of House M.D
-	public static boolean compatTranslateToOriginOnReset = false; // Fixes Fantasy Zone 128x128
-	public static boolean compatImmediateRepaints        = false; // Helps Rush and Attack by Konami, and any jar that freezes randomly by causing deadlocks with the repaint queue
+	public static boolean compatNonFatalNullImages       = false;
+	public static boolean compatTranslateToOriginOnReset = false;
+	public static boolean compatImmediateRepaints        = false;
+	public static boolean compatOverridePlatformChecks   = true; 
 
 	// M3G Debug Rendering settings
 	public static boolean M3GRenderUntexturedPolygons = false;
@@ -306,7 +307,13 @@ public class Mobile
 
 	public static MobilePlatform getPlatform() { return platform; }
 
-	public static void setPlatform(MobilePlatform p) { platform = p; }
+	public static void setPlatform(MobilePlatform p, Runnable r) 
+	{ 
+		platform = p; 
+
+		config = new Config();
+		config.onChange = r;
+	}
 
 	public static Display getDisplay() { return display; }
 
@@ -912,6 +919,10 @@ public class Mobile
 		String immediateRepaints = config.settings.get("compatimmediaterepaints");
 		if(immediateRepaints.equals("on"))        { compatImmediateRepaints = true; }
 		else if (immediateRepaints.equals("off")) { compatImmediateRepaints = false; };
+
+		String overridePlatChecks = config.settings.get("compatoverrideplatchecks");
+		if(overridePlatChecks.equals("on"))        { compatOverridePlatformChecks = true; }
+		else if (overridePlatChecks.equals("off")) { compatOverridePlatformChecks = false; };
 
 		String textFont = config.settings.get("textfont");
 		if(textFont.equals("Custom"))       { useCustomTextFont = true; }

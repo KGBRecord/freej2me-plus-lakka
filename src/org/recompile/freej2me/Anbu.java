@@ -143,13 +143,10 @@ public class Anbu
 		}
 		if(args.length>=4) { scaleFactor = Integer.parseInt(args[3]); }
 
-		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight));
+		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight), new Runnable() { public void run() { settingsChanged(); } });
 		lcdData = ((DataBufferInt) Mobile.getPlatform().getLCD().getRaster().getDataBuffer()).getData();
 
 		/* TODO: Anbu/SDL has no way of enabling any settings outside of cmd args yet, a UI and code overhaul might be in order */
-
-		Mobile.config = new Config();
-		Mobile.config.onChange = new Runnable() { public void run() { settingsChanged(); } };
 
 		// Set painter right before the jar is loaded
 		Mobile.getPlatform().setPainter(new Runnable()
@@ -175,7 +172,6 @@ public class Anbu
 		if(file != null && Mobile.getPlatform().load(file))
 		{
 			// Check config
-			Mobile.config.init();
 
 			/* Allows FreeJ2ME to set the width and height passed as cmd arguments. */
 			if(args.length>=3)

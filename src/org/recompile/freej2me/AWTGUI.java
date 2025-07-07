@@ -273,6 +273,7 @@ public final class AWTGUI
 	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("Don't throw Exception on null images");
 	final CheckboxMenuItem transToOriginOnReset = new CheckboxMenuItem("Translate to origin on gfx reset");
 	final CheckboxMenuItem immediateRepaints = new CheckboxMenuItem("Process canvas repaints immediately");
+	final CheckboxMenuItem overridePlatChecks = new CheckboxMenuItem("Override Mobile Platform checks");
 
 	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("Delete KJX files' temporary JAR/JAD");
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
@@ -646,6 +647,17 @@ public final class AWTGUI
 			}
 		});
 
+		overridePlatChecks.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(overridePlatChecks.getState()){ config.updateCompatOverridePlatformChecks("on"); hasPendingChange = true; }
+				else{ config.updateCompatOverridePlatformChecks("off"); hasPendingChange = true; }
+
+				showRestartDialog();
+			}
+		});
+
 		// Layout options
 		for(byte i = 0; i < layoutOptions.length; i++) 
 		{
@@ -914,6 +926,7 @@ public final class AWTGUI
 		compatSettingsMenu.add(NonFatalNullImages);
 		compatSettingsMenu.add(transToOriginOnReset);
 		compatSettingsMenu.add(immediateRepaints);
+		compatSettingsMenu.add(overridePlatChecks);
 		
 		// add menus to menubar
 		menuBar.add(fileMenu);
@@ -952,6 +965,8 @@ public final class AWTGUI
 			transToOriginOnReset.setState(config.settings.get("compattranstooriginonreset").equals("on"));
 
 			immediateRepaints.setState(config.settings.get("compatimmediaterepaints").equals("on"));
+
+			overridePlatChecks.setState(config.settings.get("compatoverrideplatchecks").equals("on"));
 			
 			resChoice.select(""+ Integer.parseInt(config.settings.get("scrwidth")) + "x" + ""+ Integer.parseInt(config.settings.get("scrheight")));
 

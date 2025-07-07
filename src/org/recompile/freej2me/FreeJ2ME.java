@@ -285,13 +285,10 @@ public class FreeJ2ME
 		lcdWidth = Mobile.lcdWidth;
 		lcdHeight = Mobile.lcdHeight;
 
-		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight));
+		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight), new Runnable() { public void run() { settingsChanged(); } });
 
 		lcd = new LCD();
 		lcd.setFocusable(true);
-
-		Mobile.config = new Config();
-		Mobile.config.onChange = new Runnable() { public void run() { settingsChanged(); } };
 
 		awtGUI = new AWTGUI(Mobile.config);
 
@@ -408,8 +405,6 @@ public class FreeJ2ME
 		}
 		if(Mobile.getPlatform().load(awtGUI.getJarPath()))
 		{
-			Mobile.config.init();
-
 			/* Allows FreeJ2ME to set the width and height passed as cmd arguments. */
 			if(args.length>=4)
 			{
