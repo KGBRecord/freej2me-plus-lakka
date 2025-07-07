@@ -14,12 +14,12 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package javax.microedition.location;
+package com.nokia.mid.location;
 
 public final class LocationUtil 
 {
 
-    public static LocationProvider getLocationProvider(int[] preferredMethods, String parameters) 
+    public static javax.microedition.location.LocationProvider getLocationProvider(int[] preferredMethods, String parameters) 
     {
         // TODO (Idea: Maybe implement a spoofer through LCDUI?)
         return null;
