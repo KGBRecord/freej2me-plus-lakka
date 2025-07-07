@@ -227,7 +227,10 @@ public class MobilePlatform
 			Mobile.getDisplay().postInputEvent(new Runnable() 
 			{ 
 				@Override
-				public void run() { displayable.keyRepeated(keycode); }
+				public void run() 
+				{ 
+					if(!handleCommands(Mobile.getCanvasAction(keycode))) { displayable.keyRepeated(keycode); }
+				}
 			});
 		}
 		// TODO: DoJa
