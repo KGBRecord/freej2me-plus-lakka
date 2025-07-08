@@ -130,6 +130,11 @@ public class MIDletLoader extends URLClassLoader
 			System.setProperty("microedition.io.file.FileConnection.version", "1.0");
 			System.setProperty("microedition.m3g.version", "1.1");
 			System.setProperty("microedition.jtwi.version", "1.0");
+			System.setProperty("microedition.broadcast.version", "1.0");
+			System.setProperty("microedition.broadcast.supports.overlay", "true");
+			System.setProperty("microedition.broadcast.supports.timedrecording", "true");
+			System.setProperty("microedition.broadcast.supports.filecache", "true");
+			System.setProperty("microedition.broadcast.supports.purchasing", "true");
 			System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
 			System.setProperty("wireless.messaging.version", "1.0");
 			System.setProperty("device.imei", "000000000000000");
@@ -167,6 +172,11 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("microedition.io.file.FileConnection.version", "1.0");
 		properties.put("microedition.m3g.version", "1.1");
 		properties.put("microedition.jtwi.version", "1.0");
+		properties.put("microedition.broadcast.version", "1.0");
+		properties.put("microedition.broadcast.supports.overlay", "true");
+		properties.put("microedition.broadcast.supports.timedrecording", "true");
+		properties.put("microedition.broadcast.supports.filecache", "true");
+		properties.put("microedition.broadcast.supports.purchasing", "true");
 		properties.put("wireless.messaging.sms.smsc", "+8613800010000");
 		properties.put("wireless.messaging.version", "1.0");
 		properties.put("device.imei", "000000000000000");
