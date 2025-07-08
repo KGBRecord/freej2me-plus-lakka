@@ -739,7 +739,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		int[] Type1 = {0xFFFFFFFF, 0xFF000000, 0x00FFFFFF, 0x00000000};
 		int c = 0;
 		BufferedImage temp = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);// Nokia DirectGraphics states that image width and height CAN be zero.
-		final int[] data = ((DataBufferInt) temp.getRaster().getDataBuffer()).getData();
+		int[] data = ((DataBufferInt) temp.getRaster().getDataBuffer()).getData();
 
 		switch (format) 
 		{
@@ -792,7 +792,10 @@ public abstract class PlatformGraphics implements DirectGraphics
 			default: Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawPixels A : Format " + format + " Not Implemented");
 		}
 
-		gc.drawImage(manipulateImage(temp, manipulation), x, y, null);
+		temp = manipulateImage(temp, manipulation);
+		data = ((DataBufferInt) temp.getRaster().getDataBuffer()).getData();
+
+		drawRGB(data, 0, temp.getWidth(), x, y, temp.getWidth(), temp.getHeight(), true);
 	}
 
 	public void drawPixels(int[] pixels, boolean transparency, int offset, int scanlength, int x, int y, int width, int height, int manipulation, int format) 
@@ -817,7 +820,10 @@ public abstract class PlatformGraphics implements DirectGraphics
 			}
 		}
 
-		gc.drawImage(manipulateImage(temp, manipulation), x, y, null);
+		temp = manipulateImage(temp, manipulation);
+		data = ((DataBufferInt) temp.getRaster().getDataBuffer()).getData();
+
+		drawRGB(data, 0, temp.getWidth(), x, y, temp.getWidth(), temp.getHeight(), transparency);
 	}
 
 	public void drawPixels(short[] pixels, boolean transparency, int offset, int scanlength, int x, int y, int width, int height, int manipulation, int format)
@@ -842,7 +848,10 @@ public abstract class PlatformGraphics implements DirectGraphics
 			}
 		}
 
-		gc.drawImage(manipulateImage(temp, manipulation), x, y, null);
+		temp = manipulateImage(temp, manipulation);
+		data = ((DataBufferInt) temp.getRaster().getDataBuffer()).getData();
+
+		drawRGB(data, 0, temp.getWidth(), x, y, temp.getWidth(), temp.getHeight(), transparency);
 	}
 
 	public void drawPolygon(int[] xPoints, int xOffset, int[] yPoints, int yOffset, int nPoints, int argbColor)
