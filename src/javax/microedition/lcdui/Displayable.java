@@ -139,7 +139,7 @@ public abstract class Displayable
 
 		int commandsBarHeight = titleHeight - titlePadding;
 
-		int contentHeight = height - titleHeight - commandsBarHeight;
+		int contentHeight = height - titleHeight - commandsBarHeight - 2;
 		
 		// Draw Title:
 		graphics.drawString(currentTitle, width/2, 0, Graphics.HCENTER);
