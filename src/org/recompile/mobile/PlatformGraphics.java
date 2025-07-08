@@ -718,10 +718,15 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawImage(javax.microedition.lcdui.Image img, int x, int y, int anchor, int manipulation)
 	{
+		setClip(getClipX()-getTranslateX(), getClipY()-getTranslateY(), getClipWidth(), getClipHeight());
+
 		BufferedImage image = manipulateImage(img.getCanvas(), manipulation);
 		x = AnchorX(x, image.getWidth(), anchor);
 		y = AnchorY(y, image.getHeight(), anchor);
 		gc.drawImage(image, x, y, null);
+
+		// Restore clip back to original value
+		setClip(getClipX()+getTranslateX(), getClipY()+getTranslateY(), getClipWidth(), getClipHeight());
 	}
 
 	public void drawPixels(byte[] pixels, byte[] transparencyMask, int offset, int scanlength, int x, int y, int width, int height, int manipulation, int format)
