@@ -860,7 +860,8 @@ public class MIDletLoader extends URLClassLoader
 			name.startsWith("com.sprintpcs.") || name.startsWith("com.bmc.") || name.startsWith("com.immersion.") || 
 			name.startsWith("com.j_phone.") || name.startsWith("com.kddi.") || name.startsWith("com.pantech.") ||
 			name.startsWith("mmpp.") || name.startsWith("com.velox.") || name.startsWith("com.nttdocomo.") ||
-			name.startsWith("org.xml.") || name.startsWith("org.w3c.") || name.startsWith("javacard.")
+			name.startsWith("org.xml.") || name.startsWith("org.w3c.") || name.startsWith("javacard.") ||
+			name.startsWith("com.sonyericsson")
 			)
 		{
 			return loadClass(name, true);
