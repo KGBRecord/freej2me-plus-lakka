@@ -129,28 +129,13 @@ public class PlatformImage
 			else { stream = Mobile.getPlatform().loader.getMIDletResourceAsStream(name); }
 		}
 
-		if(stream == null) 
-		{
-			// We should really throw an exception here, but House M.D is one game that explicitly tries to load null images without proper exception handling 
-			if(!Mobile.compatNonFatalNullImages) { throw new IOException("Can't load image from resource, as the returned image is null."); }
-			else 
-			{
-				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from Resource Name is NULL, ignoring due to Non Fatal Null Images being enabled.");
-			}
-		}
+		if(stream == null) { throw new IOException("Can't load image from resource, as the returned image is null."); }
 		else
 		{
 			try { temp = ImageIO.read(stream); } 
 			catch (IOException e) { throw new IOException("Failed to read image from resource:" + e.getMessage()); }
 			
-			if(temp == null) 
-			{ 
-				if(!Mobile.compatNonFatalNullImages) { throw new IOException("Can't load image from resource, as the returned image is null."); }
-				else 
-				{
-					Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from Resource Name is NULL, ignoring due to Non Fatal Null Images being enabled.");
-				}
-			}
+			if(temp == null) { throw new IOException("Can't load image from resource, as the returned image is null."); }
 
 			canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
 			canvas.getGraphics().drawImage(temp, 0, 0, null);
@@ -165,14 +150,7 @@ public class PlatformImage
 		try { temp = ImageIO.read(stream); } 
 		catch (IOException e) { throw new IOException("Failed to read image from InputStream:" + e.getMessage()); }
 		
-		if(temp == null) 
-		{ 
-			if(!Mobile.compatNonFatalNullImages) { throw new IOException("Can't load image from stream."); }
-			else 
-			{
-				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from stream is NULL, ignoring due to Non Fatal Null Images being enabled.");
-			}
-		}
+		if(temp == null) { throw new IOException("Can't load image from stream."); }
 
 		canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		canvas.getGraphics().drawImage(temp, 0, 0, null);
@@ -181,14 +159,7 @@ public class PlatformImage
 	public PlatformImage(Image source)
 	{
 		// Create a copy from an LCDUI Image
-		if(source == null) 
-		{ 
-			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image, it is null."); }
-			else 
-			{
-				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image is NULL, ignoring due to Non Fatal Null Images being enabled.");
-			}
-		}
+		if(source == null) { throw new NullPointerException("Can't load image, it is null."); }
 
 		// It's safe to assume that the source image will have the same type as the destination, so instead of drawImage we can just arraycopy the source to the destination
 		canvas = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -208,14 +179,7 @@ public class PlatformImage
 		try { temp = ImageIO.read(stream); } 
 		catch (IOException e) { throw new IllegalArgumentException("Failed to read image from Byte Array." + e.getMessage()); }
 		
-		if(temp == null) 
-		{ 
-			if(!Mobile.compatNonFatalNullImages) { throw new IllegalArgumentException("Can't load image from byte array, as the returned image is null."); }
-			else 
-			{
-				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from byte array is NULL, ignoring due to Non Fatal Null Images being enabled.");
-			}
-		}
+		if(temp == null) { throw new IllegalArgumentException("Can't load image from byte array, as the returned image is null."); }
 
 		canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		if(mutable) 
@@ -273,14 +237,7 @@ public class PlatformImage
 	public PlatformImage(com.nttdocomo.ui.Image source) 
 	{
 		// Create a copy from a DoJa Image
-		if(source == null) 
-		{ 
-			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image, it is null."); }
-			else 
-			{
-				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image is NULL, ignoring due to Non Fatal Null Images being enabled.");
-			}
-		}
+		if(source == null) { throw new NullPointerException("Can't load image, it is null."); }
 
 		// It's safe to assume that the source image will have the same type as the destination, so instead of drawImage we can just arraycopy the source to the destination
 		canvas = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -326,14 +283,7 @@ public class PlatformImage
 	{
 		if (width <= 0 || height <= 0) { return; } // No pixels to copy
 
-		if (rgbData == null) 
-		{ 
-			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't use getRGB, as the returned image is null."); }
-			else 
-			{
-				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "tried to use getRGB on NULL image, ignoring due to Non Fatal Null Images being enabled.");
-			}
-		}
+		if (rgbData == null) { throw new NullPointerException("Can't use getRGB, as the returned image is null."); }
 		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
 		{
 			throw new IllegalArgumentException("getRGB Requested area exceeds bounds of the image");

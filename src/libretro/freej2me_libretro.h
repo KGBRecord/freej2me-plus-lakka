@@ -520,11 +520,11 @@ struct retro_core_option_v2_definition core_options[] =
         "0"
     },
     {
-        "freej2me_compatnonfatalnullimages",
-        "Compatibility Settings > Don't throw Exception on null images",
-        "Don't throw Exception on null images",
-        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
-        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
+        "freej2me_compatdonottranslatedrawrgb",
+        "Compatibility Settings > Don't translate drawRGB calls",
+        "Don't translate drawRGB calls",
+        "In the J2ME spec, drawRGB calls should be affected by the current graphics context translation. However, Peggle for Sony Ericsson 240x320 is a game that expects those calls to NOT be affected by the graphics context translation whereas Nokia versions work as they should, this is also replicated in real hardware. Use this setting whenever objects aren't where they should be.",
+        "In the J2ME spec, drawRGB calls should be affected by the current graphics context translation. However, Peggle for Sony Ericsson 240x320 is a game that expects those calls to NOT be affected by the graphics context translation whereas Nokia versions work as they should, this is also replicated in real hardware. Use this setting whenever objects aren't where they should be.",
         "compat_settings",
         {
             { "on",  "Enabled"            },
@@ -944,9 +944,9 @@ struct retro_core_option_definition core_options_v1 [] =
         "0"
     },
     {
-        "freej2me_compatnonfatalnullimages",
-        "Don't throw Exception on null images",
-        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
+        "freej2me_compatdonottranslatedrawrgb",
+        "Don't translate drawRGB calls",
+        "In the J2ME spec, drawRGB calls should be affected by the current graphics context translation. However, Peggle for Sony Ericsson 240x320 is a game that expects those calls to NOT be affected by the graphics context translation whereas Nokia versions work as they should, this is also replicated in real hardware. Use this setting whenever objects aren't where they should be.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -1106,9 +1106,9 @@ static const struct retro_variable vars[] =
         "freej2me_spdhackfpsunlock",
         "Framerate Unlock Hack; 0|1|2|3"
     },
-    { /* Don't throw Exception on null images setting */
-        "freej2me_compatnonfatalnullimages",
-        "Don't throw Exception on null images; off|on"
+    { /* Don't translate drawRGB calls setting */
+        "freej2me_compatdonottranslatedrawrgb",
+        "Don't translate drawRGB calls; off|on"
     },
     { /* Translate to origin on gfx reset setting */
         "freej2me_compattranstooriginongfxreset",

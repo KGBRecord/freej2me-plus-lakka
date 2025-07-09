@@ -450,8 +450,11 @@ public abstract class PlatformGraphics implements DirectGraphics
 			}
 		}
 	
-		x += getTranslateX();
-		y += getTranslateY();
+		if(!Mobile.compatDoNotTranslateDrawRGB) 
+		{
+			x += getTranslateX();
+			y += getTranslateY();
+		}
 	
 		final int canvasWidth = canvas.getWidth();
 		final int clipX = Math.max(getClipX(), 0);

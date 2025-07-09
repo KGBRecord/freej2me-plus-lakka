@@ -131,7 +131,7 @@ public class Mobile
 	public static byte funLightRegionSize = 8;
 
 	// Compatibility settings
-	public static boolean compatNonFatalNullImages       = false;
+	public static boolean compatDoNotTranslateDrawRGB    = false;
 	public static boolean compatTranslateToOriginOnReset = false;
 	public static boolean compatImmediateRepaints        = false;
 	public static boolean compatOverridePlatformChecks   = true; 
@@ -908,9 +908,9 @@ public class Mobile
 		else if (speedHackNoAlpha.equals("off")) { noAlphaOnBlankImages = false; };
 
 		// Compatibility settings (this will probably expand in the future)
-		String nonFatalNullImage = config.settings.get("compatnonfatalnullimage");
-		if(nonFatalNullImage.equals("on"))        { compatNonFatalNullImages = true; }
-		else if (nonFatalNullImage.equals("off")) { compatNonFatalNullImages = false; };
+		String doNotTranslateDrawRGB = config.settings.get("compatdonottranslatedrawrgb");
+		if(doNotTranslateDrawRGB.equals("on"))        { compatDoNotTranslateDrawRGB = true; }
+		else if (doNotTranslateDrawRGB.equals("off")) { compatDoNotTranslateDrawRGB = false; };
 
 		String translateToOriginOnReset = config.settings.get("compattranstooriginonreset");
 		if(translateToOriginOnReset.equals("on"))        { compatTranslateToOriginOnReset = true; }

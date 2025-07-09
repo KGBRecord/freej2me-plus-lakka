@@ -270,7 +270,7 @@ public final class AWTGUI
 	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("No alpha on blank images");
 	
 	// Compatibility settings
-	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("Don't throw Exception on null images");
+	final CheckboxMenuItem doNotTranslateDrawRGB = new CheckboxMenuItem("Don't translate DrawRGB calls");
 	final CheckboxMenuItem transToOriginOnReset = new CheckboxMenuItem("Translate to origin on gfx reset");
 	final CheckboxMenuItem immediateRepaints = new CheckboxMenuItem("Process canvas repaints immediately");
 	final CheckboxMenuItem overridePlatChecks = new CheckboxMenuItem("Override Mobile Platform checks");
@@ -618,12 +618,12 @@ public final class AWTGUI
 		});
 
 		// Compatibility settings
-		NonFatalNullImages.addItemListener(new ItemListener() 
+		doNotTranslateDrawRGB.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(NonFatalNullImages.getState()){ config.updateCompatNonFatalNullImage("on"); hasPendingChange = true; }
-				else{ config.updateCompatNonFatalNullImage("off"); hasPendingChange = true; }
+				if(doNotTranslateDrawRGB.getState()){ config.updateCompatDoNotTranslateDrawRGB("on"); hasPendingChange = true; }
+				else{ config.updateCompatDoNotTranslateDrawRGB("off"); hasPendingChange = true; }
 
 				showRestartDialog();
 			}
@@ -923,7 +923,7 @@ public final class AWTGUI
 
 		speedHackMenu.add(noAlphaOnBlankImages);
 
-		compatSettingsMenu.add(NonFatalNullImages);
+		compatSettingsMenu.add(doNotTranslateDrawRGB);
 		compatSettingsMenu.add(transToOriginOnReset);
 		compatSettingsMenu.add(immediateRepaints);
 		compatSettingsMenu.add(overridePlatChecks);
@@ -960,7 +960,7 @@ public final class AWTGUI
 
 			noAlphaOnBlankImages.setState(config.settings.get("spdhacknoalpha").equals("on"));
 
-			NonFatalNullImages.setState(config.settings.get("compatnonfatalnullimage").equals("on"));
+			doNotTranslateDrawRGB.setState(config.settings.get("compatdonottranslatedrawrgb").equals("on"));
 
 			transToOriginOnReset.setState(config.settings.get("compattranstooriginonreset").equals("on"));
 

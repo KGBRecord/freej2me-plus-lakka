@@ -179,7 +179,7 @@ unsigned int spdHackNoAlpha = 0; // Boolean
 unsigned int spdFrameRateUnlock = 0; // Boolean
 
 /* Compatibility Settings section */
-unsigned int compatNonFatalNullImages      = 0; // Boolean
+unsigned int compatDoNotTranslateDrawRGB   = 0; // Boolean
 unsigned int compatTransToOriginOnGFXReset = 0; // Boolean
 unsigned int compatImmediateRepaintCalls   = 0; // Boolean
 unsigned int compatOverridePlatCheck       = 1; // Boolean
@@ -552,11 +552,11 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "3"))   { spdFrameRateUnlock = 3; }
 	}
 
-	var.key = "freej2me_compatnonfatalnullimages";
+	var.key = "freej2me_compatdonottranslatedrawrgb";
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
 	{
-		if (!strcmp(var.value, "off"))       { compatNonFatalNullImages = 0; }
-		else if (!strcmp(var.value, "on"))   { compatNonFatalNullImages = 1; }
+		if (!strcmp(var.value, "off"))       { compatDoNotTranslateDrawRGB = 0; }
+		else if (!strcmp(var.value, "on"))   { compatDoNotTranslateDrawRGB = 1; }
 	}
 
 	var.key = "freej2me_compattranstooriginongfxreset";
@@ -599,7 +599,7 @@ static void check_variables(bool first_time_startup)
 	options_update = malloc(sizeof(char) * PIPE_MAX_LEN);
 
 	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, 
-		phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatNonFatalNullImages, 
+		phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatDoNotTranslateDrawRGB, 
 		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatImmediateRepaintCalls,
 		compatOverridePlatCheck);
 	optstrlen = strlen(options_update);
@@ -634,7 +634,7 @@ void retro_init(void)
 	/* Check variables and set parameters */
 	check_variables(true);
 	char resArg[2][4], rotateArg[2], phoneArg[2], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2];
-	char compatNonFatalNullImagesArg[2], compatTransToOriginOnGFXResetArg[2], fontArg[2], offsetArg[3], dumpGFXArg[2], tempKJXArg[2], m3gUntexArg[2], m3gWireArg[2];
+	char compatDoNotTranslateDrawRGBArg[2], compatTransToOriginOnGFXResetArg[2], fontArg[2], offsetArg[3], dumpGFXArg[2], tempKJXArg[2], m3gUntexArg[2], m3gWireArg[2];
 	char fpsunlockHack[2], compatImmediateRepaintArg[2], compatOverridePlatCheckArg[2];
 
 	sprintf(resArg[0], "%lu", screenRes[0]);
@@ -648,7 +648,7 @@ void retro_init(void)
 	sprintf(logLevelArg, "%d", loggingLevel);
 	sprintf(spdHackNoAlphaArg, "%d", spdHackNoAlpha);
 	sprintf(backlightArg, "%d", backlightColor);
-	sprintf(compatNonFatalNullImagesArg, "%d", compatNonFatalNullImages);
+	sprintf(compatDoNotTranslateDrawRGBArg, "%d", compatDoNotTranslateDrawRGB);
 	sprintf(compatTransToOriginOnGFXResetArg, "%d", compatTransToOriginOnGFXReset);
 	sprintf(fontArg, "%d", customFont);
 	sprintf(offsetArg, "%d", fontOffset);
@@ -697,7 +697,7 @@ void retro_init(void)
 	params[12] = strdup(logLevelArg);
 	params[13] = strdup(spdHackNoAlphaArg);
 	params[14] = strdup(backlightArg);
-	params[15] = strdup(compatNonFatalNullImagesArg);
+	params[15] = strdup(compatDoNotTranslateDrawRGBArg);
 	params[16] = strdup(compatTransToOriginOnGFXResetArg);
 	params[17] = strdup(fontArg);
 	params[18] = strdup(offsetArg);
