@@ -1,0 +1,44 @@
+/*
+	This file is part of FreeJ2ME.
+
+	FreeJ2ME is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	FreeJ2ME is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
+*/
+package javax.microedition.amms.control.audioeffect;
+
+public interface EqualizerControl extends javax.microedition.amms.control.EffectControl  
+{
+    static final int UNDEFINED = -1004;
+
+    int getBand(int frequency);
+    
+    int getBandLevel(int band) throws java.lang.IllegalArgumentException;
+    
+    int getBass();
+    
+    int getCenterFreq(int band) throws java.lang.IllegalArgumentException;
+    
+    int getMaxBandLevel();
+    
+    int getMinBandLevel();
+    
+    int getNumberOfBands();
+    
+    int getTreble();
+    
+    void setBandLevel(int level, int band) throws java.lang.IllegalArgumentException;
+    
+    int setBass(int level) throws java.lang.IllegalArgumentException;
+    
+    int setTreble(int level) throws java.lang.IllegalArgumentException;
+}

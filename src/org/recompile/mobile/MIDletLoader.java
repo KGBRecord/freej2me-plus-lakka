@@ -120,40 +120,39 @@ public class MIDletLoader extends URLClassLoader
 			e.printStackTrace();
 		}
 
-		try
-		{
-			System.setProperty("microedition.platform", "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.");
-			System.setProperty("microedition.profiles", "MIDP-2.0");
-			System.setProperty("microedition.configuration", "CLDC-1.1");
-			System.setProperty("microedition.locale", "en-US");
-			System.setProperty("microedition.encoding", "ISO-8859-1");
-			System.setProperty("microedition.io.file.FileConnection.version", "1.0");
-			System.setProperty("microedition.m3g.version", "1.1");
-			System.setProperty("microedition.jtwi.version", "1.0");
-			System.setProperty("microedition.broadcast.version", "1.0");
-			System.setProperty("microedition.broadcast.supports.overlay", "true");
-			System.setProperty("microedition.broadcast.supports.timedrecording", "true");
-			System.setProperty("microedition.broadcast.supports.filecache", "true");
-			System.setProperty("microedition.broadcast.supports.purchasing", "true");
-			System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
-			System.setProperty("wireless.messaging.version", "1.0");
-			System.setProperty("device.imei", "000000000000000");
-			System.setProperty("com.siemens.IMEI", "000000000005152");
-			System.setProperty("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
-			System.setProperty("com.siemens.OSVersion", "11");
-			System.setProperty("microedition.media.version", "1.1");
-			System.setProperty("microedition.pim.version", "1.0");
-			System.setProperty("bluetooth.api.version", "1.0");
-			System.setProperty("microedition.sensor.version", "1.0");
-			System.setProperty("supports.mixing", "true");
-			System.setProperty("supports.audio.capture", "false");
-			System.setProperty("supports.video.capture", "false");
-			System.setProperty("supports.recording", "false");
-		}
-		catch (Exception e)
-		{
-			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't add CLDC System Properties");
-		}
+		System.setProperty("audio.samplerates", "8000 11025 12000 16000 22050 24000 32000 44100 48000");
+		System.setProperty("audio3d.simultaneouslocations", "8");
+		System.setProperty("bluetooth.api.version", "1.0");
+		System.setProperty("camera.orientations", "devcam0:outwards devcam1:inwards");
+		System.setProperty("camera.resolutions", "devcam0:640x480 devcam1:640x480");
+		System.setProperty("com.siemens.IMEI", "000000000005152");
+		System.setProperty("com.siemens.OSVersion", "11");
+		System.setProperty("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
+		System.setProperty("device.imei", "000000000000000");
+		System.setProperty("microedition.amms.version", "1.1");
+		System.setProperty("microedition.broadcast.supports.filecache", "true");
+		System.setProperty("microedition.broadcast.supports.overlay", "true");
+		System.setProperty("microedition.broadcast.supports.purchasing", "true");
+		System.setProperty("microedition.broadcast.supports.timedrecording", "true");
+		System.setProperty("microedition.broadcast.version", "1.0");
+		System.setProperty("microedition.configuration", "CLDC-1.1");
+		System.setProperty("microedition.encoding", "ISO-8859-1");
+		System.setProperty("microedition.io.file.FileConnection.version", "1.0");
+		System.setProperty("microedition.jtwi.version", "1.0");
+		System.setProperty("microedition.locale", "en-US");
+		System.setProperty("microedition.media.version", "1.1");
+		System.setProperty("microedition.m3g.version", "1.1");
+		System.setProperty("microedition.pim.version", "1.0");
+		System.setProperty("microedition.sensor.version", "1.0");
+		System.setProperty("microedition.platform", "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.");
+		System.setProperty("supports.audio.capture", "true");
+		System.setProperty("supports.mediacapabilities", "music audio3d imageencoding imagepostprocessing camera tuner");
+		System.setProperty("supports.mixing", "true");
+		System.setProperty("supports.recording", "true");
+		System.setProperty("supports.video.capture", "true");
+		System.setProperty("tuner.modulations", "am fm");
+		System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
+		System.setProperty("wireless.messaging.version", "1.0");
 
 		// Integrate properties retrieved from JAD file, if any.
 		properties.putAll(descriptorProperties);
@@ -164,33 +163,39 @@ public class MIDletLoader extends URLClassLoader
 			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Manifest!");
 		}
 
-		properties.put("microedition.platform", "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.");
-		properties.put("microedition.profiles", "MIDP-2.0");
+		properties.put("audio.samplerates", "8000 11025 12000 16000 22050 24000 32000 44100 48000");
+		properties.put("audio3d.simultaneouslocations", "8");
+		properties.put("bluetooth.api.version", "1.0");
+		properties.put("camera.orientations", "devcam0:outwards devcam1:inwards");
+		properties.put("camera.resolutions", "devcam0:640x480 devcam1:640x480");
+		properties.put("com.siemens.IMEI", "000000000005152");
+		properties.put("com.siemens.OSVersion", "11");
+		properties.put("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
+		properties.put("device.imei", "000000000000000");
+		properties.put("microedition.amms.version", "1.1");
+		properties.put("microedition.broadcast.supports.filecache", "true");
+		properties.put("microedition.broadcast.supports.overlay", "true");
+		properties.put("microedition.broadcast.supports.purchasing", "true");
+		properties.put("microedition.broadcast.supports.timedrecording", "true");
+		properties.put("microedition.broadcast.version", "1.0");
 		properties.put("microedition.configuration", "CLDC-1.1");
-		properties.put("microedition.locale", "en-US");
 		properties.put("microedition.encoding", "ISO-8859-1");
 		properties.put("microedition.io.file.FileConnection.version", "1.0");
-		properties.put("microedition.m3g.version", "1.1");
 		properties.put("microedition.jtwi.version", "1.0");
-		properties.put("microedition.broadcast.version", "1.0");
-		properties.put("microedition.broadcast.supports.overlay", "true");
-		properties.put("microedition.broadcast.supports.timedrecording", "true");
-		properties.put("microedition.broadcast.supports.filecache", "true");
-		properties.put("microedition.broadcast.supports.purchasing", "true");
+		properties.put("microedition.locale", "en-US");
+		properties.put("microedition.media.version", "1.1");
+		properties.put("microedition.m3g.version", "1.1");
+		properties.put("microedition.platform", "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.");
+		properties.put("microedition.pim.version", "1.0");
+		properties.put("microedition.sensor.version", "1.0");
+		properties.put("supports.audio.capture", "true");
+		properties.put("supports.mediacapabilities", "music audio3d imageencoding imagepostprocessing camera tuner");
+		properties.put("supports.mixing", "true");
+		properties.put("supports.recording", "true");
+		properties.put("supports.video.capture", "true");
+		properties.put("tuner.modulations", "am fm");
 		properties.put("wireless.messaging.sms.smsc", "+8613800010000");
 		properties.put("wireless.messaging.version", "1.0");
-		properties.put("device.imei", "000000000000000");
-		properties.put("com.siemens.IMEI", "000000000005152");
-		properties.put("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
-		properties.put("com.siemens.OSVersion", "11");
-		properties.put("microedition.media.version", "1.1");
-		properties.put("microedition.pim.version", "1.0");
-		properties.put("bluetooth.api.version", "1.0");
-		properties.put("microedition.sensor.version", "1.0");
-		properties.put("supports.mixing", "true");
-		properties.put("supports.audio.capture", "false");
-		properties.put("supports.video.capture", "false");
-		properties.put("supports.recording", "false");
 
 		if (className[0] == null) { className[0] = findMainClassInJar(url); }
 	}
