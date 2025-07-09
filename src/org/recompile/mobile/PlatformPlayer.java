@@ -1578,9 +1578,15 @@ public class PlatformPlayer implements Player
 						// Set volume for all channels through Control Change command 7 (volume)
 						for (int channel = 0; channel < midiChannels.length; channel++) 
 						{
-							if(channel > 0) { LockSupport.parkNanos(50000); }
+							midiChannels[channel].controlChange(7, 0);
+							LockSupport.parkNanos(10000);
+						}
+
+						// Set volume for all channels through Control Change command 7 (volume)
+						for (int channel = 0; channel < midiChannels.length; channel++) 
+						{
 							midiChannels[channel].controlChange(7, midiVolume);
-							if(channel < midiChannels.length-1) { LockSupport.parkNanos(50000); }
+							LockSupport.parkNanos(10000);
 						}
 					}
 				}
