@@ -134,7 +134,8 @@ public class Mobile
 	public static boolean compatDoNotTranslateDrawRGB    = false;
 	public static boolean compatTranslateToOriginOnReset = false;
 	public static boolean compatImmediateRepaints        = false;
-	public static boolean compatOverridePlatformChecks   = true; 
+	public static boolean compatOverridePlatformChecks   = true;
+	public static boolean compatSiemensFriendlyDrawing   = false;
 
 	// M3G Debug Rendering settings
 	public static boolean M3GRenderUntexturedPolygons = false;
@@ -923,6 +924,10 @@ public class Mobile
 		String overridePlatChecks = config.settings.get("compatoverrideplatchecks");
 		if(overridePlatChecks.equals("on"))        { compatOverridePlatformChecks = true; }
 		else if (overridePlatChecks.equals("off")) { compatOverridePlatformChecks = false; };
+
+		String siemensFriendlyDrawing = config.settings.get("compatsiemensfriendlydrawing");
+		if(siemensFriendlyDrawing.equals("on"))        { compatSiemensFriendlyDrawing = true; }
+		else if (siemensFriendlyDrawing.equals("off")) { compatSiemensFriendlyDrawing = false; };
 
 		String textFont = config.settings.get("textfont");
 		if(textFont.equals("Custom"))       { useCustomTextFont = true; }

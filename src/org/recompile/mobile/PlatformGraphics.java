@@ -382,8 +382,14 @@ public abstract class PlatformGraphics implements DirectGraphics
 			throw new IllegalArgumentException("Source region is out of bounds");
 		}
 
-		try
+		if(Mobile.compatSiemensFriendlyDrawing) 
 		{
+			if(getTranslateX() < 0) { x -= getTranslateX(); }
+			if(getTranslateY() < 0) { y -= getTranslateY(); }
+		}
+
+		try
+		{	
 			if(transform == 0)
 			{
 				x = AnchorX(x, subw, anchor);

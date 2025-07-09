@@ -137,6 +137,7 @@ public class Config
 				settings.put("compattranstooriginonreset", "off");
 				settings.put("compatimmediaterepaints", "off");
 				settings.put("compatoverrideplatchecks", "on");
+				settings.put("compatsiemensfriendlydrawing", "off");
 				settings.put("fpshack", "Disabled");
 				saveConfig();
 			}
@@ -201,6 +202,7 @@ public class Config
 			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", "off"); }
 			if(!settings.containsKey("compatimmediaterepaints")) { settings.put("compatimmediaterepaints", "off"); }
 			if(!settings.containsKey("compatoverrideplatchecks")) { settings.put("compatoverrideplatchecks", "on"); }
+			if(!settings.containsKey("compatsiemensfriendlydrawing")) { settings.put("compatsiemensfriendlydrawing", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
 
 			// System settings
@@ -424,6 +426,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatoverrideplatchecks "+value);
 		settings.put("compatoverrideplatchecks", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateCompatSiemensFriendlyDrawing(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatsiemensfriendlydrawing "+value);
+		settings.put("compatsiemensfriendlydrawing", value);
 		saveConfig();
 		onChange.run();
 	}

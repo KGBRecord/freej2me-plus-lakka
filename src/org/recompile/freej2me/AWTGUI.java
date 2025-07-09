@@ -274,6 +274,7 @@ public final class AWTGUI
 	final CheckboxMenuItem transToOriginOnReset = new CheckboxMenuItem("Translate to origin on gfx reset");
 	final CheckboxMenuItem immediateRepaints = new CheckboxMenuItem("Process canvas repaints immediately");
 	final CheckboxMenuItem overridePlatChecks = new CheckboxMenuItem("Override Mobile Platform checks");
+	final CheckboxMenuItem siemensFriendlyDrawing = new CheckboxMenuItem("Siemens-friendly drawing methods");
 
 	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("Delete KJX files' temporary JAR/JAD");
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
@@ -658,6 +659,17 @@ public final class AWTGUI
 			}
 		});
 
+		siemensFriendlyDrawing.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(siemensFriendlyDrawing.getState()){ config.updateCompatSiemensFriendlyDrawing("on"); hasPendingChange = true; }
+				else{ config.updateCompatSiemensFriendlyDrawing("off"); hasPendingChange = true; }
+
+				showRestartDialog();
+			}
+		});
+
 		// Layout options
 		for(byte i = 0; i < layoutOptions.length; i++) 
 		{
@@ -927,6 +939,7 @@ public final class AWTGUI
 		compatSettingsMenu.add(transToOriginOnReset);
 		compatSettingsMenu.add(immediateRepaints);
 		compatSettingsMenu.add(overridePlatChecks);
+		compatSettingsMenu.add(siemensFriendlyDrawing);
 		
 		// add menus to menubar
 		menuBar.add(fileMenu);
@@ -967,6 +980,8 @@ public final class AWTGUI
 			immediateRepaints.setState(config.settings.get("compatimmediaterepaints").equals("on"));
 
 			overridePlatChecks.setState(config.settings.get("compatoverrideplatchecks").equals("on"));
+
+			siemensFriendlyDrawing.setState(config.settings.get("compatsiemensfriendlydrawing").equals("on"));
 			
 			resChoice.select(""+ Integer.parseInt(config.settings.get("scrwidth")) + "x" + ""+ Integer.parseInt(config.settings.get("scrheight")));
 

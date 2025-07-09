@@ -169,6 +169,10 @@ public class Libretro
 		if(Integer.parseInt(args[21]) == 0) { Mobile.compatOverridePlatformChecks = false; }
 		else { Mobile.compatOverridePlatformChecks = true; }
 
+		/* Compat setting to translate drawing methods in a siemens-friendly way */
+		if(Integer.parseInt(args[22]) == 0) { Mobile.compatSiemensFriendlyDrawing = false; }
+		else { Mobile.compatSiemensFriendlyDrawing = true; }
+
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
@@ -341,6 +345,9 @@ public class Libretro
 										if(!Mobile.compatOverridePlatformChecks) { Mobile.config.settings.put("compatoverrideplatchecks", "off"); }
 										else                                     { Mobile.config.settings.put("compatoverrideplatchecks", "on"); }
 
+										if(!Mobile.compatSiemensFriendlyDrawing) { Mobile.config.settings.put("compatsiemensfriendlydrawing", "off"); }
+										else                                     { Mobile.config.settings.put("compatsiemensfriendlydrawing", "on"); }
+
 										if(!Mobile.useCustomTextFont)  { Mobile.config.settings.put("textfont", "Default"); }
 										else                           { Mobile.config.settings.put("textfont", "Custom");  }
 
@@ -479,6 +486,9 @@ public class Libretro
 
 									if(Integer.parseInt(cfgtokens[22])==0) { Mobile.config.settings.put("compatoverrideplatchecks", "off");  }
 									else { Mobile.config.settings.put("compatoverrideplatchecks", "on"); }
+
+									if(Integer.parseInt(cfgtokens[23])==0) { Mobile.config.settings.put("compatsiemensfriendlydrawing", "off");  }
+									else { Mobile.config.settings.put("compatsiemensfriendlydrawing", "on"); }
 
 
 									Mobile.config.saveConfig();

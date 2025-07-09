@@ -576,6 +576,20 @@ struct retro_core_option_v2_definition core_options[] =
         "on"
     },
     {
+        "freej2me_compatsiemensfriendlydraw",
+        "Compatibility Settings > Siemens-friendly drawing methods",
+        "Siemens-friendly drawing methods",
+        "MIDP-Compliant J2ME drawing operations do no need to check for negative translation values in order to draw images properly. However, some Siemens apps like STCC (Swedish Touring Car Championship) won't work properly with the default behavior. This option tries to correct translations in a way that is closer to what Siemens' VM probably does drawing. Note that enabling this will break jars that use negative translations but are tailored for the J2ME specification.",
+        "MIDP-Compliant J2ME drawing operations do no need to check for negative translation values in order to draw images properly. However, some Siemens apps like STCC (Swedish Touring Car Championship) won't work properly with the default behavior. This option tries to correct translations in a way that is closer to what Siemens' VM probably does drawing. Note that enabling this will break jars that use negative translations but are tailored for the J2ME specification.",
+        "compat_settings",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "M3G Debug Settings > Draw only vertex colors",
         "Draw only vertex colors",
@@ -988,6 +1002,17 @@ struct retro_core_option_definition core_options_v1 [] =
         "on"
     },
     {
+        "freej2me_compatsiemensfriendlydraw",
+        "Siemens-friendly drawing methods",
+        "MIDP-Compliant J2ME drawing operations do no need to check for negative translation values in order to draw images properly. However, some Siemens apps like STCC (Swedish Touring Car Championship) won't work properly with the default behavior. This option tries to correct translations in a way that is closer to what Siemens' VM probably does drawing. Note that enabling this will break jars that use negative translations but are tailored for the J2ME specification.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "Draw only vertex colors",
         "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
@@ -1121,6 +1146,10 @@ static const struct retro_variable vars[] =
     { /* Override Mobile Platform checks */
         "freej2me_compatoverrideplatcheck",
         "Override Mobile Platform checks; on|off",
+    },
+    { /* Siemens-friendly drawing methods */
+        "freej2me_compatsiemensfriendlydraw",
+        "Siemens-friendly drawing methods; off|on",
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",
