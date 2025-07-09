@@ -110,8 +110,6 @@ public abstract class Displayable
 	public void pointerDragged(int x, int y) { }
 	public void pointerPressed(int x, int y) { }
 	public void pointerReleased(int x, int y) { }
-	public void showNotify() { }
-	public void hideNotify() { }
 
 	public void notifySetCurrent() { _invalidate(); }
 
