@@ -136,7 +136,7 @@ public class MIDletLoader extends URLClassLoader
 		System.setProperty("microedition.broadcast.supports.timedrecording", "true");
 		System.setProperty("microedition.broadcast.version", "1.0");
 		System.setProperty("microedition.configuration", "CLDC-1.1");
-		System.setProperty("microedition.encoding", "ISO-8859-1");
+		System.setProperty("microedition.encoding", System.getProperty("file.encoding"));
 		System.setProperty("microedition.io.file.FileConnection.version", "1.0");
 		System.setProperty("microedition.jtwi.version", "1.0");
 		System.setProperty("microedition.locale", "en-US");
@@ -145,12 +145,14 @@ public class MIDletLoader extends URLClassLoader
 		System.setProperty("microedition.pim.version", "1.0");
 		System.setProperty("microedition.sensor.version", "1.0");
 		System.setProperty("microedition.platform", "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.");
+		System.setProperty("microedition.profiles", "MIDP-2.0");
 		System.setProperty("supports.audio.capture", "true");
 		System.setProperty("supports.mediacapabilities", "music audio3d imageencoding imagepostprocessing camera tuner");
 		System.setProperty("supports.mixing", "true");
 		System.setProperty("supports.recording", "true");
 		System.setProperty("supports.video.capture", "true");
 		System.setProperty("tuner.modulations", "am fm");
+		System.setProperty("wireless.messaging.mms.mmsc", "http://abc.stubfreej2meplus.net");
 		System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
 		System.setProperty("wireless.messaging.version", "1.0");
 
@@ -179,13 +181,14 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("microedition.broadcast.supports.timedrecording", "true");
 		properties.put("microedition.broadcast.version", "1.0");
 		properties.put("microedition.configuration", "CLDC-1.1");
-		properties.put("microedition.encoding", "ISO-8859-1");
+		properties.put("microedition.encoding", System.getProperty("file.encoding"));
 		properties.put("microedition.io.file.FileConnection.version", "1.0");
 		properties.put("microedition.jtwi.version", "1.0");
 		properties.put("microedition.locale", "en-US");
 		properties.put("microedition.media.version", "1.1");
 		properties.put("microedition.m3g.version", "1.1");
 		properties.put("microedition.platform", "FreeJ2ME-Plus, a Cross-Platform J2ME Emulator.");
+		properties.put("microedition.profiles", "MIDP-2.0");
 		properties.put("microedition.pim.version", "1.0");
 		properties.put("microedition.sensor.version", "1.0");
 		properties.put("supports.audio.capture", "true");
@@ -194,6 +197,7 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("supports.recording", "true");
 		properties.put("supports.video.capture", "true");
 		properties.put("tuner.modulations", "am fm");
+		properties.put("wireless.messaging.mms.mmsc", "http://abc.stubfreej2meplus.net");
 		properties.put("wireless.messaging.sms.smsc", "+8613800010000");
 		properties.put("wireless.messaging.version", "1.0");
 
