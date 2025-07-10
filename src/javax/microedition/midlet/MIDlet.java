@@ -45,7 +45,7 @@ public abstract class MIDlet
 
 	public String getAppProperty(String key)
 	{ 
-		return properties.get(key);
+		return properties.get(key) != null ? properties.get(key) : "";
 	}
 
 	public static void initAppProperties(HashMap<String, String> initProperties)
