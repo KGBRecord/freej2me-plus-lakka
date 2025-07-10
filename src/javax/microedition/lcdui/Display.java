@@ -119,12 +119,12 @@ public class Display
 					try { serializedEvents.wait(); }
 					catch (Exception e) { }
 				}
+
+				// Run paint event in sync with the serial queue, always before the serial call's run()
+				call = paintEvent.getAndSet(null);
+				if(call != null) { call.run(); }
 				
 				call = serializedEvents.poll(); 
-				if(call != null) { call.run(); }
-
-				// Run paint event in sync with the serial queue, always after the serial call
-				call = paintEvent.getAndSet(null);
 				if(call != null) { call.run(); }
 			}
 
@@ -295,15 +295,22 @@ public class Display
 				// Paint displayable block
 				try 
 				{
-					if(current instanceof Canvas) { current.notifySetCurrent(); } // Canvas always queues its rendering internally
-					else
+					
+					// Some jars call upon a canvas repaint() once they're ready. If the canvas still hasn't been shown at this time, wait a bit longer before forcing a repaint
+					if(current instanceof Canvas && !((Canvas) current).hasBeenDrawnAfterSet())
 					{ 
-						postPaintRequest(new Runnable()
+						int maxWait = 200; // Wait for a max of 200ms, i don't want to start littering FreeJ2ME-Plus with compatibility flags
+
+						while(!((Canvas) current).hasBeenDrawnAfterSet() && maxWait > 0) 
 						{
-							@Override
-							public void run() { current.notifySetCurrent(); }
-						}); 
+							Thread.sleep(1);
+							maxWait--;
+						}
+
+						// Still wasn't shown by the application itself? Force it to be
+						if(!((Canvas) current).hasBeenDrawnAfterSet()) { ((Canvas) current).repaint(0, 0, current.getWidth(), current.getHeight()); }
 					}
+					else { current.notifySetCurrent(); } // Displayables other than canvas have drawing dictated entirely by FreeJ2ME, so always force a draw to happen on setCurrent
 
 					Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
 				}

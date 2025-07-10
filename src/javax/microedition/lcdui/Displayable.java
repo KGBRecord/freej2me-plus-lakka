@@ -306,7 +306,11 @@ public abstract class Displayable
 	{
 		if (!isShown()) { return; }
 
-		render();
+		Mobile.getDisplay().postPaintRequest(new Runnable()
+		{
+			@Override
+			public void run() { render(); }
+		}); 
 	}
 
 }

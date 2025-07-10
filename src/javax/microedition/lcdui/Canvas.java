@@ -54,6 +54,7 @@ public abstract class Canvas extends Displayable
 	private int barHeight;
 	private boolean fullscreen = false;
 	private boolean servicing = false;
+	private boolean firstDrawn = false;
 
 	private AtomicBoolean pendingRepaint = new AtomicBoolean(false);
 
@@ -179,6 +180,8 @@ public abstract class Canvas extends Displayable
 		// These can be called from another thread, at any time (even if the canvas is no longer visible), so ignore any repaints in cases where it isn't visible
 		if (!isShown() || listCommands) { return; }
 
+		firstDrawn = true; // So that setCurrent knows whether this canvas has been shown by the application before forcing a repaint of its own (we don't need to finalize the paint call)
+
 		try 
 		{
 			synchronized(graphics) 
@@ -186,6 +189,10 @@ public abstract class Canvas extends Displayable
 				graphics.reset(x, y, width, height); 
 				paint(graphics); 
 			}
+		}
+		catch(NullPointerException npe) 
+		{
+			throw new NullPointerException("Null Pointer Exception in draw event");
 		}
 		catch (Exception e) 
 		{
@@ -305,4 +312,6 @@ public abstract class Canvas extends Displayable
 		if (listCommands) { super.render(); } 
 		else { repaint(); }
 	}
+
+	public final boolean hasBeenDrawnAfterSet() { return firstDrawn; }
 }
