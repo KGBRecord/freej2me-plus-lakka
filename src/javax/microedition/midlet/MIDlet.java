@@ -46,7 +46,7 @@ public abstract class MIDlet
 	public String getAppProperty(String key)
 	{ 
 		Mobile.log(Mobile.LOG_INFO, MIDlet.class.getPackage().getName() + "." + MIDlet.class.getSimpleName() + ": " + "getAppProperty: "+ key);
-		return properties.get(key) != null ? properties.get(key) : "";
+		return properties.get(key);
 	}
 
 	public static void initAppProperties(HashMap<String, String> initProperties)
