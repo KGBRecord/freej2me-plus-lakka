@@ -105,7 +105,7 @@ public class PlatformImage
 	{
 		// Create Image from resource name
 		
-		BufferedImage temp;
+		BufferedImage image;
 
 		InputStream stream = null;
 		if(!Mobile.isDoJa) 
@@ -132,13 +132,12 @@ public class PlatformImage
 		if(stream == null) { throw new IOException("Can't load image from resource, as the returned image is null."); }
 		else
 		{
-			try { temp = ImageIO.read(stream); } 
+			try { image = ImageIO.read(stream); } 
 			catch (IOException e) { throw new IOException("Failed to read image from resource:" + e.getMessage()); }
 			
-			if(temp == null) { throw new IOException("Can't load image from resource, as the returned image is null."); }
+			if(image == null) { throw new IOException("Can't load image from resource, as the returned image is null."); }
 
-			canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
-			canvas.getGraphics().drawImage(temp, 0, 0, null);
+			setCanvas(image);
 		}
 	}
 
@@ -146,14 +145,13 @@ public class PlatformImage
 	{
 		// Create Image from InputStream
 		Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image From Stream");
-		BufferedImage temp;
-		try { temp = ImageIO.read(stream); } 
+		BufferedImage image;
+		try { image = ImageIO.read(stream); } 
 		catch (IOException e) { throw new IOException("Failed to read image from InputStream:" + e.getMessage()); }
 		
-		if(temp == null) { throw new IOException("Can't load image from stream."); }
+		if(image == null) { throw new IOException("Can't load image from stream."); }
 
-		canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		canvas.getGraphics().drawImage(temp, 0, 0, null);
+		setCanvas(image);
 	}
 
 	public PlatformImage(Image source)
@@ -174,21 +172,20 @@ public class PlatformImage
 		// Create Image from Byte Array Range (Data is PNG, JPG, etc.)
 		InputStream stream = new ByteArrayInputStream(imageData, imageOffset, imageLength);
 
-		BufferedImage temp;
+		BufferedImage image;
 		
-		try { temp = ImageIO.read(stream); } 
+		try { image = ImageIO.read(stream); } 
 		catch (IOException e) { throw new IllegalArgumentException("Failed to read image from Byte Array." + e.getMessage()); }
 		
-		if(temp == null) { throw new IllegalArgumentException("Can't load image from byte array, as the returned image is null."); }
+		if(image == null) { throw new IllegalArgumentException("Can't load image from byte array, as the returned image is null."); }
 
-		canvas = new BufferedImage(temp.getWidth(), temp.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		if(mutable) 
 		{ 
 			if(!Mobile.isDoJa) { gc = new Graphics(this); }
 			else { djgc = new com.nttdocomo.ui.Graphics(this); }
 		}
 
-		canvas.getGraphics().drawImage(temp, 0, 0, null);
+		setCanvas(image);
 
 		isMutable = mutable;
 	}
@@ -196,9 +193,6 @@ public class PlatformImage
 	public PlatformImage(int[] rgb, int Width, int Height, boolean processAlpha)
 	{
 		// createRGBImage (Data is ARGB pixel data)
-		if(Width < 1) { Width = 1; }
-		if(Height < 1) { Height = 1; }
-
 		canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
 		int[] canvasPixels = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
