@@ -37,6 +37,7 @@ public class AudioClip
 	// NOTE: MMF/SMAF is converted by Manager->PlatformPlayer when it receives the data
 	public static final String[] formatMIMEType = {"audio/mmf", "audio/mp3", "audio/midi"};
 
+	private int playerFormat;
 	private Player player;
 
 	public AudioClip(int clipType, byte[] audioData, int audioOffset, int audioLength)
@@ -56,6 +57,7 @@ public class AudioClip
 		try 
 		{ 
 			player = Manager.createPlayer(new ByteArrayInputStream(audioData, audioOffset, audioLength), formatMIMEType[clipType-1]);
+			playerFormat = clipType;
 			player.prefetch();
 		}
 		catch (Exception e) {Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Failed to create player:" + e.getMessage()); e.printStackTrace(); }
@@ -70,6 +72,7 @@ public class AudioClip
 		{
 			InputStream stream = Mobile.getPlatform().loader.getResourceAsStream(filename);
 			player = Manager.createPlayer(stream, formatMIMEType[clipType-1]);
+			playerFormat = clipType;
 			player.prefetch();
 		}
 		catch (Exception e) {Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Failed to create player:" + e.getMessage()); e.printStackTrace(); }
@@ -81,13 +84,14 @@ public class AudioClip
 
 	public void play(int loop, int volume) 
 	{
-		if(loop < 0 || loop > 255 || volume < 0 || volume > 5) { throw new IllegalArgumentException("AudioClip: Cannot play() media, invalid argument provided"); }
+		// MMF apparently accepts looping to -1 in AudioClip. Not stated on the documentation, but some jars like ClickMan use it specifically for MMF
+		if(loop < ((playerFormat == TYPE_MMF) ? -1 : 0) || loop > 255 || volume < 0 || volume > 5) { throw new IllegalArgumentException("AudioClip: Cannot play() media, invalid argument provided"); }
 
 		try
 		{
 			if (player.getState() == Player.STARTED) { player.stop(); }
 			player.setMediaTime(0); // play() should always play media from the beginning, like Nokia Sound
-			player.setLoopCount((loop == 0 || loop == 255) ? -1 : loop); // Treat 0 loops, and the max allowed value as infinite looping
+			player.setLoopCount((loop == -1 || loop == 255) ? -1 : loop+1); // Treat -1 loops, and the max allowed value as infinite looping
 			((VolumeControl) player.getControl("VolumeControl")).setLevel(volume * 20); // Received volume varies from 1 to 5, so adapt
 			player.start();
 		}
