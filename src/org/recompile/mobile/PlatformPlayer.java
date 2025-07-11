@@ -68,6 +68,8 @@ import javax.microedition.media.Manager;
 
 /* SMAF decoding support */
 import javax.microedition.media.decoders.SMAFDecoder;
+/* MLD decoding support */
+import javax.microedition.media.decoders.MLDDecoder;
 /* IMA ADPCM WAV support */
 import javax.microedition.media.decoders.WAVTools;
 import javax.microedition.media.decoders.WAVImaADPCMDecoder;
@@ -101,6 +103,9 @@ public class PlatformPlayer implements Player
 
 	private SoundListener nokiaListener;
 	private Sound nokiaSound;
+
+	private com.nttdocomo.ui.MediaListener doJaListener;
+	private com.nttdocomo.ui.AudioPresenter doJaPresenter;
 
 	protected boolean disableControls = false; // For when a given audio format is not supported
 	protected Control[] controls;
@@ -179,10 +184,26 @@ public class PlatformPlayer implements Player
 					}
 					else if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
 					{
-						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MFi! (not supported yet)");
-						contentType = "audio/mfi (stub)";
-						player = new audioplayer();
-						disableControls = true;
+						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MLD/MFi! (not fully supported yet)");
+						contentType = "audio/x-mld (beta)";
+						MLDDecoder.decodeMLD(data);
+						if(MLDDecoder.SequenceData != null || MLDDecoder.pcmData != null) 
+						{
+							if(Mobile.dumpAudioStreams) 
+							{ 
+								if(MLDDecoder.SequenceData != null) { MLDDecoder.SequenceData = Manager.dumpAudioStream(MLDDecoder.SequenceData, contentType); }
+								if(MLDDecoder.pcmData != null) 
+								{
+									for(int i = 0; i < MLDDecoder.pcmData.size(); i++) 
+									{
+										MLDDecoder.pcmData.set(i, Manager.dumpAudioStream(MLDDecoder.pcmData.get(i), contentType));
+									}
+								}
+							}
+							// Yes, we are reusing SMAF's player for MLD, they're quite similar
+							player = new SMAFPlayer(MLDDecoder.SequenceData, MLDDecoder.pcmData.toArray(new InputStream[0]), new HashMap<Integer, Integer>(MLDDecoder.pcmDataPositions), new HashMap<Integer, Integer>(MLDDecoder.pcmDataVelocities));
+						}
+						else { player = new audioplayer(); disableControls = true; } // Somehow the MLD decoder failed, retrieve a stub player
 					}
 					else if(data.length >= 6 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '\n') 
 					{
@@ -356,41 +377,66 @@ public class PlatformPlayer implements Player
 		kddiListeners.remove(playerListener);
 	}
 
+	//DoJa listeners
+	public void setDoJaListener(com.nttdocomo.ui.MediaListener listener, com.nttdocomo.ui.AudioPresenter presenter) // DoJa behaves akin to Nokia in how it sets listeners
+	{
+		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot add SoundListener to an UNINITIALIZED Sound"); }
+		if(listener == null) { return; }
+
+		doJaListener = listener;
+		doJaPresenter = presenter;
+	}
+
 	public void notifyListeners(String event, Object eventData)
 	{
+		// Paused events will never happen for these three
+		
 		for(int i=0; i<listeners.size(); i++)
 		{
+			if(event == PlayerListener.LOOPED) { event = PlayerListener.END_OF_MEDIA; }
 			listeners.get(i).playerUpdate(this, event, eventData);
 		}
 
 		for(int i=0; i < siemensListeners.size(); i++) 
 		{
+			if(event == PlayerListener.LOOPED) { event = PlayerListener.END_OF_MEDIA; }
 			siemensListeners.get(i).playerUpdate((com.siemens.mp.media.Player) this, event, eventData);
-			if(i == siemensListeners.size() - 1) { return; }
 		}
-
-		if(kddiListeners.size() > 0) 
-		{
-			int kddiEvent = 0, kddiData = 0;
-			kddiData = (int) getMediaTime(); // This is an optional integer argument according to KDDI docs, but let's send the current media time nonetheless
-			if(event == PlayerListener.STARTED && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PLAY; }
-			if(event == PlayerListener.STARTED && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.RESUME; }
-			else if((event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.STOP; }
-			else if((event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PAUSE; }
-			
-			for(int i=0; i < kddiListeners.size(); i++) 
-			{
-				kddiListeners.get(i).stateChanged(this.kddiPlayerBox, kddiEvent, kddiData);
-				if(i == kddiListeners.size() - 1) { return; }
-			}
-		}
-		
 
 		if(nokiaListener != null) 
 		{
 			if(event == PlayerListener.CLOSED) { nokiaListener.soundStateChanged(nokiaSound, Sound.SOUND_UNINITIALIZED); }
-			else if(event == PlayerListener.STARTED) { { nokiaListener.soundStateChanged(nokiaSound, Sound.SOUND_PLAYING); } }
-			else if(event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA) { { nokiaListener.soundStateChanged(nokiaSound, Sound.SOUND_STOPPED); } }
+			else if(event == PlayerListener.STARTED) { nokiaListener.soundStateChanged(nokiaSound, Sound.SOUND_PLAYING); }
+			else if(event == PlayerListener.STOPPED || event == PlayerListener.END_OF_MEDIA || event == PlayerListener.LOOPED) { nokiaListener.soundStateChanged(nokiaSound, Sound.SOUND_STOPPED); }
+		}
+
+		// These are more robust and have additional events
+
+		if(kddiListeners.size() > 0) 
+		{
+			int kddiEvent = 0;
+			int kddiData = (int) getMediaTime(); // This is an optional integer argument according to KDDI docs, but let's send the current media time nonetheless
+			if(event == PlayerListener.STARTED && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PLAY; }
+			if(event == PlayerListener.STARTED && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.RESUME; }
+			else if(event == PlayerListener.CLOSED) { kddiEvent = com.kddi.media.MediaPlayerBox.STOP; }
+			else if(event == PlayerListener.STOPPED) { kddiEvent = com.kddi.media.MediaPlayerBox.PAUSE; }
+			else if(event == PlayerListener.END_OF_MEDIA || event == PlayerListener.LOOPED) { kddiEvent = com.kddi.media.MediaPlayerBox.STOP; }
+			
+			for(int i=0; i < kddiListeners.size(); i++) 
+			{
+				kddiListeners.get(i).stateChanged(this.kddiPlayerBox, kddiEvent, kddiData);
+			}
+		}
+		
+		if(doJaListener != null) 
+		{
+			int doJaData = (int) getMediaTime();
+			if(event == PlayerListener.CLOSED) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_STOPPED, doJaData); }
+			else if(event == PlayerListener.STARTED && doJaData == 0) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_PLAYING, doJaData); }
+			else if(event == PlayerListener.STARTED && doJaData != 0) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_RESTARTED, doJaData); }
+			else if(event == PlayerListener.STOPPED)  { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_PAUSED, doJaData); }
+			else if(event == PlayerListener.END_OF_MEDIA) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_COMPLETE, doJaData); }
+			else if(event == PlayerListener.LOOPED) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_LOOPED, doJaData); }
 		}
 	}
 
@@ -613,14 +659,15 @@ public class PlatformPlayer implements Player
 						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
 						{
 							state = Player.PREFETCHED;
-							notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
 							curTime = getMediaTime();
 							if(numLoops != 0) 
 							{
+								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
 								start();
 							}
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); }
 						}
 					}
 				};
@@ -631,10 +678,11 @@ public class PlatformPlayer implements Player
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
 				else { setMediaTime(curTime); } // Else, resume from where it stopped
 
-				midi.start();
-				((volumeControl)getControl("VolumeControl")).setLevel(getVolume());
 				state = Player.STARTED;
 				notifyListeners(PlayerListener.STARTED, getMediaTime());
+
+				midi.start();
+				((volumeControl)getControl("VolumeControl")).setLevel(getVolume());
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to clean MIDI sequencer and start playback:" + e.getMessage()); }
 		}
@@ -788,14 +836,15 @@ public class PlatformPlayer implements Player
 						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
 						{
 							state = Player.PREFETCHED;
-							notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
 							curTime = getMediaTime();
 							if(numLoops != 0) 
 							{
+								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
 								start();
 							}
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); }
 						}
 					}
 				};
@@ -807,6 +856,8 @@ public class PlatformPlayer implements Player
 				else { setMediaTime(curTime); } // Else, resume from where it stopped
 
 				isPlaying = true;
+				state = Player.STARTED;
+				notifyListeners(PlayerListener.STARTED, getMediaTime());
 
 				// Start a separate thread to handle SMAF's sequence + PCM playback
 				new Thread(new Runnable() 
@@ -814,9 +865,6 @@ public class PlatformPlayer implements Player
 					@Override
 					public void run() { handleSmafPlayback(); }
 				}).start();
-				
-				state = Player.STARTED;
-				notifyListeners(PlayerListener.STARTED, getMediaTime());
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to clean MIDI sequencer and start playback:" + e.getMessage()); }
 		}
@@ -1051,13 +1099,14 @@ public class PlatformPlayer implements Player
 							if (event.getType() == LineEvent.Type.STOP) 
 							{
 								state = Player.PREFETCHED;
-								notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
 								if(numLoops != 0) 
 								{
+									notifyListeners(PlayerListener.LOOPED, getMediaTime());
 									if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 									setMediaTime(0);
 									start();
 								}
+								else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); }
 							}
 						}
 					};
@@ -1078,10 +1127,11 @@ public class PlatformPlayer implements Player
 		public void start()
 		{	
 			if(getMediaTime() >= getDuration()) { setMediaTime(0); }
-			wavClip.start();
 
 			state = Player.STARTED;
 			notifyListeners(PlayerListener.STARTED, getMediaTime());
+
+			wavClip.start();
 		}
 
 		public void stop()
@@ -1237,10 +1287,10 @@ public class PlatformPlayer implements Player
 					}
 				});
 
-				playerThread.start();
-
 				state = Player.STARTED;
 				notifyListeners(PlayerListener.STARTED, getMediaTime());
+
+				playerThread.start();
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't start mpeg player:" + e.getMessage()); }
 		}
 

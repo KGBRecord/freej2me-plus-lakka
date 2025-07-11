@@ -16,6 +16,7 @@
 */
 package com.nttdocomo.ui;
 
+import com.nttdocomo.ui.impls.MediaSoundImpl;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformPlayer;
 
@@ -52,9 +53,8 @@ public class AudioPresenter implements MediaPresenter
     protected static final int MIN_VENDOR_AUDIO_EVENT = 64;
     protected static final int MAX_VENDOR_AUDIO_EVENT = 127;
     
-    private MediaListener listener;
     private MediaData mediaData = null;
-    private MediaSound mediaSound = null;
+    private MediaSoundImpl mediaSound = null;
 
     private int priority;
 
@@ -88,22 +88,12 @@ public class AudioPresenter implements MediaPresenter
 
     public void play(int time) 
     {
-        if (listener != null) 
-        {
-            listener.mediaAction(this, AUDIO_PLAYING, 0);
-        }
-
         mediaSound.getPlayer().setMediaTime(time);
         mediaSound.getPlayer().start();
     }
 
     public void stop() 
     {
-        if (listener != null) 
-        {
-            listener.mediaAction(this, AUDIO_STOPPED, 0);
-        }
-
         mediaSound.getPlayer().stop();
         mediaSound.getPlayer().setMediaTime(0);
     }
@@ -111,23 +101,10 @@ public class AudioPresenter implements MediaPresenter
     // Despite the name, this is actually a resume call
     public void restart() 
     {
-        if (listener != null) 
-        {
-            listener.mediaAction(this, AUDIO_RESTARTED, 0);
-        }
-
         mediaSound.getPlayer().start();
     }
 
-    public void pause() 
-    {
-        if (listener != null) 
-        {
-            listener.mediaAction(this, AUDIO_PAUSED, 0);
-        }
-
-        mediaSound.getPlayer().stop();
-    }
+    public void pause() { mediaSound.getPlayer().stop(); }
 
     public int getCurrentTime() { return (int) (mediaSound.getPlayer().getMediaTime() / 1000); }
 
@@ -135,7 +112,11 @@ public class AudioPresenter implements MediaPresenter
 
     public void setData(MediaData data) { this.mediaData = data; }
 
-    public void setSound(MediaSound sound) { this.mediaSound = sound; }
+    public void setSound(MediaSound sound) 
+    { 
+        this.mediaSound = (MediaSoundImpl) sound; 
+        this.mediaSound.getPlayer().realize();
+    }
 
     public void setAttribute(int attribute, int value) 
     {
@@ -170,7 +151,10 @@ public class AudioPresenter implements MediaPresenter
         }
     }
 
-    public void setMediaListener(MediaListener listener) { this.listener = listener; }
+    public void setMediaListener(MediaListener listener) 
+    { 
+        if(mediaSound != null) { ((PlatformPlayer)mediaSound.getPlayer()).setDoJaListener(listener, this); }
+    }
 
     public void setSyncEvent(int channel, int key) 
     { 

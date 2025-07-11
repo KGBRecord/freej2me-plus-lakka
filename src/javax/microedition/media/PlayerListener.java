@@ -30,6 +30,10 @@ public interface PlayerListener
 	public static final String STOPPED  = "stopped";
 	public static final String VOLUME_CHANGED  = "volumeChanged";
 
+	// Additional properties for more robust DoJa listeners
+	public static final String LOOPED  = "loopedMedia";
+	public static final String SYNC    = "sync";
+
 
 	public void playerUpdate(Player player, String event, Object eventData);
 
