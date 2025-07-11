@@ -36,36 +36,33 @@ public abstract class GameCanvas extends Canvas
 	public static final int GAME_C_PRESSED = 1 << Canvas.GAME_C;
 	public static final int GAME_D_PRESSED = 1 << Canvas.GAME_D;
 
-	private boolean suppressKeyEvents;
+	private final Image buffer;
 
 	protected GameCanvas(boolean suppressKeyEvents)
 	{
-		super();
-		this.suppressKeyEvents = suppressKeyEvents;
+		super(suppressKeyEvents);
+		buffer = Image.createImage(width, getHeight());
 	}
 
-	protected Graphics getGraphics()
+	protected Graphics getGraphics() 
 	{
-		return platformImage.getMIDPGraphics();
+		buffer.getGraphics().reset(); 
+		return buffer.getGraphics(); 
 	}
 
-	public void paint(Graphics g) { }
+	public void paint(Graphics g) { g.drawImage(buffer, 0, 0, Graphics.LEFT | Graphics.TOP); }
 
 	public void flushGraphics(int x, int y, int width, int height)
 	{
-		Mobile.getPlatform().limitFps();
-
 		if (width <= 0 || height <= 0 || x + width < 0 || y + height < 0 || x >= this.width || y >= this.height) { return; }
 
-		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+		Mobile.getPlatform().flushGraphics(buffer, x, y, width, height);
+		Mobile.getPlatform().limitFps();
 	}
 
-	public void flushGraphics()
-	{
-		flushGraphics(0, 0, getWidth(), getHeight());
-	}
+	public void flushGraphics() { flushGraphics(0, 0, getWidth(), getHeight()); }
 
-	public int getKeyStates() { return MobilePlatform.keyState; }
+	public int getKeyStates() { return isShown() ? MobilePlatform.keyState : 0; }
 
 	@Override
 	public void doSizeChanged(int w, int h) { super.sizeChanged(w, h); }

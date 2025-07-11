@@ -40,7 +40,7 @@ public abstract class Canvas extends Frame
 	{
 		if (group < 0) { throw new IllegalArgumentException("group cannot be negative"); }
 		
-		return MobilePlatform.DoJaKeyState;
+		return MobilePlatform.doJaKeyState;
 	}
 
     public abstract void paint(Graphics g);

@@ -85,7 +85,7 @@ public class MobilePlatform
 
 	public volatile static int keyState = 0;
 	public volatile static int vodafoneKeyState = 0;
-	public volatile static int DoJaKeyState = 0;
+	public volatile static int doJaKeyState = 0;
 
 	// MobilePlatform will handle the input repeats as well
 	public static boolean[] pressedKeys = new boolean[22];
@@ -195,7 +195,10 @@ public class MobilePlatform
 					@Override
 					public void run() 
 					{ 
-						if(!handleCommands(Mobile.getCanvasAction(keycode))) { displayable.keyPressed(keycode); }
+						if(!handleCommands(Mobile.getCanvasAction(keycode))) 
+						{ 
+							if(displayable instanceof Canvas && !((Canvas) displayable).areKeysSuppressed()) { displayable.keyPressed(keycode); }
+						}
 					}
 				});
 			}
@@ -214,7 +217,10 @@ public class MobilePlatform
 				Mobile.getDisplay().postInputEvent(new Runnable() 
 				{ 
 					@Override
-					public void run() { displayable.keyReleased(keycode); }
+					public void run() 
+					{ 
+						if(displayable instanceof Canvas && !((Canvas) displayable).areKeysSuppressed()) { displayable.keyReleased(keycode); }
+					}
 				});
 			}
 		}
@@ -229,7 +235,10 @@ public class MobilePlatform
 				@Override
 				public void run() 
 				{ 
-					if(!handleCommands(Mobile.getCanvasAction(keycode))) { displayable.keyRepeated(keycode); }
+					if(!handleCommands(Mobile.getCanvasAction(keycode))) 
+					{ 
+						if(displayable instanceof Canvas && !((Canvas) displayable).areKeysSuppressed()) { displayable.keyRepeated(keycode); }
+					}
 				}
 			});
 		}
@@ -243,7 +252,7 @@ public class MobilePlatform
 			Mobile.getDisplay().postInputEvent(new Runnable() 
 			{ 
 				@Override
-				public void run() { displayable.pointerDragged(x, y);; }
+				public void run() { displayable.pointerDragged(x, y); }
 			});
 		}
 		// TODO: DoJa
@@ -440,19 +449,19 @@ public class MobilePlatform
 		
 		if(pressed) 
 		{ 
-			DoJaKeyState |= mask;
+			doJaKeyState |= mask;
 			if(canvasPresent) 
 			{
-				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_PRESSED_EVENT, DoJaKeyState);
+				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_PRESSED_EVENT, doJaKeyState);
 			}
 		}
 		else // Send the released event BEFORE changing the mask (or else this will always send 0 as the key value)
 		{ 
 			if(canvasPresent) 
 			{
-				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_RELEASED_EVENT, DoJaKeyState);
+				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_RELEASED_EVENT, doJaKeyState);
 			}
-			DoJaKeyState ^= mask; 
+			doJaKeyState ^= mask; 
 		}
 	}
 

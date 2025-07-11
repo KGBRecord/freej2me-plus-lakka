@@ -52,6 +52,7 @@ public abstract class Canvas extends Displayable
 	public static final int KEY_SOFT_RIGHT = 127;
 
 	private int barHeight;
+	private boolean suppressKeyEvents = false; // For GameCanvas
 	private boolean fullscreen = false;
 	private boolean servicing = false;
 	private boolean firstDrawn = false;
@@ -63,6 +64,16 @@ public abstract class Canvas extends Displayable
 		Mobile.log(Mobile.LOG_INFO, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Create Canvas:"+width+", "+height);
 
 		barHeight = Font.getDefaultFont().getHeight();
+	}
+
+	// Constructor called by GameCanvas
+	protected Canvas(boolean suppressKeys)
+	{
+		Mobile.log(Mobile.LOG_INFO, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Create Canvas:"+width+", "+height+" suppressKeys:"+suppressKeys);
+
+		barHeight = Font.getDefaultFont().getHeight();
+
+		suppressKeyEvents = suppressKeys;
 	}
 
 	public int getGameAction(int keyCode) { return Mobile.getGameAction(keyCode); }
@@ -314,4 +325,6 @@ public abstract class Canvas extends Displayable
 	}
 
 	public final boolean hasBeenDrawnAfterSet() { return firstDrawn; }
+
+	public final boolean areKeysSuppressed() { return suppressKeyEvents; }
 }
