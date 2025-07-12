@@ -14,11 +14,13 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.siemens.mp;
+package com.siemens.mp.gsm;
 
-public class NotAllowedException extends Exception 
+import com.siemens.mp.NotAllowedException;
+
+public class Call 
 {
-    public NotAllowedException() { super(); }
-           
-    public NotAllowedException(String msg) { super(msg); }
+    public Call() { }
+
+    public static void start(String number) throws NotAllowedException { throw new NotAllowedException("Calls are not allowed"); }
 }

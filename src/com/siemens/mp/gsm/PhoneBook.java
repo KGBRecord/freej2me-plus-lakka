@@ -14,11 +14,13 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.siemens.mp;
+package com.siemens.mp.gsm;
 
-public class NotAllowedException extends Exception 
+import com.siemens.mp.NotAllowedException;
+
+public class PhoneBook 
 {
-    public NotAllowedException() { super(); }
-           
-    public NotAllowedException(String msg) { super(msg); }
+    public PhoneBook() { }
+
+    public static String[] getMDN() throws NotAllowedException { throw new NotAllowedException("Platform does not have a PhoneBook"); }
 }

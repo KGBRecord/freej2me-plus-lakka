@@ -14,11 +14,21 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.siemens.mp;
+package com.siemens.mp.gsm;
 
-public class NotAllowedException extends Exception 
+import com.siemens.mp.NotAllowedException;
+
+public class SMS 
 {
-    public NotAllowedException() { super(); }
-           
-    public NotAllowedException(String msg) { super(msg); }
+    public SMS() { }
+
+    public static int send(String number, String data) throws NotAllowedException 
+    {
+        throw new NotAllowedException("Sending SMS is not allowed.");
+    }
+
+    public static int send(String number, byte[] data) throws NotAllowedException 
+    {
+        throw new NotAllowedException("Sending SMS is not allowed.");
+    }
 }

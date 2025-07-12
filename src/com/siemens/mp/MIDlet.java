@@ -16,9 +16,20 @@
 */
 package com.siemens.mp;
 
-public class NotAllowedException extends Exception 
-{
-    public NotAllowedException() { super(); }
-           
-    public NotAllowedException(String msg) { super(msg); }
+import org.recompile.mobile.Mobile;
+
+public abstract class MIDlet 
+{ 
+
+	public MIDlet() { }
+
+	public String getAppProperty(String key) { return Mobile.midlet.getAppProperty(key); }
+
+	public final void notifyDestroyed() { Mobile.midlet.notifyDestroyed(); }
+
+	public final void notifyPaused() { Mobile.midlet.notifyPaused(); }
+
+	public final boolean platformRequest(String URL) { return Mobile.midlet.platformRequest(URL); }
+
+	public static String[] getSupportedProtocols() { return new String[0]; }
 }
