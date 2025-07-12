@@ -100,6 +100,40 @@ public class MIDletLoader extends URLClassLoader
 		"k500", "s700", "k800", "k850" // TODO: Add more devices if any jar has sudden issues booting
 	};
 
+	private static final String[] supportedLocales = 
+	{
+		"en-US", // English (United States)
+		"en-UK", // English (United Kingdom)
+		"en",    // Broader English fallback (all other locales have one too)
+		"xx",    // Some jars fallback to this for english (Bounce Tales, Nature Park)
+		"fr-FR", // French (France)
+		"fr",
+		"de-DE", // German (Germany)
+		"de",
+		"es-ES", // Spanish (Spain)
+		"es",
+		"it-IT", // Italian (Italy)
+		"it",
+		"ja-JP", // Japanese (Japan)
+		"ja",
+		"zh-CN", // Chinese (Simplified)
+		"zh-TW", // Chinese (Traditional)
+		"zh",
+		"ko-KR", // Korean (South Korea)
+		"ko",
+		"pt-PT", // Portuguese (Portugal)
+		"pt-BR", // Portuguese (Brazil)
+		"pt",
+		"ru-RU", // Russian (Russia)
+		"ru",
+		"ar-AE", // Arabic (UAE)
+		"ar",
+		"hi-IN", // Hindi (India)
+		"hi",
+		"tr-TR", // Turkish (Turkey)
+		"tr"
+	};
+
 
 	public MIDletLoader(URL url, Map<String, String> descriptorProperties)
 	{
@@ -666,8 +700,37 @@ public class MIDletLoader extends URLClassLoader
 				catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Couldn't load resource from jar: " + e.getMessage()); e.printStackTrace(); }
 			}
 		}
-		
+
+		if (resourceName.contains(System.getProperty("microedition.locale"))) 
+		{
+			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Requested resource appears to be a language file. Checking for alternatives...");
+
+			// Search for any language files matching the list of supported locales
+			for (String locale : supportedLocales) 
+			{
+				String fallbackResourceName = resourceName.replace(System.getProperty("microedition.locale"), locale);
+				for (JarEntry entry : jarEntries) 
+				{
+					String entryName = entry.getName();
+					if (entryName.equalsIgnoreCase(fallbackResourceName)) 
+					{
+						try 
+						{
+							URI jarEntryURI = new URI("jar:" + jarUrl.toExternalForm() + "!/" + entryName);
+							return jarEntryURI.toURL(); 
+						} 
+						catch (Exception e) 
+						{
+							Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Couldn't load fallback resource from jar: " + e.getMessage());
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		}
+
 		Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Couldn't find resource '" + resourceName + "' in jar: " + jarUrl);
+
         return null;
     }
 
