@@ -137,7 +137,12 @@ public class PlatformImage
 			
 			if(image == null) { throw new IOException("Can't load image from resource, as the returned image is null."); }
 
-			setCanvas(image);
+			if(image.getType() == BufferedImage.TYPE_INT_ARGB || image.getType() == BufferedImage.TYPE_INT_RGB) { canvas = image; }
+			else 
+			{
+				canvas = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+				canvas.getGraphics().drawImage(image, 0, 0, null);
+			}
 		}
 	}
 
@@ -151,7 +156,12 @@ public class PlatformImage
 		
 		if(image == null) { throw new IOException("Can't load image from stream."); }
 
-		setCanvas(image);
+		if(image.getType() == BufferedImage.TYPE_INT_ARGB || image.getType() == BufferedImage.TYPE_INT_RGB) { canvas = image; }
+		else 
+		{
+			canvas = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+			canvas.getGraphics().drawImage(image, 0, 0, null);
+		}
 	}
 
 	public PlatformImage(Image source)
@@ -185,7 +195,12 @@ public class PlatformImage
 			else { djgc = new com.nttdocomo.ui.Graphics(this); }
 		}
 
-		setCanvas(image);
+		if(image.getType() == BufferedImage.TYPE_INT_ARGB || image.getType() == BufferedImage.TYPE_INT_RGB) { canvas = image; }
+		else 
+		{
+			canvas = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+			canvas.getGraphics().drawImage(image, 0, 0, null);
+		}
 
 		isMutable = mutable;
 	}
