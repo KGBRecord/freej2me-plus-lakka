@@ -23,6 +23,7 @@ public abstract class Canvas extends Frame
 {
 	
 	private int barHeight;
+	private boolean firstDrawn = false;
 
     public Canvas() 
     { 
@@ -66,6 +67,8 @@ public abstract class Canvas extends Frame
 	{
 
 		if(!isShown()) { return; }
+
+		firstDrawn = true; // So that setCurrent knows whether this canvas has been shown by the application before forcing a repaint of its own (we don't need to finalize the paint call)
 
 		try 
 		{ 
@@ -130,4 +133,5 @@ public abstract class Canvas extends Frame
 		graphics.setClip(clipX, clipY, clipW, clipH);
 	}
 
+	public final boolean hasBeenDrawnAfterSet() { return firstDrawn; }
 }

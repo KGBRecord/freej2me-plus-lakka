@@ -160,6 +160,25 @@ public class Display
             if(frame == current) { return; }
 
             current = frame;
+
+            // Some jars call upon a canvas repaint() once they're ready. If the canvas still hasn't been shown at this time, wait a bit longer before forcing a repaint
+            if(current instanceof Canvas && !((Canvas) current).hasBeenDrawnAfterSet())
+            { 
+                int maxWait = 200; // Wait for a max of 200ms, i don't want to start littering FreeJ2ME-Plus with compatibility flags
+
+                while(!((Canvas) current).hasBeenDrawnAfterSet() && maxWait > 0) 
+                {
+                    try 
+                    {
+                        Thread.sleep(1);
+                        maxWait--;
+                    }
+                    catch(InterruptedException e) { }
+                }
+
+                // Still wasn't shown by the application itself? Force it to be
+                if(!((Canvas) current).hasBeenDrawnAfterSet()) { ((Canvas) current).repaint(0, 0, current.getWidth(), current.getHeight()); }
+            }
         }
     }
 }

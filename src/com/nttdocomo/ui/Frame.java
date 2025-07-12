@@ -42,7 +42,7 @@ public abstract class Frame
 		graphics = platformImage.getDoJaGraphics();
     }
 
-    public final int getHeight()  { return height - ((labelVisible) ? Font.getDefaultFont().getHeight() : 0); }
+    public final int getHeight()  { return height; }
 
     public final int getWidth() { return width; }
 

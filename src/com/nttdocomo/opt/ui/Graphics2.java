@@ -16,8 +16,15 @@
 */
 package com.nttdocomo.opt.ui;
 
+import org.recompile.mobile.Mobile;
+
 // This class is used by some DoJa jars, but there's zero documentation on it
-public abstract class Graphics2 extends org.recompile.mobile.PlatformGraphics 
+public abstract class Graphics2 extends com.nttdocomo.ui.Graphics
 { 
 	public Graphics2(org.recompile.mobile.PlatformImage image) { super(image); }
+
+	public void setRenderMode(int operation, int arg1, int arg2) 
+	{
+		Mobile.log(Mobile.LOG_WARNING, Graphics2.class.getPackage().getName() + "." + Graphics2.class.getSimpleName() + ": " + "setRenderMode not implemented " + operation + " " + arg1 + " " + arg2);
+	}
 }
