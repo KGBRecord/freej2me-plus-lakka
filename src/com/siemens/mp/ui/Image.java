@@ -16,6 +16,8 @@
 */
 package com.siemens.mp.ui;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.IOException;
 
@@ -34,8 +36,9 @@ public class Image extends javax.microedition.lcdui.Image
 
     Image(byte[] imageData) 
     {
-        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[]) not implemented");
-        // TODO
+        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[]) untested");
+        // TODO: Does it have to be mutable?
+        img = javax.microedition.lcdui.Image.createImage(imageData, 0, imageData.length, true);
     }
 
     // The idea is to handle as much of this on lcdui.Image as possible
@@ -48,16 +51,16 @@ public class Image extends javax.microedition.lcdui.Image
 
     Image(byte[] bytes, int imageWidth, int imageHeight, boolean transparent) 
     {
-        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[], width, height, boolean transp) not implemented");
-        // TODO
-		//img = javax.microedition.lcdui.Image.createRGBImage(rgb, width, height, transparent);
+        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[], width, height, boolean transp) untested");
+		if(transparent) { img = createTransparentImageFromBitmap(bytes, imageWidth, imageHeight); }
+        else { img = createImageFromBitmap(bytes, imageWidth, imageHeight); }
     }
 
-    Image(byte[] rgb, int width, int height, int bitmapType)
+    Image(byte[] rgb, int width, int height, int bitmapType) throws IOException
 	{
-        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[], width, height, int type) not implemented");
+        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(byte[], width, height, int type) untested");
         // TODO: We should verify whether or not Alpha Processing is required here
-		//img = javax.microedition.lcdui.Image.createRGBImage(rgb, width, height, true);
+		img = createRGBImage(rgb, width, height, bitmapType);
 	}
 
     Image(javax.microedition.lcdui.Image image) 
@@ -74,15 +77,18 @@ public class Image extends javax.microedition.lcdui.Image
 
     Image(String name, boolean doScale) 
     {
-        Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(String, boolean) untested");
         try 
         {
-            if(!doScale) { img = createImageWithoutScaling(name); }
+            if(!doScale) 
+            { 
+                Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(String, boolean) without scaling untested");
+                img = createImageWithoutScaling(name); 
+            }
             else 
             {
-                Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(String, boolean) with scaling not implemented");
+                Mobile.log(Mobile.LOG_WARNING, Image.class.getPackage().getName() + "." + Image.class.getSimpleName() + ": " + "Image(String, boolean) with scaling untested");
                 img = createImageWithoutScaling(name);
-                // Do Scaling
+                img.setCanvas(javax.microedition.lcdui.Image.scaleImage(img.getCanvas(), Mobile.getDisplay().getCurrent().getWidth(), Mobile.getDisplay().getCurrent().getHeight()));
             }
         } catch (IOException e) { }
     }

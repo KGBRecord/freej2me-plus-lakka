@@ -17,8 +17,6 @@
 
 package com.siemens.mp.game;
 
-import com.siemens.mp.misc.NativeMem;
-
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformImage;
 
@@ -30,7 +28,7 @@ import java.util.ArrayList;
 
 public class GraphicObjectManager extends com.siemens.mp.misc.NativeMem
 {
-	ArrayList<GraphicObject> list = new ArrayList<GraphicObject>();
+	private ArrayList<GraphicObject> list = new ArrayList<GraphicObject>();
 
 	public GraphicObjectManager() { }
 	
@@ -63,6 +61,8 @@ public class GraphicObjectManager extends com.siemens.mp.misc.NativeMem
 
 	public void deleteObject(GraphicObject g) { list.remove(g); }
 
+	public void deleteObject(int position) { list.remove(position); }
+
 
 	public GraphicObject getObjectAt(int index) { return list.get(index); }
 	
@@ -71,12 +71,14 @@ public class GraphicObjectManager extends com.siemens.mp.misc.NativeMem
 	
 	public void paint(ExtendedImage img, int x, int y) { paint(img.getImage(), x, y); }
 
+	// This one paints to an offscreen image, so we should limit the framerate here
 	public void paint(Image image, int x, int y) 
 	{ 
 		for (GraphicObject obj : list) 
 		{
 			if (obj.getVisible()) { obj.paint(image.getGraphics(), x, y); }
 		}
+		Mobile.getPlatform().limitFps();
 	}
 
 }

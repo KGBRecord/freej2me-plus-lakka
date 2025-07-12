@@ -357,8 +357,8 @@ public class PlatformImage
 						targetData[targetPos + x * height] = sourceData[y * width + x];
 					}
 				}
-				//dumpImage(image, "");
-				//dumpImage(transimage, "_rot90");
+				//dumpImage(image, null, "");
+				//dumpImage(transimage, null, "_rot90");
 				break;
 
 			case Sprite.TRANS_ROT180:
@@ -379,8 +379,8 @@ public class PlatformImage
 					// If image width is odd, copy the middle pixel directly as there's no need to swap anything.
 					if (width % 2 != 0) { targetData[targetPos + (width / 2)] = sourceData[y * width + (width / 2)]; }
 				}
-				//dumpImage(image, "");
-				//dumpImage(transimage, "_rot180");
+				//dumpImage(image, null, "");
+				//dumpImage(transimage, null, "_rot180");
 				break;
 			
 			case Sprite.TRANS_ROT270:
@@ -391,8 +391,8 @@ public class PlatformImage
 						targetData[y + (width - 1 - x) * height] = sourceData[y * width + x];
 					}
 				}
-				//dumpImage(image, "");
-				//dumpImage(transimage, "_rot270");
+				//dumpImage(image, null, "");
+				//dumpImage(transimage, null, "_rot270");
 				break;
 
 			case Sprite.TRANS_MIRROR: 
@@ -418,8 +418,8 @@ public class PlatformImage
 					// If image width is odd, copy the middle pixel directly as there's no need to swap anything.
 					if (width % 2 != 0) { targetData[targetRow + (width/2)] = sourceData[targetRow + (width/2)]; }
 				}
-				//dumpImage(image, "");
-				//dumpImage(transimage, "_mirror");
+				//dumpImage(image, null, "");
+				//dumpImage(transimage, null, "_mirror");
 				break;
 
 			case Sprite.TRANS_MIRROR_ROT90:
@@ -431,8 +431,8 @@ public class PlatformImage
 						targetData[x * height + targetRow] = sourceData[y * width + (width - 1 - x)];
 					}
 				}
-				//dumpImage(image, "");
-				//dumpImage(transimage, "_mirror90");
+				//dumpImage(image, null, "");
+				//dumpImage(transimage, null, "_mirror90");
 				break;
 
 			case Sprite.TRANS_MIRROR_ROT180: // Basically mirror vertically (an arrow pointing up will then point down).
@@ -440,8 +440,8 @@ public class PlatformImage
 				{
 					System.arraycopy(sourceData, y * width, targetData, (height - 1 - y) * width, width);
 				}
-				//dumpImage(image, "");
-				//dumpImage(transimage, "_mirror180");
+				//dumpImage(image, null, "");
+				//dumpImage(transimage, null, "_mirror180");
 				break;
 				
 			case Sprite.TRANS_MIRROR_ROT270:
@@ -452,21 +452,33 @@ public class PlatformImage
 						targetData[(width - 1 - x) * height + y] = sourceData[y * width + (width - 1 - x)];
 					}
 				}
-				//dumpImage(image, "");
-				//dumpImage(transimage, "_mirror270");
+				//dumpImage(image, null, "");
+				//dumpImage(transimage, null, "_mirror270");
 				break;
 		}
 
 		return transimage;
 	}
 
+	public static BufferedImage scaleImage(BufferedImage originalImage, int desiredWidth, int desiredHeight) 
+    {
+
+        // Create a new image to draw the scaled version to fit on screen
+        BufferedImage scaledImage = new BufferedImage(desiredWidth != 0 ? desiredWidth : originalImage.getWidth(), desiredHeight != 0 ? desiredHeight : originalImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D gc = scaledImage.createGraphics();
+        gc.drawImage(originalImage, 0, 0, desiredWidth != 0 ? desiredWidth : originalImage.getWidth(), desiredHeight != 0 ? desiredHeight : originalImage.getHeight(), null);
+        gc.dispose();
+        
+        return scaledImage;
+    }
+
 	// TODO: Turn this into a setting. Being able to dump image data would be nice.
-	public static void dumpImage(BufferedImage image, String append) 
+	public static void dumpImage(BufferedImage image, String path, String append) 
 	{
         try 
 		{
 			String imageMD5 = generateMD5Hash(image);
-			String dumpPath = "." + File.separatorChar + "FreeJ2MEDumps" + File.separatorChar + "Image" + File.separatorChar + Mobile.getPlatform().loader.suitename + File.separatorChar;
+			String dumpPath = "." + File.separatorChar + "FreeJ2MEDumps" + File.separatorChar + "Image" + (path != null ? path : File.separatorChar + Mobile.getPlatform().loader.suitename + File.separatorChar);
 			File dumpFile = new File(dumpPath);
 			
 			if (!dumpFile.isDirectory()) { dumpFile.mkdirs(); }

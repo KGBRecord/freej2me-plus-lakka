@@ -21,17 +21,16 @@ import org.recompile.mobile.Mobile;
 
 import javax.microedition.lcdui.Graphics;
 
-public class GraphicObject
+public class GraphicObject extends com.siemens.mp.misc.NativeMem
 {
 	private boolean visible;
 
 
-	protected GraphicObject() { }
-
-	protected void paint(Graphics g, int x, int y) {  }
-	
+	protected GraphicObject() { visible = true; }
 
 	public boolean getVisible() { return visible; }
 
 	public void setVisible(boolean value) { visible = value; }
+
+	protected void paint(Graphics g, int x, int y) { }
 }
