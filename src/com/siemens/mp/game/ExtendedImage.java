@@ -116,15 +116,26 @@ public class ExtendedImage extends com.siemens.mp.misc.NativeMem
 			throw new IllegalArgumentException("x and width must be multiples of " + (image.is2Bpp() ? 4 : 8));
 		}
 
-		if(x < 0) { x = 0; }
-		if(y < 0) { y = 0; }
+		int imgWidth = image.getWidth();
+		int imgHeight = image.getHeight();
+		
+		/* 
+		 * Some Siemens jars use negative coordinates, and in those cases, it appears to be so that the 
+		 * data can be retrieved from an area of the byte array that would normally be outside the screen
+		*/
+		int dx = 0, dy = 0;
+		if(x < 0) { dx = -x; x = 0; }
+		if(y < 0) { dy = -y; y = 0; }
 
-		for (int j = 0; j < Math.min(height, image.getHeight()); j++) 
+		width = Math.min(x + width, imgWidth) - x;
+		height = Math.min(y + height, imgHeight) - y;
+
+		for (int j = 0; j < Math.min(height, imgHeight); j++) 
 		{
-			for (int i = 0; i < Math.min(width, image.getWidth()); i++) 
+			for (int i = 0; i < Math.min(width, imgWidth); i++) 
 			{
-				int pixelIndex = (j * width + i) / (image.is2Bpp() ? 4 : 8);
-				int bitIndex = (j * width + i) % (image.is2Bpp() ? 4 : 8);
+				int pixelIndex = ((j+dy) * width + i+dx) / (image.is2Bpp() ? 4 : 8);
+				int bitIndex = ((j+dy) * width + i+dx) % (image.is2Bpp() ? 4 : 8);
 	
 				if(pixelIndex >= pixels.length) { continue; }
 				if (image.is2Bpp()) 

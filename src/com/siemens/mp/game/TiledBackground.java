@@ -32,7 +32,7 @@ public class TiledBackground extends GraphicObject
 	public TiledBackground(byte[] tilePixels, byte[] tileMask, byte[] map, int widthInTiles, int heightInTiles) 
     {
 		this(com.siemens.mp.ui.Image.createImageFromBitmap(tilePixels, 8, tilePixels.length),
-			com.siemens.mp.ui.Image.createImageFromBitmap(tileMask, 8, tilePixels.length),
+			tileMask == null ? null : com.siemens.mp.ui.Image.createImageFromBitmap(tileMask, 8, tilePixels.length),
 			map,
 			widthInTiles,
 			heightInTiles
@@ -41,11 +41,24 @@ public class TiledBackground extends GraphicObject
 
 	public TiledBackground(ExtendedImage tilePixels, ExtendedImage tileMask, byte[] map, int widthInTiles, int heightInTiles) 
     {
-		this(tilePixels.getImage(), tileMask.getImage(), map, widthInTiles, heightInTiles);
+		this(tilePixels.getImage(), tileMask == null ? null : tileMask.getImage(), map, widthInTiles, heightInTiles);
 	}
 
 	public TiledBackground(Image tilePixels, Image tileMask, byte[] map, int widthInTiles, int heightInTiles) 
     {
+		if (tilePixels.getWidth() != 8 || (tileMask != null && tileMask.getWidth() != 8)) { throw new IllegalArgumentException("Tile image width must be 8."); }
+        if (containsTransparentColor(tilePixels) || (tileMask != null && containsTransparentColor(tileMask)))
+		{
+            throw new IllegalArgumentException("Images must not contain transparent colors.");
+        }
+        for (byte tile : map) 
+		{
+            if (tile < 0 || tile >= tilePixels.getHeight() / 8) 
+			{
+                throw new IllegalArgumentException("Invalid tile number in the map.");
+            }
+        }
+
 		this.map = map;
 		this.heightInTiles = heightInTiles;
 		this.widthInTiles = widthInTiles;

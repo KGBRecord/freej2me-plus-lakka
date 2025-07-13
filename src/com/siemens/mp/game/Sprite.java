@@ -24,33 +24,54 @@ import javax.microedition.lcdui.Graphics;
 
 public class Sprite extends GraphicObject
 {
-	public int collh;
-	public int collw;
-	public int collx;
-	public int colly;
-	public int frame;
+	private int collh;
+	private int collw;
+	private int collx;
+	private int colly;
+	private int frame;
 
 	private Image[] mask;
 	private Image[] pixels;
 
-	public int x;
-	public int y;
+	private int x;
+	private int y;
 
 	
 	public Sprite(byte[] pixels, int pixel_offset, int width, int height, byte[] mask, int mask_offset, int numFrames)
 	{
 		this(com.siemens.mp.ui.Image.createImageFromBitmap(pixels, width, height * numFrames),
-			com.siemens.mp.ui.Image.createImageFromBitmap(mask, width, height * numFrames),
+			mask == null ? null : com.siemens.mp.ui.Image.createImageFromBitmap(mask, width, height * numFrames),
 			numFrames);
 	}
 
 	public Sprite(ExtendedImage pixels, ExtendedImage mask, int numFrames)
 	{
-		this(pixels.getImage(), mask.getImage(), numFrames);
+		this(pixels.getImage(), mask == null ? null : mask.getImage(), numFrames);
 	}
 
 	public Sprite(Image pixels, Image mask, int numFrames)
 	{
+		if (numFrames < 1) 
+		{
+            throw new IllegalArgumentException("Number of frames must be at least 1.");
+        }
+		if (containsTransparentColor(pixels) || (mask != null && containsTransparentColor(mask)))
+		{
+            throw new IllegalArgumentException("Images must not contain transparent colors.");
+		}
+		if (pixels.getWidth() % 8 != 0 || (mask != null && mask.getWidth() % 8 != 0))
+		{
+            throw new IllegalArgumentException("Image width must be a multiple of 8.");
+        }
+        if (mask != null && (pixels.getWidth() != mask.getWidth() || pixels.getHeight() != mask.getHeight()))
+		{
+            throw new IllegalArgumentException("Images must have the same size.");
+        }
+        if (pixels.getHeight() % numFrames != 0) 
+		{
+            throw new IllegalArgumentException("Image height must be divisible by the number of frames.");
+        }        
+
 		this.pixels = new Image[numFrames];
 
 		if (mask != null) 
