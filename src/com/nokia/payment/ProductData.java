@@ -19,11 +19,16 @@ package com.nokia.payment;
 public class ProductData 
 {
 
-    String productId = "";
-    String localizedPrice = "";
-    String localCurrency = "";
+    private String productId = "";
+    private String localizedPrice = "";
+    private String localCurrency = "";
 
-    public ProductData(String productId, String localizedPrice, String localCurrency) { }
+    public ProductData(String productId, String localizedPrice, String localCurrency) 
+	{ 
+		this.productId = productId;
+		this.localizedPrice = localizedPrice;
+		this.localCurrency = localCurrency;
+	}
 
     public String getCurrency() { return localCurrency; }
 

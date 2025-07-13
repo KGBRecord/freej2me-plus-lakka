@@ -21,18 +21,32 @@ import javax.microedition.midlet.MIDlet;
 
 public class NPayManager 
 {
+	// This class tries to bypass purchases from the Nokia In-App Payment API
 
-    public NPayManager(MIDlet midlet) { Mobile.log(Mobile.LOG_WARNING, NPayManager.class.getPackage().getName() + "." + NPayManager.class.getSimpleName() + ": " + "NPayManager init requested."); }
+	NPayListener listener;
 
-    public void getProductData(String[] productIdList)  { }
+    public NPayManager(MIDlet midlet) throws NPayException 
+	{ 
+		if(midlet == null) { throw new NPayException("NPayManager received null MIDlet"); }
+		Mobile.log(Mobile.LOG_INFO, NPayManager.class.getPackage().getName() + "." + NPayManager.class.getSimpleName() + ": " + "NPayManager init."); 
+	}
+
+    public void getProductData(String[] productIdList) throws NPayException
+	{ 
+		listener.productDataReceived(new ProductData[] { new ProductData("0", "0.00", "$") } );
+	}
 
     public boolean isNPayAvailable() { return true; }
 
     public void launchNPaySetup() { }
 
-    public void purchaseProduct(String productId) { }
+    public void purchaseProduct(String productId) throws NPayException { purchaseProduct("0", productId);}
 
-    public void purchaseProduct(String contentId, String productId) { }
+    public void purchaseProduct(String contentId, String productId) throws NPayException 
+	{ 
+		PurchaseData data = new PurchaseData(contentId, productId, PurchaseData.PURCHASE_SUCCESS, "RequestPurchase", "AllowStub");
+		listener.purchaseCompleted(data);
+	}
 
-    public void setNPayListener(NPayListener listener) { }
+    public void setNPayListener(NPayListener listener) { this.listener = listener; }
 }
