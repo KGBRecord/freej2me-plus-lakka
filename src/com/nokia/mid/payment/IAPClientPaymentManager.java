@@ -16,10 +16,15 @@
 */
 package com.nokia.mid.payment;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+
+import org.recompile.mobile.Mobile;
 
 public final class IAPClientPaymentManager
 {
+
+	// This class tries to bypass purchases from the Nokia In-App Purchase API
 
 	public static final int DEFAULT_AUTHENTICATION = 0;
 	public static final int ONLY_IN_SILENT_AUTHENTICATION = 1;
@@ -38,24 +43,55 @@ public final class IAPClientPaymentManager
 	public static final int FAIL = 103;
 	public static final int NORMAL = 104;
 
+	private static IAPClientPaymentListener listener;
+
     // Has to return a manager instance
 	public static IAPClientPaymentManager getIAPClientPaymentManager() throws IAPClientPaymentException { return ManagerInstance.instance; }
 
-	public static void setIAPClientPaymentListener(IAPClientPaymentListener iapListener) { }
+	public static void setIAPClientPaymentListener(IAPClientPaymentListener iapListener) { listener = iapListener; }
 
-	public int getProductData(String productId) { return FAIL; }
+	public int getProductData(String productId)
+	{ 
+		listener.restorableProductsReceived(IAPClientPaymentListener.OK, new IAPClientProductData[] { new IAPClientProductData(productId) });
+		return SUCCESS; 
+	}
 
-	public int getProductData(String[] productIdList) { return FAIL; }
+	public int getProductData(String[] productIdList)
+	{ 
+		IAPClientProductData[] products = new IAPClientProductData[productIdList.length];
+		for(int i = 0; i < products.length; i++) { products[i] = new IAPClientProductData(productIdList[i]); }
+		listener.restorableProductsReceived(IAPClientPaymentListener.OK, products);
+		return SUCCESS; 
+	}
 
-	public int purchaseProduct(String productId, int forceRestorationFlag) { return FAIL; }
+	public int purchaseProduct(String productId, int forceRestorationFlag)
+	{ 
+		listener.purchaseCompleted(IAPClientPaymentListener.OK, productId);
+		return SUCCESS; 
+	}
 
-	public int restoreProduct(String productId, int authenticationMode) { return FAIL; }
+	public int restoreProduct(String productId, int authenticationMode)
+	{ 
+		listener.restorationCompleted(IAPClientPaymentListener.OK, productId);
+		return SUCCESS; 
+	}
 
-	public int getRestorableProducts(int authenticationMode) { return FAIL; }
+	public int getRestorableProducts(int authenticationMode) 
+	{ 
+		listener.restorableProductsReceived(IAPClientPaymentListener.OK, new IAPClientProductData[] { new IAPClientProductData("0") });
+		return SUCCESS; 
+	}
 
-	public int getUserAndDeviceId(int authenticationMode) { return FAIL; }
+	public int getUserAndDeviceId(int authenticationMode) 
+	{ 
+		listener.userAndDeviceDataReceived(IAPClientPaymentListener.OK, new IAPClientUserAndDeviceData());
+		return SUCCESS; 
+	}
 
-	public InputStream getDRMResourceAsStream(String name) { return null; }
+	public InputStream getDRMResourceAsStream(String name) 
+	{ 
+		return Mobile.getMIDletResourceAsStream(name);
+	}
 
 	private static final class ManagerInstance 
     {

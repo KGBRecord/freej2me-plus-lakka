@@ -17,7 +17,10 @@
 package javax.microedition.content;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import org.recompile.mobile.Mobile;
 
 // TODO: Finish implementing this, if needed
 public class Registry 
@@ -40,7 +43,10 @@ public class Registry
 
     public void cancelGetResponse() { }
 
-    public ContentHandler[] findHandler(Invocation invocation) { return null; }
+    public ContentHandler[] findHandler(Invocation invocation) 
+    { 
+        return new ContentHandler[] { new ContentHandlerImpl(invocation.getID(), "", Mobile.getPlatform().loader.name[0], "1.0.0", null, null, null, null) }; 
+    }
 
     public ContentHandler[] forAction(String action) { return null; }
 
@@ -65,7 +71,10 @@ public class Registry
         return null; 
     }
 
-    public Invocation getResponse(boolean wait) { return null; }
+    public Invocation getResponse(boolean wait) 
+    { 
+        return this.invocation; 
+    }
 
     public static ContentHandlerServer getServer(String classname) 
     { 
@@ -76,22 +85,37 @@ public class Registry
 
     public String[] getTypes() { return types; }
 
-    public boolean invoke(Invocation invocation) 
-    {
-        invocation.invokerID = "";
-        invocation.invokerAuth = "";
-        invocation.invokerName = "";
-        this.invocation = invocation;
-        return false; 
-    }
+    public boolean invoke(Invocation invocation) { return invoke(invocation, null); }
 
     public boolean invoke(Invocation invocation, Invocation previous) 
     {
-        invocation.invokerID = "";
-        invocation.invokerAuth = "";
-        invocation.invokerName = "";
+        if (invocation == null) { throw new NullPointerException("Invocation must not be null."); }
+        if (invocation.getURL() != null) { throw new IllegalArgumentException("Invalid URL."); }
+        if (!invocation.getResponseRequired() && previous != null) { throw new IllegalArgumentException("Response is required, but previous is non-null."); }
+        if (invocation.getStatus() != Invocation.INIT) { throw new IllegalStateException("Invocation status must be INIT."); }
+        if (invocation.getID() == null && invocation.getType() == null && invocation.getURL() == null && invocation.getAction() == null) 
+        {
+            throw new IllegalArgumentException("ID, type, URL, and action cannot all be null.");
+        }
+        if (previous != null && previous.getStatus() != Invocation.ACTIVE) 
+        {
+            throw new IllegalStateException("Previous Invocation must have ACTIVE status.");
+        }
+
+        if (invocation.getArgs() != null) 
+        {
+            for (Object arg : invocation.getArgs()) 
+            {
+                if (arg == null) 
+                {
+                    throw new IllegalArgumentException("Argument array contains null references.");
+                }
+            }
+        }
+
         invocation.setPrevious(previous);
         this.invocation = invocation;
+        listener.invocationResponseNotify(this);
         return false; 
     }
 
@@ -119,5 +143,5 @@ public class Registry
 
     public void setListener(ResponseListener listener) { this.listener = listener; }
 
-    public boolean unregister(String classname) { return false; }
+    public boolean unregister(String classname) { return registries.remove(classname); }
 }

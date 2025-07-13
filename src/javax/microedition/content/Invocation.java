@@ -19,6 +19,8 @@ package javax.microedition.content;
 // TODO: Not ideal, it's here just so FreeJ2ME builds without modifying the Connection stubs below
 import com.siemens.mp.io.Connection;
 
+import org.recompile.mobile.Mobile;
+
 public final class Invocation 
 {
 
@@ -41,28 +43,30 @@ public final class Invocation
 
     public Invocation() { }
 
-    public Invocation(String url) { this.url = url; }
+    public Invocation(String url) 
+    { 
+        this(url, null, null, true, null);
+    }
 
     public Invocation(String url, String type) 
     { 
-        this.url = url;
-        this.type = type;
+        this(url, type, null, true, null);
     }
 
     public Invocation(String url, String type, String ID) 
     {
-        this.url = url;
-        this.type = type;
-        this.ID = ID;
+        this(url, type, ID, true, null);
     }
 
     public Invocation(String url, String type, String ID, boolean responseRequired, String action) 
     {
+        Mobile.log(Mobile.LOG_DEBUG, Invocation.class.getPackage().getName() + "." + Invocation.class.getSimpleName() + ": " + "New Invocation: url=" + url + " type=" + type + " id=" + ID + " respReq=" + responseRequired + " action=" + action);
         this.url = url;
         this.type = type;
         this.ID = ID;
         this.responseRequired = responseRequired;
         this.action = action;
+        this.status = INIT;
     }
 
     public String findType() { return type; }

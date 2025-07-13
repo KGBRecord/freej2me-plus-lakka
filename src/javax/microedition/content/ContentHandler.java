@@ -33,7 +33,7 @@ public interface ContentHandler
     public static final String ACTION_STOP         = "stop";
     public static final String UNIVERSAL_TYPE      = "*";
 
-    public String getAction();
+    public String getAction(int index);
 
     public int getActionCount();
 

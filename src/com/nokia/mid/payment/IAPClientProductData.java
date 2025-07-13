@@ -22,15 +22,19 @@ public class IAPClientProductData
 	public static final int OTHER_DRM = 0;
 	public static final int NOKIA_DRM = 1;
 
-	public String getProductId() { return ""; }
+	private String productId;
 
-	public String getTitle() { return ""; }
+	public IAPClientProductData(String pid) { productId = pid; }
 
-	public String getShortDescription() { return ""; }
+	public String getProductId() { return productId; }
 
-	public String getLongDescription() { return ""; }
+	public String getTitle() { return "Bypass Purchase"; }
 
-	public String getPrice() { return ""; }
+	public String getShortDescription() { return "Purchase product requested by MIDlet"; }
 
-	public int getDrmProtection() { return OTHER_DRM; }
+	public String getLongDescription() { return "Purchase product requested by MIDlet."; }
+
+	public String getPrice() { return "$ 0.00"; }
+
+	public int getDrmProtection() { return NOKIA_DRM; }
 }
