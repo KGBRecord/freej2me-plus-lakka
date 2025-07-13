@@ -48,6 +48,7 @@ public final class FreeJ2MEPlayer extends Dialog
     public FreeJ2MEPlayer(Frame parent) 
     {
         super(parent, "FreeJ2ME Media Player", true);
+        if(Manager.toneSynth == null) { Manager.prepareMediaEngine(); }
         setupPlayerDialog();
     }
 

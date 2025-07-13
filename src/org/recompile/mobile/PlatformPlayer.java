@@ -552,7 +552,7 @@ public class PlatformPlayer implements Player
 		{
 			for(int i = 0; i < sequencePlayers.length; i++) 
 			{
-				if(sequencePlayers[i] == null || ((midiPlayer)sequencePlayers[i]).getSequence() == null) 
+				if(sequencePlayers[i] == null || sequencePlayers[i].getSequence() == null) 
 				{
 					sequencePlayers[i] = midplayer; // TODO: SMAF here too, in case a jar that never releases players for it is found
 					return;
@@ -561,7 +561,7 @@ public class PlatformPlayer implements Player
 			// All players are occupied, find the first stopped one to be replaced
 			for(int i = 0; i < sequencePlayers.length; i++) 
 			{
-				if(sequencePlayers[i] != null && !((midiPlayer)sequencePlayers[i]).isRunning()) 
+				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning()) 
 				{
 					sequencePlayers[i].close();
 					sequencePlayers[i] = midplayer;
@@ -574,7 +574,7 @@ public class PlatformPlayer implements Player
 		{
 			for(int i = 0; i < sequencePlayers.length; i++) 
 			{
-				if(sequencePlayers[i] == null || ((SMAFPlayer)sequencePlayers[i]).getSequence() == null) 
+				if(sequencePlayers[i] == null || sequencePlayers[i].getSequence() == null) 
 				{
 					sequencePlayers[i] = smafPlayer;
 					return;
@@ -583,7 +583,7 @@ public class PlatformPlayer implements Player
 			// All players are occupied, find the first stopped one to be replaced
 			for(int i = 0; i < sequencePlayers.length; i++) 
 			{
-				if(sequencePlayers[i] != null && !((SMAFPlayer)sequencePlayers[i]).isRunning()) 
+				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning()) 
 				{
 					sequencePlayers[i].close();
 					sequencePlayers[i] = smafPlayer;
@@ -649,6 +649,9 @@ public class PlatformPlayer implements Player
 
 		public int getVolume() { return volume; }
 		public void setVolume(int level) { volume = level; }
+
+		// For sequence players
+		public Sequence getSequence() { return null; }
 	}
 
 	private class midiPlayer extends audioplayer
