@@ -125,6 +125,14 @@ public abstract class Item
 		return Font.getDefaultFont().getHeight() + Font.getDefaultFont().getHeight() / 5;
 	}
 
+	protected void doDefaultCommand() 
+	{
+		if(commandListener != null)
+		{
+			commandListener.commandAction(defaultCommand, this);
+		}
+	}
+
 	protected void renderItem(Graphics graphics, int x, int y, int width, int height) { }
 
 	protected void invalidate() 

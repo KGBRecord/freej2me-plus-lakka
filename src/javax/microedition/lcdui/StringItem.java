@@ -57,6 +57,23 @@ public class StringItem extends Item
 
 	public void setText(String textvalue) { text = textvalue; height = 0; this._invalidateContents(); }
 
+	protected boolean keyPressed(int key) 
+	{ 
+		boolean handled = false;
+		
+		if (!handled) 
+		{
+			if (key == Canvas.FIRE || key == Canvas.KEY_NUM5 || key == Canvas.KEY_SOFT_LEFT) 
+			{
+				doDefaultCommand();
+				handled = true;
+			}
+			
+		}
+	
+		return handled;
+	}
+
 	protected int getContentHeight(int width) 
 	{
 		if (appearance == Item.BUTTON)
