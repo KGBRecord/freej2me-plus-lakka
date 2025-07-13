@@ -729,6 +729,13 @@ public class MobilePlatform
 				tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName);
 				tmpfile.delete(); // Delete the temporary jad file
 			}
+
+			/* 
+			 * Load up everything needed to play sound before the jar opens to minimize ingame stutters
+			 * this basically just loads up the synthesizers, as they're the biggest troublemakers.
+			 */
+			javax.microedition.media.Manager.prepareMediaEngine();
+			
 			loader.start(); 
 		}
 		catch (Exception e)

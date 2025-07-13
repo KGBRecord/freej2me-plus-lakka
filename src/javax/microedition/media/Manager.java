@@ -49,46 +49,15 @@ public class Manager
 	public static final String MIDI_DEVICE_LOCATOR = "device://midi";
 
 	/* Custom MIDI variables */
-	private static boolean hasLoadedSoundfont = false;
 	private static File soundfontDir = new File("freej2me_system" + File.separatorChar + "customMIDI" + File.separatorChar);
 	private static Soundbank customSoundfont;
 	private static Soundbank defaultSoundbank = null;
 	
-	public static Synthesizer dedicatedSynth = null;
-	public static Receiver dedicatedReceiver = null;
-	public static Sequencer dedicatedSequencer = null;
-	public static MidiChannel channels[];
+	public static Synthesizer toneSynth = null;
+	public static Receiver toneReceiver = null;
+	public static Sequencer toneSequencer = null;
 	private static MidiChannel toneChannel;
 	private static Thread toneThread;
-
-	static 
-	{
-		try  
-		{	
-			if(dedicatedSequencer != null) // We already went through here before, make sure to stop the sequencer and close the synth before changing the soundfont
-			{ 
-				dedicatedSequencer.stop(); 
-				dedicatedSynth.close();
-			}
-
-			dedicatedSynth = MidiSystem.getSynthesizer(); 
-			dedicatedSynth.open();
-			defaultSoundbank = dedicatedSynth.getDefaultSoundbank();
-
-			changeCustomMidi();
-
-			dedicatedReceiver = dedicatedSynth.getReceiver();
-			channels = dedicatedSynth.getChannels();
-			toneChannel = channels[15]; // The last MIDI channel is often the least used, so use it for tones to minimize possible issues in case they play alongside sequenced data
-
-			dedicatedSequencer = MidiSystem.getSequencer(false);
-			dedicatedSequencer.getTransmitter().setReceiver(dedicatedReceiver);
-			dedicatedSequencer.open();
-
-			Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Synthesizer for sequenced and tone data is ready.");
-		} 
-		catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); }
-	}
 
 	public static synchronized Player createPlayer(InputStream stream, String type) throws IOException, MediaException
 	{
@@ -371,21 +340,56 @@ public class Manager
 			boolean wasPlaying = false;
 			checkCustomMidi();
 
-			if (dedicatedSequencer != null && dedicatedSequencer.isRunning()) 
+			// Maybe we went through here before, make sure to stop the sequencers before changing soundfont
+			if (toneSequencer != null && toneSequencer.isRunning()) 
 			{
-				dedicatedSequencer.stop();
+				toneSequencer.stop();
 				wasPlaying = true;
 			}
-
-			// This is always called after the dedicatedSynth was created
-			dedicatedSynth.loadAllInstruments(customSoundfont);
-
+			
 			// Restart the sequencer if needed
-			if (dedicatedSequencer != null && wasPlaying) 
+			if (toneSequencer != null && wasPlaying) 
 			{
-				dedicatedSequencer.start();
+				toneSequencer.start();
+				wasPlaying = false;
 			}
+
+			// Do the same step above, but for PlatformPlayer's sequence players
+			PlatformPlayer.doSoundbankChange();
 		}
 		catch (Exception e) {Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to change MIDI soundfont: " + e.getMessage()); }
+	}
+
+	public static Synthesizer prepareSynthesizer() throws MidiUnavailableException
+	{
+		Synthesizer synth = MidiSystem.getSynthesizer(); 
+		if(defaultSoundbank == null) { defaultSoundbank = MidiSystem.getSynthesizer().getDefaultSoundbank(); }
+		synth.open();
+
+		changeCustomMidi();
+
+		synth.loadAllInstruments(customSoundfont);
+
+		return synth;
+	}
+
+	public static Soundbank getCustomSoundfont() { return customSoundfont; }
+
+	public static void prepareMediaEngine() 
+	{
+		try  
+		{
+			PlatformPlayer.loadSynthesizers();
+			toneSynth = PlatformPlayer.exclusiveSynths[PlatformPlayer.NUM_EXCLUSIVE_SYNTHS-1]; // Get the last synth of PlatformPlayer
+			toneReceiver = toneSynth.getReceiver();	
+			toneChannel = toneSynth.getChannels()[15]; // Also get the last channel of the last synth, to minimize chances of this causing issues with other MIDI streams
+
+			toneSequencer = MidiSystem.getSequencer(false);
+			toneSequencer.getTransmitter().setReceiver(toneReceiver);
+			toneSequencer.open();
+
+			Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Synthesizer for sequenced and tone data is ready.");
+		} 
+		catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); }
 	}
 }
