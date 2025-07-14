@@ -21,10 +21,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -49,6 +49,11 @@ import com.nttdocomo.ui.IApplication;
 public class Mobile
 {
 	private static MobilePlatform platform;
+
+	// Logging
+	private static File logFile;
+	private static BufferedWriter logWriter;
+	private static final Queue<Runnable> pendingLogs = new LinkedList<Runnable>();
 
 	// Default MIDP encoding, will be changed by DoJa and any other implementation that use a different encoding
 	public static String textEncoding = "ISO_8859_1";
@@ -798,51 +803,85 @@ public class Mobile
 		return 0;
 	}
 
-	public static final void log(byte logLevel, String text) 
+	public static final void log(final byte logLevel, final String text) 
 	{
 		if(logLevel == 0 || logLevel < minLogLevel) { return; }
 
-		switch(logLevel) 
-		{
-			case LOG_DEBUG:
-				text = new String("[DEBUG] " + text);
-				break;
-			case LOG_INFO:
-				text = new String("[INFO] " + text);
-				break;
-			case LOG_WARNING:
-				text = new String("[WARNING] " + text);
-				break;
-			case LOG_ERROR:
-				text = new String("[ERROR] " + text);
-				break;
-			case LOG_FATAL:
-				text = new String("[FATAL] " + text);
-				break;
+		synchronized (pendingLogs) 
+		{ 
+			pendingLogs.add(new Runnable() 
+			{
+				@Override
+				public void run() 
+				{ 
+					String logText = "";
+					switch(logLevel) 
+					{
+						case LOG_DEBUG:
+							logText = new String("[DEBUG] " + text);
+							break;
+						case LOG_INFO:
+							logText = new String("[INFO] " + text);
+							break;
+						case LOG_WARNING:
+							logText = new String("[WARNING] " + text);
+							break;
+						case LOG_ERROR:
+							logText = new String("[ERROR] " + text);
+							break;
+						case LOG_FATAL:
+							logText = new String("[FATAL] " + text);
+							break;
+					}
+
+					// Log to console only if not libretro, as it won't be seen there anyway
+					if(!MobilePlatform.isLibretro) { System.out.println(logText); }
+					
+					try
+					{
+						logWriter.write(logText);
+						logWriter.newLine();
+					} catch (IOException e) { System.out.println("Couldn't write to log file: " + e.getMessage()); e.printStackTrace(); }
+				}
+			}); 
+			pendingLogs.notify();
 		}
-
-		// Log to console only if not libretro, as it won't be seen there anyway
-		if(!MobilePlatform.isLibretro) { System.out.println(text); }
-
-		File logFile = new File(LOG_FILE);
-
-		// Create system dir if not available yet and try writing to the log file
-		logFile.getParentFile().mkdirs();
-
-		try
-		{
-			BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true));
-			writer.write(text);
-			writer.newLine();
-			writer.close();
-		} catch (IOException e) { System.out.println("Couldn't write to log file: " + e.getMessage()); e.printStackTrace(); }
 	}
 
 	/* Clears old log file at boot. */
 	public static final void clearOldLog() 
 	{
-		File logFile = new File(LOG_FILE);
+		logFile = new File(LOG_FILE);
         if (logFile.exists()) { logFile.delete(); }
+		// Create system dir if not available yet and try writing to the log file
+		logFile.getParentFile().mkdirs();
+		try { logWriter = new BufferedWriter(new FileWriter(logFile, true)); } // This one doesn't need to be closed, it dies with FreeJ2ME-Plus
+		catch(IOException e) { System.out.println("Failed to preparate file writer: " + e.getMessage()); e.printStackTrace(); }
+
+		new Thread(new Runnable() 
+		{
+			@Override
+			public void run() { processLogs(); }
+		}, "Logging-Thread").start();
+	}
+
+	private static final void processLogs() 
+	{
+		Runnable call = null;
+		while(true) 
+		{
+			synchronized (pendingLogs) 
+			{
+				while(pendingLogs.isEmpty()) // If we have no serial events to process, and no current displayable change, wait.
+				{
+					try { pendingLogs.wait(); }
+					catch (Exception e) { }
+				}
+
+				call = pendingLogs.poll(); 
+				if(call != null) { call.run(); }
+			}
+		}
 	}
 
 	public static boolean updateSettings() 
