@@ -62,17 +62,20 @@ public class Display
 	// MIDlet serial call queue methods
 	public void callSerially(final Runnable r) 
 	{ 
-		serializedEvents.add(r); 
-		synchronized (serializedEvents) { serializedEvents.notify(); }
+		synchronized (serializedEvents) 
+		{ 
+			serializedEvents.add(r); 
+			serializedEvents.notify(); 
+		}
 	}
 
 	// Paint events should be serialized as well (if the event queue is empty, we need to notify the event processing thread to resume)
     public void postPaintRequest(final Runnable r) 
 	{ 
-		paintEvent.set(r);
 		synchronized (serializedEvents) 
 		{
-			if(serializedEvents.isEmpty()) { serializedEvents.notify(); }
+			paintEvent.set(r);
+			serializedEvents.notify();
 		}
 	}
 
@@ -94,7 +97,7 @@ public class Display
 				synchronized(inputEvents) { inputEvents.add(r); }
 				synchronized (serializedEvents) 
 				{
-					if(serializedEvents.isEmpty()) { serializedEvents.notify(); }
+					serializedEvents.notify();
 				}
 			}
 		}).start();
