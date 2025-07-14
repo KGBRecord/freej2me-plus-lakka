@@ -56,6 +56,7 @@ public class Sound
 
 	private static boolean isPrevPlayerTone = false;
 
+	private SoundListener listener;
 
 	public Sound(byte[] data, int type) { init(data, type); }
 	
@@ -137,7 +138,11 @@ public class Sound
 		
 		Mobile.log(Mobile.LOG_DEBUG, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Nokia Sound: Single Note:" + freq);
 
-		try { Manager.playTone(convertFreqToNote(freq), (int) duration, TONE_MAX_VOLUME);  }
+		try 
+		{ 
+			release();
+			Manager.playTone(convertFreqToNote(freq), (int) duration, TONE_MAX_VOLUME); 
+		}
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Nokia Sound: Could not play tone:" + e.getMessage()); }
 	}
 
@@ -147,13 +152,16 @@ public class Sound
 		if(getState() == SOUND_PLAYING) { player.stop(); }
 		if(loop < 0) { throw new IllegalArgumentException("Cannot play media, invalid loop value received"); }
 		else if(loop == 0) { loop = -1; }
+		
+		if(((PlatformPlayer)player).nokiaListener != listener) { ((PlatformPlayer) player).setSoundListener(this, listener); }
 
 		player.setLoopCount(loop);
 		player.setMediaTime(0); // A play call always makes the media play from the beginning.
 		player.start();
 	}
 
-	public void release() { if(player != null) { player.close(); } }
+	// Nokia UI API 1.1 states that this should be a deallocate() call, but since we always recreate the player on init, we can use close()
+	public void release() { if(player != null) { player.close(); player = null; } }
 
 	public void resume() 
 	{
@@ -173,10 +181,17 @@ public class Sound
 		return 0;
 	}
 
-	public void setSoundListener(SoundListener soundListener) { if(player != null) { ((PlatformPlayer) player).setSoundListener(this, soundListener); } }
+	public void setSoundListener(SoundListener soundListener) { this.listener = soundListener; }
 
-	public void stop() { if(player != null) { player.stop(); } }
+	public void stop() 
+	{ 
+		if(player != null) 
+		{ 
+			if(((PlatformPlayer)player).nokiaListener != listener) { ((PlatformPlayer) player).setSoundListener(this, listener); }
+			player.stop(); 
+		} 
+	}
 
 	// This is the same conversion used in Sprintpcs' DualTone implementation., as it also uses this constant.
-	public static int convertFreqToNote(int freq) { return (int) (Math.round(Math.log((double) freq / 8.176) * SEMITONE_CONST)); }
+	public static int convertFreqToNote(int freq) { return (int) Math.max(Math.round(Math.log((double) freq / 8.176) * SEMITONE_CONST), 0); }
 }

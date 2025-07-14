@@ -100,7 +100,7 @@ public class PlatformPlayer implements Player
 
 	private com.kddi.media.MediaPlayerBox kddiPlayerBox;
 
-	private SoundListener nokiaListener;
+	public SoundListener nokiaListener;
 	private Sound nokiaSound;
 
 	private com.nttdocomo.ui.MediaListener doJaListener;

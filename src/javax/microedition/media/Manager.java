@@ -193,13 +193,16 @@ public class Manager
 			@Override
 			public void run() 
 			{
-				try { Thread.sleep(effectiveDuration); } 
-				catch (InterruptedException e) { }
-				toneChannel.noteOff(note);
-				toneChannel.controlChange(0,  restoreBankMSB);
-				toneChannel.controlChange(32, restoreBankLSB);
-				toneChannel.programChange(restoreInstrument);
-				toneChannel.controlChange(7, restoreVolume);
+				try 
+				{ 
+					Thread.sleep(effectiveDuration);
+					toneChannel.noteOff(note);
+					toneChannel.controlChange(0,  restoreBankMSB);
+					toneChannel.controlChange(32, restoreBankLSB);
+					toneChannel.programChange(restoreInstrument);
+					toneChannel.controlChange(7, restoreVolume);
+				} 
+				catch (InterruptedException e) { return; } // The only reason for this to be interrupted is if a new tone is requested
 			}
 		});
 		toneThread.start();
