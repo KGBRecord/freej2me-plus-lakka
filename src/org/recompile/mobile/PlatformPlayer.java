@@ -767,7 +767,7 @@ public class PlatformPlayer implements Player
 		public void deallocate() 
 		{ 
 			receiver = null;
-			midi.close();
+			if(midi != null) { midi.close(); }
 		}
 
 		public void close() { midiSequence = null; }
@@ -1013,7 +1013,7 @@ public class PlatformPlayer implements Player
 		public void deallocate() 
 		{
 			receiver = null;
-			midi.close();
+			if(midi != null) { midi.close(); }
 
 			new Thread(new Runnable() 
 			{
