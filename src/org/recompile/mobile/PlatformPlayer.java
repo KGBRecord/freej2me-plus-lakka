@@ -286,6 +286,7 @@ public class PlatformPlayer implements Player
 		try
 		{
 			if(getState() >= Player.REALIZED && player.isRunning()) { stop(); }
+			player.deallocate();
 			player.close();
 			controls = null;
 			player = null;
@@ -567,6 +568,7 @@ public class PlatformPlayer implements Player
 			{
 				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning()) 
 				{
+					sequencePlayers[i].deallocate();
 					sequencePlayers[i].close();
 					sequencePlayers[i] = midplayer;
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Overriding a previously allocated midi player. Either the jar requires more than " + sequencePlayers.length + " midi at the same time, or it's not closing media properly.");
@@ -589,6 +591,7 @@ public class PlatformPlayer implements Player
 			{
 				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning()) 
 				{
+					sequencePlayers[i].deallocate();
 					sequencePlayers[i].close();
 					sequencePlayers[i] = smafPlayer;
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Overriding a previously allocated midi player. Either the jar requires more than " + sequencePlayers.length + " midi at the same time, or it's not closing media properly.");
@@ -737,6 +740,7 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{ 
+			transmitter = null;
 			receiver = null;
 			if(midi != null) { midi.close(); }
 		}
@@ -981,6 +985,7 @@ public class PlatformPlayer implements Player
 
 		public void deallocate() 
 		{
+			transmitter = null;
 			receiver = null;
 			if(midi != null) { midi.close(); }
 
@@ -1092,7 +1097,6 @@ public class PlatformPlayer implements Player
 		private Clip wavClip;
 		private int[] wavHeaderData = new int[6];
 		private int numLoops = 0;
-		private LineListener lineListener = null;
 
 		public wavPlayer(InputStream stream)
 		{
@@ -1147,29 +1151,25 @@ public class PlatformPlayer implements Player
 				wavClip = AudioSystem.getClip();
 				wavClip.open(wavStream);
 				/* Like for midi, we need to listen for END_OF_MEDIA events here too. */
-				if (lineListener == null) 
+				wavClip.addLineListener(new LineListener() 
 				{
-					lineListener = new LineListener() 
+					@Override
+					public void update(LineEvent event) 
 					{
-						@Override
-						public void update(LineEvent event) 
+						if (event.getType() == LineEvent.Type.STOP) 
 						{
-							if (event.getType() == LineEvent.Type.STOP) 
+							state = Player.PREFETCHED;
+							if(numLoops != 0) 
 							{
-								state = Player.PREFETCHED;
-								if(numLoops != 0) 
-								{
-									notifyListeners(PlayerListener.LOOPED, getMediaTime());
-									if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
-									setMediaTime(0);
-									start();
-								}
-								else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); }
+								notifyListeners(PlayerListener.LOOPED, getMediaTime());
+								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
+								setMediaTime(0);
+								start();
 							}
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); }
 						}
-					};
-					wavClip.addLineListener(lineListener);
-				}
+					}
+				});
 
 				state = Player.REALIZED; 
 			}
@@ -1207,34 +1207,16 @@ public class PlatformPlayer implements Player
 				@Override
 				public void run() 
 				{
-					if (lineListener != null) 
-					{
-						wavClip.removeLineListener(lineListener);
-						lineListener = null;
-					}
 					if(wavClip != null) { wavClip.close(); }
+					wavClip = null;
 				}
 			}).start();
 		}
 
 		public void close() 
 		{
-			new Thread(new Runnable() 
-			{
-				@Override
-				public void run() 
-				{
-					if (lineListener != null) 
-					{
-						wavClip.removeLineListener(lineListener);
-						lineListener = null;
-					}
-					if(wavClip != null) { wavClip.close(); }
-					wavClip = null;
-					wavStream = null;
-					wavHeaderData = null;
-				}
-			}).start();
+			wavStream = null;
+			wavHeaderData = null;
 		}
 
 		public void setLoopCount(int count)
