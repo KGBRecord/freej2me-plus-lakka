@@ -74,7 +74,8 @@ import javax.microedition.media.decoders.MLDDecoder;
 /* IMA ADPCM WAV support */
 import javax.microedition.media.decoders.WAVTools;
 import javax.microedition.media.decoders.WAVImaADPCMDecoder;
-
+/* IMA ADPCM WAV support */
+import javax.microedition.media.decoders.EMSiMelodyDecoder;
 /* audio/mpeg support */
 import javazoom.jl.player.MPEGPlayer;
 
@@ -203,6 +204,12 @@ public class PlatformPlayer implements Player
 							player = new SMAFPlayer(MLDDecoder.SequenceData, MLDDecoder.pcmData.toArray(new InputStream[0]), new HashMap<Integer, Integer>(MLDDecoder.pcmDataPositions), new HashMap<Integer, Integer>(MLDDecoder.pcmDataVelocities));
 						}
 						else { player = new audioplayer(); disableControls = true; } // Somehow the MLD decoder failed, retrieve a stub player
+					}
+					else if(data.length >= 4 && data[0] == 'B' && data[1] == 'E' && data[2] == 'G' && data[3] == 'I' && data[4] == 'N' && data[5] == ':' && data[6] == 'I' && data[7] == 'M')
+					{
+						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is EMS iMelody! (not fully supported yet)");
+						contentType = "audio/iMelody (beta)";
+						player = new midiPlayer(EMSiMelodyDecoder.decodeiMelody(data));
 					}
 					else if(data.length >= 6 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '\n') 
 					{
