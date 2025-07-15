@@ -302,17 +302,21 @@ public class Manager
 			try 
 			{
 				soundfontDir.mkdirs();
-				File dummyFile = new File(soundfontDir.getPath() + File.separatorChar + "Put your sf2 bank here");
+				File dummyFile = new File(soundfontDir.getPath() + File.separatorChar + "place sf2 file or gm for early java 6 here");
 				dummyFile.createNewFile();
 			}
 			catch(IOException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to create custom midi dir:" + e.getMessage()); }
 		}
 		
-		/* Get the first sf2 soundfont in the directory */
-		String[] fontfile = soundfontDir.list(new FilenameFilter()
+		/* Get the first sf2 or gm soundfont in the directory */
+		String[] fontfile = soundfontDir.list(new FilenameFilter() 
 		{
 			@Override
-			public boolean accept(File f, String soundfont ) { return soundfont.toLowerCase().endsWith(".sf2"); }
+			public boolean accept(File f, String soundfont) 
+			{
+				String lowerCaseFont = soundfont.toLowerCase();
+				return lowerCaseFont.endsWith(".sf2") || lowerCaseFont.endsWith(".gm");
+			}
 		});
 
 		/* 
