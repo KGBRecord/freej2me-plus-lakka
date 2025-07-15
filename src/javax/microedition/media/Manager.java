@@ -53,6 +53,9 @@ public class Manager
 	private static Soundbank customSoundfont;
 	private static Soundbank defaultSoundbank = null;
 	
+	public static final int NUM_EXCLUSIVE_SYNTHS = 4;
+	public static final Synthesizer[] exclusiveSynths = new Synthesizer[NUM_EXCLUSIVE_SYNTHS];
+	public static final boolean[] synthIdxInUse = new boolean[] { false, false, false, false };
 	public static Synthesizer toneSynth = null;
 	public static Receiver toneReceiver = null;
 	public static Sequencer toneSequencer = null;
@@ -325,13 +328,10 @@ public class Manager
 			} 
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load soundfont into synth: " + e.getMessage());}
 		}
-		else if (!Mobile.useCustomMidi) 
-		{ 
-			customSoundfont = defaultSoundbank;
-		}
+		else if (!Mobile.useCustomMidi) { customSoundfont = defaultSoundbank; }
 		else 
 		{ 
-			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Custom MIDI enabled but there's no soundfont in" + (soundfontDir.getPath() + File.separatorChar)); 
+			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Custom MIDI enabled but there's no soundfont in: " + (soundfontDir.getPath() + File.separatorChar)); 
 			customSoundfont = defaultSoundbank;
 		}
 	}
@@ -349,6 +349,11 @@ public class Manager
 				toneSequencer.stop();
 				wasPlaying = true;
 			}
+
+			for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
+			{
+				if(exclusiveSynths[i] != null) { exclusiveSynths[i].loadAllInstruments(Manager.getCustomSoundfont()); }
+			}
 			
 			// Restart the sequencer if needed
 			if (toneSequencer != null && wasPlaying) 
@@ -356,9 +361,6 @@ public class Manager
 				toneSequencer.start();
 				wasPlaying = false;
 			}
-
-			// Do the same step above, but for PlatformPlayer's sequence players
-			PlatformPlayer.doSoundbankChange();
 		}
 		catch (Exception e) {Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to change MIDI soundfont: " + e.getMessage()); }
 	}
@@ -366,8 +368,9 @@ public class Manager
 	public static Synthesizer prepareSynthesizer() throws MidiUnavailableException
 	{
 		Synthesizer synth = MidiSystem.getSynthesizer(); 
-		if(defaultSoundbank == null) { defaultSoundbank = MidiSystem.getSynthesizer().getDefaultSoundbank(); }
 		synth.open();
+
+		defaultSoundbank = synth.getDefaultSoundbank();
 
 		changeCustomMidi();
 
@@ -376,14 +379,27 @@ public class Manager
 		return synth;
 	}
 
+	public static int retrieveAvailableSynthIndex() 
+	{
+		for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
+		{
+			if(synthIdxInUse[i] == false) { return i; }
+		}
+
+		return 0; // We have no option but to reuse a synth here, as the four exclusive ones are all in use
+	}
+
 	public static Soundbank getCustomSoundfont() { return customSoundfont; }
 
 	public static void prepareMediaEngine() 
 	{
 		try  
 		{
-			PlatformPlayer.loadSynthesizers();
-			toneSynth = PlatformPlayer.exclusiveSynths[PlatformPlayer.NUM_EXCLUSIVE_SYNTHS-1]; // Get the last synth of PlatformPlayer
+			for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
+			{
+				exclusiveSynths[i] = prepareSynthesizer();
+			}
+			toneSynth = exclusiveSynths[NUM_EXCLUSIVE_SYNTHS-1]; // Get the last synth of PlatformPlayer
 			toneReceiver = toneSynth.getReceiver();	
 			toneChannel = toneSynth.getChannels()[15]; // Also get the last channel of the last synth, to minimize chances of this causing issues with other MIDI streams
 

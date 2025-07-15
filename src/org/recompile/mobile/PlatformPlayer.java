@@ -81,10 +81,7 @@ import javazoom.jl.player.MPEGPlayer;
 
 public class PlatformPlayer implements Player
 {
-
-	public static final int NUM_EXCLUSIVE_SYNTHS = 4;
-	public static final Synthesizer[] exclusiveSynths = new Synthesizer[NUM_EXCLUSIVE_SYNTHS];
-	private static final boolean[] synthIdxInUse = new boolean[] { false, false, false, false };
+	
 	private static final audioplayer[] sequencePlayers = new audioplayer[32];
 
 	private final byte NUM_CONTROLS = 4;
@@ -605,37 +602,6 @@ public class PlatformPlayer implements Player
 		}
 	}
 
-	public static void doSoundbankChange() 
-	{ 
-		for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
-		{
-			if(exclusiveSynths[i] != null) { exclusiveSynths[i].loadAllInstruments(Manager.getCustomSoundfont()); }
-		}
-	}
-
-	public static int retrieveAvailableSynthIndex() 
-	{
-		for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
-		{
-			if(synthIdxInUse[i] == false) { return i; }
-		}
-
-		return 0; // We have no option but to reuse a synth here, as the four exclusive ones are all in use
-	}
-
-	public static void loadSynthesizers() 
-	{
-		try 
-		{
-			for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
-			{
-				exclusiveSynths[i] = Manager.prepareSynthesizer();
-			}
-		}
-		catch(Exception e) { }
-	}
-
-
 	// Players //
 
 	private class audioplayer
@@ -708,6 +674,26 @@ public class PlatformPlayer implements Player
 				midi = MidiSystem.getSequencer(false);
 				transmitter = midi.getTransmitter();
 				midi.open();
+				midi.addMetaEventListener(new MetaEventListener() 
+				{
+					@Override
+					public void meta(MetaMessage meta) 
+					{
+						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
+						{
+							state = Player.PREFETCHED;
+							curTime = getMediaTime();
+							if(numLoops != 0) 
+							{
+								notifyListeners(PlayerListener.LOOPED, getMediaTime());
+								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
+								setMediaTime(0);
+								start();
+							}
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); Manager.synthIdxInUse[synthIdx] = false; }
+						}
+					}
+				});
 				prepareMidiSubsystem();
 				state = Player.REALIZED;
 			}
@@ -726,29 +712,7 @@ public class PlatformPlayer implements Player
 			{
 				// Prepare the midi subsystem for every start call
 				prepareMidiSubsystem();
-				synthIdxInUse[synthIdx] = true;
-
-				// Reset the MetaEventListener so that it tracks the current midi sequence
-				midi.addMetaEventListener(new MetaEventListener() 
-				{
-					@Override
-					public void meta(MetaMessage meta) 
-					{
-						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
-						{
-							state = Player.PREFETCHED;
-							curTime = getMediaTime();
-							if(numLoops != 0) 
-							{
-								notifyListeners(PlayerListener.LOOPED, getMediaTime());
-								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
-								setMediaTime(0);
-								start();
-							}
-							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); synthIdxInUse[synthIdx] = false; }
-						}
-					}
-				});
+				Manager.synthIdxInUse[synthIdx] = true;
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
 				else { setMediaTime(curTime); } // Else, resume from where it stopped
@@ -757,7 +721,7 @@ public class PlatformPlayer implements Player
 				notifyListeners(PlayerListener.STARTED, getMediaTime());
 
 				midi.start();
-				((volumeControl)getControl("VolumeControl")).setLevel(getVolume());
+				((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to clean MIDI sequencer and start playback:" + e.getMessage()); }
 		}
@@ -765,7 +729,7 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
-			synthIdxInUse[synthIdx] = false;
+			Manager.synthIdxInUse[synthIdx] = false;
 			getMediaTime();
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
@@ -828,8 +792,8 @@ public class PlatformPlayer implements Player
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
-			this.synthIdx = retrieveAvailableSynthIndex();
-			this.synthesizer = exclusiveSynths[synthIdx];
+			this.synthIdx = Manager.retrieveAvailableSynthIndex();
+			this.synthesizer = Manager.exclusiveSynths[synthIdx];
 			this.receiver = this.synthesizer.getReceiver();
 			transmitter.setReceiver(receiver);
 			midi.setSequence(midiSequence);
@@ -885,6 +849,26 @@ public class PlatformPlayer implements Player
 				midi = MidiSystem.getSequencer(false);
 				transmitter = midi.getTransmitter();
 				midi.open();
+				midi.addMetaEventListener(new MetaEventListener() 
+				{
+					@Override
+					public void meta(MetaMessage meta) 
+					{
+						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
+						{
+							state = Player.PREFETCHED;
+							curTime = getMediaTime();
+							if(numLoops != 0) 
+							{
+								notifyListeners(PlayerListener.LOOPED, getMediaTime());
+								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
+								setMediaTime(0);
+								start();
+							}
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); Manager.synthIdxInUse[synthIdx] = false; }
+						}
+					}
+				});
 				prepareMidiSubsystem();
 
 				if(wavStreams != null) 
@@ -914,29 +898,7 @@ public class PlatformPlayer implements Player
 			{
 				// Prepare the midi subsystem for every start call
 				prepareMidiSubsystem();
-				synthIdxInUse[synthIdx] = true;
-
-				// Reset the MetaEventListener so that it tracks the current midi sequence
-				midi.addMetaEventListener(new MetaEventListener() 
-				{
-					@Override
-					public void meta(MetaMessage meta) 
-					{
-						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
-						{
-							state = Player.PREFETCHED;
-							curTime = getMediaTime();
-							if(numLoops != 0) 
-							{
-								notifyListeners(PlayerListener.LOOPED, getMediaTime());
-								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
-								setMediaTime(0);
-								start();
-							}
-							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); synthIdxInUse[synthIdx] = false; }
-						}
-					}
-				});
+				Manager.synthIdxInUse[synthIdx] = true;
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
 				else { setMediaTime(curTime); } // Else, resume from where it stopped
@@ -960,7 +922,7 @@ public class PlatformPlayer implements Player
 			Set<Integer> playedPositions = new HashSet<Integer>();
 
 			midi.start();
-			((volumeControl)getControl("VolumeControl")).setLevel(getVolume());
+			((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
 			while (isPlaying && wavClips != null) 
 			{
 				int mediaTime = (int) (getMediaTime() / 1000);
@@ -1006,7 +968,7 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
-			synthIdxInUse[synthIdx] = false;
+			Manager.synthIdxInUse[synthIdx] = false;
 			getMediaTime();
 			if(wavClips != null) 
 			{
@@ -1114,8 +1076,8 @@ public class PlatformPlayer implements Player
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
-			this.synthIdx = retrieveAvailableSynthIndex();
-			this.synthesizer = exclusiveSynths[synthIdx];
+			this.synthIdx = Manager.retrieveAvailableSynthIndex();
+			this.synthesizer = Manager.exclusiveSynths[synthIdx];
 			this.receiver = this.synthesizer.getReceiver();
 			transmitter.setReceiver(receiver);
 			midi.setSequence(midiSequence);
@@ -1708,11 +1670,15 @@ public class PlatformPlayer implements Player
 			return player.getVolume(); 
 		}
 
-		public int setLevel(int level) 
+		public int setLevel(int level) { return doSetLevel(level, false); }
+
+		public int doSetLevel(int level, boolean forceChange) 
 		{
 			/* Some Digital Chocolate games actually go all the way to level = 120. E.g. Tornado Mania */
 			if(level > 100) { level = 100; }
 			else if(level < 0) { level = 0; }
+
+			if(level == getLevel() && !forceChange) { return getLevel(); }
 
 			if (player instanceof midiPlayer) 
 			{
