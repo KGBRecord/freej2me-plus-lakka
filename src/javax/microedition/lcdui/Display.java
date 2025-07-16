@@ -324,7 +324,8 @@ public class Display
 				}
 			}
 		});
-		synchronized(serializedEvents) { serializedEvents.notify(); }
+		if(Mobile.compatImmediateRepaints) { setCurrentRequest.getAndSet(null).run(); }
+		else { synchronized(serializedEvents) { serializedEvents.notify(); } }
 	}
 
 	public void setCurrent(final Alert alert, final Displayable next)
@@ -353,7 +354,8 @@ public class Display
 				}
 			}
 		});
-		synchronized(serializedEvents) { serializedEvents.notify(); }
+		if(Mobile.compatImmediateRepaints) { setCurrentRequest.getAndSet(null).run(); }
+		else { synchronized(serializedEvents) { serializedEvents.notify(); } }
 	}
 
 	public void setCurrentItem(final Item item) 
@@ -371,7 +373,8 @@ public class Display
 				}
 			}
 		});
-		synchronized(serializedEvents) { serializedEvents.notify(); }
+		if(Mobile.compatImmediateRepaints) { setCurrentRequest.getAndSet(null).run(); }
+		else { synchronized(serializedEvents) { serializedEvents.notify(); } }
 	}
 
 	public boolean vibrate(int duration)
