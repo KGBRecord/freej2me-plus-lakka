@@ -60,7 +60,7 @@ public final class SMAFDecoder
 
     // Create a new sequence and track for the converted SMAF file
     private static Sequence sequence;
-    private static Track[] channels;
+    private static Track track;
 
     private static byte[] input;
 
@@ -251,7 +251,7 @@ public final class SMAFDecoder
         try
         {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            MidiSystem.write(sequence, 1, output);
+            MidiSystem.write(sequence, 0, output);
             SequenceData = new ByteArrayInputStream(output.toByteArray());
 
             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF parsing and conversion finished, Sequence data size:" + output.size() + " | number of PCM streams:" + pcmData.size());
@@ -468,8 +468,8 @@ public final class SMAFDecoder
         { 
             try 
             {
-                sequence = new Sequence(Sequence.PPQ, 500, 16); // TODO: Maybe revise this? We shouldn't rely on a fixed PPQ value, i think. (though there are separate timebases for duration and gateTime, so who knows, maybe it's correct)
-                channels = sequence.getTracks();
+                sequence = new Sequence(Sequence.PPQ, 500); // TODO: Maybe revise this? We shouldn't rely on a fixed PPQ value, i think. (though there are separate timebases for duration and gateTime, so who knows, maybe it's correct)
+                track = sequence.createTrack();
             } catch(InvalidMidiDataException ie) { Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " couldn't create MIDI Sequence to convert:" + ie.getMessage()); }
         }
     }
@@ -721,7 +721,7 @@ public final class SMAFDecoder
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding program change value 0x" + String.format("%02X", handyPhoneBankToMidi(valueField, channel)) + "(" + handyPhoneBankToMidi(valueField, channel) + ") to channel " + channel);
                                 event.setMessage(ShortMessage.PROGRAM_CHANGE, channel, handyPhoneBankToMidi(valueField, channel), 0);
                                 midiEvent = new MidiEvent(event, totalDuration);
-                                channels[channel].add(midiEvent);
+                                track.add(midiEvent);
                                 break;
 
                             case 0x1: // Bank Select
@@ -733,7 +733,7 @@ public final class SMAFDecoder
                                 event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 0, bankNumber);
                                 // Send the bank select message
                                 midiEvent = new MidiEvent(event, totalDuration);
-                                channels[channel].add(midiEvent);
+                                track.add(midiEvent);
                     
                                 // If it's a drum bank, we'll need to change to a drum instrument by altering the midi instrument mapping
                                 if (bankType == 1) 
@@ -770,35 +770,35 @@ public final class SMAFDecoder
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding modulation value 0x" + String.format("%02X", valueField) + "(" + valueField + ") to channel " + channel);
                                 event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 1, valueField);
                                 midiEvent = new MidiEvent(event, totalDuration);
-                                channels[channel].add(midiEvent);
+                                track.add(midiEvent);
                                 break;
 
                             case 0x4: // Pitch Bend (Long Type)
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding pitch bend value 0x" + String.format("%02X", valueField) + "(" + valueField + ") to channel " + channel);
                                 event.setMessage(ShortMessage.PITCH_BEND, channel, valueField);
                                 midiEvent = new MidiEvent(event, totalDuration);
-                                channels[channel].add(midiEvent);
+                                track.add(midiEvent);
                                 break;
 
                             case 0x7: // Volume Change
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding volume value 0x" + String.format("%02X", valueField) + "(" + valueField + ") to channel " + channel);
                                 event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 7, valueField);
                                 midiEvent = new MidiEvent(event, totalDuration);
-                                channels[channel].add(midiEvent);
+                                track.add(midiEvent);
                                 break;
 
                             case 0xA: // Panning Change
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding panning value 0x" + String.format("%02X", valueField) + "(" + valueField + ") to channel " + channel);
                                 event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 10, valueField);
                                 midiEvent = new MidiEvent(event, totalDuration);
-                                channels[channel].add(midiEvent);
+                                track.add(midiEvent);
                                 break;
 
                             case 0xB: // Expression Change (Long Type)
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding expression value 0x" + String.format("%02X", valueField) + "(" + valueField + ") to channel " + channel);
                                 event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 11, valueField);
                                 midiEvent = new MidiEvent(event, totalDuration);
-                                channels[channel].add(midiEvent);
+                                track.add(midiEvent);
                                 break;
 
                             default:
@@ -815,7 +815,7 @@ public final class SMAFDecoder
                             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding modulation value 0x" + String.format("%02X", shortModValues[shortEventValue-1]) + "(" + shortModValues[shortEventValue-1] + ") to channel " + channel);
                             event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 1, shortModValues[shortEventValue-1]);
                             midiEvent = new MidiEvent(event, totalDuration);
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
                         }
 
                         if (b5 == 0 && b4 == 1) // Pitch Bend (Short Type)
@@ -823,7 +823,7 @@ public final class SMAFDecoder
                             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding pitch bend value 0x" + String.format("%02X", shortPitchBendValues[shortEventValue-1]) + "(" + shortPitchBendValues[shortEventValue-1] + ") to channel " + channel);
                             event.setMessage(ShortMessage.PITCH_BEND, channel, shortPitchBendValues[shortEventValue-1]);
                             midiEvent = new MidiEvent(event, totalDuration);
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
                         }
 
                         if (b5 == 0 && b4 == 0) // Expression (Short Type)
@@ -831,7 +831,7 @@ public final class SMAFDecoder
                             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding expression value 0x" + String.format("%02X", shortExpressionValues[shortEventValue-1]) + "(" + shortExpressionValues[shortEventValue-1] + ") to channel " + channel);
                             event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 11, shortExpressionValues[shortEventValue-1]);
                             midiEvent = new MidiEvent(event, totalDuration);
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
                         }
                     }
                 }
@@ -899,12 +899,12 @@ public final class SMAFDecoder
                     ShortMessage noteOn = new ShortMessage();
                     noteOn.setMessage(ShortMessage.NOTE_ON, channel, midiNoteNumber, channelData[channel].velocity);
                     midiEvent = new MidiEvent(noteOn, totalDuration);
-                    channels[channel].add(midiEvent); // Add the note event to the corresponding channel
+                    track.add(midiEvent); // Add the note event to the corresponding channel
 
                     ShortMessage noteOff = new ShortMessage();
                     noteOff.setMessage(ShortMessage.NOTE_OFF, channel, midiNoteNumber, 0);
                     midiEvent = new MidiEvent(noteOff, totalDuration+(gateTime * timeBasetoMs(TimeBase_G)));
-                    channels[channel].add(midiEvent);
+                    track.add(midiEvent);
                 }
             }
             else // Mobile Standard formats (with or without compression, as this method will receive uncompressed data either way)
@@ -1006,11 +1006,11 @@ public final class SMAFDecoder
                             // We still add the notes no matter, just so that the sequencer can actually reach the PCM request time
                             noteOn.setMessage(ShortMessage.NOTE_ON, channel, noteNumber, channelData[channel].velocity);
                             midiEvent = new MidiEvent(noteOn, totalDuration);
-                            channels[channel].add(midiEvent); // Add the note event to the corresponding channel
+                            track.add(midiEvent); // Add the note event to the corresponding channel
 
                             noteOff.setMessage(ShortMessage.NOTE_OFF, channel, noteNumber, 0);
                             midiEvent = new MidiEvent(noteOff, totalDuration+(gateTime * timeBasetoMs(TimeBase_G)));
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
                             break;
             
                         case 0x90: // Note with velocity
@@ -1051,11 +1051,11 @@ public final class SMAFDecoder
                             
                             noteOn.setMessage(ShortMessage.NOTE_ON, channel, noteNumber, channelData[channel].velocity);
                             midiEvent = new MidiEvent(noteOn, totalDuration);
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
 
                             noteOff.setMessage(ShortMessage.NOTE_OFF, channel, noteNumber, 0);
                             midiEvent = new MidiEvent(noteOff, totalDuration+(gateTime * timeBasetoMs(TimeBase_G)));
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
                             break;
             
                         case 0xA0: // Reserved (3 bytes)
@@ -1072,7 +1072,7 @@ public final class SMAFDecoder
                             ShortMessage ctrlChange = new ShortMessage();
                             ctrlChange.setMessage(ShortMessage.CONTROL_CHANGE, channel, controlNumber, controlValue);
                             midiEvent = new MidiEvent(ctrlChange, totalDuration);
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
                             break;
             
                         case 0xC0: // Program Change (0xC0 to 0xCF)
@@ -1083,7 +1083,7 @@ public final class SMAFDecoder
                             ShortMessage prgChange = new ShortMessage();
                             prgChange.setMessage(ShortMessage.PROGRAM_CHANGE, channel, programNumber, 0);
                             midiEvent = new MidiEvent(prgChange, totalDuration);
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
                             break;
             
                         case 0xD0: // Reserved (2 bytes)
@@ -1100,7 +1100,7 @@ public final class SMAFDecoder
                             ShortMessage pitchBend = new ShortMessage();
                             pitchBend.setMessage(ShortMessage.PITCH_BEND, channel, pitchBendLSB, pitchBendMSB);
                             midiEvent = new MidiEvent(pitchBend, totalDuration);
-                            channels[channel].add(midiEvent);
+                            track.add(midiEvent);
                             break;
 
                         default:

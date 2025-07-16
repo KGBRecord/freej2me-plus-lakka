@@ -130,7 +130,7 @@ public class NokiaOTTDecoder
 			try 
 			{
 				ByteArrayOutputStream output = new ByteArrayOutputStream();
-				MidiSystem.write(sequence, 1, output);
+				MidiSystem.write(sequence, 0, output);
 				return output.toByteArray();
 			}
 			catch (IOException e) { Mobile.log(Mobile.LOG_ERROR, NokiaOTTDecoder.class.getPackage().getName() + "." + NokiaOTTDecoder.class.getSimpleName() + ": " + " couldn't write converted Tone Sequence:" + e.getMessage()); return null;}

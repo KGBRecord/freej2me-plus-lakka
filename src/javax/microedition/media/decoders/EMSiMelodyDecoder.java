@@ -256,7 +256,7 @@ public final class EMSiMelodyDecoder
 
             // Everything's finished, send the converted stream to the player
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            MidiSystem.write(sequence, 1, output);
+            MidiSystem.write(sequence, 0, output);
 
             return new ByteArrayInputStream(output.toByteArray());
         }

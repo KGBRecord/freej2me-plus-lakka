@@ -366,7 +366,7 @@ public class MelodyComposer
 		try 
 		{
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			MidiSystem.write(melodySequence, 1, output);
+			MidiSystem.write(melodySequence, 0, output);
 			return output.toByteArray();
 		}
 		catch (IOException e) { Mobile.log(Mobile.LOG_ERROR, MelodyComposer.class.getPackage().getName() + "." + MelodyComposer.class.getSimpleName() + ": " + " couldn't write Melody:" + e.getMessage()); return null;}

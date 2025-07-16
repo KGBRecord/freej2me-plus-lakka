@@ -42,66 +42,73 @@ public class DualTone
 	/* Implementation Idea: Dual Tone can just be made a single midi sequence with two tracks, one for each tone sequence. */
 	public DualTone(int[] x_frequencies, int[] y_frequencies, int[] durations, int priority, int vibration) 
 	{
-        try
+		try
 		{
 			this.priority = priority;
 			this.vibration = vibration;
 
-            Sequence midiSequence = new Sequence(Sequence.PPQ, PPQ);
-            Track trackA = midiSequence.createTrack();
-			Track trackB = midiSequence.createTrack();
+			Sequence midiSequence = new Sequence(Sequence.PPQ, PPQ);
+			Track track = midiSequence.createTrack();
 
 			// Like siemens' MelodyComposer, use a square wave instrument here.
-			ShortMessage bankMSB = new ShortMessage();
-			ShortMessage bankLSB = new ShortMessage();
-			ShortMessage programChange = new ShortMessage();
+			ShortMessage bankMSB1 = new ShortMessage();
+			ShortMessage bankLSB1 = new ShortMessage();
+			ShortMessage programChange1 = new ShortMessage();
+			ShortMessage bankMSB2 = new ShortMessage();
+			ShortMessage bankLSB2 = new ShortMessage();
+			ShortMessage programChange2 = new ShortMessage();
 
-			bankMSB.setMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1); // Bank change MSB (Bank 1)
-			bankLSB.setMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0); // Bank change LSB
-			programChange.setMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0); // 80 is the Square Wave / Lead 1 instrument, which we'll use to get closer to what this should sound like
+			bankMSB1.setMessage(ShortMessage.CONTROL_CHANGE, 0, 0, 1); // Bank change MSB (Bank 1)
+			bankLSB1.setMessage(ShortMessage.CONTROL_CHANGE, 0, 32, 0); // Bank change LSB
+			programChange1.setMessage(ShortMessage.PROGRAM_CHANGE, 0, 80, 0); // 80 is the Square Wave / Lead 1 instrument, which we'll use to get closer to what this should sound like
 
-			trackA.add(new MidiEvent(bankMSB, 0));
-			trackA.add(new MidiEvent(bankLSB, 1));
-			trackA.add(new MidiEvent(programChange, 0));
-			trackB.add(new MidiEvent(bankMSB, 0));
-			trackB.add(new MidiEvent(bankLSB, 1));
-			trackB.add(new MidiEvent(programChange, 0));
+			bankMSB2.setMessage(ShortMessage.CONTROL_CHANGE, 1, 0, 1); // Bank change MSB (Bank 1)
+			bankLSB2.setMessage(ShortMessage.CONTROL_CHANGE, 1, 32, 0); // Bank change LSB
+			programChange2.setMessage(ShortMessage.PROGRAM_CHANGE, 1, 80, 0); // 80 is the Square Wave / Lead 1 instrument, which we'll use to get closer to what this should sound like
+
+			track.add(new MidiEvent(bankMSB1, 0));
+			track.add(new MidiEvent(bankLSB1, 1));
+			track.add(new MidiEvent(programChange1, 0));
+
+			track.add(new MidiEvent(bankMSB2, 0));
+			track.add(new MidiEvent(bankLSB2, 1));
+			track.add(new MidiEvent(programChange2, 0));
 
 			// Start from tick 0, and move onwards after reading each note pair's duration.
-            long currentTick = 0;
+			long currentTick = 0;
 			int tmpNote;
 
 			// x_frequencies and y-frequencies are expected to always be the same length, same for durations
-            for (int i = 0; i < x_frequencies.length; i++) 
+			for (int i = 0; i < x_frequencies.length; i++) 
 			{
-                // Convert duration from milliseconds to ticks
-                long durationInTicks = Math.round(durations[i] * TICKS_PER_MILLISECOND);
+				// Convert duration from milliseconds to ticks
+				long durationInTicks = Math.round(durations[i] * TICKS_PER_MILLISECOND);
 
 				if(x_frequencies[i] != 0) // Don't add silent notes
 				{
 					tmpNote = convertFreqToNote(x_frequencies[i]);
-					trackA.add(createMidiEvent(ShortMessage.NOTE_ON, tmpNote, 93, currentTick));
-					trackA.add(createMidiEvent(ShortMessage.NOTE_OFF, tmpNote, 0, currentTick + durationInTicks));
+					track.add(createMidiEvent(ShortMessage.NOTE_ON, 0, tmpNote, 93, currentTick));
+					track.add(createMidiEvent(ShortMessage.NOTE_OFF, 0, tmpNote, 0, currentTick + durationInTicks));
 				}
 				if(y_frequencies[i] != 0)
 				{
 					tmpNote = convertFreqToNote(y_frequencies[i]);
-					trackB.add(createMidiEvent(ShortMessage.NOTE_ON, tmpNote, 93, currentTick));
-					trackB.add(createMidiEvent(ShortMessage.NOTE_OFF, tmpNote, 0, currentTick + durationInTicks));
+					track.add(createMidiEvent(ShortMessage.NOTE_ON, 1, tmpNote, 93, currentTick));
+					track.add(createMidiEvent(ShortMessage.NOTE_OFF, 1, tmpNote, 0, currentTick + durationInTicks));
 				}
 				
-                currentTick += durationInTicks;
-            }
+				currentTick += durationInTicks;
+			}
 
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
 			MidiSystem.write(midiSequence, 1, output);
 			sequence = output.toByteArray();
-        }
+		}
 		catch (Exception e) 
 		{
-            Mobile.log(Mobile.LOG_ERROR, DualTone.class.getPackage().getName() + "." + DualTone.class.getSimpleName() + ": " + " failed to create DualTone:" + e.getMessage());
-        }
-    }
+			Mobile.log(Mobile.LOG_ERROR, DualTone.class.getPackage().getName() + "." + DualTone.class.getSimpleName() + ": " + " failed to create DualTone:" + e.getMessage());
+		}
+	}
 
 	public int getPriority() { return priority; }
 
@@ -109,13 +116,13 @@ public class DualTone
 
 	private int convertFreqToNote(int frequency) 
 	{
-        return (int) (Math.round(Math.log((double) frequency / 8.176) * SEMITONE_CONST)); // Adjust to MIDI note A4 (440 Hz = note 69)
-    }
+		return (int) (Math.round(Math.log((double) frequency / 8.176) * SEMITONE_CONST)); // Adjust to MIDI note A4 (440 Hz = note 69)
+	}
 
-	private MidiEvent createMidiEvent(int type, int note, int velocity, long tick) throws InvalidMidiDataException 
+	private MidiEvent createMidiEvent(int type, int channel, int note, int velocity, long tick) throws InvalidMidiDataException 
 	{
-        ShortMessage message = new ShortMessage();
-        message.setMessage(type, 0, note, velocity);
-        return new MidiEvent(message, tick);
-    }
+		ShortMessage message = new ShortMessage();
+		message.setMessage(type, channel, note, velocity);
+		return new MidiEvent(message, tick);
+	}
 }
