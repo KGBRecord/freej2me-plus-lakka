@@ -84,7 +84,7 @@ public class AudioClip
 
 	public void play(int loop, int volume) 
 	{
-		Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "loop:" + loop + " vol:" + volume);
+		Mobile.log(Mobile.LOG_DEBUG, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "loop:" + loop + " vol:" + volume);
 		// MMF apparently accepts looping to -1 in AudioClip. Not stated on the documentation, but some jars like ClickMan use it specifically for MMF
 		if(loop < ((playerFormat == TYPE_MMF) ? -1 : 0) || loop > 255 || volume < 0 || volume > ((playerFormat == TYPE_MMF) ? 100 : 5)) { throw new IllegalArgumentException("AudioClip: Cannot play() media, invalid argument provided"); }
 
@@ -93,7 +93,7 @@ public class AudioClip
 			if (player.getState() == Player.STARTED) { player.stop(); }
 			player.setMediaTime(0); // play() should always play media from the beginning, like Nokia Sound
 			player.setLoopCount((playerFormat == TYPE_MMF) ? (loop == 0 ? -1 : loop) : (loop == 255 ? -1 : loop+1)); // For non-MMF, treat 255 loops as infinite looping
-			((VolumeControl) player.getControl("VolumeControl")).setLevel((playerFormat == TYPE_MMF) ? volume : volume * 20); // Received volume varies from 1 to 5, so adapt
+			((VolumeControl) player.getControl("VolumeControl")).setLevel((playerFormat == TYPE_MMF) ? (volume <= 5 ? volume * 20 : volume) : volume * 20); // Received volume varies from 1 to 5, so adapt
 			player.start();
 		}
 		catch (Exception e) {Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Failed to play():" + e.getMessage()); }
