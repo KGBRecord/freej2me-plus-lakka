@@ -92,7 +92,7 @@ public class AudioClip
 		{
 			if (player.getState() == Player.STARTED) { player.stop(); }
 			player.setMediaTime(0); // play() should always play media from the beginning, like Nokia Sound
-			player.setLoopCount((playerFormat == TYPE_MMF) ? loop : (loop == 255 ? -1 : loop+1)); // For non-MMF, treat 255 loops as infinite looping
+			player.setLoopCount((playerFormat == TYPE_MMF) ? (loop == 0 ? -1 : loop) : (loop == 255 ? -1 : loop+1)); // For non-MMF, treat 255 loops as infinite looping
 			((VolumeControl) player.getControl("VolumeControl")).setLevel((playerFormat == TYPE_MMF) ? volume : volume * 20); // Received volume varies from 1 to 5, so adapt
 			player.start();
 		}
