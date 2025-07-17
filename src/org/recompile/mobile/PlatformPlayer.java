@@ -67,6 +67,8 @@ import javax.microedition.media.Control;
 import javax.microedition.media.Controllable;
 import javax.microedition.media.Manager;
 
+/* Patcher for MIDI files with running status bytes */
+import javax.microedition.media.decoders.MIDIPatcher;
 /* SMAF decoding support */
 import javax.microedition.media.decoders.SMAFDecoder;
 /* MLD decoding support */
@@ -658,15 +660,25 @@ public class PlatformPlayer implements Player
 
 		public midiPlayer(InputStream stream) 
 		{
+			byte[] midiData = null;
+			
 			try 
 			{ 
-				midiSequence = MidiSystem.getSequence(stream);
+				midiData = new byte[stream.available()];
+				stream.read(midiData, 0, stream.available());
+				
+				midiSequence = MidiSystem.getSequence(new ByteArrayInputStream(midiData));
 				PlatformPlayer.addPlayerToStack(this, null, null, null);
 			} 
 			catch (Exception e) 
 			{
-				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load MIDI file: " + e.getMessage());
-				e.printStackTrace();
+				Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load MIDI file: " + e.getMessage() + ". Trying to patch running status bytes...");
+				try 
+				{
+					midiSequence = MidiSystem.getSequence(MIDIPatcher.patchMIDIFile(midiData));
+					Mobile.log(Mobile.LOG_INFO, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "MIDI patching succeeded!");
+				}
+				catch(Exception ie) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't patch MIDI file: " + ie.getMessage() + ". Defaulting midi data to null"); e.printStackTrace(); }
 			}
 		}
 
