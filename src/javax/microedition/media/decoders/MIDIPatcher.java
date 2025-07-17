@@ -19,8 +19,6 @@ package javax.microedition.media.decoders;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 public class MIDIPatcher 
 {
