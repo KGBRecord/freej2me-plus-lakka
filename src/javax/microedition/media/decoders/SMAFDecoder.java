@@ -17,13 +17,13 @@
 package javax.microedition.media.decoders;
 
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -49,14 +49,12 @@ public final class SMAFDecoder
 
     private static int decodePos = 0;
     private static byte formatType = 0;
+    private static byte sequenceType = 0;
     private static byte handyChannelIdx = 0;
+    private static int startPoint = 0, stopPoint = 0;
 
     private static byte TimeBase_D;
     private static byte TimeBase_G;
-
-    // Used for handy phone format, as it can simulate more instruments with many Sequence Chunks
-    private static boolean wrapInstruments = false; 
-    private static int preWrapLongestDuration = 0;
 
     // Create a new sequence and track for the converted SMAF file
     private static Sequence sequence;
@@ -152,10 +150,11 @@ public final class SMAFDecoder
 	{
         // Reset any and all static variables to their defaults
         isPCM = false;
-        wrapInstruments = false;
-        preWrapLongestDuration = 0;
         handyChannelIdx = 0;
         decodePos = 0;
+        sequenceType = 0;
+        startPoint = 0;
+        stopPoint = 0;
         channelData = new ChannelData[16];
         for (int j = 0; j < channelData.length; j++) { channelData[j] = new ChannelData(); }
         sequence = null; // Clear the previous MIDI sequence
@@ -188,24 +187,11 @@ public final class SMAFDecoder
             else if(chunkID.contains("Mtsq"))
             {
                 scoreTrackSequenceData();
-                // Handy Phone format states that more than 4 channels can be simulated by having multiple Score Track Sequences
+                // Handy Phone format states that more than 4 channels can be used by having multiple Score Track Sequences (each track has 4)
                 if(formatType == 0x00) { handyChannelIdx += 4; }
-
-                /* 
-                    * If there are more than 4 Score Track Sequences, we have no choice but to wrap back to the first 4 channels
-                    * But something we do here is to begin adding any new wrapped events (which often start with bank changes, etc) AFTER 
-                    * the last longest total duration, which means that these events will only start happening AFTER all the previously active 
-                    * MIDI channels become silent and have no new notes to play. This should also prevent unintended instrument changes and 
-                    * notes to come into play at an instant that they shouldn't, overriding previously slotted channel data.
-                    */
-                if(handyChannelIdx > 12) { handyChannelIdx = 0; wrapInstruments = true;  }
             }
             else if(chunkID.contains("Mtsp")) { scoreTrackPCMData(); } // Unfinished as far as spec compliance goes, but works more often than not
-            else if(chunkID.contains("Mwa")) // Same as above (in fact, it pretty much ties with teh above)
-            {
-                Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " SMAF PCM Chunk found. PCM support not complete yet. ");
-                pcmData.add(new ByteArrayInputStream(scoreTrackWaveData()));
-            }
+            else if(chunkID.contains("Mwa")) { pcmData.add(new ByteArrayInputStream(scoreTrackWaveData())); } // Same as above (in fact, it pretty much ties with the above)
             else if(chunkID.contains("MMMG")) // TODO, seen in use in some jars meant for Sharp
             { 
                 Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " This is a non-standard SMAF file usually found in Sharp phones! Trying to parse... ");
@@ -330,18 +316,84 @@ public final class SMAFDecoder
 
         // -------------------------- Back to parsing
         
-        // NOTE: "," or 0x2C is used as a delimiter for data
         
-                
         if(contentClass >= 0x00 && contentClass <= 0xFF)
         {
-            while(!((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R') &&
-                !((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'M' && (char) input[decodePos+2] == 'M' && (char) input[decodePos+3] == 'G')) 
+            if((char) input[decodePos] == 'O' && (char) input[decodePos+1] == 'P' && (char) input[decodePos+2] == 'D' && (char) input[decodePos+3] == 'A') 
             {
-                sb.append((char) (input[decodePos++] & 0xFF));
-            }
+                decodePos += 4;
+                int opdaLength = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF); 
 
-            data = sb.toString().split(",");
+                for(int i = 0; i < opdaLength; i++) 
+                {
+                    if((char) input[decodePos] == 'D' && (char) input[decodePos+1] == 'c' && (char) input[decodePos+2] == 'h') 
+                    {
+                        decodePos += 3;
+                        contentCodeType = (byte) (input[decodePos++] & 0xFF);
+                        int dchLength = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF); 
+                        i += 8;
+                    }
+                    else 
+                    {
+                        if((char) input[decodePos] == 'V' && (char) input[decodePos+1] == 'N') { sb.append("Vendor name: "); }
+                        else if((char) input[decodePos] == 'C' && (char) input[decodePos+1] == 'N') { sb.append("Carrier name: "); }
+                        else if((char) input[decodePos] == 'C' && (char) input[decodePos+1] == 'A') { sb.append("Category name: "); }
+                        else if((char) input[decodePos] == 'S' && (char) input[decodePos+1] == 'T') { sb.append("Song title: "); }
+                        else if((char) input[decodePos] == 'A' && (char) input[decodePos+1] == 'N') { sb.append("Artist name: "); }
+                        else if((char) input[decodePos] == 'W' && (char) input[decodePos+1] == 'W') { sb.append("Lyricist: "); }
+                        else if((char) input[decodePos] == 'S' && (char) input[decodePos+1] == 'W') { sb.append("Composer: "); }
+                        else if((char) input[decodePos] == 'A' && (char) input[decodePos+1] == 'W') { sb.append("Arranger: "); }
+                        else if((char) input[decodePos] == 'C' && (char) input[decodePos+1] == 'R') { sb.append("Copyright: "); }
+                        else if((char) input[decodePos] == 'G' && (char) input[decodePos+1] == 'R') { sb.append("Manage Group: "); }
+                        else if((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'I') { sb.append("Management Info: "); }
+                        else if((char) input[decodePos] == 'C' && (char) input[decodePos+1] == 'D') { sb.append("Creation Date: "); }
+                        else if((char) input[decodePos] == 'U' && (char) input[decodePos+1] == 'D') { sb.append("Revision Date: "); }
+                        else if((char) input[decodePos] == 'E' && (char) input[decodePos+1] == 'S') { sb.append("Edit Status: "); }
+                        else if((char) input[decodePos] == 'V' && (char) input[decodePos+1] == 'C') { sb.append("V-Card: "); }
+                        else if((char) input[decodePos] == 'I' && (char) input[decodePos+1] == 'C') { sb.append("Image Creator: "); }
+                        else if((char) input[decodePos] == 'I' && (char) input[decodePos+1] == 'R') { sb.append("Image Copyright Owner: "); }
+                        else if((char) input[decodePos] == 'I' && (char) input[decodePos+1] == 'P') { sb.append("Image Editor: "); }
+                        else if((char) input[decodePos] == 'T' && (char) input[decodePos+1] == 'R') { sb.append("Text Copyright Owner: "); }
+                        else if((char) input[decodePos] == 'T' && (char) input[decodePos+1] == 'P') { sb.append("Text Editor: "); }
+                        else if((char) input[decodePos] == 'G' && (char) input[decodePos+1] == 'P') { sb.append("Content Copyright Owner: "); }
+                        else if((char) input[decodePos] == 'V' && (char) input[decodePos+1] == 'E') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'C' && (char) input[decodePos+1] == 'E') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'U' && (char) input[decodePos+1] == 'I') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'O' && (char) input[decodePos+1] == 'W') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'A' && (char) input[decodePos+1] == '0') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'A' && (char) input[decodePos+1] == '1') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'A' && (char) input[decodePos+1] == '2') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'A' && (char) input[decodePos+1] == 'S') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'R' && (char) input[decodePos+1] == 'F') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+
+                        decodePos += 2;
+
+                        int fieldLength = (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF); 
+                        for(int j = 0; j < fieldLength; j++) { sb.append((char) (input[decodePos++] & 0xFF)); }
+                        sb.append(',');
+                        i += 4 + fieldLength;
+                    }
+                }
+            }
+            else 
+            {
+                while(!((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R') &&
+                !((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'M' && (char) input[decodePos+2] == 'M' && (char) input[decodePos+3] == 'G')) 
+                {
+                    sb.append((char) (input[decodePos++] & 0xFF));
+                }
+                
+            }
+            
+            try 
+            {
+                byte[] bytes = sb.toString().getBytes(getContentCodeType(contentCodeType));
+                String encodedString = new String(bytes, getContentCodeType(contentCodeType));
+                // "," or 0x2C is used as a delimiter for identifier data in cases where the OPDA chunk isn't present, but here, it's also used in OPDA as "," is used as a separator
+                data = encodedString.split(",");
+            }
+            catch(UnsupportedEncodingException e) { Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Java does not support the requested encoding: " + getContentCodeType(contentCodeType)); }
         }
 
         while(!((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R') && 
@@ -360,6 +412,7 @@ public final class SMAFDecoder
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"contentCodeType: " + codeString);
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"copyStatus: " + copyStatString);
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"copyCounts: " + copyCounts);
+        
         if(contentClass >= 0x00 && contentClass <= 0xFF)
         {
             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Format has 'Option' field!");
@@ -397,7 +450,7 @@ public final class SMAFDecoder
         String mtr = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++]; // "MTR" actually uses 4 chars, the last one appears to always be 0x01
         int mtrChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
         formatType = (byte) (input[decodePos++]); // 0x00 = Handy Phone, 0x01 = Standard Mobile (compress), 0x02 = Standard Mobile (no comp.)
-        byte sequenceType = input[decodePos++]; // for formatType 0x00, 0x00 and 0x01 are allowed, 0x02 is reserved
+        sequenceType = input[decodePos++]; // for formatType 0x00, 0x00 and 0x01 are allowed, 0x02 is reserved
         TimeBase_D = input[decodePos++]; // 0x00 = 1msec, 0x01 = 2msec, 0x02 = 4msec, 0x03 = 5msec. 0x10 = 10msec, 0x11 = 20msec, 0x12 = 40msec, 0x13 = 50msec
         TimeBase_G = input[decodePos++]; // same value range as above
 
@@ -477,19 +530,39 @@ public final class SMAFDecoder
     public static void decodeSeekAndPhraseChunk() 
     {
         String seekAndPhrase = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
-        StringBuilder sb = new StringBuilder();
+        int mspiChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
+        int curPos = 0;
 
-        while(!((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 't' && (char) input[decodePos+2] == 's' && (char) input[decodePos+3] == 'u') && 
-                !((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 't' && (char) input[decodePos+2] == 's' && (char) input[decodePos+3] == 'q')) 
+        if(((char) input[decodePos] == 's' && (char) input[decodePos+1] == 't' && (char) input[decodePos+2] == ':')) 
         {
-            sb.append((char) (input[decodePos++] & 0xFF));
+            decodePos+=3; // Skip to the integer data
+            curPos+=3;
+            if(sequenceType == 0) { startPoint = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF); curPos+=4; }
+            else { startPoint = (input[decodePos++] & 0xFF); curPos++; }
+            decodePos++; // Skip ',' delimiter char
+            curPos++;
         }
-        String startAndStopPoints = sb.toString();
+        if(((char) input[decodePos] == 's' && (char) input[decodePos+1] == 'p' && (char) input[decodePos+2] == ':')) 
+        {
+            decodePos+=3; // Skip to the integer data
+            curPos+=3;
+            if(sequenceType == 0) { stopPoint = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF); curPos+=4; }
+            else { stopPoint = (input[decodePos++] & 0xFF); curPos++; }
+            decodePos++; // Skip ',' delimiter char
+            curPos++;
+        }
+
+        if(curPos < mspiChunkSize) 
+        {
+            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Seek and Phrase section has Phrase List (Unsupported)");
+            decodePos += (mspiChunkSize - curPos);
+        }
 
         if(seekAndPhrase != "")
         {
             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- '" + seekAndPhrase +"' SECTION --------------------------");
-            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"startAndStopPoints parsed ");
+            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Start Point: " + startPoint);
+            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Stop Point: " + stopPoint);
         }
     }
 
@@ -652,7 +725,7 @@ public final class SMAFDecoder
     public static void convertSequenceEvents(byte[] data) throws InvalidMidiDataException 
     {
         int offset = 0;
-        int totalDuration = (wrapInstruments) ? preWrapLongestDuration : 0;
+        int totalDuration = 0;
     
         while (offset < data.length) 
         {
@@ -1112,10 +1185,27 @@ public final class SMAFDecoder
             }
         }
 
-        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Sequence finished. Returning.");
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Sequence data end reached. Returning.");
+    }
 
-        // Only update preWrap duration if we are not at the wrapped channels (hopefully no Handy Phone SMAF uses more than 8 sequence chunks or "32" simulated channels)
-        if(formatType == 0x00 && !wrapInstruments && preWrapLongestDuration < totalDuration) { preWrapLongestDuration = totalDuration; }
+    private static String getContentCodeType(int codeType) 
+    {
+        switch (codeType) 
+        {
+            case 0x00: return "Shift-JIS";
+            case 0x01: return "ISO-8859-1"; // Latin-1
+            case 0x02: return "EUC-KR";
+            case 0x03: return "HZ-GB-2312";
+            case 0x04: return "Big5";
+            case 0x05: return "KOI8-R";
+            case 0x20: return "UTF-16";
+            case 0x21: return "UTF-32";
+            case 0x22: return "UTF-7";
+            case 0x23: return "UTF-8";
+            case 0x24: return "UTF-16";
+            case 0x25: return "UTF-32";
+            default: return "UTF-8";
+        }
     }
 
     private static int timeBasetoMs(byte timeBase) 
