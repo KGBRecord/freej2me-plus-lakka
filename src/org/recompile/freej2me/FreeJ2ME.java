@@ -454,7 +454,7 @@ public class FreeJ2ME
 			
 			switch(keycode) // Handle emulator control keys
 			{
-				case KeyEvent.VK_PLUS:
+				case KeyEvent.VK_EQUALS:
 				case KeyEvent.VK_ADD:
 					if(!isFullscreen) 
 					{
