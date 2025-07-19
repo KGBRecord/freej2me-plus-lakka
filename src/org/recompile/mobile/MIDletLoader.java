@@ -28,10 +28,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.lang.ClassLoader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -249,6 +245,16 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("wireless.messaging.sms.smsc", "+8613800010000");
 		properties.put("wireless.messaging.version", "1.0");
 
+		// SKT stuff
+		properties.put("com.xce.wipi.version", "1.0.0");
+		properties.put("m.SK_VM", "20");
+		properties.put("m.VENDER", "LG");
+		properties.put("m.MODEL", "11");
+		properties.put("m.CARRIER", "SKT");
+		properties.put("m.COLOR", "5");
+		properties.put("m.MIN", "0000000000");
+		properties.put("MIN", "0000000000"); // legacy SK-VM 1.0.x property
+
 		if (className[0] == null) { className[0] = findMainClassInJar(url); }
 	}
 
@@ -394,11 +400,7 @@ public class MIDletLoader extends URLClassLoader
 		}
 	}
 
-	public static void parseDescriptorInto(InputStream is, Map<String, String> keyValueMap) {
-		parseDescriptorInto(is, keyValueMap, StandardCharsets.UTF_8);
-	}
-
-	public static void parseDescriptorInto(InputStream is, Map<String, String> keyValueMap, Charset charset)
+	public static void parseDescriptorInto(InputStream is, Map<String, String> keyValueMap, String charset)
 	{
 		boolean hasMIDlet = false;
         String currentKey = null;
@@ -406,23 +408,22 @@ public class MIDletLoader extends URLClassLoader
         try
 		{
 			BufferedReader br = new BufferedReader(new InputStreamReader(is, charset));
-			try {
+			try 
+			{
 				String line;
-				while ((line = br.readLine()) != null) {
-					if (line.trim().isEmpty()) {
-						continue;
-					}
-					if (line.startsWith(" ")) {
-						currentValue.append(line, 1, line.length());
-					} else {
-						if (currentKey != null) {
-							if (currentKey.contains("MIDlet-")) {
-								hasMIDlet = true;
-							}
+				while ((line = br.readLine()) != null) 
+				{
+					if (line.trim().isEmpty()) { continue; }
+					if (line.startsWith(" ")) { currentValue.append(line, 1, line.length()); } 
+					else 
+					{
+						if (currentKey != null) 
+						{
+							if (currentKey.contains("MIDlet-")) { hasMIDlet = true; }
 							// Only add a new key-value pair if the key doesn't already exist (set by the JAD file)
-							if (!keyValueMap.containsKey(currentKey)) {
-								keyValueMap.put(currentKey, currentValue.toString().trim());
-							} else {
+							if (!keyValueMap.containsKey(currentKey)) { keyValueMap.put(currentKey, currentValue.toString().trim()); } 
+							else 
+							{
 								Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "properties already contain " + currentKey + "! Maintaining current value: " + keyValueMap.get(currentKey));
 							}
 							currentValue.setLength(0);
@@ -430,29 +431,28 @@ public class MIDletLoader extends URLClassLoader
 
 						int colonIndex = line.indexOf(':');
 
-						if (colonIndex != -1) {
+						if (colonIndex != -1) 
+						{
 							currentKey = line.substring(0, colonIndex).trim();
 							currentValue.append(line.substring(colonIndex + 1).trim());
 						}
 					}
 				}
-				if (currentKey != null) {
-					if (!keyValueMap.containsKey(currentKey)) {
-						keyValueMap.put(currentKey, currentValue.toString().trim());
-					} else {
+				if (currentKey != null) 
+				{
+					if (!keyValueMap.containsKey(currentKey)) { keyValueMap.put(currentKey, currentValue.toString().trim()); } 
+					else 
+					{
 						Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "properties already contain " + currentKey + "! Maintaining current value: " + keyValueMap.get(currentKey));
 					}
 				}
 
-				if (keyValueMap.containsKey("MIDlet-1")) {
-					hasMIDlet = true;
-				}
+				if (keyValueMap.containsKey("MIDlet-1")) { hasMIDlet = true; }
 
 				// If no MIDlet was found above, we'll try loading this jar as a DoJa file, which has an accompanying .jam descriptor (this is fine because if a jad is present, it's loaded before this method is even called)
 				Mobile.isDoJa = !hasMIDlet;
-			} finally {
-				br.close();
-			}
+			} 
+			finally { br.close(); }
         }
 		catch (IOException e) 
 		{
@@ -521,7 +521,7 @@ public class MIDletLoader extends URLClassLoader
 
 		if(url != null) // Standard MIDlet manifest is present (at least i assume so)
 		{
-			try { parseDescriptorInto(url.openStream(), properties); }
+			try { parseDescriptorInto(url.openStream(), properties, "UTF-8"); }
 			catch (Exception e) 
 			{
 				Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Jar Manifest!");
@@ -1098,30 +1098,30 @@ public class MIDletLoader extends URLClassLoader
 
 			MethodVisitor visitor = super.visitMethod(access, name, desc, signature, exceptions);
 
-			if ((access & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC &&
-					"(Ljavax/microedition/midlet/MIDlet;)Z".equals(desc)
-			) {
-				// TODO: better heuristic?
-				// SKT security check bypass
+			// SKT security check bypass
+			if ((access & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC && "(Ljavax/microedition/midlet/MIDlet;)Z".equals(desc) && Mobile.isSKT) 
+			{
 				visitor = new ASMSecureUtilWorkaroundMethodVisitor(visitor);
-			} else {
-				visitor = new ASMMethodVisitor(visitor);
-			}
+			} 
+			else { visitor = new ASMMethodVisitor(visitor); }
 			
 			return visitor;
 		}
 
-		private class ASMSecureUtilWorkaroundMethodVisitor extends MethodAdapter {
+		private class ASMSecureUtilWorkaroundMethodVisitor extends MethodAdapter 
+		{
 			private final MethodVisitor target;
 
-			public ASMSecureUtilWorkaroundMethodVisitor(MethodVisitor target) {
+			public ASMSecureUtilWorkaroundMethodVisitor(MethodVisitor target) 
+			{
                 super(target);
 
 				this.target = target;
 			}
 
 			@Override
-			public void visitCode() {
+			public void visitCode() 
+			{
 				target.visitCode();
 				target.visitInsn(Opcodes.ICONST_1);
 				target.visitInsn(Opcodes.IRETURN);
@@ -1212,24 +1212,27 @@ public class MIDletLoader extends URLClassLoader
 				super.visitLdcInsn(value);
 			}
 
-			private static final boolean ENABLE_EXCEPTION_DEBUG = false;
+			// Ported from J2ME-Loader, originally by Nikita Shakarun and Yuri Kharchenko
+			private static final boolean ENABLE_EXCEPTION_DEBUG = false; // TODO: Make this into a debug setting?
 			private final HashSet<Label> catchLabels = new HashSet<Label>();
 
 			@Override
-			public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
+			public void visitTryCatchBlock(Label start, Label end, Label handler, String type) 
+			{
 				super.visitTryCatchBlock(start, end, handler, type);
 
-				if (ENABLE_EXCEPTION_DEBUG) {
-					catchLabels.add(handler);
-				}
+				if (ENABLE_EXCEPTION_DEBUG) { catchLabels.add(handler); }
 			}
 
 			@Override
-			public void visitLabel(Label label) {
+			public void visitLabel(Label label) 
+			{
 				super.visitLabel(label);
 
-				if (ENABLE_EXCEPTION_DEBUG) {
-					if (catchLabels.contains(label)) {
+				if (ENABLE_EXCEPTION_DEBUG) 
+				{
+					if (catchLabels.contains(label)) 
+					{
 						super.visitInsn(Opcodes.DUP);
 						super.visitMethodInsn(
 								Opcodes.INVOKEVIRTUAL,

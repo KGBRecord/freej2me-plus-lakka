@@ -66,6 +66,7 @@ public class Mobile
 
 	public static boolean isDoJa = false;
 	public static boolean isKDDI = false;
+	public static boolean isSKT = false;
 
 	// These flags are used for general compatibility adjustments within FreeJ2ME
 	public static boolean usingMessagingAPI = false;
@@ -1064,6 +1065,7 @@ public class Mobile
 						if(textEncoding.equals("UTF-8"))              { libretroEncodingRequested = 0; }
 						else if(textEncoding.equals("ISO_8859_1"))    { libretroEncodingRequested = 1; }
 						else if(textEncoding.equals("Shift_JIS"))     { libretroEncodingRequested = 2; }
+						else if(textEncoding.equals("EUC_KR"))        { libretroEncodingRequested = 3; }
 						// TODO: Support other encodings
 
 						libretroRestartRequested = 1;

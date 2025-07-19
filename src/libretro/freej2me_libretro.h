@@ -34,6 +34,7 @@ static const char *supported_encodings[] =
     "-Dfile.encoding=UTF-8",
     "-Dfile.encoding=ISO_8859_1",
     "-Dfile.encoding=Shift-JIS",
+    "-Dfile.encoding=EUC_KR"
 };
 
 /* Input mapping variables and descriptions */

@@ -1,3 +1,19 @@
+/*
+	This file is part of FreeJ2ME.
+
+	FreeJ2ME is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	FreeJ2ME is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
+*/
 package org.recompile.freej2me.imageio;
 
 import javax.imageio.IIOException;
@@ -17,7 +33,8 @@ import java.nio.ByteOrder;
 import java.util.Collections;
 import java.util.Iterator;
 
-public class LbmReader extends ImageReader {
+public class LbmReader extends ImageReader 
+{
     private static final ColorSpace COLORSPACE_SRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
     private static final ImageTypeSpecifier TYPE_SRGB_ALPHA = ImageTypeSpecifier.createInterleaved(COLORSPACE_SRGB, new int[]{0, 1, 2, 3}, DataBuffer.TYPE_BYTE, true, false);
@@ -26,26 +43,30 @@ public class LbmReader extends ImageReader {
 
     private LbmHeaderData header;
 
-    protected LbmReader(ImageReaderSpi originatingProvider) {
+    protected LbmReader(ImageReaderSpi originatingProvider) 
+    {
         super(originatingProvider);
     }
 
     @Override
-    public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetadata) {
+    public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetadata) 
+    {
         super.setInput(input, seekForwardOnly, ignoreMetadata);
 
         header = null;
         this.imageInput = (ImageInputStream) input;
     }
 
-    private void readHeader() throws IOException {
-        if (header != null) return;
+    private void readHeader() throws IOException 
+    {
+        if (header != null) { return; }
 
         imageInput.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 
         byte[] magic = new byte[4];
         imageInput.readFully(magic);
-        if (magic[0] != 'L' || magic[1] != 'B' || magic[2] != 'M' || magic[3] != 'P') {
+        if (magic[0] != 'L' || magic[1] != 'B' || magic[2] != 'M' || magic[3] != 'P') 
+        {
             throw new IOException("Not an LBMP file");
         }
 
@@ -59,40 +80,44 @@ public class LbmReader extends ImageReader {
     }
 
     @Override
-    public int getNumImages(boolean allowSearch) throws IOException {
-        return 1;
-    }
+    public int getNumImages(boolean allowSearch) throws IOException { return 1; }
 
     @Override
-    public int getWidth(int imageIndex) throws IOException {
+    public int getWidth(int imageIndex) throws IOException 
+    {
         readHeader();
         return header.width;
     }
 
     @Override
-    public int getHeight(int imageIndex) throws IOException {
+    public int getHeight(int imageIndex) throws IOException 
+    {
         readHeader();
         return header.height;
     }
 
     @Override
-    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
+    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException 
+    {
         readHeader();
         return Collections.singleton(TYPE_SRGB_ALPHA).iterator();
     }
 
     @Override
-    public IIOMetadata getStreamMetadata() throws IOException {
+    public IIOMetadata getStreamMetadata() throws IOException 
+    {
         return null;
     }
 
     @Override
-    public IIOMetadata getImageMetadata(int imageIndex) throws IOException {
+    public IIOMetadata getImageMetadata(int imageIndex) throws IOException 
+    {
         return null;
     }
 
     @Override
-    public BufferedImage read(int imageIndex, ImageReadParam param) throws IOException {
+    public BufferedImage read(int imageIndex, ImageReadParam param) throws IOException 
+    {
         readHeader();
 
         int width = getWidth(imageIndex);
@@ -108,7 +133,8 @@ public class LbmReader extends ImageReader {
 
         if (header.bitDepth == 2) {
             int numScanlines = (height + 7) / 8;
-            if (width * numScanlines != header.bytesPerPlane) {
+            if (width * numScanlines != header.bytesPerPlane) 
+            {
                 throw new IIOException("Wrong number of bytes per plane");
             }
 
@@ -118,26 +144,28 @@ public class LbmReader extends ImageReader {
 
             imageInput.readFully(highPlaneData);
             imageInput.readFully(lowPlaneData);
-            if (header.enableAlpha) {
+            if (header.enableAlpha) 
+            {
                 imageInput.readFully(alphaPlaneData);
             }
 
             byte[] resultPixelData = new byte[destRegion.width * destRegion.height * 4];
 
-            for (int y = 0; y < srcRegion.height; y++) {
+            for (int y = 0; y < srcRegion.height; y++) 
+            {
                 int srcY = y + srcRegion.y;
 
-                for (int x = 0; x < srcRegion.width; x++) {
+                for (int x = 0; x < srcRegion.width; x++) 
+                {
                     int srcX = x + srcRegion.x;
 
                     int byteIndex = srcX + (srcY >> 3) * width;
                     int bitIndex = srcY & 7;
 
                     int alpha = 0xFF;
-                    if (alphaPlaneData != null) {
-                        if (((alphaPlaneData[byteIndex] >> bitIndex) & 1) == 1) {
-                            alpha = 0;
-                        }
+                    if (alphaPlaneData != null) 
+                    {
+                        if (((alphaPlaneData[byteIndex] >> bitIndex) & 1) == 1) { alpha = 0; }
                     }
 
                     int color = ~((((highPlaneData[byteIndex] >>> bitIndex) & 1) * 0xF0)
@@ -149,15 +177,19 @@ public class LbmReader extends ImageReader {
                     resultPixelData[(x + y * destRegion.width) * 4 + 3] = (byte) alpha;
                 }
 
-                if (abortRequested()) {
+                if (abortRequested()) 
+                {
                     processReadAborted();
                     break;
                 }
             }
 
             raster.setDataElements(0, 0, destRegion.width, destRegion.height, resultPixelData);
-        } else {
-            if (width * height != header.bytesPerPlane) {
+        } 
+        else 
+        {
+            if (width * height != header.bytesPerPlane) 
+            {
                 throw new IIOException("Wrong number of bytes per plane");
             }
 
@@ -167,16 +199,16 @@ public class LbmReader extends ImageReader {
             byte[] alphaPlaneData = header.enableAlpha ? new byte[numScanlines * width] : null;
 
             imageInput.readFully(rgbPlaneData);
-            if (header.enableAlpha) {
-                imageInput.readFully(alphaPlaneData);
-            }
+            if (header.enableAlpha) { imageInput.readFully(alphaPlaneData); }
 
             byte[] resultPixelData = new byte[destRegion.width * destRegion.height * 4];
 
-            for (int y = 0; y < srcRegion.height; y++) {
+            for (int y = 0; y < srcRegion.height; y++) 
+            {
                 int srcY = y + srcRegion.y;
 
-                for (int x = 0; x < srcRegion.width; x++) {
+                for (int x = 0; x < srcRegion.width; x++) 
+                {
                     int srcX = x + srcRegion.x;
 
                     int byteIndex = srcX + srcY * width;
@@ -190,10 +222,9 @@ public class LbmReader extends ImageReader {
                     int bitIndex = srcY & 7;
 
                     int alpha = 0xFF;
-                    if (alphaPlaneData != null) {
-                        if (((alphaPlaneData[aByteIndex] >> bitIndex) & 1) == 1) {
-                            alpha = 0;
-                        }
+                    if (alphaPlaneData != null) 
+                    {
+                        if (((alphaPlaneData[aByteIndex] >> bitIndex) & 1) == 1) { alpha = 0; }
                     }
 
                     resultPixelData[(x + y * destRegion.width) * 4] = (byte) (red * 36 + (red >>> 1));
@@ -202,7 +233,8 @@ public class LbmReader extends ImageReader {
                     resultPixelData[(x + y * destRegion.width) * 4 + 3] = (byte) alpha;
                 }
 
-                if (abortRequested()) {
+                if (abortRequested()) 
+                {
                     processReadAborted();
                     break;
                 }

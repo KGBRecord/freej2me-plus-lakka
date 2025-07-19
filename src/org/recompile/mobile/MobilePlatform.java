@@ -627,7 +627,7 @@ public class MobilePlatform
 				try
 				{
 					InputStream targetStream = new FileInputStream(tmpfile);
-					MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties);
+					MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties, "UTF-8");
 					targetStream.close();
 				}
 				catch (IOException e) 
@@ -660,7 +660,7 @@ public class MobilePlatform
 			} 
 			catch (Exception e) { Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Couldn't load KJX file:" + e.getMessage()); return false; }
 		}
-		else // If it's not KJX, it's JAD or JAR
+		else // If it's not KJX, it's JAD/MSD or JAR
 		{
 			/*
 			 * If loading a jar directly, check if an accompanying jad with the same name 
@@ -668,15 +668,26 @@ public class MobilePlatform
 			 */
 			if(fileName.toLowerCase().contains(".jar")) 
 			{
+				// This might be better off being separated into a "checkAccompanyingDescriptor" method if there's other descriptors that aren't jar or msd.
 				try 
 				{
-					File checkJad = new File(new URI(fileName.replace(".jar", ".jad")));
-					if(checkJad.exists() && !checkJad.isDirectory()) 
+					File checkDescriptor = new File(new URI(fileName.replace(".jar", ".jad")));
+					if(checkDescriptor.exists() && !checkDescriptor.isDirectory()) 
 					{
 						Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Accompanying JAD found! Parsing additional MIDlet properties.");
 						fileName = fileName.replace(".jar", ".jad"); 
 					}
-				} catch (Exception e) { Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Couldn't check for accompanying JAD:" + e.getMessage()); }
+					else 
+					{
+						checkDescriptor = new File(new URI(fileName.replace(".jar", ".msd")));
+						if(checkDescriptor.exists() && !checkDescriptor.isDirectory()) 
+						{
+							Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Accompanying MSD found! Parsing additional MIDlet properties.");
+							fileName = fileName.replace(".jar", ".msd"); 
+						}
+					}
+				} 
+				catch (Exception e) { Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Couldn't check for accompanying JAD/MSD:" + e.getMessage()); }
 			}
 
 			boolean isMsd = fileName.toLowerCase().endsWith(".msd");
@@ -685,9 +696,13 @@ public class MobilePlatform
 
 			if (isJad) 
 			{
-				Charset jadCharset = StandardCharsets.UTF_8;
-				if (isMsd) {
-					jadCharset = Charset.forName("CP949");
+				String jadCharset = "UTF-8";
+				if (isMsd) 
+				{ 
+					jadCharset = "CP949"; 
+					Mobile.isSKT = true; 
+					Mobile.textEncoding = "EUC_KR"; 
+					MobilePlatform.checkFileEncoding();
 				}
 
 				String preparedFileName = fileName.substring(fileName.lastIndexOf(":") + 1).trim();
@@ -699,19 +714,19 @@ public class MobilePlatform
 				}
 
 				InputStream targetStream = null;
-				try {
+				try 
+				{
 					targetStream = new FileInputStream(preparedFileName);
-					try {
-						MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties, jadCharset);
-					} finally {
-						targetStream.close();
-					}
-				} catch (IOException e) {
+					try { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties, jadCharset); } 
+					finally { targetStream.close(); }
+				} 
+				catch (IOException e) 
+				{
 					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jad data: " + e.getMessage());
 					return false;
 				}
 
-				// JAD file was parsed, so get the jar path and load it next
+				// JAD/MSD file was parsed, so get the jar path and load it next
 
 				// String jarUrl = descriptorProperties.getOrDefault("MIDlet-Jar-URL", preparedFileName.replace(".jad", ".jar"));
 

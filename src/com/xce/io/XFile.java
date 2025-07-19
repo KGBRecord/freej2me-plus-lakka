@@ -1,3 +1,19 @@
+/*
+	This file is part of FreeJ2ME.
+
+	FreeJ2ME is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	FreeJ2ME is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
+*/
 package com.xce.io;
 
 import org.recompile.mobile.Mobile;
@@ -7,7 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-public class XFile {
+public class XFile 
+{
     public static final int STDSTREAM = 0;
     public static final int NORMAL = 1;
     public static final int DIRECTORY = 2;
@@ -30,115 +47,113 @@ public class XFile {
     private InputStream inputStream;
     private RandomAccessFile raf;
 
-    public XFile(String name, int mode) throws IOException {
-        if (mode == READ_RESOURCE) {
+    public XFile(String name, int mode) throws IOException 
+    {
+        if (mode == READ_RESOURCE) 
+        {
             inputStream = Mobile.getMIDletResourceAsStream(name);
-        } else {
+        } 
+        else 
+        {
             String modeStr;
-            if (mode == READ) {
-                modeStr = "r";
-            } else if (mode == WRITE) {
-                modeStr = "rw";
-            } else if (mode == READ_WRITE) {
-                modeStr = "rw";
-            } else {
+            if (mode == READ) { modeStr = "r"; } 
+            else if (mode == WRITE) { modeStr = "rw"; } 
+            else if (mode == READ_WRITE) { modeStr = "rw"; } 
+            else 
+            {
                 throw new IllegalArgumentException("invalid XFile mode " + mode);
             }
             raf = new RandomAccessFile(convertFilePath(name), modeStr);
         }
     }
 
-    public int available() throws IOException {
-        if (raf != null) {
-            return (int) (raf.length() - raf.getFilePointer());
-        } else {
-            return inputStream.available();
-        }
+    public int available() throws IOException 
+    {
+        if (raf != null) { return (int) (raf.length() - raf.getFilePointer()); } 
+        else { return inputStream.available(); }
     }
 
-    public int read(byte[] b, int off, int len) throws IOException {
-        if (raf != null) {
-            return raf.read(b, off, len);
-        } else {
-            return inputStream.read(b, off, len);
-        }
+    public int read(byte[] b, int off, int len) throws IOException 
+    {
+        if (raf != null) { return raf.read(b, off, len); } 
+        else { return inputStream.read(b, off, len); }
     }
 
-    public int write(byte[] b, int off, int len) throws IOException {
-        if (raf != null) {
+    public int write(byte[] b, int off, int len) throws IOException 
+    {
+        if (raf != null) 
+        {
             raf.write(b, off, len);
             return len;
-        } else {
+        } 
+        else 
+        {
             throw new IOException("InputStream XFile does not support writing");
         }
     }
 
-    public long tell() throws IOException {
-        if (raf != null) {
-            return raf.getFilePointer();
-        } else {
+    public long tell() throws IOException 
+    {
+        if (raf != null) { return raf.getFilePointer(); } 
+        else 
+        {
             throw new IOException("InputStream XFile does not support seeking");
         }
     }
 
-    public int seek(int n, int whence) throws IOException {
-        if (raf != null) {
-            if (whence == SEEK_SET) {
-                raf.seek(n);
-            } else if (whence == SEEK_CUR) {
-                raf.seek(raf.getFilePointer() + n);
-            } else if (whence == SEEK_END) {
-                raf.seek(raf.length() - n);
-            }
+    public int seek(int n, int whence) throws IOException 
+    {
+        if (raf != null) 
+        {
+            if (whence == SEEK_SET) { raf.seek(n); } 
+            else if (whence == SEEK_CUR) { raf.seek(raf.getFilePointer() + n); } 
+            else if (whence == SEEK_END) { raf.seek(raf.length() - n); }
             return 0;
-        } else {
+        } 
+        else 
+        {
             throw new IOException("InputStream XFile does not support seeking");
         }
     }
 
-    public void flush() throws IOException {
+    public void flush() throws IOException { }
 
+    public void close() throws IOException 
+    {
+        if (raf != null) { raf.close(); } 
+        else { inputStream.close(); }
     }
 
-    public void close() throws IOException {
-        if (raf != null) {
-            raf.close();
-        } else {
-            inputStream.close();
-        }
-    }
-
-    static File convertFilePath(String path) {
+    static File convertFilePath(String path) 
+    {
         String basePath = Mobile.XCE_DATA_PATH + Mobile.getPlatform().loader.suitename;
         boolean ignored = new File(basePath).mkdirs();
         return new File(basePath, path);
     }
 
-    public static boolean exists(String name) throws IOException {
+    public static boolean exists(String name) throws IOException 
+    {
         return convertFilePath(name).exists();
     }
 
-    public static int filesize(String name) throws IOException {
+    public static int filesize(String name) throws IOException 
+    {
         return (int) convertFilePath(name).length();
     }
 
-    public static int unlink(String name) throws IOException {
+    public static int unlink(String name) throws IOException 
+    {
         return convertFilePath(name).delete() ? 0 : -1;
     }
 
-    public String readdir() throws IOException {
-        Mobile.log(
-                Mobile.LOG_ERROR,
-                XFile.class.getPackage().getName() + "." + XFile.class.getSimpleName() + ": " + "readdir() not implemented"
-        );
-        throw new IOException();
+    public String readdir() throws IOException 
+    {
+        Mobile.log( Mobile.LOG_ERROR, XFile.class.getPackage().getName() + "." + XFile.class.getSimpleName() + ": " + "readdir() not implemented");
+
+        throw new IOException("readdir() not implemented");
     }
 
-    public static int fsused() {
-        return 0;
-    }
+    public static int fsused() { return 0; }
 
-    public static int fsavail() {
-        return 0x10000;
-    }
+    public static int fsavail() { return 0x10000; }
 }

@@ -284,23 +284,7 @@ public final class SMAFDecoder
             }
             else { typeString = "Reserved"; }
 
-            switch(contentCodeType)
-            {
-                case 0x00: codeString = "Shift-JIS"; break;
-                case 0x01: codeString = "Latin-1"; break;
-                case 0x02: codeString = "EUC-KR"; break;
-                case 0x03: codeString = "GB-2312"; break;
-                case 0x04: codeString = "Big5"; break;
-                case 0x05: codeString = "KOI8-R"; break;
-                case 0x06: codeString = "TCVN-5773:1993"; break;
-                case 0x20: codeString = "UCS-2"; break;
-                case 0x21: codeString = "UCS-4"; break;
-                case 0x22: codeString = "UTF-7"; break;
-                case 0x23: codeString = "UTF-8"; break;
-                case 0x24: codeString = "UTF-16"; break;
-                case 0x25: codeString = "UTF-32"; break;
-                default: codeString = "RESERVED " + contentCodeType; break;
-            }
+            codeString = getContentCodeType(contentCodeType);
 
             if((copyStatus & 0x04) == 1) { copyStatString = copyStatString + " NO Edit"; }
             else { copyStatString = copyStatString + " Edit OK"; }
@@ -388,12 +372,12 @@ public final class SMAFDecoder
             
             try 
             {
-                byte[] bytes = sb.toString().getBytes(getContentCodeType(contentCodeType));
-                String encodedString = new String(bytes, getContentCodeType(contentCodeType));
+                byte[] bytes = sb.toString().getBytes(codeString);
+                String encodedString = new String(bytes, codeString);
                 // "," or 0x2C is used as a delimiter for identifier data in cases where the OPDA chunk isn't present, but here, it's also used in OPDA as "," is used as a separator
                 data = encodedString.split(",");
             }
-            catch(UnsupportedEncodingException e) { Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Java does not support the requested encoding: " + getContentCodeType(contentCodeType)); }
+            catch(UnsupportedEncodingException e) { Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Java does not support the requested encoding: " + codeString); }
         }
 
         while(!((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R') && 
@@ -1194,7 +1178,7 @@ public final class SMAFDecoder
         {
             case 0x00: return "Shift-JIS";
             case 0x01: return "ISO-8859-1"; // Latin-1
-            case 0x02: return "EUC-KR";
+            case 0x02: return "EUC_KR";
             case 0x03: return "HZ-GB-2312";
             case 0x04: return "Big5";
             case 0x05: return "KOI8-R";

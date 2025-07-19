@@ -1,3 +1,19 @@
+/*
+	This file is part of FreeJ2ME.
+
+	FreeJ2ME is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	FreeJ2ME is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
+*/
 package org.recompile.freej2me.imageio;
 
 import javax.imageio.ImageReader;
@@ -7,8 +23,10 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.Locale;
 
-public class LbmReaderSpi extends ImageReaderSpi {
-    public LbmReaderSpi() {
+public class LbmReaderSpi extends ImageReaderSpi 
+{
+    public LbmReaderSpi() 
+    {
         super(
                 "FreeJ2ME",
                 "1.0",
@@ -32,33 +50,37 @@ public class LbmReaderSpi extends ImageReaderSpi {
     }
 
     @Override
-    public boolean canDecodeInput(Object source) throws IOException {
-        if (!(source instanceof ImageInputStream)) return false;
+    public boolean canDecodeInput(Object source) throws IOException 
+    {
+        if (!(source instanceof ImageInputStream)) { return false; }
 
         ImageInputStream stream = (ImageInputStream) source;
 
-        try {
+        try 
+        {
             stream.mark();
             byte[] header = new byte[4];
             stream.readFully(header);
-            if (header[0] == 'L' && header[1] == 'B' && header[2] == 'M' && header[3] == 'P') {
+            if (header[0] == 'L' && header[1] == 'B' && header[2] == 'M' && header[3] == 'P') 
+            {
                 return true;
             }
-        } catch (EOFException e) {
-            return false;
-        } finally {
-            stream.reset();
-        }
+        } 
+        catch (EOFException e) {  return false; } 
+        finally { stream.reset(); }
+
         return false;
     }
 
     @Override
-    public ImageReader createReaderInstance(Object extension) throws IOException {
+    public ImageReader createReaderInstance(Object extension) throws IOException 
+    {
         return new LbmReader(this);
     }
 
     @Override
-    public String getDescription(Locale locale) {
+    public String getDescription(Locale locale) 
+    {
         return "XCE LBM format image reader";
     }
 }
