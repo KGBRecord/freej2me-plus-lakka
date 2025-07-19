@@ -32,8 +32,8 @@ public class XDisplay
 
     public static void refresh(int x, int y, int width, int height) 
     {
-        Mobile.getPlatform().limitFps();
         Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+        Mobile.getPlatform().limitFps();
     }
 
     public static void drawImageEx(
