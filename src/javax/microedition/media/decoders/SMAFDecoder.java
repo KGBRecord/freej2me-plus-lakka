@@ -117,10 +117,10 @@ public final class SMAFDecoder
     };
 
     // These are used only for debugging
-    private static String[] formatTypes = {"Handy Phone Standard (MA-1/2)", "Mobile Standard (MA-3/5) - Compressed (Untested)", "Mobile Standard (MA-3/5) - Not Compressed", "Yamaha MA-7 (Unsupported)"};
-    private static String[] sequenceTypes = {"Stream Sequence", "Sub-Sequence (UNTESTED)"};
-    private static String[] channelTypes = {"No Care", "Melody", "No Melody", "Rhythm"};
-    private static String[] noteTypes = {"Invalid", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "Invalid", "Invalid", "Invalid"};
+    private static final String[] formatTypes = {"Handy Phone Standard (MA-1/2)", "Mobile Standard (MA-3/5) - Compressed (Untested)", "Mobile Standard (MA-3/5) - Not Compressed", "Yamaha MA-7 (Unsupported)"};
+    private static final String[] sequenceTypes = {"Stream Sequence", "Sub-Sequence (UNTESTED)"};
+    private static final String[] channelTypes = {"No Care", "Melody", "No Melody", "Rhythm"};
+    private static final String[] noteTypes = {"Invalid", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "Invalid", "Invalid", "Invalid"};
     
     @SuppressWarnings("unchecked")
     private static final List<SimpleEntry<Byte, String>> timebases = Arrays.asList(
@@ -135,9 +135,13 @@ public final class SMAFDecoder
     );
 
     // PCM-Specific variables
+    private static byte ATRFormatType = 0, ATRChannelType = 0, ATRDataFormat = 0, ATRSamplingFreq = 0, ATRBaseBit = 0;
+    private static byte pcmSequenceType = 0;
     public static boolean isPCM = false; // Used by PlatformPlayer to decide whether it'll load the decoded data into a WAVPlayer or MIDIPlayer
-    private static String[] pcmDataFormats = {"2's complement PCM", "Offset Binary PCM", "YAMAHA ADPCM"};
-    private static String[] pcmBaseBits = {"4 bits", "8 bits", "12 bits", "16 bits", "Reserved", "Reserved", "Reserved", "Reserved"};
+    private static final String[] pcmDataFormats = {"2's complement PCM", "Offset Binary PCM", "YAMAHA ADPCM"};
+    private static final String[] ATRPcmDataFormats = {"2's complement PCM", "YAMAHA ADPCM", "TwinVQ", "MP3", "Reserved", "Reserved", "Reserved", "Reserved"};
+    private static final String[] pcmBaseBits = {"4 bits", "8 bits", "12 bits", "16 bits", "Reserved", "Reserved", "Reserved", "Reserved"};
+    private static final String[] pcmSamplingFreqs = {"4000", "8000", "11025", "22050", "44100", "Reserved", "Reserved", "Reserved"};
 
     // Structures that hold decoded SMAF data
 
@@ -152,16 +156,14 @@ public final class SMAFDecoder
         isPCM = false;
         handyChannelIdx = 0;
         decodePos = 0;
-        sequenceType = 0;
         startPoint = 0;
         stopPoint = 0;
+        formatType = 0;
         channelData = new ChannelData[16];
         for (int j = 0; j < channelData.length; j++) { channelData[j] = new ChannelData(); }
         sequence = null; // Clear the previous MIDI sequence
 
         // Clear previous decoded data objects
-        if(pcmData != null) { pcmData.clear(); }
-        pcmData = null;
         SequenceData = null;
         pcmData = new ArrayList<InputStream>();
         pcmDataPositions.clear();
@@ -169,10 +171,6 @@ public final class SMAFDecoder
 
         input = data;
 
-        
-        // TODO: Decode more of SMAF
-
-    
         // Start parsing the file.
         decodeHeader(); // MMMD (file chunk header)
 
@@ -182,30 +180,28 @@ public final class SMAFDecoder
             String chunkID = "" + (char) input[decodePos] + (char) input[decodePos+1] + (char) input[decodePos+2] + (char) input[decodePos+3];
 
             if(chunkID.contains("MTR")) { decodeScoreTrackChunk(); }
-            else if(chunkID.contains("MspI")) { decodeSeekAndPhraseChunk(); }
-            else if(chunkID.contains("Mtsu")) { decodeSetupDataChunk(); }
-            else if(chunkID.contains("Mtsq"))
+            else if(chunkID.contains("MspI") || chunkID.contains("AspI")) { decodeSeekAndPhraseChunk(); }
+            else if(chunkID.contains("Mtsu") || chunkID.contains("Atsu")) { decodeSetupDataChunk(); }
+            else if(chunkID.contains("Mtsq") || chunkID.contains("Atsq"))
             {
                 scoreTrackSequenceData();
                 // Handy Phone format states that more than 4 channels can be used by having multiple Score Track Sequences (each track has 4)
                 if(formatType == 0x00) { handyChannelIdx += 4; }
             }
             else if(chunkID.contains("Mtsp")) { scoreTrackPCMData(); } // Unfinished as far as spec compliance goes, but works more often than not
-            else if(chunkID.contains("Mwa")) { pcmData.add(new ByteArrayInputStream(scoreTrackWaveData())); } // Same as above (in fact, it pretty much ties with the above)
+            else if(chunkID.contains("Mwa"))  { scoreTrackWaveData(); } // Same as above (in fact, it pretty much ties with the above)
             else if(chunkID.contains("MMMG")) // TODO, seen in use in some jars meant for Sharp
             { 
                 Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " This is a non-standard SMAF file usually found in Sharp phones! Trying to parse... ");
                 decodeSharpHeader(); 
             }
             else if(chunkID.contains("VOIC")) { decodeSharpVOICChunk(); }
+            else if(chunkID.contains("ATR"))  { decodePCMScoreTrackChunk(); }
+            else if(chunkID.contains("Awa"))  { decodeAudioTrackWaveDataChunk(); }
             else { parsingData = false; }
 
+            // TODO: Decode more of SMAF
             /* TODOs 
-                case "ATR ":
-                case "AspI":
-                case "Atsu":
-                case "Atsq": 
-                case "Awa ":
                 case "GTR ":
                 case "Gtsu":
                 case "Gsq ":
@@ -266,7 +262,7 @@ public final class SMAFDecoder
         StringBuilder sb = new StringBuilder();
 
         // Used just to make the content type print below a bit easier to understand
-        String typeString = "", codeString = "", copyStatString = "";
+        String typeString = "", codeString = "UTF-8", copyStatString = "";
 
         if(Mobile.minLogLevel <= Mobile.LOG_DEBUG) 
         {
@@ -363,6 +359,7 @@ public final class SMAFDecoder
             else 
             {
                 while(!((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R') &&
+                !((char) input[decodePos] == 'A' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R') &&
                 !((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'M' && (char) input[decodePos+2] == 'M' && (char) input[decodePos+3] == 'G')) 
                 {
                     sb.append((char) (input[decodePos++] & 0xFF));
@@ -381,6 +378,7 @@ public final class SMAFDecoder
         }
 
         while(!((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R') && 
+            !((char) input[decodePos] == 'A' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R') &&
             !((char) input[decodePos] == 'M' && (char) input[decodePos+1] == 'M' && (char) input[decodePos+2] == 'M' && (char) input[decodePos+3] == 'G')) // assume garbage data is present in files that don't use that "options" field
         {
             decodePos++;
@@ -511,6 +509,86 @@ public final class SMAFDecoder
         }
     }
 
+    public static void decodePCMScoreTrackChunk()
+    {
+        // We're at the Score Track Chunk, so let's decode the info about the audio data
+        String atr = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++]; // "ATR" actually uses 4 chars, the last one appears to always be 0x01
+        int atrChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
+        ATRFormatType = (byte) input[decodePos++]; // 0x00 = Handy Phone, 0x01~0xFF = Reserved
+        pcmSequenceType = (byte) input[decodePos++]; // 0x00 = Stream Sequence, 0x01 = Sub-Sequence, 0x02~0xFF = Reserved
+        byte pcmWaveTypeMSB = (byte) input[decodePos++];
+        byte pcmWaveTypeLSB = (byte) input[decodePos++];
+        TimeBase_D = (byte) input[decodePos++];
+        TimeBase_G = (byte) input[decodePos++];
+        ATRChannelType = (byte) ((pcmWaveTypeMSB >> 7) & 0x01);
+        ATRDataFormat = (byte) ((pcmWaveTypeMSB >> 4) & 0x07);
+        ATRSamplingFreq = (byte) (pcmWaveTypeMSB & 0x0F);
+        ATRBaseBit = (byte) ((pcmWaveTypeLSB >> 4) & 0x0F);
+
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "-------------------------- '" + atr +"' SECTION --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "atrChunkSize: " + atrChunkSize);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "formatType: " + (ATRFormatType == (byte) 0x00 ? "Handy Phone Standard" : "Reserved"));
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "PCMSequenceType: " + sequenceTypes[pcmSequenceType]);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "channelType: " + (ATRChannelType == (byte) 0x00 ? "Mono" : "Stereo"));
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "dataFormat: " + ATRPcmDataFormats[ATRDataFormat]);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "baseBit: " + pcmBaseBits[ATRBaseBit]);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "samplingFrequency: " + pcmSamplingFreqs[ATRSamplingFreq]);
+        
+        // We now have sufficient data to decode the PCM sequences and set up the MIDI sequence based on the 'Atsq' chunk.
+        if(sequence == null) 
+        { 
+            try 
+            {
+                sequence = new Sequence(Sequence.PPQ, 500); // TODO: Maybe revise this? We shouldn't rely on a fixed PPQ value, i think. (though there are separate timebases for duration and gateTime, so who knows, maybe it's correct)
+                track = sequence.createTrack();
+            } catch(InvalidMidiDataException ie) { Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " couldn't create MIDI Sequence to convert:" + ie.getMessage()); }
+        }
+    }
+
+    public static void decodeAudioTrackWaveDataChunk() 
+    {
+        String awa = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
+        byte chunkNumber = (byte) (input[decodePos++]);
+        int awaChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
+
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "-------------------------- '" + awa +"' SECTION --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "chunkNumber: " + chunkNumber);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "mwaChunkSize: " + awaChunkSize);
+
+        pcmData.add(null); // Awa Chunk number starts from 1, so we need to add a null position.
+        byte[] waveData = new byte[awaChunkSize];
+
+        for(int i = 0; i < awaChunkSize; i++) { waveData[i] = input[decodePos++]; }
+
+        if(ATRDataFormat == (byte) 0x00) // 2's complement PCM WAV
+        {
+            if(ATRBaseBit == (byte) 0x00) { pcmData.add(new ByteArrayInputStream(WAVTools.convert4BitWav(waveData, ATRChannelType+1, Integer.parseInt(pcmSamplingFreqs[ATRSamplingFreq]), true)));}
+            if(ATRBaseBit == (byte) 0x01) { pcmData.add(new ByteArrayInputStream(WAVTools.convert8BitWav(waveData, ATRChannelType+1, Integer.parseInt(pcmSamplingFreqs[ATRSamplingFreq]), true)));}
+            if(ATRBaseBit == (byte) 0x02) { pcmData.add(new ByteArrayInputStream(WAVTools.convert12BitWav(waveData, ATRChannelType+1, Integer.parseInt(pcmSamplingFreqs[ATRSamplingFreq]), true)));}
+            if(ATRBaseBit == (byte) 0x03) { pcmData.add(new ByteArrayInputStream(WAVTools.convert16BitWav(waveData, ATRChannelType+1, Integer.parseInt(pcmSamplingFreqs[ATRSamplingFreq]), true)));}
+        }
+        else if(ATRDataFormat == (byte) 0x01) // YAMAHA ADPCM
+        {
+            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"PCM data uses YAMAHA ADPCM. Decoding for this is not fully tested!");
+            pcmData.add(new ByteArrayInputStream(WAVYamahaADPCMDecoder.ADPCMBDecode(waveData, Integer.parseInt(pcmSamplingFreqs[ATRSamplingFreq]), ATRChannelType+1)));
+        } 
+        else if(ATRDataFormat == (byte) 0x02) // TODO: TwinVQ
+        {
+            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"PCM Data is of TwinVQ format! Decoding not supported!"); 
+            pcmData.add(new ByteArrayInputStream(null));
+        }
+        else if(ATRDataFormat == (byte) 0x03) // TODO: MP3
+        {
+            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"PCM Data is of MP3 format! Decoding not supported!"); 
+            pcmData.add(new ByteArrayInputStream(null));
+        }
+        else 
+        { 
+            Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Invalid PCM data format!"); 
+            pcmData.add(new ByteArrayInputStream(null));
+        }
+    }
+
     public static void decodeSeekAndPhraseChunk() 
     {
         String seekAndPhrase = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
@@ -553,16 +631,16 @@ public final class SMAFDecoder
     public static void decodeSetupDataChunk() 
     {
         // We're at the Score Track Chunk, so let's decode the info about the audio data
-        String mtsu = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
-        int mtsuChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
+        String matsu = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
+        int matsuChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
         List<Byte> exclusiveMessage = new ArrayList<Byte>(); // Seems to relate to SysEx messages, maybe we don't need these?
         int mtsuPos = 0;
 
-        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- '" + mtsu +"' SECTION --------------------------");
-        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"mtsuChunkSize: " + mtsuChunkSize);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- '" + matsu +"' SECTION --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + matsu + "ChunkSize: " + matsuChunkSize);
 
         // FormatType doesn't seem to really matter for us here
-        while(mtsuPos < mtsuChunkSize) 
+        while(mtsuPos < matsuChunkSize) 
         {
             exclusiveMessage.add(input[decodePos++]);
             mtsuPos++;
@@ -575,19 +653,19 @@ public final class SMAFDecoder
     public static void scoreTrackSequenceData() 
     {
         // We're at the Score Track Chunk, so let's decode the info about the audio data
-        String mtsq = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
-        int mtsqChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
+        String matsq = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
+        int matsqChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
         int curPos = 0;
 
-        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- '" + mtsq +"' SECTION --------------------------");
-        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"mtsqChunkSize: " + mtsqChunkSize);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- '" + matsq +"' SECTION --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + matsq + "ChunkSize: " + matsqChunkSize);
 
-        byte[] seqBytes = new byte[mtsqChunkSize];
+        byte[] seqBytes = new byte[matsqChunkSize];
         // TODO: Decode these properly
         if(formatType == (byte) 0x00 || formatType == (byte) 0x02) // Handy Phone and Uncompressed Mobile Standard are about the same here
         {
             // Collect sequence data
-            while (curPos < mtsqChunkSize)
+            while (curPos < matsqChunkSize)
             {
                 seqBytes[curPos] = input[decodePos++];
                 curPos++;
@@ -607,7 +685,7 @@ public final class SMAFDecoder
                             (input[decodePos++] & 0xFF);
 
             List<Node> huffmanNodes = new ArrayList<Node>();
-            while (curPos < mtsqChunkSize - 4) // We already read the size above, so we need to decrease the actual data to be read
+            while (curPos < matsqChunkSize - 4) // We already read the size above, so we need to decrease the actual data to be read
             {
                 seqBytes[curPos] = input[decodePos++];
                 curPos++;
@@ -645,9 +723,10 @@ public final class SMAFDecoder
         isPCM = true;
     }
 
-    public static byte[] scoreTrackWaveData() 
+    public static void scoreTrackWaveData() 
     {
-        String mwa = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
+        String mwa = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
+        byte chunkNumber = (byte) input[decodePos++];
         int mwaChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
         
         byte waveType = (byte) (input[decodePos++] & 0xFF);
@@ -659,6 +738,7 @@ public final class SMAFDecoder
         short samplingFrequency = (short) (((samplingFreqMSB & 0xFF) << 8) | (samplingFreqLSB & 0xFF)); // I really doubt this will ever go over 48000Hz (hell, even 22050Hz since it's J2ME), so a short should suffice
 
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "-------------------------- '" + mwa +"' SECTION --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "chunkNumber: " + (chunkNumber+1));
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "mwaChunkSize: " + mwaChunkSize);
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "waveNumber: " + (waveType > (byte) 0x00 && waveType < (byte) 0x3F ? "Wave ID" : "PROHIBITED"));
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "channelType: " + (channelType == (byte) 0x00 ? "Mono" : "Stereo"));
@@ -666,40 +746,35 @@ public final class SMAFDecoder
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "baseBit: " + pcmBaseBits[baseBit]);
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "samplingFrequency: " + samplingFrequency);
 
-        if(!((char) input[decodePos] == 'A' && (char) input[decodePos+1] == 'T' && (char) input[decodePos+2] == 'R')) 
-        {
-            // We have no PCM Audio Track Chunk, prepare to parse and, if needed, decode the PCM data directly
-            byte[] waveData = new byte[mwaChunkSize];
-            // "mwaChunkSize-3" because we have alread read 3 bytes after mwaChunkSize
-            for(int i = 0; i < mwaChunkSize-3; i++) { waveData[i] = input[decodePos++]; }
+        // We have no PCM Audio Track Chunk, prepare to parse and, if needed, decode the PCM data directly
+        byte[] waveData = new byte[mwaChunkSize];
+        // "mwaChunkSize-3" because we have alread read 3 bytes after mwaChunkSize
+        for(int i = 0; i < mwaChunkSize-3; i++) { waveData[i] = input[decodePos++]; }
 
-            if(dataFormat == (byte) 0x00) // 2's complement PCM WAV
-            {
-                if(baseBit == (byte) 0x00) { return WAVTools.convert4BitWav(waveData, channelType+1, samplingFrequency, true);}
-                if(baseBit == (byte) 0x01) { return WAVTools.convert8BitWav(waveData, channelType+1, samplingFrequency, true);}
-                if(baseBit == (byte) 0x02) { return WAVTools.convert12BitWav(waveData, channelType+1, samplingFrequency, true);}
-                if(baseBit == (byte) 0x03) { return WAVTools.convert16BitWav(waveData, channelType+1, samplingFrequency, true);}
-            }
-            else if(dataFormat == (byte) 0x01) // Binary Offset PCM WAV
-            {
-                if(baseBit == (byte) 0x00) { return WAVTools.convert4BitWav(waveData, channelType+1, samplingFrequency, false);}
-                if(baseBit == (byte) 0x01) { return WAVTools.convert8BitWav(waveData, channelType+1, samplingFrequency, false);}
-                if(baseBit == (byte) 0x02) { return WAVTools.convert12BitWav(waveData, channelType+1, samplingFrequency, false);}
-                if(baseBit == (byte) 0x03) { return WAVTools.convert16BitWav(waveData, channelType+1, samplingFrequency, false);}
-            } 
-            else if(dataFormat == (byte) 0x02) // YAMAHA ADPCM (TODO: SMAF seems to only use ADPCM-B?)
-            {
-                Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"PCM data uses YAMAHA ADPCM. Decoding for this is not fully tested!");
-                return WAVYamahaADPCMDecoder.ADPCMBDecode(waveData, samplingFrequency, channelType+1);
-            }
-            else { Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Invalid PCM data format!"); return null;}
+        if(dataFormat == (byte) 0x00) // 2's complement PCM WAV
+        {
+            if(baseBit == (byte) 0x00) { pcmData.add(new ByteArrayInputStream(WAVTools.convert4BitWav(waveData, channelType+1, samplingFrequency, true)));}
+            if(baseBit == (byte) 0x01) { pcmData.add(new ByteArrayInputStream(WAVTools.convert8BitWav(waveData, channelType+1, samplingFrequency, true)));}
+            if(baseBit == (byte) 0x02) { pcmData.add(new ByteArrayInputStream(WAVTools.convert12BitWav(waveData, channelType+1, samplingFrequency, true)));}
+            if(baseBit == (byte) 0x03) { pcmData.add(new ByteArrayInputStream(WAVTools.convert16BitWav(waveData, channelType+1, samplingFrequency, true)));}
+        }
+        else if(dataFormat == (byte) 0x01) // Binary Offset PCM WAV
+        {
+            if(baseBit == (byte) 0x00) { pcmData.add(new ByteArrayInputStream(WAVTools.convert4BitWav(waveData, channelType+1, samplingFrequency, false)));}
+            if(baseBit == (byte) 0x01) { pcmData.add(new ByteArrayInputStream(WAVTools.convert8BitWav(waveData, channelType+1, samplingFrequency, false)));}
+            if(baseBit == (byte) 0x02) { pcmData.add(new ByteArrayInputStream(WAVTools.convert12BitWav(waveData, channelType+1, samplingFrequency, false)));}
+            if(baseBit == (byte) 0x03) { pcmData.add(new ByteArrayInputStream(WAVTools.convert16BitWav(waveData, channelType+1, samplingFrequency, false)));}
+        } 
+        else if(dataFormat == (byte) 0x02) // YAMAHA ADPCM (TODO: SMAF seems to only use ADPCM-B?)
+        {
+            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"PCM data uses YAMAHA ADPCM. Decoding for this is not fully tested!");
+            pcmData.add(new ByteArrayInputStream(WAVYamahaADPCMDecoder.ADPCMBDecode(waveData, samplingFrequency, channelType+1)));
         }
         else 
-        {
-            Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"ATR Chunk detected. Parsing not implemented!");
+        { 
+            Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"Invalid PCM data format!"); 
+            pcmData.add(new ByteArrayInputStream(null));
         }
-
-        return null; // We should never hit this
     }
 
     /* -------------------------------------------------------------------------------------- */
@@ -710,16 +785,16 @@ public final class SMAFDecoder
     {
         int offset = 0;
         int totalDuration = 0;
+        byte firstDurByte = 0;
+        int duration = 0;
+        byte channel = 0;
+        int gateTime = 0;
+        byte firstGateByte = 0;
+        byte noteNumber = 0;
+
     
         while (offset < data.length) 
         {
-            byte firstDurByte = 0;
-            int duration = 0;
-            byte channel = 0;
-            int gateTime = 0;
-            byte firstGateByte = 0;
-            byte noteNumber = 0;
-
             MidiEvent midiEvent = null;
 
             if(formatType == (byte) 0x00) // Handy Phone format
@@ -952,7 +1027,10 @@ public final class SMAFDecoder
                     midiNoteNumber += 12 * channelData[channel].octaveShift;
 
                     // Create MIDI note event
-                    Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note event " + noteTypes[noteNumber] + (4+octave+channelData[channel].octaveShift) + " to channel " + channel);
+                    Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note event " + noteTypes[noteNumber] + (4+octave+channelData[channel].octaveShift) + "(" + noteNumber + ")" + " to channel " + channel);
+                    pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
+                    pcmDataVelocities.put(totalDuration+gateTime, (int) channelData[channel].velocity);
+                    
                     ShortMessage noteOn = new ShortMessage();
                     noteOn.setMessage(ShortMessage.NOTE_ON, channel, midiNoteNumber, channelData[channel].velocity);
                     midiEvent = new MidiEvent(noteOn, totalDuration);
@@ -1052,13 +1130,9 @@ public final class SMAFDecoder
                             }
                             
                             // TODO: This might be incorrect as the SMAF documentation doesn't detail how the chip differentiates between PCM data and Sequence Data to play, for now notes are played alongside the PCM index
-                            if(noteNumber < 20)
-                            {
-                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value " + noteNumber + " to channel " + channel + " at duration " + totalDuration);
-                                pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
-                                pcmDataVelocities.put(totalDuration+gateTime, (int) channelData[channel].velocity);
-                            }
-                            else { Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + channel); }
+                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + channel);
+                            pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
+                            pcmDataVelocities.put(totalDuration+gateTime, (int) channelData[channel].velocity);
                             
                             // We still add the notes no matter, just so that the sequencer can actually reach the PCM request time
                             noteOn.setMessage(ShortMessage.NOTE_ON, channel, noteNumber, channelData[channel].velocity);
@@ -1098,13 +1172,9 @@ public final class SMAFDecoder
                                 return;
                             }
                             
-                            if(noteNumber < 20)
-                            {
-                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value" + noteNumber + " with new velocity " + channelData[channel].velocity + " to channel " + channel + " at duration " + totalDuration);
-                                pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
-                                pcmDataVelocities.put(totalDuration+gateTime, (int) channelData[channel].velocity);
-                            }
-                            else { Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " with new velocity to channel " + channel); }
+                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " with new velocity to channel " + channel);
+                            pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
+                            pcmDataVelocities.put(totalDuration+gateTime, (int) channelData[channel].velocity);
                             
                             noteOn.setMessage(ShortMessage.NOTE_ON, channel, noteNumber, channelData[channel].velocity);
                             midiEvent = new MidiEvent(noteOn, totalDuration);
