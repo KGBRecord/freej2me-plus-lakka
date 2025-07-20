@@ -27,6 +27,7 @@ import javax.microedition.media.Player;
 import javax.microedition.media.control.VolumeControl;
 
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.PlatformPlayer;
 
 public class AudioClip
 {
@@ -110,6 +111,15 @@ public class AudioClip
 		if(player.getState() != Player.STARTED) { return; }
 		player.stop();
 		player.setMediaTime(0); 
+	}
+
+
+	// Used by skt.m.AudioClip, it's play method has to be blocking
+	public boolean isRunning() { return ((PlatformPlayer)player).isRunning(); }
+
+	public void close() 
+	{ 
+		if(player != null) { player.close(); player = null; } 
 	}
 
 }

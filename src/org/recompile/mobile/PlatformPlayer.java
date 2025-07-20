@@ -172,6 +172,7 @@ public class PlatformPlayer implements Player
 								{
 									for(int i = 0; i < SMAFDecoder.pcmData.size(); i++) 
 									{
+										if(SMAFDecoder.pcmData.get(i) == null) { continue; }
 										SMAFDecoder.pcmData.set(i, Manager.dumpAudioStream(SMAFDecoder.pcmData.get(i), contentType));
 									}
 								}
@@ -530,6 +531,8 @@ public class PlatformPlayer implements Player
 		return player.setMediaTime(now);
 	}
 
+	public boolean isRunning() { return getState() >= Player.REALIZED ? player.isRunning() : false; }
+
 	// Controllable interface //
 
 	public Control getControl(String controlType)
@@ -561,7 +564,7 @@ public class PlatformPlayer implements Player
 			{
 				if(sequencePlayers[i] == null || sequencePlayers[i].getSequence() == null) 
 				{
-					sequencePlayers[i] = midplayer; // TODO: SMAF here too, in case a jar that never releases players for it is found
+					sequencePlayers[i] = midplayer;
 					return;
 				}
 			}
@@ -847,6 +850,8 @@ public class PlatformPlayer implements Player
 					wavClips = new Clip[wavStreams.length];
 					for(int i = 0; i < wavStreams.length; i++) 
 					{
+						if(wavStreams[i] == null) { continue; }
+						
 						this.wavStreams[i] = AudioSystem.getAudioInputStream(wavStreams[i]);
 					}
 				}
@@ -881,7 +886,7 @@ public class PlatformPlayer implements Player
 								setMediaTime(0);
 								start();
 							}
-							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); Manager.synthIdxInUse[synthIdx] = false; }
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); Manager.synthIdxInUse[synthIdx] = false; isPlaying = false; }
 						}
 					}
 				});
@@ -891,6 +896,8 @@ public class PlatformPlayer implements Player
 				{
 					for(int i = 0; i < wavStreams.length; i++) 
 					{
+						if(wavStreams[i] == null) { continue; }
+
 						wavClips[i] = AudioSystem.getClip();
 						wavClips[i].open(wavStreams[i]);
 					} 
@@ -900,7 +907,7 @@ public class PlatformPlayer implements Player
 			}
 			catch (Exception e) 
 			{
-				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not realize midi stream:" + e.getMessage());
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not realize SMAF stream:" + e.getMessage());
 				state = Player.UNREALIZED;
 				e.printStackTrace();
 			}
@@ -964,7 +971,12 @@ public class PlatformPlayer implements Player
 		{
 			if (pcmIndex < wavClips.length && wavClips[pcmIndex] != null) 
 			{
-				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); wavClips[i].flush(); }
+				for(int i = 0; i < wavClips.length; i++) 
+				{ 
+					if(wavClips[i] == null) { continue; }
+					wavClips[i].stop(); 
+					wavClips[i].flush(); 
+				}
 
 				// Set volume based on matched "velocity" value
 				FloatControl volumeControl = (FloatControl) wavClips[pcmIndex].getControl(FloatControl.Type.MASTER_GAIN);
@@ -988,7 +1000,11 @@ public class PlatformPlayer implements Player
 			getMediaTime();
 			if(wavClips != null) 
 			{
-				for(int i = 0; i < wavClips.length; i++) { wavClips[i].stop(); }
+				for(int i = 0; i < wavClips.length; i++) 
+				{ 
+					if(wavClips[i] == null) { continue; }
+					wavClips[i].stop(); 
+				}
 			}
 			isPlaying = false;
 			state = Player.PREFETCHED;
@@ -1010,6 +1026,7 @@ public class PlatformPlayer implements Player
 					{
 						for(int i = 0; i < wavClips.length; i++) 
 						{ 
+							if(wavClips[i] == null) { continue; }
 							wavClips[i].stop(); 
 							wavClips[i].close(); 
 						}
@@ -1022,24 +1039,15 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
-			new Thread(new Runnable() 
-			{
-				@Override
-				public void run() 
-				{
-					midiSequence = null;
+			midiSequence = null;
 
-					if(wavClips != null) 
-					{
-						for(int i = 0; i < wavClips.length; i++) 
-						{
-							wavClips[i].stop();
-							wavClips[i].close();
-							wavStreams[i] = null;
-						}
-					}
+			if(wavStreams != null) 
+			{
+				for(int i = 0; i < wavStreams.length; i++) 
+				{
+					wavStreams[i] = null;
 				}
-			}).start();
+			}
 			
 			isPlaying = false;
 		}
@@ -1081,7 +1089,7 @@ public class PlatformPlayer implements Player
 
 		public long getDuration() { return midi.getMicrosecondLength(); }
 
-		public boolean isRunning() { return midi.isRunning(); }
+		public boolean isRunning() { return isPlaying; }
 
 		public Sequence getSequence() { return midiSequence; }
 

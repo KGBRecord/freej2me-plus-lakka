@@ -22,48 +22,45 @@ import com.skt.m.UnsupportedFormatException;
 import com.skt.m.UserStopException;
 
 import java.io.IOException;
+import java.util.concurrent.locks.LockSupport;
 
+// based off of Samsung.util.AudioClip, but play() is blocking and only seems to support mmf
 public class AudioClipImpl implements AudioClip 
 {
-    @Override
+
+    private int volume = 5;
+    private com.samsung.util.AudioClip player;
+
     public void open(byte[] data, int offset, int bufferSize) throws UnsupportedFormatException, ResourceAllocException 
     {
-
+        player = new com.samsung.util.AudioClip(com.samsung.util.AudioClip.TYPE_MMF, data, offset, bufferSize);
     }
 
-    @Override
     public void close() throws IOException 
-    {
-
+    { 
+        player.close();
+        player = null;
     }
 
-    @Override
-    public void play() throws UserStopException, IOException 
-    {
+    public void play() throws UserStopException, IOException { play(1, volume); }
 
+    public void loop() throws UserStopException, IOException { play(0, volume); } // 0 loops is infinite looping for MMF
+
+    private void play(int loops, int volume) 
+    {
+        player.play(loops, volume);
+
+        // SKT's AudioClip playback is thread-blocking
+        while(player.isRunning()) { LockSupport.parkNanos(1000000); }
     }
 
-    @Override
-    public void loop() throws UserStopException, IOException 
-    {
+    public void stop() throws IOException { player.stop(); }
 
-    }
+    public void pause() throws IOException { player.pause(); }
 
-    @Override
-    public void stop() throws IOException 
-    {
+    public void resume() throws IOException { player.resume(); }
 
-    }
+    public int getVolume() { return volume; }
 
-    @Override
-    public void pause() throws IOException 
-    {
-
-    }
-
-    @Override
-    public void resume() throws IOException 
-    {
-
-    }
+    public void setVolume(int volume) { this.volume = volume; }
 }

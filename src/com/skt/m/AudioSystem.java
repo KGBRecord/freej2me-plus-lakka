@@ -22,23 +22,26 @@ import java.io.IOException;
 
 public class AudioSystem 
 {
+
+    private static AudioClipImpl clip = new AudioClipImpl();
+
     public static int getMaxVolume(String format) throws UnsupportedFormatException 
     {
-        return 100;
+        return 5;
     }
 
     public static AudioClip getAudioClip(String format) throws UnsupportedFormatException 
     {
-        return new AudioClipImpl();
+        return clip;
     }
 
     public static int getVolume(String format) throws UnsupportedFormatException 
     {
-        return 100;
+        return clip.getVolume();
     }
 
     public static void setVolume(String format, int level) throws UnsupportedFormatException 
     {
-        //
+        clip.setVolume(level);
     }
 }
