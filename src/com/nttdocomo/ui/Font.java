@@ -100,11 +100,10 @@ public class Font
 	public static Font getFont(int type) { return getDefaultFont(); }
 
 	public static Font getDefaultFont() 
-	{
-		if (defaultDoJaFont == null) 
-		{
-			defaultDoJaFont = new Font(FACE_SYSTEM, STYLE_PLAIN, convertSize(SIZE_MEDIUM)); 
-		}
+	{ 
+		// Update the platformFont, as the screen size and font scale properties might have changed
+		defaultDoJaFont.platformFont = new PlatformFont(new Font(defaultDoJaFont.face, defaultDoJaFont.style, defaultDoJaFont.size));
+		 
 		return defaultDoJaFont;
 	}
 

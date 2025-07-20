@@ -86,7 +86,7 @@ public class Font
 		else if (minSize < 220) { screenType = 2; }
 		else                    { screenType = 3; }
 
-		defaultFont = new Font(Font.FACE_SYSTEM, Font.STYLE_PLAIN, convertSize(SIZE_MEDIUM));   
+		defaultFont = new Font(FACE_SYSTEM, STYLE_PLAIN, SIZE_MEDIUM);   
 	}
 
 	public int charsWidth(char[] ch, int offset, int length)
@@ -104,10 +104,9 @@ public class Font
 
 	public static Font getDefaultFont() 
 	{ 
-		if (defaultFont == null) 
-		{
-			defaultFont = new Font(Font.FACE_SYSTEM, Font.STYLE_PLAIN, convertSize(SIZE_MEDIUM)); 
-		}
+		// Update the platformFont, as the screen size and font scale properties might have changed
+		defaultFont.platformFont = new PlatformFont(new Font(defaultFont.face, defaultFont.style, defaultFont.size));
+		 
 		return defaultFont;
 	}
 

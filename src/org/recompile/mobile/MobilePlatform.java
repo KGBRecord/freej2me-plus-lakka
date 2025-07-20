@@ -134,18 +134,21 @@ public class MobilePlatform
 		 * a simple restart is all it takes, just like before.
 		 */
 
-		if (!Mobile.isDoJa) {
+		if (!Mobile.isDoJa) 
+		{
 			com.xce.lcdui.XDisplay.width = width;
 			com.xce.lcdui.XDisplay.height2 = height;
 			com.xce.lcdui.XDisplay.platformImage = lcd;
 			com.xce.lcdui.Toolkit.graphics = (Graphics) gc;
 
-			if (Mobile.getDisplay() != null && Mobile.getDisplay().getCurrent() != null) {
+			if (Mobile.getDisplay() != null && Mobile.getDisplay().getCurrent() != null) 
+			{
 				Mobile.getDisplay().getCurrent().doSizeChanged(width, height);
 				Mobile.getDisplay().getCurrent().platformImage = lcd;
 				Mobile.getDisplay().getCurrent().graphics = (Graphics) gc;
 			}
-		} else if(Mobile.isDoJa && com.nttdocomo.ui.Display.getCurrent() != null) // Doja's current Frames (Displayables) are static
+		} 
+		else if(Mobile.isDoJa && com.nttdocomo.ui.Display.getCurrent() != null) // Doja's current Frames (Displayables) are static
 		{
 			com.nttdocomo.ui.Display.getCurrent().platformImage = lcd; 
 			com.nttdocomo.ui.Display.getCurrent().graphics = (com.nttdocomo.ui.Graphics) gc; 
@@ -153,13 +156,9 @@ public class MobilePlatform
 		
 	}
 
-	public static PlatformImage getLcdBackbuffer() {
-		return lcd;
-	}
+	public static PlatformImage getLcdBackbuffer() { return lcd; }
 
-	public BufferedImage getLcdFrontbufferImage() {
-		return lcdFrontbuffer.getCanvas();
-	}
+	public BufferedImage getLcdFrontbufferImage() { return lcdFrontbuffer.getCanvas(); }
 
 	public void setPainter(Runnable r) { painter = r; }
 
