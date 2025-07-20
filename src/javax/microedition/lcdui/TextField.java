@@ -266,7 +266,7 @@ public class TextField extends Item
 				}
 				caretPosition++;
 			} 
-			else if (key == Canvas.FIRE || key == Canvas.KEY_NUM5) // Insert the selected character into the current caret position
+			else if ((key == Canvas.RIGHT && caretPosition == text.length()) || key == Canvas.FIRE || key == Canvas.KEY_NUM5) // Insert the selected character into the current caret position
 			{ 
 				if (caretPosition < text.length()) // Replace the character at the caret position
 				{
@@ -321,13 +321,21 @@ public class TextField extends Item
 		}
 	}
 
+	// For skt's com.xce.lcdui.XTextField
+	public void externalKeyPressed(int key) { keyPressed(key); }
+	public void externalRenderItem(Graphics graphics, int x, int y, int width, int height) { renderItem(graphics, x, y, width, height); }
+
 	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
 		graphics.getGraphics2D().translate(x, y);
 
+		// Fill the whole textField area with specified BG color. TODO: Make sure everything is inside the textField area, right now up/down arrows and the inputMode hint aren't.
+		graphics.setColor(Mobile.lcduiBGColor);
+		graphics.fillRect(margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
+		
 		// Draw the border of the field
 		graphics.setColor(Mobile.lcduiTextColor);
-		graphics.drawRect( margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
+		graphics.drawRect(margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
 
 		// Replace line breaks, they aren't visible by default.
 		String formattedText = text.replace('\n', '↳');
@@ -335,7 +343,8 @@ public class TextField extends Item
 		// Draw the existing text before the caret (we'll make a space to highlight the char position the user is currently editing)
 		graphics.setColor(Mobile.lcduiTextColor);
 
-		if (caretPosition > 0) {
+		if (caretPosition > 0) 
+		{
 			graphics.drawChars(formattedText.substring(0, caretPosition).toCharArray(), 0, formattedText.substring(0, caretPosition).length(), margin + padding, margin + padding, 0);
 		}
 

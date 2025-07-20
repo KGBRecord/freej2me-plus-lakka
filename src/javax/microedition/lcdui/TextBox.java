@@ -301,9 +301,13 @@ public class TextBox extends Screen
 	{
 		graphics.getGraphics2D().translate(x, y);
 
+		// Fill the whole textField area with specified BG color. TODO: Make sure everything is inside the textField area, right now up/down arrows and the inputMode hint aren't.
+		graphics.setColor(Mobile.lcduiBGColor);
+		graphics.fillRect(margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
+
 		// Draw the border of the field
 		graphics.setColor(Mobile.lcduiTextColor);
-		graphics.drawRect( margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
+		graphics.drawRect(margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
 
 		// Replace line breaks, they aren't visible by default.
 		String formattedText = text.replace('\n', '↳');
@@ -311,7 +315,8 @@ public class TextBox extends Screen
 		// Draw the existing text before the caret (we'll make a space to highlight the char position the user is currently editing)
 		graphics.setColor(Mobile.lcduiTextColor);
 
-		if (caretPosition > 0) {
+		if (caretPosition > 0) 
+		{
 			graphics.drawChars(formattedText.substring(0, caretPosition).toCharArray(), 0, formattedText.substring(0, caretPosition).length(), margin + padding, margin + padding, 0);
 		}
 

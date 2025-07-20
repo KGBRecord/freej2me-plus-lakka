@@ -123,6 +123,30 @@ public abstract class Canvas extends Displayable
 		return 0;
 	}
 
+	// Used in SKT lcdui classes so we can put them on top of MIDP ones 
+	public int SKTToMIDPKey(int sktKey) 
+	{
+		switch(sktKey) 
+		{
+			case KEY_CLR: return 0;
+			case KEY_COML: return 0;
+			case KEY_COMC: return 0;
+			case KEY_COMR: return 0;
+			case KEY_UP: return UP;
+			case KEY_LEFT: return LEFT;
+			case KEY_RIGHT: return RIGHT;
+			case KEY_DOWN: return DOWN;
+			case KEY_FIRE: return FIRE;
+			case KEY_CALL: return 0;
+			case KEY_END: return 0;
+			case KEY_FLIP_OPEN: return 0;
+			case KEY_FLIP_CLOSE: return 0;
+			case KEY_VOL_UP: return 0;
+			case KEY_VOL_DOWN: return 0;
+			default: return 0;
+		}
+	}
+
 	public String getKeyName(int keyCode)
 	{
 		if(keyCode<0) { keyCode=0-keyCode; }
@@ -220,7 +244,9 @@ public abstract class Canvas extends Displayable
 		}
 		catch(NullPointerException npe) 
 		{
-			throw new NullPointerException("Null Pointer Exception in draw event");
+			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Null Pointer Exception in draw event: " + npe.getMessage());
+			npe.printStackTrace();
+			//throw new NullPointerException("Null Pointer Exception in draw event");
 		}
 		catch (Exception e) 
 		{

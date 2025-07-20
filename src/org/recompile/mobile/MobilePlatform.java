@@ -691,10 +691,9 @@ public class MobilePlatform
 			}
 
 			boolean isMsd = fileName.toLowerCase().endsWith(".msd");
-			boolean isJad = fileName.toLowerCase().endsWith(".jad")
-					|| isMsd;
+			boolean isJad = fileName.toLowerCase().endsWith(".jad");
 
-			if (isJad) 
+			if (isJad || isMsd) 
 			{
 				String jadCharset = "UTF-8";
 				if (isMsd) 

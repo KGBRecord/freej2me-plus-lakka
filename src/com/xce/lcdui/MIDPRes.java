@@ -14,25 +14,6 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package mmpp.media;
+package com.xce.lcdui;
 
-import org.recompile.mobile.Mobile;
-
-public class Vibration 
-{
-
-    public Vibration() { }
-
-    public static int getLevelNum() { return 5; }
-
-	// Used by skt.m.Vibration
-	public static boolean isSupported() { return true; }
-
-    public static void start(int level, int timeout) 
-	{ 
-		Mobile.vibrationStrength = Math.min((level * 0xFFFF) / 5, 0xFFFF);
-		Mobile.getDisplay().vibrate(timeout); 
-	}
-
-    public static void stop() { Mobile.getDisplay().vibrate(0); }
-}
+public class MIDPRes { }
