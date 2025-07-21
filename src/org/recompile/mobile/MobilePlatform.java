@@ -717,7 +717,7 @@ public class MobilePlatform
 					MobilePlatform.checkFileEncoding();
 				}
 
-				String preparedFileName = fileName.substring(fileName.lastIndexOf(":") + 1).trim();
+				String preparedFileName = fileName.replace("file:", "").trim();
 				try { preparedFileName = URLDecoder.decode(preparedFileName, "UTF-8"); }
 				catch (Exception e) 
 				{
