@@ -834,7 +834,7 @@ public class PlatformPlayer implements Player
 		// Meanwhile, sampled data will be treated like "additional" instruments
 		private boolean isPlaying = false;
 		private AudioInputStream[] wavStreams = null;
-		private Clip[] wavClips = null;
+		public Clip[] wavClips = null;
 		private Map<Integer, Integer> pcmPositions, pcmVelocities;
 
 		public SMAFPlayer(InputStream midiStream, InputStream[] wavStreams, Map<Integer, Integer> pcmPositions, Map<Integer, Integer> pcmVelocities)
@@ -982,7 +982,7 @@ public class PlatformPlayer implements Player
 				FloatControl volumeControl = (FloatControl) wavClips[pcmIndex].getControl(FloatControl.Type.MASTER_GAIN);
 				
 				// Calculate volume based on velocity
-				float dB = -30.0f + ((velocity / 100.0f) * (30.0f));
+				float dB = -30.0f + ((velocity / 127.0f) * (30.0f));
 				
 				if(dB > 6.0f) { dB = 6.0f; }
 				// Set the volume
@@ -1693,17 +1693,49 @@ public class PlatformPlayer implements Player
 				for (int channel = 0; channel < midiChannels.length; channel++) 
 				{
 					midiChannels[channel].controlChange(7, 0);
-					LockSupport.parkNanos(10000);
+					LockSupport.parkNanos(12500);
 				}
 
 				// Set volume for all channels through Control Change command 7 (volume)
 				for (int channel = 0; channel < midiChannels.length; channel++) 
 				{
 					midiChannels[channel].controlChange(7, midiVolume);
-					LockSupport.parkNanos(10000);
+					LockSupport.parkNanos(12500);
 				}
 			}
-			else if(player instanceof wavPlayer) /* Haven't found a jar that actually makes use of this yet - Scratch that: Shadow Shoot again */
+			else if(player instanceof SMAFPlayer) // SMAF is a mix of midi and wavPlayer, so it pretty much borrows from both here
+			{
+				FloatControl volumeControl;
+				SMAFPlayer sequencer = (SMAFPlayer) player;
+
+				int midiVolume = isMuted() ? 0 : (int) (level * 127 / 100);
+				float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
+
+				MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
+
+				for (int channel = 0; channel < midiChannels.length; channel++) 
+				{
+					midiChannels[channel].controlChange(7, 0);
+					LockSupport.parkNanos(12500);
+				}
+
+				for (int channel = 0; channel < midiChannels.length; channel++) 
+				{
+					midiChannels[channel].controlChange(7, midiVolume);
+					LockSupport.parkNanos(12500);
+				}
+
+				if(((SMAFPlayer) player).wavClips != null) 
+				{
+					for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++) 
+					{
+						if(((SMAFPlayer) player).wavClips[i] == null) { continue; }
+						volumeControl = (FloatControl) ((SMAFPlayer) player).wavClips[i].getControl(FloatControl.Type.MASTER_GAIN);
+						volumeControl.setValue(dB);
+					}
+				}
+			}
+			else if(player instanceof wavPlayer)
 			{
 				wavPlayer wav = (wavPlayer) player;
 

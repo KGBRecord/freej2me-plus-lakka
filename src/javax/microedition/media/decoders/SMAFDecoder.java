@@ -345,6 +345,16 @@ public final class SMAFDecoder
                         else if((char) input[decodePos] == 'A' && (char) input[decodePos+1] == '2') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
                         else if((char) input[decodePos] == 'A' && (char) input[decodePos+1] == 'S') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
                         else if((char) input[decodePos] == 'R' && (char) input[decodePos+1] == 'F') { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
+                        else if((char) input[decodePos] == 'P' && (char) input[decodePos+1] == 'r') 
+                        { 
+                            // 'Pro' field is undocumented, but seems to contain 4 chars (4th defines some kind of type) then length
+                            sb.append((char) input[decodePos]); 
+                            sb.append((char) input[decodePos+1]);
+                            sb.append((char) input[decodePos+2]); 
+                            sb.append((char) input[decodePos+3]); 
+                            sb.append(": "); 
+                            decodePos += 2; // Will add to the +2 below
+                        }
                         else { sb.append((char) input[decodePos]); sb.append((char) input[decodePos+1]); sb.append(": "); }
 
                         decodePos += 2;
