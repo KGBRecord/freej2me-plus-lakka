@@ -18,7 +18,8 @@ package org.recompile.mobile;
 
 import javax.microedition.lcdui.Font;
 
-import java.awt.Graphics2D;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.font.TextAttribute;
 
@@ -33,7 +34,9 @@ import org.recompile.mobile.Mobile;
 
 public class PlatformFont
 {
-	private Graphics2D gc;
+	private FontMetrics metrics;
+
+	private static Graphics gc;
 
 	public java.awt.Font awtFont;
 
@@ -73,14 +76,20 @@ public class PlatformFont
 			catch (Exception e) // If there's an issue loading it, we can still fallback to the default
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformFont.class.getPackage().getName() + "." + PlatformFont.class.getSimpleName() + ": " + "Failed to load custom font:" + e.getMessage());
-                awtFont = new java.awt.Font((font.getFace() == Font.FACE_MONOSPACE) ? java.awt.Font.MONOSPACED : java.awt.Font.SANS_SERIF, font.getStyle(), font.getPointSize());
+				// Fallback
+				String fontFace = java.awt.Font.SANS_SERIF;
+				if(font.getFace() == Font.FACE_MONOSPACE) { fontFace = java.awt.Font.MONOSPACED; }
+				else if(font.getFace() == Font.FACE_PROPORTIONAL) { fontFace = java.awt.Font.DIALOG; }
+
+				awtFont = new java.awt.Font(fontFace, font.getStyle(), font.getPointSize());
             }
         }
 		else if(!Mobile.useCustomTextFont) // If the user is not going to use custom fonts, or there are no custom fonts in the directory, load the defaults
 		{
-			// We'll use SansSerif for both SYSTEM and PROPORTIONAL
+			// We'll use SansSerif for SYSTEM
 			String fontFace = java.awt.Font.SANS_SERIF;
 			if(font.getFace() == Font.FACE_MONOSPACE) { fontFace = java.awt.Font.MONOSPACED; }
+			else if(font.getFace() == Font.FACE_PROPORTIONAL) { fontFace = java.awt.Font.DIALOG; }
 
 			awtFont = new java.awt.Font(fontFace, font.getStyle(), font.getPointSize());
 		}
@@ -96,8 +105,9 @@ public class PlatformFont
 			awtFont = awtFont.deriveFont(map);
 		}
 
-		gc = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics();
+		if(gc == null) { System.out.println("newg"); gc = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).getGraphics(); }
 		gc.setFont(awtFont);
+		metrics = gc.getFontMetrics();
 	}
 
 	// DoJa Font
@@ -130,21 +140,27 @@ public class PlatformFont
 		{
             try 
 			{
-                awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, fontfiles[0])).deriveFont(font.getStyle(), font.getPointSize());
+                awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, fontfiles[0])).deriveFont(convertDoJaToLCDUIStyle(font.getStyle()), font.getPointSize());
             } 
 			catch (Exception e) // If there's an issue loading it, we can still fallback to the default
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformFont.class.getPackage().getName() + "." + PlatformFont.class.getSimpleName() + ": " + "Failed to load custom font:" + e.getMessage());
-                awtFont = new java.awt.Font((font.getFace() == com.nttdocomo.ui.Font.FACE_MONOSPACE) ? java.awt.Font.MONOSPACED : java.awt.Font.SANS_SERIF, font.getStyle(), font.getPointSize());
+				// Fallback
+				String fontFace = java.awt.Font.SANS_SERIF;
+				if(convertDoJaToLCDUIFace(font.getFace())  == com.nttdocomo.ui.Font.FACE_MONOSPACE) { fontFace = java.awt.Font.MONOSPACED; }
+				else if(convertDoJaToLCDUIFace(font.getFace()) == Font.FACE_PROPORTIONAL) { fontFace = java.awt.Font.DIALOG; }
+
+				awtFont = new java.awt.Font(fontFace, convertDoJaToLCDUIStyle(font.getStyle()), font.getPointSize());
             }
         }
 		else if(!Mobile.useCustomTextFont) // If the user is not going to use custom fonts, or there are no custom fonts in the directory, load the defaults
 		{
-			// We'll use SansSerif for both SYSTEM and PROPORTIONAL
+			// We'll use SansSerif for SYSTEM
 			String fontFace = java.awt.Font.SANS_SERIF;
-			if(font.getFace() == com.nttdocomo.ui.Font.FACE_MONOSPACE) { fontFace = java.awt.Font.MONOSPACED; }
+			if(convertDoJaToLCDUIFace(font.getFace())  == com.nttdocomo.ui.Font.FACE_MONOSPACE) { fontFace = java.awt.Font.MONOSPACED; }
+			else if(convertDoJaToLCDUIFace(font.getFace()) == com.nttdocomo.ui.Font.FACE_PROPORTIONAL) { fontFace = java.awt.Font.DIALOG; }
 
-			awtFont = new java.awt.Font(fontFace, font.getStyle(), font.getPointSize());
+			awtFont = new java.awt.Font(fontFace, convertDoJaToLCDUIStyle(font.getStyle()), font.getPointSize());
 		}
 		
 		// This section is font independent
@@ -158,22 +174,37 @@ public class PlatformFont
 			awtFont = awtFont.deriveFont(map);
 		}
 
-		gc = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics();
+		if(gc == null) { gc = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).getGraphics(); }
 		gc.setFont(awtFont);
+		metrics = gc.getFontMetrics();
 	}
 
-	public int stringWidth(String str)
+	public int stringWidth(String str) { return metrics.stringWidth(str); }
+
+	public int getHeight() { return metrics.getHeight(); }
+
+	public int getAscent() { return metrics.getAscent(); }
+
+	public int convertDoJaToLCDUIStyle(int doJaStyle) 
 	{
-		return gc.getFontMetrics().stringWidth(str);
+		switch(doJaStyle) 
+		{
+			case com.nttdocomo.ui.Font.STYLE_BOLD: return Font.STYLE_BOLD;
+			case com.nttdocomo.ui.Font.STYLE_BOLDITALIC: return Font.STYLE_BOLD | Font.STYLE_ITALIC;
+			case com.nttdocomo.ui.Font.STYLE_ITALIC: return Font.STYLE_ITALIC; 
+			case com.nttdocomo.ui.Font.STYLE_PLAIN:
+			default: return doJaStyle;
+		}
 	}
 
-	public int getHeight()
+	public int convertDoJaToLCDUIFace(int doJaFace) 
 	{
-		return gc.getFontMetrics().getHeight();
-	}
-
-	public int getAscent()
-	{
-		return gc.getFontMetrics().getAscent();
+		switch(doJaFace) 
+		{
+			case com.nttdocomo.ui.Font.FACE_MONOSPACE: return Font.FACE_MONOSPACE;
+			case com.nttdocomo.ui.Font.FACE_PROPORTIONAL: return Font.FACE_PROPORTIONAL;
+			case com.nttdocomo.ui.Font.FACE_SYSTEM: return Font.FACE_SYSTEM; 
+			default: return doJaFace;
+		}
 	}
 }

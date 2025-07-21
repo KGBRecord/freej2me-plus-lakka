@@ -329,7 +329,7 @@ public class MIDletLoader extends URLClassLoader
 		{
 			if(className[1] != null) // More than one element, bring up the selection menu
 			{
-				platformImage = new PlatformImage(Mobile.lcdWidth, Mobile.lcdHeight);
+				platformImage = MobilePlatform.getLcdBackbuffer();
 				graphics = platformImage.getMIDPGraphics();
 
 				while(!MIDletSelected) { render(); }

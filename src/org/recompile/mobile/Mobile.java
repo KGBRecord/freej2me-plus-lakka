@@ -1000,6 +1000,9 @@ public class Mobile
 		String fontOffset = config.settings.get("fontoffset");
 		fontSizeOffset = (byte) Integer.parseInt(fontOffset);
 
+		com.nttdocomo.ui.Font.updateDefaultFont();
+		javax.microedition.lcdui.Font.updateDefaultFont();
+
 		String fpsHackSetting = config.settings.get("fpshack");
 		if(fpsHackSetting.equals("Disabled"))        { unlockFramerateHack = 0; }
 		else if(fpsHackSetting.equals("Safe"))       { unlockFramerateHack = 1; }

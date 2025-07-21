@@ -99,17 +99,16 @@ public class Font
 
 	public static Font getFont(int type) { return getDefaultFont(); }
 
-	public static Font getDefaultFont() 
-	{ 
-		// Update the platformFont, as the screen size and font scale properties might have changed
-		defaultDoJaFont.platformFont = new PlatformFont(new Font(defaultDoJaFont.face, defaultDoJaFont.style, defaultDoJaFont.size));
-		 
-		return defaultDoJaFont;
-	}
+	public static Font getDefaultFont() { return defaultDoJaFont; }
 
 	public static void setDefaultFont(Font font) 
 	{
 		if(font != null) { defaultDoJaFont = font; }
+	}
+
+	public static void updateDefaultFont() 
+	{
+		defaultDoJaFont.platformFont = new PlatformFont(new Font(defaultDoJaFont.face, defaultDoJaFont.style, defaultDoJaFont.size));
 	}
 
 	public int getDescent() { return 0; }

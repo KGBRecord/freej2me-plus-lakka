@@ -102,12 +102,11 @@ public class Font
 
 	public int getBaselinePosition() { return platformFont.getAscent(); }
 
-	public static Font getDefaultFont() 
-	{ 
-		// Update the platformFont, as the screen size and font scale properties might have changed
+	public static Font getDefaultFont() { return defaultFont; }
+
+	public static void updateDefaultFont() 
+	{
 		defaultFont.platformFont = new PlatformFont(new Font(defaultFont.face, defaultFont.style, defaultFont.size));
-		 
-		return defaultFont;
 	}
 
 	public int getFace() { return face; }

@@ -38,7 +38,7 @@ public abstract class Frame
     { 
         width = Mobile.getPlatform().lcdWidth;
 		height = Mobile.getPlatform().lcdHeight;
-		platformImage = new PlatformImage(width, height);
+		platformImage = MobilePlatform.getLcdBackbuffer();
 		graphics = platformImage.getDoJaGraphics();
     }
 
