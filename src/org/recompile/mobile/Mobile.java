@@ -55,8 +55,10 @@ public class Mobile
 	private static BufferedWriter logWriter;
 	private static final Queue<Runnable> pendingLogs = new LinkedList<Runnable>();
 
+	public static final String[] supportedEncodings = new String[] {"ISO_8859_1", "Shift_JIS", "EUC_KR"};
+
 	// Default MIDP encoding, will be changed by DoJa and any other implementation that use a different encoding
-	public static String textEncoding = "ISO_8859_1";
+	public static String textEncoding = supportedEncodings[0];
 
 	private static Display display;
 
@@ -1038,13 +1040,23 @@ public class Mobile
 			// Get the main class name
 			String mainClass = getMainClassFromJar("file:" + classPath);
 
-			String jarPath = platform.fileName.replace("file:", "");
-
+			String jarPath = null;
+			
+			if(MobilePlatform.fileName != null) 
+			{ 	
+				File jarFile = new File(platform.fileName.replace("file:", "").trim());
+				jarPath = jarFile.getCanonicalPath(); 
+			}
+			
 			if(!MobilePlatform.isLibretro)
 			{
 				String[] commands = new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath};
 
-				ProcessBuilder processBuilder = new ProcessBuilder(commands);
+				ProcessBuilder processBuilder = null;
+
+				if(jarPath != null) { processBuilder = new ProcessBuilder(new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath}); }
+				else { processBuilder = new ProcessBuilder(new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath}); }
+				
 				processBuilder.start();
 
 				System.exit(0);
@@ -1062,10 +1074,9 @@ public class Mobile
 							catch (Exception e) { }
 						}
 						
-						if(textEncoding.equals("UTF-8"))              { libretroEncodingRequested = 0; }
-						else if(textEncoding.equals("ISO_8859_1"))    { libretroEncodingRequested = 1; }
-						else if(textEncoding.equals("Shift_JIS"))     { libretroEncodingRequested = 2; }
-						else if(textEncoding.equals("EUC_KR"))        { libretroEncodingRequested = 3; }
+						if(textEncoding.equals("ISO_8859_1"))         { libretroEncodingRequested = 0; }
+						else if(textEncoding.equals("Shift_JIS"))     { libretroEncodingRequested = 1; }
+						else if(textEncoding.equals("EUC_KR"))        { libretroEncodingRequested = 2; }
 						// TODO: Support other encodings
 
 						libretroRestartRequested = 1;
@@ -1073,7 +1084,7 @@ public class Mobile
 				}, "RestartThread").start();
 			}
 		}
-		catch(Exception e) { log(Mobile.LOG_INFO, Mobile.class.getPackage().getName() + "." + Mobile.class.getSimpleName() + ": " + "Failed to restart FreeJ2ME: " + e.getMessage()); }
+		catch(Exception e) { log(Mobile.LOG_INFO, Mobile.class.getPackage().getName() + "." + Mobile.class.getSimpleName() + ": " + "Failed to restart FreeJ2ME: " + e.getMessage()); e.printStackTrace(); }
 	}
 
 	private static String getMainClassFromJar(String classPath) 

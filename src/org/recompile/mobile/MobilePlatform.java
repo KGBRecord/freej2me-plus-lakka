@@ -85,7 +85,7 @@ public class MobilePlatform
 	public static Displayable displayable;
 
 	public String dataPath = "";
-	public String fileName = null;
+	public static String fileName = null;
 	private static String kjxJadFileName = null; // Static so that we can delete the extracted jar and jad files if needed
 
 	public volatile static int keyState = 0;
@@ -99,6 +99,20 @@ public class MobilePlatform
 
 	public MobilePlatform(int width, int height)
 	{
+		boolean isUsingValidEncoding = false;
+		
+		// Check whether we're using any of the valid encodings before starting the jar, otherwise we'll be defaulting to ISO_8859_1
+		for (String encoding : Mobile.supportedEncodings) 
+		{
+			if (encoding.equals(System.getProperty("file.encoding"))) { isUsingValidEncoding = true; }
+		}
+
+		if(!isUsingValidEncoding) 
+		{
+			Mobile.textEncoding = "ISO_8859_1";
+			checkFileEncoding();
+		}
+
 		resizeLCD(width, height);
 
 		painter = new Runnable()
@@ -757,7 +771,6 @@ public class MobilePlatform
 	{
 		try
 		{
-
 			if(Mobile.deleteTemporaryKJXFiles && kjxJadFileName != null)
 			{
 				File tmpfile = new File(Mobile.tempKJXDir, kjxJadFileName.substring(0, kjxJadFileName.length() -4) + ".jar");
