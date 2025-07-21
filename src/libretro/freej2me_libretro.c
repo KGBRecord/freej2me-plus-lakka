@@ -153,7 +153,7 @@ char** params; /* Char matrix containing launch arguments */
 unsigned int optstrlen; /* length of the string above */
 unsigned long int screenRes[2]; /* {width, height} */
 int rotateScreen; /* Acts as a boolean */
-int phoneType = 0; /* 0=Standard (Nokia/Sony/Samsung), 1=LG, 2=Motorola/SoftBank, 3=Motorola Triplets... refer to freej2me_libretro.h's "Phone Key Layout" */
+int phoneType = 0; /* 0=Standard (Nokia/Sony/Samsung), 1=LG, 2=Motorola/SoftBank, 3=Motorola Triplets... */
 int backlightColor = 1; /* 0=Disabled, 1=Green, etc. */
 int gameFPS; /* Auto(0), 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10 */
 int soundEnabled; /* also acts as a boolean */
@@ -355,6 +355,7 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "Siemens"))            { phoneType = 7; }
 		else if (!strcmp(var.value, "Sharp"))              { phoneType = 8; }
 		else if (!strcmp(var.value, "SKT"))                { phoneType = 9; }
+		else if (!strcmp(var.value, "KDDI"))               { phoneType = 10; }
 	}
 
 	var.key = "freej2me_backlightcolor";
@@ -642,7 +643,7 @@ void retro_init(void)
 
 	/* Check variables and set parameters */
 	check_variables(true);
-	char resArg[2][4], rotateArg[2], phoneArg[2], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2];
+	char resArg[2][4], rotateArg[2], phoneArg[3], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2];
 	char compatDoNotTranslateDrawRGBArg[2], compatTransToOriginOnGFXResetArg[2], fontArg[2], offsetArg[3], dumpGFXArg[2], tempKJXArg[2], m3gUntexArg[2], m3gWireArg[2];
 	char fpsunlockHack[2], compatImmediateRepaintArg[2], compatOverridePlatCheckArg[2], compatSiemensFriendlyDrawArg[2];
 
@@ -916,6 +917,7 @@ void retro_run(void)
 		}
 
 		joypad[18] = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3); // Num 5
+		joypad[19] = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3); // CLR
 		
 		/* Right analog will control the pointer, freeing the left analog to mirror the D-Pad if needed. */
 		int joyRx = InputState(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X);

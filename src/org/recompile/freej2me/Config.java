@@ -51,7 +51,7 @@ public class Config
 
 	public final String[] supportedResolutions = {"96x65","101x64","101x80","128x128","130x130","120x160","128x160","132x176","176x208","176x220","220x176","208x208","180x320","320x180","208x320","240x320","320x240","240x400","400x240","240x432","240x480","360x360","352x416","360x640","640x360","640x480","480x800","800x480"};
 
-	int inputKeycodes[] = new int[] 
+	public static int inputKeycodes[] = new int[] 
 	{ 
 		81,  // Q Key
 		87,  // W Key
@@ -72,6 +72,7 @@ public class Config
 		69,  // E Key 
 		96,  // Numpad_0 
 		82,  // R Key 
+		65,  // A key
 		32,  // Space Key (for AWT fast-forward)
 		67,  // C Key (for AWT screenshots)
 		88   // X Key (for AWT Pause/Resume)
@@ -245,9 +246,10 @@ public class Config
 			if(!sysSettings.containsKey("input_Star"))        { sysSettings.put("input_Star", ""         + inputKeycodes[16]); }
 			if(!sysSettings.containsKey("input_Num0"))        { sysSettings.put("input_Num0", ""         + inputKeycodes[17]); }
 			if(!sysSettings.containsKey("input_Pound"))       { sysSettings.put("input_Pound", ""        + inputKeycodes[18]); }
-			if(!sysSettings.containsKey("input_FastForward")) { sysSettings.put("input_FastForward", ""  + inputKeycodes[19]); }
-			if(!sysSettings.containsKey("input_Screenshot"))  { sysSettings.put("input_Screenshot", ""   + inputKeycodes[20]); }
-			if(!sysSettings.containsKey("input_PauseResume")) { sysSettings.put("input_PauseResume", ""  + inputKeycodes[21]); }
+			if(!sysSettings.containsKey("input_CLR"))         { sysSettings.put("input_CLR", ""          + inputKeycodes[19]); }
+			if(!sysSettings.containsKey("input_FastForward")) { sysSettings.put("input_FastForward", ""  + inputKeycodes[20]); }
+			if(!sysSettings.containsKey("input_Screenshot"))  { sysSettings.put("input_Screenshot", ""   + inputKeycodes[21]); }
+			if(!sysSettings.containsKey("input_PauseResume")) { sysSettings.put("input_PauseResume", ""  + inputKeycodes[22]); }
 
 			inputKeycodes[0] = Integer.parseInt(sysSettings.get("input_LeftSoft"));
 			inputKeycodes[1] = Integer.parseInt(sysSettings.get("input_RightSoft"));
@@ -268,9 +270,10 @@ public class Config
 			inputKeycodes[16] = Integer.parseInt(sysSettings.get("input_Star"));
 			inputKeycodes[17] = Integer.parseInt(sysSettings.get("input_Num0"));
 			inputKeycodes[18] = Integer.parseInt(sysSettings.get("input_Pound"));
-			inputKeycodes[19] = Integer.parseInt(sysSettings.get("input_FastForward"));
-			inputKeycodes[20] = Integer.parseInt(sysSettings.get("input_Screenshot"));
-			inputKeycodes[21] = Integer.parseInt(sysSettings.get("input_PauseResume"));
+			inputKeycodes[19] = Integer.parseInt(sysSettings.get("input_CLR"));
+			inputKeycodes[20] = Integer.parseInt(sysSettings.get("input_FastForward"));
+			inputKeycodes[21] = Integer.parseInt(sysSettings.get("input_Screenshot"));
+			inputKeycodes[22] = Integer.parseInt(sysSettings.get("input_PauseResume"));
 
 			onChange.run();
 		}
@@ -535,9 +538,10 @@ public class Config
 		sysSettings.put("input_Star", ""         + inputKeycodes[16]);
 		sysSettings.put("input_Num0", ""         + inputKeycodes[17]);
 		sysSettings.put("input_Pound", ""        + inputKeycodes[18]);
-		sysSettings.put("input_FastForward", ""  + inputKeycodes[19]);
-		sysSettings.put("input_Screenshot",  ""  + inputKeycodes[20]);
-		sysSettings.put("input_PauseResume", ""  + inputKeycodes[21]);
+		sysSettings.put("input_CLR", ""          + inputKeycodes[19]);
+		sysSettings.put("input_FastForward", ""  + inputKeycodes[20]);
+		sysSettings.put("input_Screenshot",  ""  + inputKeycodes[21]);
+		sysSettings.put("input_PauseResume", ""  + inputKeycodes[22]);
 		saveConfig();
 		onChange.run();
 	}

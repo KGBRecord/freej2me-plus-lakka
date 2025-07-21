@@ -93,7 +93,7 @@ public class MobilePlatform
 	public volatile static int doJaKeyState = 0;
 
 	// MobilePlatform will handle the input repeats as well
-	public static boolean[] pressedKeys = new boolean[22];
+	public static boolean[] pressedKeys = new boolean[23];
 
 	public static Runnable painter;
 
@@ -827,7 +827,7 @@ public class MobilePlatform
 	public void limitFps() 
 	{
 		frameCount++;
-		if(Mobile.limitFPS == 0 || pressedKeys[19]) { lastRenderTime = System.nanoTime(); return; }
+		if(Mobile.limitFPS == 0 || pressedKeys[20]) { lastRenderTime = System.nanoTime(); return; }
 
 		requiredFrametime = 1000000000 / Mobile.limitFPS;
 		elapsedTime = System.nanoTime() - lastRenderTime;

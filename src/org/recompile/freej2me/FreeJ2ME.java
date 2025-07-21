@@ -491,7 +491,7 @@ public class FreeJ2ME
 
 			if (MobilePlatform.pressedKeys[mobikey] == false)
 			{
-				if(mobikey < 19) // Anything over 19 are special keys (fast-forward, etc)
+				if(mobikey < 20) // Anything over 20 are special keys (fast-forward, etc)
 				{
 					MobilePlatform.pressedKeys[mobikey] = true;
 					MobilePlatform.keyPressed(Mobile.getMobileKey(mobikey));
@@ -506,7 +506,7 @@ public class FreeJ2ME
 			}
 			else
 			{
-				if(mobikey < 19) { MobilePlatform.keyRepeated(Mobile.getMobileKey(mobikey)); }
+				if(mobikey < 20) { MobilePlatform.keyRepeated(Mobile.getMobileKey(mobikey)); }
 			}
 		}
 	}
@@ -528,8 +528,8 @@ public class FreeJ2ME
 				MobilePlatform.pressedKeys[mobikey] = false;
 				MobilePlatform.keyReleased(Mobile.getMobileKey(mobikey));
 
-				if(mobikey == 20) { ScreenShot.takeScreenshot(false); }
-				else if(mobikey == 21) { MobilePlatform.pauseResumeApp(); }
+				if(mobikey == 21) { ScreenShot.takeScreenshot(false); }
+				else if(mobikey == 22) { MobilePlatform.pauseResumeApp(); }
 
 				for(int i = 0; i < MobilePlatform.pressedKeys.length; i++)
 				{
@@ -736,7 +736,7 @@ public class FreeJ2ME
 					int y = (getHeight() + metrics.getAscent()) / 2;
 					g.drawString(message, x, y);
 				}
-				else if (MobilePlatform.pressedKeys[19]) // Check if fast-forward is active
+				else if (MobilePlatform.pressedKeys[20]) // Check if fast-forward is active
 				{
 					g.setFont(new Font("Dialog", Font.BOLD, cw/2));
 					g.setColor(Color.ORANGE);

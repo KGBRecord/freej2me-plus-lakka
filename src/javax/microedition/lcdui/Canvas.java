@@ -99,26 +99,25 @@ public abstract class Canvas extends Displayable
 	{
 		switch(gameAction) // Look on Mobile.java for what these magic numbers mean ("J2ME Canvas standard keycodes")
 		{
-			case Mobile.KEY_NUM2:   return Mobile.getMobileKey(14);
-			case Mobile.KEY_NUM8:   return Mobile.getMobileKey(17);
-			case Mobile.KEY_NUM4:   return Mobile.getMobileKey(15);
-			case Mobile.KEY_NUM6:   return Mobile.getMobileKey(16);
-			case Mobile.KEY_NUM5:   return Mobile.getMobileKey(18);
-			case Mobile.GAME_UP:    return Mobile.getMobileKey(0);
-			case Mobile.GAME_DOWN:  return Mobile.getMobileKey(1);
-			case Mobile.GAME_LEFT:  return Mobile.getMobileKey(2);
-			case Mobile.GAME_RIGHT: return Mobile.getMobileKey(3);
-			case Mobile.GAME_FIRE:  return Mobile.getMobileKey(7);
+			case KEY_NUM2:   return Mobile.getMobileKey(14);
+			case KEY_NUM8:   return Mobile.getMobileKey(17);
+			case KEY_NUM4:   return Mobile.getMobileKey(15);
+			case KEY_NUM6:   return Mobile.getMobileKey(16);
+			case KEY_NUM5:   return Mobile.getMobileKey(18);
+			case UP:         return Mobile.getMobileKey(0);
+			case DOWN:       return Mobile.getMobileKey(1);
+			case LEFT:       return Mobile.getMobileKey(2);
+			case RIGHT:      return Mobile.getMobileKey(3);
+			case FIRE:       return Mobile.getMobileKey(7);
 	
-			// GAME_A through D don't show up in documentation at all.
-			case Mobile.GAME_A: case Mobile.KEY_NUM1: return Mobile.getMobileKey(10);
-			case Mobile.GAME_B: case Mobile.KEY_NUM3: return Mobile.getMobileKey(11);
-			case Mobile.GAME_C: case Mobile.KEY_NUM7: return Mobile.getMobileKey(5);
-			case Mobile.GAME_D: case Mobile.KEY_NUM9: return Mobile.getMobileKey(4);
+			case GAME_A: case KEY_NUM1: return Mobile.getMobileKey(10);
+			case GAME_B: case KEY_NUM3: return Mobile.getMobileKey(11);
+			case GAME_C: case KEY_NUM7: return Mobile.getMobileKey(5);
+			case GAME_D: case KEY_NUM9: return Mobile.getMobileKey(4);
 
-			case Mobile.KEY_NUM0:  return Mobile.getMobileKey(6);
-			case Mobile.KEY_STAR:  return Mobile.getMobileKey(12);
-			case Mobile.KEY_POUND: return Mobile.getMobileKey(13);
+			case KEY_NUM0:  return Mobile.getMobileKey(6);
+			case KEY_STAR:  return Mobile.getMobileKey(12);
+			case KEY_POUND: return Mobile.getMobileKey(13);
 		}
 		return 0;
 	}
@@ -266,7 +265,7 @@ public abstract class Canvas extends Displayable
 		if(!isShown() || !pendingRepaint.get()) { return; }
 	
 		servicing = true;
-		if(!MobilePlatform.pressedKeys[19]) // If the fast-forward key is pressed, ignore the waiting and force a repaint immediately
+		if(!MobilePlatform.pressedKeys[20]) // If the fast-forward key is pressed, ignore the waiting and force a repaint immediately
 		{
 			// serviceRepaints has to force pending repaints to happen, so initially wait until they have time to be serviced normally, or multiple retries were attempted and unsuccessful
 			for(byte waitTime = 0; waitTime < 16; waitTime++) 

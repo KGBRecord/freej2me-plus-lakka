@@ -117,13 +117,14 @@ public class Anbu
 
 
 	// On keyboard, SDL follows AWT's convention
-	int inputKeycodes[] = new int[] { 
+	int inputKeycodes[] = new int[] 
+	{ 
 		SDLK_Q, SDLK_W, 
 		SDLK_UP, SDLK_LEFT, SDLK_RETURN, SDLK_RIGHT, SDLK_DOWN, 
 		SDLK_KP_7, SDLK_KP_8, SDLK_KP_9, 
 		SDLK_KP_4, SDLK_KP_5, SDLK_KP_6, 
 		SDLK_KP_1, SDLK_KP_2, SDLK_KP_3, 
-		SDLK_E, SDLK_KP_0, SDLK_R
+		SDLK_E, SDLK_KP_0, SDLK_R, SDLK_A
 	};
 
 	private static final int[] joypadKeycodes = {0x00, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0xFA, 0xFB, 0xFC, 0xFD};

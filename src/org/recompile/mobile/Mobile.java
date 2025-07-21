@@ -151,6 +151,7 @@ public class Mobile
 	public static boolean M3GRenderWireframe = false;
 
 	// Keycode modifiers
+	public static boolean kddi = false;
 	public static boolean lg = false;
 	public static boolean motorola = false;
 	public static boolean motoV8 = false;
@@ -163,13 +164,13 @@ public class Mobile
 
 	/*                                               
 	 * For AWTGUI, the input array is as follows:    [LeftSoft, RightSoft, Up, Left, Fire, Right, Down, 1, 2, 3, 4, 5, 6, 7, 8, 9, *, 0, #, Fast-Forward, Screenshot]
-	 * Whereas in SDL it's:                          [Fire, 7, 9, #, LeftSoft, 0, RightSoft, 5, unused, 1, 3, Up, Down, Left, Right, 2(todo), 4(todo), 6(todo), 8(todo)] // Special hotkeys are not implemented
+	 * Whereas in SDL it's:                          [Fire, 7, 9, #, LeftSoft, 0, RightSoft, 5, CLR, 1, 3, Up, Down, Left, Right, 2(todo), 4(todo), 6(todo), 8(todo)] // Special hotkeys are not implemented
 	 * While on Libretro, it's:                      [Up, Down, Left, Right, 9, 7, 0, Fire, RightSoft, LeftSoft, 1,  3.  *.  #,  2,  4,  6,  8,  5] // Fast-Forward, pause/resume and screenshot are frontend-governed
 	 * private static final int[] libretroKeycodes = {0,  1,    2,     3,    4, 5, 6,  7,     8,          9,     10, 11, 12, 13, 14, 15, 16, 17, 18}; // Doesn't need to be explicitly defined, it's the default array
 	 */
-	private static final int[] awtguiKeycodes      = {9,  8,    0,     2,    7, 3, 1, 10,    14,         11,     15, 18, 16,  5, 17,  4, 12,  6, 13, 19, 20, 21};
-	private static final int[] sdlguiKeycodes      = {7,  5,    4,    13,    9, 6, 8, 18,    19,         10,     11,  0,  1,  2,  3, 14, 15, 16, 17};
-	private static final String[] keyArray = {"Up", "Down", "Left", "Right", "9", "7", "0", "Fire", "RightSoft", "LeftSoft", "1", "3", "*", "#", "2", "4", "6", "8", "5", "Fast Forward", "Screenshot", "MIDlet Pause/Resume"};
+	private static final int[] awtguiKeycodes      = {9,  8,    0,     2,    7, 3, 1, 10,    14,         11,     15, 18, 16,  5, 17,  4, 12,  6, 13, 19, 20, 21, 22};
+	private static final int[] sdlguiKeycodes      = {7,  5,    4,    13,    9, 6, 8, 18,    19,         10,     11,  0,  1,  2,  3, 14, 15, 16, 17, 20};
+	private static final String[] keyArray = {"Up", "Down", "Left", "Right", "9", "7", "0", "Fire", "RightSoft", "LeftSoft", "1", "3", "*", "#", "2", "4", "6", "8", "5", "CLR", "Fast Forward", "Screenshot", "MIDlet Pause/Resume"};
 
 	// Set whether audio should be enabled or not. Can work around jars that crash FreeJ2ME due to audio
 	public static boolean sound = true;
@@ -198,28 +199,51 @@ public class Mobile
 	public static int vibrationDuration = 0;
 	public static int vibrationStrength = 0xFFFF;
 
-	//MIDP Canvas keycodes (A.K.A the standard set provided by MIDP)
-	public static final int KEY_NUM0  = Canvas.KEY_NUM0;  // 48
-	public static final int KEY_NUM1  = Canvas.KEY_NUM1;  // 49
-	public static final int KEY_NUM2  = Canvas.KEY_NUM2;  // 50
-	public static final int KEY_NUM3  = Canvas.KEY_NUM3;  // 51
-	public static final int KEY_NUM4  = Canvas.KEY_NUM4;  // 52
-	public static final int KEY_NUM5  = Canvas.KEY_NUM5;  // 53
-	public static final int KEY_NUM6  = Canvas.KEY_NUM6;  // 54
-	public static final int KEY_NUM7  = Canvas.KEY_NUM7;  // 55
-	public static final int KEY_NUM8  = Canvas.KEY_NUM8;  // 56
-	public static final int KEY_NUM9  = Canvas.KEY_NUM9;  // 57
-	public static final int KEY_STAR  = Canvas.KEY_STAR;  // 42
-	public static final int KEY_POUND = Canvas.KEY_POUND; // 35
-	public static final int GAME_UP   = Canvas.UP;     // 1
-	public static final int GAME_DOWN = Canvas.DOWN;   // 6
-	public static final int GAME_LEFT = Canvas.LEFT;   // 2 
-	public static final int GAME_RIGHT= Canvas.RIGHT;  // 5 
-	public static final int GAME_FIRE = Canvas.FIRE;   // 8
-	public static final int GAME_A    = Canvas.GAME_A; // 9
-	public static final int GAME_B    = Canvas.GAME_B; // 10
-	public static final int GAME_C    = Canvas.GAME_C; // 11
-	public static final int GAME_D    = Canvas.GAME_D; // 12
+	//KDDI keycodes
+	public static final int KDDI_UP    = -1;
+	public static final int KDDI_DOWN  = -2;
+	public static final int KDDI_LEFT  = -3;
+	public static final int KDDI_RIGHT = -4;
+	public static final int KDDI_SOFT1 = -20; 
+	public static final int KDDI_SOFT2 = -21; 
+	public static final int KDDI_FIRE  = -5;
+	public static final int KDDI_CLR   = -8;
+
+	//LG keycodes
+	public static final int LG_UP    = -1;
+	public static final int LG_DOWN  = -2;
+	public static final int LG_LEFT  = -3;
+	public static final int LG_RIGHT = -4;
+	public static final int LG_SOFT1 = -202; 
+	public static final int LG_SOFT2 = -203; 
+	public static final int LG_FIRE  = -5;
+
+	//Motorola E1000/Alcatel/Softbank keycodes
+	public static final int MOTOROLA_UP    = -1;
+	public static final int MOTOROLA_DOWN  = -6;
+	public static final int MOTOROLA_LEFT  = -2;
+	public static final int MOTOROLA_RIGHT = -5;
+	public static final int MOTOROLA_SOFT1 = -21; 
+	public static final int MOTOROLA_SOFT2 = -22; 
+	public static final int MOTOROLA_FIRE  = -20;
+
+	//Motorola V8 keycodes
+	public static final int MOTOV8_UP    = -1;
+	public static final int MOTOV8_DOWN  = -2;
+	public static final int MOTOV8_LEFT  = -3;
+	public static final int MOTOV8_RIGHT = -4;
+	public static final int MOTOV8_SOFT1 = -21;
+	public static final int MOTOV8_SOFT2 = -22;
+	public static final int MOTOV8_FIRE  = -5;
+
+	//Motorola Triplets keycodes
+	public static final int TRIPLETS_UP    = 1;
+	public static final int TRIPLETS_DOWN  = 6;
+	public static final int TRIPLETS_LEFT  = 2;
+	public static final int TRIPLETS_RIGHT = 5;
+	public static final int TRIPLETS_SOFT1 = 21; 
+	public static final int TRIPLETS_SOFT2 = 22; 
+	public static final int TRIPLETS_FIRE = 20;
 
 	//Nokia keycodes
 	public static final int NOKIA_UP    = -1; // KEY_UP_ARROW = -1;
@@ -231,15 +255,6 @@ public class Mobile
 	public static final int NOKIA_SOFT3 = -5; // KEY_SOFTKEY3 = -5; (Fire)
 	public static final int NOKIA_END   = -11; // KEY_END = -11;
 	public static final int NOKIA_SEND  = -10; // KEY_SEND = -10;
-
-	//Sharp keycodes
-	public static final int SHARP_UP    = 1;  // KEY_UP_ARROW = 1;
-	public static final int SHARP_DOWN  = 6;  // KEY_DOWN_ARROW = 6;
-	public static final int SHARP_LEFT  = 2;  // KEY_LEFT_ARROW = 2;
-	public static final int SHARP_RIGHT = 5;  // KEY_RIGHT_ARROW = 5;
-	public static final int SHARP_SOFT1 = 21; // KEY_SOFTKEY1 = 21; (Left Soft)
-	public static final int SHARP_SOFT2 = 22; // KEY_SOFTKEY2 = 22; (Right Soft)
-	public static final int SHARP_FIRE  = 20; // KEY_SOFTKEY3 = 20; (Fire)
 
 	//Nokia keyboard keycodes
 	public static final int NOKIAKB_UP    = -1; // KEY_UP_ARROW = -1;
@@ -262,51 +277,6 @@ public class Mobile
 	public static final int NOKIAKB_STAR  = 117;
 	public static final int NOKIAKB_POUND = 106;
 
-	//Siemens keycodes
-	public static final int SIEMENS_UP    = -59;
-	public static final int SIEMENS_DOWN  = -60;
-	public static final int SIEMENS_LEFT  = -61;
-	public static final int SIEMENS_RIGHT = -62;
-	public static final int SIEMENS_SOFT1 = -1; 
-	public static final int SIEMENS_SOFT2 = -4; 
-	public static final int SIEMENS_FIRE = -26; 
-
-	//Motorola E1000/Alcatel/Softbank keycodes
-	public static final int MOTOROLA_UP    = -1;
-	public static final int MOTOROLA_DOWN  = -6;
-	public static final int MOTOROLA_LEFT  = -2;
-	public static final int MOTOROLA_RIGHT = -5;
-	public static final int MOTOROLA_SOFT1 = -21; 
-	public static final int MOTOROLA_SOFT2 = -22; 
-	public static final int MOTOROLA_FIRE = -20;
-
-	//Motorola V8 keycodes
-	public static final int MOTOV8_UP    = -1;
-	public static final int MOTOV8_DOWN  = -2;
-	public static final int MOTOV8_LEFT  = -3;
-	public static final int MOTOV8_RIGHT = -4;
-	public static final int MOTOV8_SOFT1 = -21;
-	public static final int MOTOV8_SOFT2 = -22;
-	public static final int MOTOV8_FIRE = -5;
-
-	//Motorola Triplets keycodes
-	public static final int TRIPLETS_UP    = 1;
-	public static final int TRIPLETS_DOWN  = 6;
-	public static final int TRIPLETS_LEFT  = 2;
-	public static final int TRIPLETS_RIGHT = 5;
-	public static final int TRIPLETS_SOFT1 = 21; 
-	public static final int TRIPLETS_SOFT2 = 22; 
-	public static final int TRIPLETS_FIRE = 20;
-
-	//LG keycodes
-	public static final int LG_UP    = -1;
-	public static final int LG_DOWN  = -2;
-	public static final int LG_LEFT  = -3;
-	public static final int LG_RIGHT = -4;
-	public static final int LG_SOFT1 = -202; 
-	public static final int LG_SOFT2 = -203; 
-	public static final int LG_FIRE = -5;
-
 	//Sagem keycodes (just nokia with inverted softkeys)
 	public static final int SAGEM_UP    = -1; // KEY_UP_ARROW = -1;
 	public static final int SAGEM_DOWN  = -2; // KEY_DOWN_ARROW = -2;
@@ -315,6 +285,24 @@ public class Mobile
 	public static final int SAGEM_SOFT1 = -7; // KEY_SOFTKEY1 = -7; (Left Soft)
 	public static final int SAGEM_SOFT2 = -6; // KEY_SOFTKEY2 = -6; (Right Soft)
 	public static final int SAGEM_SOFT3 = -5; // KEY_SOFTKEY3 = -5; (Fire)
+
+	//Sharp keycodes
+	public static final int SHARP_UP    = 1;  // KEY_UP_ARROW = 1;
+	public static final int SHARP_DOWN  = 6;  // KEY_DOWN_ARROW = 6;
+	public static final int SHARP_LEFT  = 2;  // KEY_LEFT_ARROW = 2;
+	public static final int SHARP_RIGHT = 5;  // KEY_RIGHT_ARROW = 5;
+	public static final int SHARP_SOFT1 = 21; // KEY_SOFTKEY1 = 21; (Left Soft)
+	public static final int SHARP_SOFT2 = 22; // KEY_SOFTKEY2 = 22; (Right Soft)
+	public static final int SHARP_FIRE  = 20; // KEY_SOFTKEY3 = 20; (Fire)
+
+	//Siemens keycodes
+	public static final int SIEMENS_UP    = -59;
+	public static final int SIEMENS_DOWN  = -60;
+	public static final int SIEMENS_LEFT  = -61;
+	public static final int SIEMENS_RIGHT = -62;
+	public static final int SIEMENS_SOFT1 = -1; 
+	public static final int SIEMENS_SOFT2 = -4; 
+	public static final int SIEMENS_FIRE  = -26; 
 
 	public static MobilePlatform getPlatform() { return platform; }
 
@@ -365,6 +353,20 @@ public class Mobile
 		log(Mobile.LOG_DEBUG, Mobile.class.getPackage().getName() + "." + Mobile.class.getSimpleName() + ": " + "KeyPress:" + keyArray[keycode]);
 
 		// These keys are overridden by the modifier variables (comments simulate the Libretro interface with a NS Pro Controller)
+		if(kddi)
+		{
+			switch(keycode)
+			{
+				case 0:  return KDDI_UP; // Up
+				case 1:  return KDDI_DOWN; // Down
+				case 2:  return KDDI_LEFT; // Left
+				case 3:  return KDDI_RIGHT; // Right
+				case 7:  return KDDI_FIRE; // Y
+				case 8:  return KDDI_SOFT2; // Start
+				case 9:  return KDDI_SOFT1; // Select
+				case 19: return KDDI_CLR; // Select
+			}
+		}
 		if(lg)
 		{
 			switch(keycode)
@@ -492,6 +494,7 @@ public class Mobile
 				case 7: return Canvas.KEY_FIRE; // Y
 				case 8: return Canvas.KEY_COML; // Start
 				case 9: return Canvas.KEY_COMR; // Select
+				case 19: return Canvas.KEY_CLR;
 			}
 		}
 
@@ -502,21 +505,21 @@ public class Mobile
 			case 1:  return NOKIA_DOWN; // Down
 			case 2:  return NOKIA_LEFT; // Left
 			case 3:  return NOKIA_RIGHT; // Right
-			case 4:  return KEY_NUM9; // A
-			case 5:  return KEY_NUM7; // B
-			case 6:  return KEY_NUM0; // X
+			case 4:  return Canvas.KEY_NUM9; // A
+			case 5:  return Canvas.KEY_NUM7; // B
+			case 6:  return Canvas.KEY_NUM0; // X
 			case 7:  return NOKIA_SOFT3; // Y
 			case 8:  return NOKIA_SOFT2; // Start
 			case 9:  return NOKIA_SOFT1; // Select
-			case 10: return KEY_NUM1; // L
-			case 11: return KEY_NUM3; // R
-			case 12: return KEY_STAR; // L2
-			case 13: return KEY_POUND; // R2
-			case 14: return KEY_NUM2; // Up (Analog)
-			case 15: return KEY_NUM4; // Left (Analog)
-			case 16: return KEY_NUM6; // Right (Analog)
-			case 17: return KEY_NUM8; // Down (Analog)
-			case 18: return KEY_NUM5; // User-Mappable (often same as case 7)
+			case 10: return Canvas.KEY_NUM1; // L
+			case 11: return Canvas.KEY_NUM3; // R
+			case 12: return Canvas.KEY_STAR; // L2
+			case 13: return Canvas.KEY_POUND; // R2
+			case 14: return Canvas.KEY_NUM2; // Up (Analog)
+			case 15: return Canvas.KEY_NUM4; // Left (Analog)
+			case 16: return Canvas.KEY_NUM6; // Right (Analog)
+			case 17: return Canvas.KEY_NUM8; // Down (Analog)
+			case 18: return Canvas.KEY_NUM5; // User-Mappable (often same as case 7)
 		}
 
 		// If a matching key wasn't found, return 0;
@@ -527,6 +530,19 @@ public class Mobile
 	public static final int getGameAction(int keycode) 
 	{
 		// NOTE: Canvas doesn't support SOFT keys by default. Those cases are all returning NOKIA softkeys to abstract lcdui's menu navigation
+		if (kddi)
+		{
+			switch(keycode)
+			{
+				case KDDI_UP:    return Canvas.UP; // Up
+				case KDDI_DOWN:  return Canvas.DOWN; // Down
+				case KDDI_LEFT:  return Canvas.LEFT; // Left
+				case KDDI_RIGHT: return Canvas.RIGHT; // Right
+				case KDDI_FIRE:  return Canvas.FIRE; // Y
+				case KDDI_SOFT1: return Canvas.KEY_SOFT_LEFT; // Start   (should be GAME_A, but let's go with the special keys)
+				case KDDI_SOFT2: return Canvas.KEY_SOFT_RIGHT; // Select (should be GAME_B, but let's go with the special keys)
+			}
+		}
 		if (lg) 
 		{
 			switch (keycode) 
@@ -660,25 +676,25 @@ public class Mobile
 		// J2ME Canvas standard keycodes, to match against any keys not covered above (Canvas does not handle left/right soft keys).
 		switch (keycode) // TODO: This can probably be turned into a single 'return Canvas.getKeyCode(keycode)''
 		{
-			case NOKIA_UP:    return Canvas.UP;
-			case NOKIA_DOWN:  return Canvas.DOWN;
-			case NOKIA_LEFT:  return Canvas.LEFT;
-			case NOKIA_RIGHT: return Canvas.RIGHT;
-			case KEY_NUM2:    return Canvas.UP;
-			case KEY_NUM8:    return Canvas.DOWN;
-			case KEY_NUM4:    return Canvas.LEFT;
-			case KEY_NUM6:    return Canvas.RIGHT;
-			case KEY_NUM9:    return Canvas.GAME_D;
-			case KEY_NUM7:    return Canvas.GAME_C;
-			case KEY_NUM5:    return Canvas.FIRE;
-			case KEY_NUM1:    return Canvas.GAME_A;
-			case KEY_NUM3:    return Canvas.GAME_B;
-			case KEY_NUM0:    return Canvas.KEY_NUM0;
-			case KEY_STAR:    return Canvas.KEY_STAR;
-			case KEY_POUND:   return Canvas.KEY_POUND;
-			case NOKIA_SOFT3: return Canvas.FIRE;
-			case NOKIA_SOFT1: return Canvas.KEY_SOFT_LEFT;
-			case NOKIA_SOFT2: return Canvas.KEY_SOFT_RIGHT;
+			case NOKIA_UP:         return Canvas.UP;
+			case NOKIA_DOWN:       return Canvas.DOWN;
+			case NOKIA_LEFT:       return Canvas.LEFT;
+			case NOKIA_RIGHT:      return Canvas.RIGHT;
+			case Canvas.KEY_NUM2:  return Canvas.UP;
+			case Canvas.KEY_NUM8:  return Canvas.DOWN;
+			case Canvas.KEY_NUM4:  return Canvas.LEFT;
+			case Canvas.KEY_NUM6:  return Canvas.RIGHT;
+			case Canvas.KEY_NUM9:  return Canvas.GAME_D;
+			case Canvas.KEY_NUM7:  return Canvas.GAME_C;
+			case Canvas.KEY_NUM5:  return Canvas.FIRE;
+			case Canvas.KEY_NUM1:  return Canvas.GAME_A;
+			case Canvas.KEY_NUM3:  return Canvas.GAME_B;
+			case Canvas.KEY_NUM0:  return Canvas.KEY_NUM0;
+			case Canvas.KEY_STAR:  return Canvas.KEY_STAR;
+			case Canvas.KEY_POUND: return Canvas.KEY_POUND;
+			case NOKIA_SOFT3:      return Canvas.FIRE;
+			case NOKIA_SOFT1:      return Canvas.KEY_SOFT_LEFT;
+			case NOKIA_SOFT2:      return Canvas.KEY_SOFT_RIGHT;
 		}
 
 		// If a matching key wasn't found, return 0;
@@ -689,6 +705,19 @@ public class Mobile
 	public static final int getCanvasAction(int keycode) 
 	{
 		// NOTE: Canvas doesn't support SOFT keys by default. Those cases are all returning NOKIA softkeys to abstract lcdui's menu navigation
+		if (kddi)
+		{
+			switch(keycode)
+			{
+				case KDDI_UP:    return Canvas.UP; // Up
+				case KDDI_DOWN:  return Canvas.DOWN; // Down
+				case KDDI_LEFT:  return Canvas.LEFT; // Left
+				case KDDI_RIGHT: return Canvas.RIGHT; // Right
+				case KDDI_FIRE:  return Canvas.FIRE; // Y
+				case KDDI_SOFT1: return Canvas.KEY_SOFT_LEFT; // Start   (should be GAME_A, but let's go with the special keys)
+				case KDDI_SOFT2: return Canvas.KEY_SOFT_RIGHT; // Select (should be GAME_B, but let's go with the special keys)
+			}
+		}
 		if (lg) 
 		{
 			switch (keycode) 
@@ -766,68 +795,29 @@ public class Mobile
 				case NOKIAKB_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		if (sagem) 
-		{
-			switch (keycode) 
-			{
-				case SAGEM_UP: return Canvas.UP; // Up
-				case SAGEM_DOWN: return Canvas.DOWN; // Down
-				case SAGEM_LEFT: return Canvas.LEFT; // Left
-				case SAGEM_RIGHT: return Canvas.RIGHT; // Right
-				case SAGEM_SOFT3: return Canvas.FIRE; // Y
-				case SAGEM_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SAGEM_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-		if (siemens) 
-		{
-			switch (keycode) 
-			{
-				case SIEMENS_UP:    return Canvas.UP; // Up
-				case SIEMENS_DOWN:  return Canvas.DOWN; // Down
-				case SIEMENS_LEFT:  return Canvas.LEFT; // Left
-				case SIEMENS_RIGHT: return Canvas.RIGHT; // Right
-				case SIEMENS_FIRE:  return Canvas.FIRE; // Y
-				case SIEMENS_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SIEMENS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-		if (sharp) 
-		{
-			switch (keycode) 
-			{
-				case SHARP_UP:    return Canvas.UP; // Up
-				case SHARP_DOWN:  return Canvas.DOWN; // Down
-				case SHARP_LEFT:  return Canvas.LEFT; // Left
-				case SHARP_RIGHT: return Canvas.RIGHT; // Right
-				case SHARP_FIRE:  return Canvas.FIRE; // Y
-				case SHARP_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SHARP_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-
+		
 		// J2ME Canvas standard keycodes, to match against any keys not covered above (Canvas does not handle left/right soft keys).
 		switch (keycode) // TODO: This can probably be turned into a single 'return Canvas.getKeyCode(keycode)''
 		{
-			case NOKIA_UP:    return Canvas.UP;
-			case NOKIA_DOWN:  return Canvas.DOWN;
-			case NOKIA_LEFT:  return Canvas.LEFT;
-			case NOKIA_RIGHT: return Canvas.RIGHT;
-			case KEY_NUM2:    return Canvas.KEY_NUM2;
-			case KEY_NUM8:    return Canvas.KEY_NUM8;
-			case KEY_NUM4:    return Canvas.KEY_NUM4;
-			case KEY_NUM6:    return Canvas.KEY_NUM6;
-			case KEY_NUM9:    return Canvas.KEY_NUM9;
-			case KEY_NUM7:    return Canvas.KEY_NUM7;
-			case KEY_NUM5:    return Canvas.KEY_NUM5;
-			case KEY_NUM1:    return Canvas.KEY_NUM1;
-			case KEY_NUM3:    return Canvas.KEY_NUM3;
-			case KEY_NUM0:    return Canvas.KEY_NUM0;
-			case KEY_STAR:    return Canvas.KEY_STAR;
-			case KEY_POUND:   return Canvas.KEY_POUND;
-			case NOKIA_SOFT3: return Canvas.FIRE;
-			case NOKIA_SOFT1: return Canvas.KEY_SOFT_LEFT;
-			case NOKIA_SOFT2: return Canvas.KEY_SOFT_RIGHT;
+			case NOKIA_UP:         return Canvas.UP;
+			case NOKIA_DOWN:       return Canvas.DOWN;
+			case NOKIA_LEFT:       return Canvas.LEFT;
+			case NOKIA_RIGHT:      return Canvas.RIGHT;
+			case Canvas.KEY_NUM2:  return Canvas.KEY_NUM2;
+			case Canvas.KEY_NUM8:  return Canvas.KEY_NUM8;
+			case Canvas.KEY_NUM4:  return Canvas.KEY_NUM4;
+			case Canvas.KEY_NUM6:  return Canvas.KEY_NUM6;
+			case Canvas.KEY_NUM9:  return Canvas.KEY_NUM9;
+			case Canvas.KEY_NUM7:  return Canvas.KEY_NUM7;
+			case Canvas.KEY_NUM5:  return Canvas.KEY_NUM5;
+			case Canvas.KEY_NUM1:  return Canvas.KEY_NUM1;
+			case Canvas.KEY_NUM3:  return Canvas.KEY_NUM3;
+			case Canvas.KEY_NUM0:  return Canvas.KEY_NUM0;
+			case Canvas.KEY_STAR:  return Canvas.KEY_STAR;
+			case Canvas.KEY_POUND: return Canvas.KEY_POUND;
+			case NOKIA_SOFT3:      return Canvas.FIRE;
+			case NOKIA_SOFT1:      return Canvas.KEY_SOFT_LEFT;
+			case NOKIA_SOFT2:      return Canvas.KEY_SOFT_RIGHT;
 		}
 
 		// If a matching key wasn't found, return 0;
@@ -944,6 +934,7 @@ public class Mobile
 		if(soundEnabled.equals("on")) { sound = true; }
 
 		String phone = config.settings.get("phone");
+		kddi = false;
 		lg = false;
 		motorola = false;
 		motoTriplets = false;
@@ -953,6 +944,7 @@ public class Mobile
 		siemens = false;
 		sharp = false;
 		skt = false;
+		if(phone.equals("KDDI"))          { kddi = true;}
 		if(phone.equals("LG"))            { lg = true;}
 		if(phone.equals("Motorola"))      { motorola = true;}
 		if(phone.equals("MotoTriplets"))  { motoTriplets = true;}

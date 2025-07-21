@@ -135,19 +135,22 @@ public final class AWTGUI
 		new Button("E"),
 		new Button("NumPad-0"),
 		new Button("R"),
+		new Button("A"),
 		new Button("Space"),
 		new Button("C"),
 		new Button("X")
 	};
 
 	/* Array of inputs in order to support input remapping */
-	int inputKeycodes[] = new int[] { 
+	public static int inputKeycodes[] = new int[] 
+	{
 		KeyEvent.VK_Q, KeyEvent.VK_W, 
 		KeyEvent.VK_UP, KeyEvent.VK_LEFT, KeyEvent.VK_ENTER, KeyEvent.VK_RIGHT, KeyEvent.VK_DOWN, 
 		KeyEvent.VK_NUMPAD7, KeyEvent.VK_NUMPAD8, KeyEvent.VK_NUMPAD9, 
 		KeyEvent.VK_NUMPAD4, KeyEvent.VK_NUMPAD5, KeyEvent.VK_NUMPAD6, 
 		KeyEvent.VK_NUMPAD1, KeyEvent.VK_NUMPAD2, KeyEvent.VK_NUMPAD3, 
-		KeyEvent.VK_E, KeyEvent.VK_NUMPAD0, KeyEvent.VK_R, KeyEvent.VK_SPACE, KeyEvent.VK_C, KeyEvent.VK_X
+		KeyEvent.VK_E, KeyEvent.VK_NUMPAD0, KeyEvent.VK_R, KeyEvent.VK_A,
+		KeyEvent.VK_SPACE, KeyEvent.VK_C, KeyEvent.VK_X
 	};
 
 	private final int newInputKeycodes[] = Arrays.copyOf(inputKeycodes, inputKeycodes.length);
@@ -184,17 +187,19 @@ public final class AWTGUI
 	final CheckboxMenuItem[] layoutOptions = 
 	{
 		new CheckboxMenuItem("Default", true),
+		new CheckboxMenuItem("KDDI", false),
 		new CheckboxMenuItem("LG", false),
 		new CheckboxMenuItem("Motorola/SoftBank", false),
 		new CheckboxMenuItem("Motorola V8", false),
 		new CheckboxMenuItem("Motorola Triplets", false),
 		new CheckboxMenuItem("Nokia Full Keyboard", false),
 		new CheckboxMenuItem("Sagem", false),
-		new CheckboxMenuItem("Siemens", false),
 		new CheckboxMenuItem("Sharp", false),
+		new CheckboxMenuItem("Siemens", false),
 		new CheckboxMenuItem("SKT", false)
+		
 	};
-	final String[] layoutValues = {"Standard", "LG", "Motorola", "MotoV8", "MotoTriplets", "NokiaKeyboard", "Sagem", "Siemens", "Sharp", "SKT"};
+	final String[] layoutValues = {"Standard", "KDDI", "LG", "Motorola", "MotoV8", "MotoTriplets", "NokiaKeyboard", "Sagem", "Sharp", "Siemens", "SKT"};
 	
 	final CheckboxMenuItem[] backlightOptions = 
 	{
@@ -408,6 +413,10 @@ public final class AWTGUI
 		awtDialogs[4].add(inputButtons[6]);
 		awtDialogs[4].add(new Label(""));
 
+		awtDialogs[4].add(new Label("CLR:"));
+		awtDialogs[4].add(inputButtons[19]);
+		awtDialogs[4].add(new Label(""));
+
 		awtDialogs[4].add(new Label(""));
 		awtDialogs[4].add(new Label(""));
 		awtDialogs[4].add(new Label(""));
@@ -444,9 +453,9 @@ public final class AWTGUI
 		awtDialogs[4].add(new Label("Screenshot"));
 		awtDialogs[4].add(new Label("Pause/Resume"));
 
-		awtDialogs[4].add(inputButtons[19]);
 		awtDialogs[4].add(inputButtons[20]);
 		awtDialogs[4].add(inputButtons[21]);
+		awtDialogs[4].add(inputButtons[22]);
 
 		awtDialogs[4].add(new Label(""));
 		awtDialogs[4].add(new Label(""));

@@ -27,7 +27,7 @@
 #define PIPE_MAX_LEN 255
 
 // The max amount of phone keys currently supported (might increase since KDDI and SKT/SK-VM phones tend to have more)
-#define PHONE_KEYS 19
+#define PHONE_KEYS 20
 
 static const char *supported_encodings[] = 
 {
@@ -88,8 +88,9 @@ static const struct retro_input_descriptor desc[] =
     { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,                                       "Num #" },
     { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,                                       "Num *" },
     { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,                                       "Num 5/Pointer Press" },
-    { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,                                   "Left Soft Key" },
-    { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,                                    "Right Soft Key" },
+    { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,                                   "Left Softkey" },
+    { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,                                    "Right Softkey" },
+    { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,                                       "CLR" },
 
     { 0 },
 };
@@ -192,15 +193,16 @@ struct retro_core_option_v2_definition core_options[] =
         "system_settings",
         {
             { "Default",             NULL },
+            { "KDDI",                NULL },
             { "LG",                  NULL },
             { "Motorola/SoftBank",   NULL },
             { "Motorola Triplets",   NULL },
             { "Motorola V8",         NULL },
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
-            { "Siemens",             NULL },
             { "Sharp",               NULL },
-            { "SKT",               NULL },
+            { "Siemens",             NULL },
+            { "SKT",                 NULL },
             { NULL, NULL },
         },
         "Default"
@@ -688,14 +690,15 @@ struct retro_core_option_definition core_options_v1 [] =
         "Due to the different mobile phone manufacturers on the J2ME space, it's usual to have some games expecting a certain phone's key layout like Nokia's for example. If a game is not responding to the inputs correctly, try changing this option.",
         {
             { "Default",             NULL },
+            { "KDDI",                NULL },
             { "LG",                  NULL },
             { "Motorola/SoftBank",   NULL },
             { "Motorola Triplets",   NULL },
             { "Motorola V8",         NULL },
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
-            { "Siemens",             NULL },
             { "Sharp",               NULL },
+            { "Siemens",             NULL },
             { "SKT",                 NULL },
             { NULL, NULL },
         },
@@ -1055,7 +1058,7 @@ static const struct retro_variable vars[] =
     },
     { /* Phone Control Type */
         "freej2me_phone",
-        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Sharp|SKT"
+        "Phone Key Layout; Default|KDDI|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Sharp|Siemens|SKT"
     },
     { /* LCD Backlight Color */
         "freej2me_backlightcolor",
