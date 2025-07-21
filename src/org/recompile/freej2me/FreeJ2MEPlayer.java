@@ -164,6 +164,7 @@ public final class FreeJ2MEPlayer extends Dialog
             @Override
             public void dragEnter(DropTargetDragEvent dtde) 
             { 
+                dtde.acceptDrag(DnDConstants.ACTION_COPY);
                 setBackground(FreeJ2ME.freeJ2MEDragColor);
                 toggleComponentsVisibility(false);
                 dropMessageLabel.setVisible(true);
@@ -199,12 +200,9 @@ public final class FreeJ2MEPlayer extends Dialog
                     if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) 
                     {
                         java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
-                        if (!files.isEmpty()) 
-                        {
-                            openFile(files.get(0).getAbsolutePath());
-                        }
+                        
+                        if (!files.isEmpty()) { openFile(files.get(0).getAbsolutePath()); }
                     }
-                    dtde.dropComplete(true);
                 } 
                 catch (Exception e) { System.out.println("Exception caught in Drag and Drop:" + e.getMessage()); }
                 finally 

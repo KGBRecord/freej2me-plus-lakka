@@ -678,7 +678,7 @@ public class FreeJ2ME
 
 	private class LCD extends Canvas
 	{
-		private boolean showDragMessage = false, fileSupported = true;
+		private boolean showDragMessage = false, fileSupported = false;
 		public int cx=0;
 		public int cy=0;
 		public int cw=240;
@@ -778,16 +778,22 @@ public class FreeJ2ME
 							java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
 
 							// Check if the file is supported
-							boolean fileSupported = false;
 							for (File file : files)
 							{
 								if (isSupportedFile(file.getName()))
 								{
+									dtde.acceptDrag(DnDConstants.ACTION_COPY);
 									fileSupported = true;
 									break;
 								}
+								else 
+								{ 
+									dtde.rejectDrag();
+									fileSupported = false; 
+								}
 							}
 						}
+						else { dtde.rejectDrag(); }
 					} catch (Exception e) { e.printStackTrace(); }
 
 					showDragMessage = true;
@@ -824,7 +830,7 @@ public class FreeJ2ME
 								if(!awtGUI.hasLoadedFile()) { awtGUI.loadJarFile(files.get(0).toURI().toString()); }
 								else // Ask for a restart if a jar is already running
 								{
-									Mobile.getPlatform().fileName = files.get(0).toURI().toString();
+									MobilePlatform.fileName = files.get(0).toURI().toString();
 									awtGUI.showRestartDialog();
 								}
 							}
