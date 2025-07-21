@@ -1689,18 +1689,21 @@ public class PlatformPlayer implements Player
 
 				MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
 
-				// Set volume of all channels to 0, to help Java Sound API not trip over itself when making the actual volume change after
-				for (int channel = 0; channel < midiChannels.length; channel++) 
+				if(sequencer.isRunning())
 				{
-					midiChannels[channel].controlChange(7, 0);
-					LockSupport.parkNanos(12500);
-				}
+					// Set volume of all channels to 0, to help Java Sound API not trip over itself when making the actual volume change after
+					for (int channel = 0; channel < midiChannels.length; channel++) 
+					{
+						midiChannels[channel].controlChange(7, 0);
+						LockSupport.parkNanos(12500);
+					}
 
-				// Set volume for all channels through Control Change command 7 (volume)
-				for (int channel = 0; channel < midiChannels.length; channel++) 
-				{
-					midiChannels[channel].controlChange(7, midiVolume);
-					LockSupport.parkNanos(12500);
+					// Set volume for all channels through Control Change command 7 (volume)
+					for (int channel = 0; channel < midiChannels.length; channel++) 
+					{
+						midiChannels[channel].controlChange(7, midiVolume);
+						LockSupport.parkNanos(12500);
+					}
 				}
 			}
 			else if(player instanceof SMAFPlayer) // SMAF is a mix of midi and wavPlayer, so it pretty much borrows from both here
@@ -1713,16 +1716,19 @@ public class PlatformPlayer implements Player
 
 				MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
 
-				for (int channel = 0; channel < midiChannels.length; channel++) 
+				if(sequencer.isRunning())
 				{
-					midiChannels[channel].controlChange(7, 0);
-					LockSupport.parkNanos(12500);
-				}
+					for (int channel = 0; channel < midiChannels.length; channel++) 
+					{
+						midiChannels[channel].controlChange(7, 0);
+						LockSupport.parkNanos(12500);
+					}
 
-				for (int channel = 0; channel < midiChannels.length; channel++) 
-				{
-					midiChannels[channel].controlChange(7, midiVolume);
-					LockSupport.parkNanos(12500);
+					for (int channel = 0; channel < midiChannels.length; channel++) 
+					{
+						midiChannels[channel].controlChange(7, midiVolume);
+						LockSupport.parkNanos(12500);
+					}
 				}
 
 				if(((SMAFPlayer) player).wavClips != null) 
