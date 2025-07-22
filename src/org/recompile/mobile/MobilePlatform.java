@@ -70,10 +70,7 @@ public class MobilePlatform
 	// Whether the user has toggled the ShowFPS option
 	private final int OVERLAY_WIDTH = 100;
 	private final int OVERLAY_HEIGHT = 20;
-	private String showFPS = "Off";
-	private int frameCount = 0;
-	private long lastFpsTime = System.nanoTime();
-    private int fps = 0;
+	public static String showFPS = "Off";
 
 	// Canvas command bar focus
 	public static boolean focusCommandBar = true;
@@ -812,8 +809,7 @@ public class MobilePlatform
 		if(!Mobile.isPaused)
 		{
 			gcFrontbuffer.flushGraphics(img, x, y, width, height);
-
-			if(!showFPS.equals("Off")) { showFPS();}
+			
 			painter.run();
 
 			if(focusCommandBar)
@@ -826,7 +822,6 @@ public class MobilePlatform
 
 	public void limitFps() 
 	{
-		frameCount++;
 		if(Mobile.limitFPS == 0 || pressedKeys[20]) { lastRenderTime = System.nanoTime(); return; }
 
 		requiredFrametime = 1000000000 / Mobile.limitFPS;
@@ -836,55 +831,6 @@ public class MobilePlatform
 		if (sleepTime > 0) { LockSupport.parkNanos(sleepTime); }
 
 		lastRenderTime = System.nanoTime();
-	}
-
-	// For now, the logic here works by updating the framerate counter every second
-	private final void showFPS() 
-	{
-		if (System.nanoTime() - lastFpsTime >= 1000000000)
-		{ 
-			fps = frameCount; 
-			frameCount = 0; 
-			lastFpsTime = System.nanoTime(); 
-		}
-
-		BufferedImage overlayImage = new BufferedImage(OVERLAY_WIDTH, OVERLAY_HEIGHT, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D overlayGraphics = overlayImage.createGraphics();
-
-        gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		
-		// Set the overlay background
-		overlayGraphics.setColor(new Color(0, 0, 105, 150)); // BG is a semi-transparent dark blue
-		overlayGraphics.fillRect(0, 0, OVERLAY_WIDTH, OVERLAY_HEIGHT);
-	
-		// Adjust the font size
-		int fontSize = 21; // Base font size
-		overlayGraphics.setFont(overlayGraphics.getFont().deriveFont((float) fontSize));
-		overlayGraphics.setColor(new Color(255, 175, 0, 255)); // Text color is orange
-	
-		// Draw the FPS text
-		String fpsText = "FPS: " + fps;
-		overlayGraphics.drawString(fpsText, 3, 17);
-	
-		overlayGraphics.dispose(); // Clean up graphics
-	
-		// Scale the overlay image to fit the screen
-		double scale = Math.min(lcdWidth, lcdHeight);
-
-		int scaledWidth = 0;
-		if(scale < 100) { scaledWidth = (int) (lcdWidth / 2);}
-		if(scale > 100) { scaledWidth = (int) (lcdWidth / 2.5);}
-		if(scale > 200) { scaledWidth = (int) (lcdWidth / 3);}
-		if(scale > 300) { scaledWidth = (int) (lcdWidth / 4);}
-		if(scale > 400) { scaledWidth = (int) (lcdWidth / 5);}
-		int scaledHeight = (int) (scaledWidth / 5);
-	
-		// Draw the scaled overlay image onto the jar's main screen.
-		if(showFPS.equals("TopLeft"))          { gc.getGraphics2D().drawImage(overlayImage, 2, 2, scaledWidth, scaledHeight, null); }
-		else if(showFPS.equals("TopRight"))    { gc.getGraphics2D().drawImage(overlayImage, lcdWidth-scaledWidth-2, 2, scaledWidth, scaledHeight, null); }
-		else if(showFPS.equals("BottomLeft"))  { gc.getGraphics2D().drawImage(overlayImage, 2, lcdHeight-scaledHeight-2, scaledWidth, scaledHeight, null); }
-		else if(showFPS.equals("BottomRight")) { gc.getGraphics2D().drawImage(overlayImage, lcdWidth-scaledWidth-2, lcdHeight-scaledHeight-2, scaledWidth, scaledHeight, null); }
 	}
 
 	public void setShowFPS(String show) { showFPS = show; }

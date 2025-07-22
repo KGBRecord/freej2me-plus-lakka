@@ -39,6 +39,12 @@ import com.nttdocomo.ui.UIException;
 
 public abstract class PlatformGraphics implements DirectGraphics
 {
+
+	// FPS Counter variables
+	private static int frameCount = 0;
+	private static long lastFpsTime = System.nanoTime();
+    private static int fps = 0;
+
 	protected BufferedImage canvas;
 	protected Graphics2D gc;
 	protected int[] canvasData;
@@ -368,6 +374,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 					}
 				}
 			}
+
+			if(!MobilePlatform.showFPS.equals("Off")) { showFPS();}
 		}
 		catch (Exception e)
 		{
@@ -1650,5 +1658,39 @@ public abstract class PlatformGraphics implements DirectGraphics
 		}
 
 		return image;
+	}
+
+
+	// FPS COUNTER
+
+
+	// For now, the logic here works by updating the framerate counter every second
+	public final void showFPS() 
+	{
+		frameCount++;
+		if (System.nanoTime() - lastFpsTime >= 1000000000)
+		{ 
+			fps = frameCount; 
+			frameCount = 0; 
+			lastFpsTime = System.nanoTime(); 
+		}
+
+		String fpsText = "FPS: " + fps;
+		int scaledWidth = getFont().stringWidth(fpsText);
+		int scaledHeight = getFont().getBaselinePosition();
+		
+		if(MobilePlatform.showFPS.equals("TopLeft"))          { setOrigin(2, 2); }
+		else if(MobilePlatform.showFPS.equals("TopRight"))    { setOrigin(MobilePlatform.lcdWidth-scaledWidth-2, 2); }
+		else if(MobilePlatform.showFPS.equals("BottomLeft"))  { setOrigin(2, MobilePlatform.lcdHeight-scaledHeight-2); }
+		else if(MobilePlatform.showFPS.equals("BottomRight")) { setOrigin(MobilePlatform.lcdWidth-scaledWidth-2, MobilePlatform.lcdHeight-scaledHeight-2); }
+
+		// Set the overlay background and draw
+		setARGBColor(0x96000069); // BG is a semi-transparent dark blue
+		fillRoundRect(0, 0, scaledWidth, scaledHeight, 4, 4); // Cut a bit off from the height so that the counter is slimmer. We're not using chars that go below baseline like 'f' or 'q'
+	
+		// Set the font color and draw it
+		setColor(0xFFAF00); // Text color is orange
+		drawString(fpsText, 0, 0, TOP | LEFT);
+		reset();
 	}
 }
