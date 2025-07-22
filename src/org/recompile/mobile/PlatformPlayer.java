@@ -1672,86 +1672,96 @@ public class PlatformPlayer implements Player
 			return player.getVolume(); 
 		}
 
-		public int setLevel(int level) { return doSetLevel(level, false); }
-
-		public int doSetLevel(int level, boolean forceChange) 
-		{
+		public int setLevel(int level) 
+		{ 
 			/* Some Digital Chocolate games actually go all the way to level = 120. E.g. Tornado Mania */
 			if(level > 100) { level = 100; }
 			else if(level < 0) { level = 0; }
+			return doSetLevel(level, false); 
+		}
 
+		public int doSetLevel(final int level, final boolean forceChange) 
+		{
 			if(level == getLevel() && !forceChange) { return getLevel(); }
 
-			if (player instanceof midiPlayer) 
+			// Run heavier parts of setLevel in a separate thread so that this doesn't block.
+			new Thread(new Runnable() 
 			{
-				midiPlayer sequencer = (midiPlayer) player;
-				int midiVolume = isMuted() ? 0 : (int) (level * 127 / 100); // Convert to MIDI volume range
-
-				MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
-
-				if(sequencer.isRunning())
+				@Override
+				public void run() 
 				{
-					// Set volume of all channels to 0, to help Java Sound API not trip over itself when making the actual volume change after
-					for (int channel = 0; channel < midiChannels.length; channel++) 
+					if (player instanceof midiPlayer) 
 					{
-						midiChannels[channel].controlChange(7, 0);
-						LockSupport.parkNanos(12500);
+						midiPlayer sequencer = (midiPlayer) player;
+						int midiVolume = isMuted() ? 0 : (int) (level); // Convert to MIDI volume range
+
+						MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
+
+						if(sequencer.isRunning())
+						{
+							// Set volume of all channels to 0, to help Java Sound API not trip over itself when making the actual volume change after
+							for (int channel = 0; channel < midiChannels.length; channel++) 
+							{
+								midiChannels[channel].controlChange(7, 0);
+								LockSupport.parkNanos(12500);
+							}
+
+							// Set volume for all channels through Control Change command 7 (volume)
+							for (int channel = 0; channel < midiChannels.length; channel++) 
+							{
+								midiChannels[channel].controlChange(7, midiVolume);
+								LockSupport.parkNanos(12500);
+							}
+						}
 					}
-
-					// Set volume for all channels through Control Change command 7 (volume)
-					for (int channel = 0; channel < midiChannels.length; channel++) 
+					else if(player instanceof SMAFPlayer) // SMAF is a mix of midi and wavPlayer, so it pretty much borrows from both here
 					{
-						midiChannels[channel].controlChange(7, midiVolume);
-						LockSupport.parkNanos(12500);
+						FloatControl volumeControl;
+						SMAFPlayer sequencer = (SMAFPlayer) player;
+
+						int midiVolume = isMuted() ? 0 : (int) (level * 127 / 100);
+						float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
+
+						MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
+
+						if(sequencer.isRunning())
+						{
+							for (int channel = 0; channel < midiChannels.length; channel++) 
+							{
+								midiChannels[channel].controlChange(7, 0);
+								LockSupport.parkNanos(12500);
+							}
+
+							for (int channel = 0; channel < midiChannels.length; channel++) 
+							{
+								midiChannels[channel].controlChange(7, midiVolume);
+								LockSupport.parkNanos(12500);
+							}
+						}
+
+						if(((SMAFPlayer) player).wavClips != null) 
+						{
+							for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++) 
+							{
+								if(((SMAFPlayer) player).wavClips[i] == null) { continue; }
+								volumeControl = (FloatControl) ((SMAFPlayer) player).wavClips[i].getControl(FloatControl.Type.MASTER_GAIN);
+								volumeControl.setValue(dB);
+							}
+						}
 					}
-				}
-			}
-			else if(player instanceof SMAFPlayer) // SMAF is a mix of midi and wavPlayer, so it pretty much borrows from both here
-			{
-				FloatControl volumeControl;
-				SMAFPlayer sequencer = (SMAFPlayer) player;
-
-				int midiVolume = isMuted() ? 0 : (int) (level * 127 / 100);
-				float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
-
-				MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
-
-				if(sequencer.isRunning())
-				{
-					for (int channel = 0; channel < midiChannels.length; channel++) 
+					else if(player instanceof wavPlayer)
 					{
-						midiChannels[channel].controlChange(7, 0);
-						LockSupport.parkNanos(12500);
-					}
+						wavPlayer wav = (wavPlayer) player;
 
-					for (int channel = 0; channel < midiChannels.length; channel++) 
-					{
-						midiChannels[channel].controlChange(7, midiVolume);
-						LockSupport.parkNanos(12500);
-					}
-				}
+						/* We have to map 0 <= value <= 100 to a clip's range of -30dB to 0dB  */
+						float dB = isMuted() ? -80.0f : -30.0f + ((level / 100.0f) * (30.0f));
 
-				if(((SMAFPlayer) player).wavClips != null) 
-				{
-					for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++) 
-					{
-						if(((SMAFPlayer) player).wavClips[i] == null) { continue; }
-						volumeControl = (FloatControl) ((SMAFPlayer) player).wavClips[i].getControl(FloatControl.Type.MASTER_GAIN);
+						FloatControl volumeControl = (FloatControl) wav.wavClip.getControl(FloatControl.Type.MASTER_GAIN);
 						volumeControl.setValue(dB);
 					}
+					else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
 				}
-			}
-			else if(player instanceof wavPlayer)
-			{
-				wavPlayer wav = (wavPlayer) player;
-
-				/* We have to map 0 <= value <= 100 to a clip's range of -30dB to 0dB  */
-				float dB = isMuted() ? -80.0f : -30.0f + ((level / 100.0f) * (30.0f));
-
-				FloatControl volumeControl = (FloatControl) wav.wavClip.getControl(FloatControl.Type.MASTER_GAIN);
-				volumeControl.setValue(dB);
-			}
-			else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
+			}).start();
 
 			notifyListeners(PlayerListener.VOLUME_CHANGED, this); 
 
