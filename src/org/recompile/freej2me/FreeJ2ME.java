@@ -102,12 +102,12 @@ public class FreeJ2ME
 
 	private static void checkExtInputFile()
 	{
-			File extFile = new File("freej2me_system/"+extInputFilePath);
+		File extFile = new File("freej2me_system/"+extInputFilePath);
 
-			// If File doesn't exist on the system dir, check if this is the web/CheerpJ frontend
-			if(!extFile.exists()) { extFile = new File("/str/"+extInputFilePath); }
+		// If File doesn't exist on the system dir, check if this is the web/CheerpJ frontend
+		if(!extFile.exists()) { extFile = new File("/str/"+extInputFilePath); }
 
-            if (extFile.exists()) { readFile(extFile.getPath()); }
+		if (extFile.exists()) { readFile(extFile.getPath()); }
     }
 
     private static void readFile(String filePath)

@@ -323,10 +323,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 				lastImage = image;
 			}
 
-			boolean fastBlit = !Mobile.renderLCDMask && Mobile.maskIndex != 0 && !Mobile.funLightsEnabled;
-			if (fastBlit && imgPixels == canvasData) {
-				return;
-			}
+			boolean fastBlit = (!Mobile.renderLCDMask || Mobile.maskIndex == 0) && !Mobile.funLightsEnabled;
+			if (fastBlit && imgPixels == canvasData) { return; }
 
 			// This one is rather costly, as it has to draw overlays on the corners of the screen with gaussian filtering applied.
 			if(Mobile.funLightsEnabled)
@@ -335,7 +333,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 				drawFunLights(overlayData, width, height);
 			}
 		
-			int destRowIndex, srcRowIndex, destIndex, srcIndex, srcAlpha, existingPixel, destAlpha, newAlpha, newRed, newGreen, newBlue;
+			int destRowIndex, srcRowIndex, destIndex, srcIndex, srcAlpha, existingPixel, destAlpha, newAlpha, newRed, newGreen, newBlue, invSrcAlpha;
 			// Render the resulting image
 			for (int j = startY + y; j < endY + y; j++) 
 			{
@@ -343,7 +341,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 				if(fastBlit)
 				{
 					destRowIndex = j * canvasWidth + startX + x;
-            		srcRowIndex = j * imageWidth + startX + x;
+					srcRowIndex = j * imageWidth + startX + x;
 					System.arraycopy(imgPixels, srcRowIndex, canvasData, destRowIndex, endX - startX);
 				}
 				else
@@ -362,12 +360,14 @@ public abstract class PlatformGraphics implements DirectGraphics
 							srcAlpha = (overlayData[srcIndex] >> 24) & 0xFF; // Source alpha
 							existingPixel = canvasData[destIndex]; // Current pixel in the canvas
 							destAlpha = (existingPixel >> 24) & 0xFF;
+
+							invSrcAlpha = (255 - srcAlpha);
 		
 							// Blend alpha and color values using the srcOver alpha compositing method
 							newAlpha = Math.min(255, srcAlpha + destAlpha);
-							newRed = (((overlayData[srcIndex] >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-							newGreen = (((overlayData[srcIndex] >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-							newBlue = ((overlayData[srcIndex] & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
+							newRed = (((overlayData[srcIndex] >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * invSrcAlpha) / newAlpha;
+							newGreen = (((overlayData[srcIndex] >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * invSrcAlpha) / newAlpha;
+							newBlue = ((overlayData[srcIndex] & 0xFF) * srcAlpha + (existingPixel & 0xFF) * invSrcAlpha) / newAlpha;
 
 							canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 						}
@@ -375,7 +375,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 				}
 			}
 
-			if(!MobilePlatform.showFPS.equals("Off")) { showFPS();}
+			if(!MobilePlatform.showFPS.equals("Off")) { showFPS(); }
 		}
 		catch (Exception e)
 		{
@@ -481,7 +481,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		final int clipWidth = Math.min(getClipWidth()+clipX, canvasWidth);
 		final int clipHeight = Math.min(getClipHeight()+clipY, canvas.getHeight());
 	
-		int rowOffset, destRow, pixelIndex, destIndex, pixel, srcAlpha, existingPixel, destAlpha, newAlpha, newRed, newGreen, newBlue;
+		int rowOffset, destRow, pixelIndex, destIndex, pixel, srcAlpha, existingPixel, destAlpha, newAlpha, invSrcAlpha, newRed, newGreen, newBlue, i;
 		// Directly manipulate the canvasData
 		for (int j = 0; j < height; j++) // The array's x and y positions start from 0, as the offset is what dictates where the data should start being read from
 		{
@@ -489,7 +489,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			rowOffset = offset + (j * scanlength); // Calculate the starting index for the current row
 			destRow = (y + j) * canvasWidth;
 	
-			for (int i = 0; i < width; i++)
+			for (i = 0; i < width; i++)
 			{
 				if ((x + i - getTranslateX()) < clipX || (x + i - getTranslateX()) >= clipWidth || (x + i) >= canvasWidth) { continue; }
 
@@ -504,16 +504,16 @@ public abstract class PlatformGraphics implements DirectGraphics
 					if(srcAlpha == 255) { canvasData[destIndex] = pixel; }
 					else if (srcAlpha > 0)
 					{
-						existingPixel = canvasData[destIndex]; // Current pixel in the canvas
+						existingPixel = canvasData[destIndex];
 						destAlpha = (existingPixel >> 24) & 0xFF;
-	
-						// Blend alpha and color values using the srcOver alpha compositing method
+
 						newAlpha = Math.min(255, srcAlpha + destAlpha);
-						newRed = (((pixel >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-						newGreen = (((pixel >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
-						newBlue = ((pixel & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
-	
-						// Store the new pixel back in canvasData
+						invSrcAlpha = 255 - srcAlpha;
+
+						newRed = (((pixel >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * invSrcAlpha) / newAlpha;
+						newGreen = (((pixel >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * invSrcAlpha) / newAlpha;
+						newBlue = ((pixel & 0xFF) * srcAlpha + (existingPixel & 0xFF) * invSrcAlpha) / newAlpha;
+
 						canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 					}
 				}
