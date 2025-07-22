@@ -82,7 +82,7 @@ public abstract class Canvas extends Frame
 		}
 
 		// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-		if (labelVisible) { paintCommandsBar(); }
+		//if (labelVisible) { paintCommandsBar(); }
 
 		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, labelVisible ? height+barHeight : height); // Extend the draw area if we have the commands bar visible
 		Mobile.getPlatform().limitFps();

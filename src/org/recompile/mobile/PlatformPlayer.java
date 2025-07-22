@@ -84,7 +84,7 @@ import javazoom.jl.player.MPEGPlayer;
 public class PlatformPlayer implements Player
 {
 	
-	private static final audioplayer[] sequencePlayers = new audioplayer[32];
+	private static final audioplayer[] sequencePlayers = new audioplayer[64];
 
 	private final byte NUM_CONTROLS = 4;
 
@@ -184,7 +184,7 @@ public class PlatformPlayer implements Player
 					}
 					else if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
 					{
-						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MLD/MFi! (not fully supported yet)");
+						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MLD/MFi! (not fully supported yet)");
 						contentType = "audio/x-mld (beta)";
 						MLDDecoder.decodeMLD(data);
 						if(MLDDecoder.SequenceData != null || MLDDecoder.pcmData != null) 
@@ -207,7 +207,7 @@ public class PlatformPlayer implements Player
 					}
 					else if(data.length >= 4 && data[0] == 'B' && data[1] == 'E' && data[2] == 'G' && data[3] == 'I' && data[4] == 'N' && data[5] == ':' && data[6] == 'I' && data[7] == 'M')
 					{
-						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is EMS iMelody! (not fully supported yet)");
+						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is EMS iMelody! (not fully supported yet)");
 						contentType = "audio/iMelody (beta)";
 						player = new midiPlayer(EMSiMelodyDecoder.decodeiMelody(data));
 					}

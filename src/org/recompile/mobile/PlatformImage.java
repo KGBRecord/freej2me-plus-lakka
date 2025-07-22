@@ -75,16 +75,10 @@ public class PlatformImage
 		else { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB); }
 		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		
-		if(!Mobile.isDoJa) 
-		{
-			gc = new Graphics(this);
-			Arrays.fill(canvasData, 0xFFFFFFFF);
-		}
-		else 
-		{
-			djgc = new com.nttdocomo.ui.Graphics(this);
-			Arrays.fill(canvasData, 0xFFFFFFFF);
-		}
+
+		gc = new Graphics(this);
+		djgc = new com.nttdocomo.ui.Graphics(this);
+		Arrays.fill(canvasData, 0xFFFFFFFF);
 
 		isMutable = true;
 	}

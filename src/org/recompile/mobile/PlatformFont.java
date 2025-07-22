@@ -105,7 +105,7 @@ public class PlatformFont
 			awtFont = awtFont.deriveFont(map);
 		}
 
-		if(gc == null) { System.out.println("newg"); gc = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).getGraphics(); }
+		if(gc == null) { gc = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).getGraphics(); }
 		gc.setFont(awtFont);
 		metrics = gc.getFontMetrics();
 	}

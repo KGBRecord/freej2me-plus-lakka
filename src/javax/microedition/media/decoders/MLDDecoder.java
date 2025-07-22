@@ -529,7 +529,8 @@ public final class MLDDecoder
                 {
                     int eventValue = data[offset++] & 0xFF;
                     int eventChannelIndex = eventValue >> 6;
-                    eventChannel          = eventChannelIndex * curTrack;
+                    eventChannel          = (curTrack * 4 + eventChannelIndex);
+                    
 
                     int centsAdjustment = 0, pitchBendValue = 0, msb = 0, lsb = 0;
                     
@@ -548,8 +549,8 @@ public final class MLDDecoder
                     switch (eventParam) 
                     {
                         case (byte) 0x80: // AUDIO CHANNEL VOLUME TODO: Is this where PCM samples are set to be played?
-                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Audio channel volume (PCM) event not implemented! value " + (eventValue & 0x3f) + ", channel " + (curTrack * 4 + eventChannel));
-                            pcmDataPositions.put(totalDuration+gateTime, (curTrack * 4 + eventChannel));
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Audio channel volume (PCM) event not implemented! value " + (eventValue & 0x3f) + ", channel " + eventChannel);
+                            pcmDataPositions.put(totalDuration+gateTime, eventChannel);
                             pcmDataVelocities.put(totalDuration+gateTime, (eventValue & 0x3f) * 2);
                             break;
 
@@ -604,7 +605,7 @@ public final class MLDDecoder
                             break;
 
                         case (byte) 0xBA: // Drum bank enable
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding drum bank enable " + ((eventValue & 1) != 0) + " event " + " to channel " + (curTrack * 4 + eventChannel));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding drum bank enable " + ((eventValue & 1) != 0) + " event " + " to channel " + eventChannel);
                             boolean enableDrumBank = (eventValue & 1) != 0;
                             event.setMessage(ShortMessage.CONTROL_CHANGE, (eventValue >> 3 & 15), (enableDrumBank ? handyPhoneBankToMidi(channelData[(eventValue >> 3 & 15)].currentInstrument) : channelData[(eventValue >> 3 & 15)].currentInstrument), 0);
                             midiEvent = new MidiEvent(event, totalDuration);
@@ -647,33 +648,33 @@ public final class MLDDecoder
                             return;
             
                         case (byte) 0xE0: // Program Change
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding program change number " + (eventValue & 0x3F) + " to channel " + (curTrack * 4 + eventChannel));
-                            channelData[(curTrack * 4 + eventChannel)].currentInstrument = (byte) (eventValue & 0x3F);
-                            event.setMessage(ShortMessage.PROGRAM_CHANGE, (curTrack * 4 + eventChannel), (eventValue & 0x3F), 0);
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding program change number " + (eventValue & 0x3F) + " to channel " + eventChannel);
+                            channelData[eventChannel].currentInstrument = (byte) (eventValue & 0x3F);
+                            event.setMessage(ShortMessage.PROGRAM_CHANGE, eventChannel, (eventValue & 0x3F), 0);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
                         
                         case (byte) 0xE1: // Bank Change
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding bank change to channel " + (curTrack * 4 + eventChannel) + " with value " + (eventValue & 0x3F));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding bank change to channel " + eventChannel + " with value " + (eventValue & 0x3F));
                             
                             if ((eventValue & 0x3F) >= 2 && (eventValue & 0x3F) <= 3) // Bank should map to General MIDI Instrument Patch Map
                             {
                                 int bankNumber = (eventValue & 0x3F) - 2; // 0 selects the first 64 patches of the Patch Map, 1 selects the second 64 patches
                                 
                                 // Bank Select MSB
-                                event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 0, bankNumber);
+                                event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 0, bankNumber);
                                 midiEvent = new MidiEvent(event, totalDuration);
                                 track.add(midiEvent);
 
                                 // Bank Select LSB
-                                event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 32, 0); // Assuming LSB is 0 for simplicity
+                                event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 32, 0); // Assuming LSB is 0 for simplicity
                                 midiEvent = new MidiEvent(event, totalDuration);
                                 track.add(midiEvent);
                             } 
                             else if ((eventValue & 0x3F) == 63) // Drum bank identical to MIDI Percussion Key Map
                             {
-                                event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 0, (eventValue & 0x3F)); // Bank select for drums
+                                event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 0, (eventValue & 0x3F)); // Bank select for drums
                                 midiEvent = new MidiEvent(event, totalDuration);
                                 track.add(midiEvent);
                             }
@@ -681,15 +682,15 @@ public final class MLDDecoder
                             break;
 
                         case (byte) 0xE2: // Volume change
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding volume change " + eventValue +" to channel " + (curTrack * 4 + eventChannel));
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 7, (eventValue & 0x3F));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding volume change " + eventValue +" to channel " + eventChannel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 7, (eventValue & 0x3F));
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
 
                         case (byte) 0xE3: // Panpot change
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding panpot value" + (eventValue & 0x3F) + " to channel " + (curTrack * 4 + eventChannel));
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 10, (eventValue & 0x3F));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding panpot value" + (eventValue & 0x3F) + " to channel " + eventChannel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 10, (eventValue & 0x3F));
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
@@ -707,46 +708,46 @@ public final class MLDDecoder
                             lsb = pitchBendValue & 0x7F;
                             msb = (pitchBendValue >> 7) & 0x7F;
 
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding pitch bend MSB " + msb + " LSB " + lsb + " to channel " + (curTrack * 4 + eventChannel));
-                            event.setMessage(ShortMessage.PITCH_BEND, (curTrack * 4 + eventChannel), lsb, msb);
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding pitch bend MSB " + msb + " LSB " + lsb + " to channel " + eventChannel);
+                            event.setMessage(ShortMessage.PITCH_BEND, eventChannel, lsb, msb);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
 
                         case (byte) 0xE5: // CHANNEL_ASSIGN
                             Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Channel Change event not implemented! Voice: " + (eventValue & 0xC0) + " Channel:" + (eventValue & 0x0F));
-                            //channelData[(curTrack * 4 + eventChannel)].pitchBendRange = (byte) (eventValue & 0x3F);
+                            //channelData[eventChannel].pitchBendRange = (byte) (eventValue & 0x3F);
                             break;
 
                         case (byte) 0xE6: // Expression change
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding Expression change event value:" + (eventValue & 0x7F) + " to channel" + (curTrack * 4 + eventChannel));
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 11, (eventValue & 0x7F));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding Expression change event value:" + (eventValue & 0x7F) + " to channel" + eventChannel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 11, (eventValue & 0x7F));
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
 
                         case (byte) 0xE7: // PITCH_BEND_RANGE
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding pitch bend range " + (eventValue & 0x3F) + " to channel " + (curTrack * 4 + eventChannel));
-                            channelData[(curTrack * 4 + eventChannel)].pitchBendRange = (byte) (eventValue & 0x3F);
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding pitch bend range " + (eventValue & 0x3F) + " to channel " + eventChannel);
+                            channelData[eventChannel].pitchBendRange = (byte) (eventValue & 0x3F);
                             break;
 
                         case (byte) 0xE8: // FINE_PITCH_BEND_A / WAVE_CHANNEL_VOLUME
                             Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Fine Pitch Bend A (Wave volume) not implemented! Value: " + (eventValue & 0x7F));
-                            //event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 1, (eventValue & 0x3F) * 2);
+                            //event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 1, (eventValue & 0x3F) * 2);
                             //midiEvent = new MidiEvent(event, totalDuration);
                             //track.add(midiEvent);
                             break;
 
                         case (byte) 0xE9: // FINE_PITCH_BEND_B / WAVE_CHANNEL_PANPOT
                             Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Fine Pitch Bend B (Wave Panpot) not implemented! Value: " + (eventValue & 0x3F));
-                            //event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 1, (eventValue & 0x3F) * 2);
+                            //event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 1, (eventValue & 0x3F) * 2);
                             //midiEvent = new MidiEvent(event, totalDuration);
                             //track.add(midiEvent);
                             break;
                         
                         case (byte) 0xEA: // MODULATION DEPTH
-                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding modulation depth value " + (eventValue & 0x3F) + "(" + ((eventValue & 0x3F) * 2) + ") to channel " + (curTrack * 4 + eventChannel));
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, (curTrack * 4 + eventChannel), 1, (eventValue & 0x3F) * 2);
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding modulation depth value " + (eventValue & 0x3F) + "(" + ((eventValue & 0x3F) * 2) + ") to channel " + eventChannel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 1, (eventValue & 0x3F) * 2);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
@@ -820,21 +821,21 @@ public final class MLDDecoder
                 
                 if(noteNumber < 20)
                 {
-                    Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value " + noteNumber + " to channel " + ((curTrack * 4 + eventChannel)) + " at duration " + totalDuration);
+                    Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value " + noteNumber + " to channel " + (eventChannel) + " at duration " + totalDuration);
                     pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
                 }
-                else { Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + (curTrack * 4 + eventChannel)); }
+                else { Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + eventChannel); }
                 
                 // We still add the notes no matter, just so that the sequencer can actually reach the PCM request time
                 ShortMessage noteOn = new ShortMessage();
-                noteOn.setMessage(ShortMessage.NOTE_ON, (curTrack * 4 + eventChannel), noteNumber, velocity);
+                noteOn.setMessage(ShortMessage.NOTE_ON, eventChannel, noteNumber, velocity);
                 midiEvent = new MidiEvent(noteOn, totalDuration);
                 track.add(midiEvent);
                 
-                channelData[(curTrack * 4 + eventChannel)].lastNote = noteNumber;
+                channelData[eventChannel].lastNote = noteNumber;
 
                 ShortMessage noteOff = new ShortMessage();
-                noteOff.setMessage(ShortMessage.NOTE_OFF, (curTrack * 4 + eventChannel), channelData[(curTrack * 4 + eventChannel)].lastNote, 0);
+                noteOff.setMessage(ShortMessage.NOTE_OFF, eventChannel, channelData[eventChannel].lastNote, 0);
                 midiEvent = new MidiEvent(noteOff, totalDuration+gateTime);
                 track.add(midiEvent);
                 
