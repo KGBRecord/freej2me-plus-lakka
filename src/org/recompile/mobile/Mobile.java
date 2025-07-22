@@ -494,7 +494,7 @@ public class Mobile
 				case 7: return Canvas.KEY_FIRE; // Y
 				case 8: return Canvas.KEY_COML; // Start
 				case 9: return Canvas.KEY_COMR; // Select
-				case 19: return Canvas.KEY_CLR;
+				case 19: return Canvas.KEY_CLR; // SKT's CLR key is specific to it (value 8)
 			}
 		}
 
@@ -520,6 +520,7 @@ public class Mobile
 			case 16: return Canvas.KEY_NUM6; // Right (Analog)
 			case 17: return Canvas.KEY_NUM8; // Down (Analog)
 			case 18: return Canvas.KEY_NUM5; // User-Mappable (often same as case 7)
+			case 19: return KDDI_CLR; // KDDI's CLR key is used for some non-KDDI jars
 		}
 
 		// If a matching key wasn't found, return 0;
