@@ -16,86 +16,30 @@
 */
 package com.j_phone.amuse;
 
-public class PhrasePlayer 
+public class PhrasePlayer extends com.jblend.media.smaf.phrase.PhrasePlayerBase
 {
-    private PhraseTrack[] tracks = new PhraseTrack[] // 16 tracks 
-	{
-		new PhraseTrack(), new PhraseTrack(), new PhraseTrack(), new PhraseTrack(),
-		new PhraseTrack(), new PhraseTrack(), new PhraseTrack(), new PhraseTrack(), 
-		new PhraseTrack(), new PhraseTrack(), new PhraseTrack(), new PhraseTrack(),
-		new PhraseTrack(), new PhraseTrack(), new PhraseTrack(), new PhraseTrack()
-	};
+    protected static PhrasePlayer phrasePlayer;
 
-	public static PhrasePlayer getPlayer() { return new PhrasePlayer(); }
-
-	public PhraseTrack getTrack() 
-    {
-		for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] == null) 
-            {
-				tracks[i] = new PhraseTrack();
-				return tracks[i];
-			}
-		}
-        return null;
-	}
-
-    public PhraseTrack getTrack(int track)
-    {
-        if(track < 0 || track > tracks.length-1) { throw new IllegalArgumentException("invalid track index"); }
-        return tracks[track];
-	}
-
-    public int getTrackCount() { return tracks.length; }
-
-    public void disposeTrack(PhraseTrack t) 
-    { 
-        if(t == null) { throw new NullPointerException("disposeTrack received a null argument"); }
-        for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] == t) 
-            {
-				tracks[i] = null;
-                return;
-			}
-		}
-    }
-
-    public PhraseTrack getTrackPair() { return null; }
-
-	public PhraseTrack getTrackPair(int paramInt) { return null; }
-
-    public void kill() 
+	public static PhrasePlayer getPlayer() 
 	{ 
-		for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] != null) 
-            {
-				tracks[i].stop();
-			}
-		}
+		com.jblend.media.smaf.phrase.PhrasePlayerBase.setup();
+		phrasePlayer = new PhrasePlayer();
+		return phrasePlayer; 
 	}
 
-    public void pause() 
+	public void disposePlayer() 
 	{ 
-		for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] != null) 
-            {
-				tracks[i].pause();
-			}
-		}
+		super.dispose();
+		phrasePlayer = null;
 	}
 
-    public void resume() 
-	{ 
-		for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] != null) 
-            {
-				tracks[i].resume();
-			}
-		}
-	}
+	public PhraseTrack getTrack() { return super.getJPhoneTrack(); } 
+
+	public PhraseTrack getTrack(int track) { return super.getJPhoneTrack(track); }
+
+	public void disposeTrack(PhraseTrack t) { super.disposeJPhoneTrack(t); }
+
+	public PhraseTrack getTrackPair() { return super.getTrackPair(); }
+
+	public PhraseTrack getTrackPair(int paramInt) { return super.getTrackPair(paramInt); }
 }

@@ -16,7 +16,4 @@
 */
 package com.vodafone.v10.sound;
 
-public interface SoundTrackListener 
-{
-	public void eventOccurred(int event);
-}
+public interface SoundTrackListener extends com.jblend.media.smaf.phrase.PhraseTrackListener { }

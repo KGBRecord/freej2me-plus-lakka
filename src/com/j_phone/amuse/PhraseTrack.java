@@ -16,127 +16,73 @@
 */
 package com.j_phone.amuse;
 
-import javax.microedition.media.MediaException;
-import javax.microedition.media.Player;
-
-import org.recompile.mobile.PlatformPlayer;
-
-public class PhraseTrack 
+public class PhraseTrack extends com.jblend.media.smaf.phrase.PhraseTrackBase
 {
-	public static final int DEFAULT_VOLUME = 100;
 
-    public static final int NO_DATA = 0;
-	public static final int PAUSED = 3;
-	public static final int PLAYING = 2;
-	public static final int READY = 1;
-	private static final int MAX_VOLUME = 127;
 	private Phrase phrase;
-	private Player player;
-    private int playerState = NO_DATA;
 	private PhraseTrackListener listener;
 
-    PhraseTrack() { }
+    public PhraseTrack(int id) { super(id); }
 
-    public int getID() { return 0; } /* TODO: Flesh this out */
+    public int getID() { return super.getID(); }
 
 	public Phrase getPhrase() { return phrase; }
 
-    public int getState() { return playerState; }
+    public int getState() { return super.getState(); }
 
 	public void setPhrase(Phrase p) 
     {
 		this.phrase = p;
-		this.player = p.getPlayer();
+		super.setPhrase(phrase.getPhraseImpl());
 	}
 
-	public boolean isPlaying() { return getState() == PLAYING; }
+	public boolean isPlaying() { return super.getState() == PLAYING; }
 
-    public boolean isMute() 
-    { 
-        if(player == null) { return true; }
-        else { return ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).isMuted(); }
-    }
+    public boolean isMute() { return super.isMute(); }
 
-	public void setVolume(int value) 
-    {
-        if(player == null) { return; }
+	public void setVolume(int value) { super.setVolume(value); }
 
-		if (value < 0) { value = 0; }
-		if (value > MAX_VOLUME) { value = MAX_VOLUME; }
-        ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setLevel(value);
-	}
+    public void mute(boolean mute) { super.mute(mute); }
 
-    public void mute(boolean mute) 
-    {
-        if(player == null) { return; }
+    public void setPanpot(int value) { super.setPanpot(value); }
 
-        ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setMute(mute);
-	}
+	public int getPanpot() { return super.getPanpot(); }
 
-	public void stop() 
-    { 
-        if(player != null && getState() == PLAYING) 
-        { 
-            player.stop(); 
-            player.setMediaTime(0);
-            playerState = READY;
-        } 
-    }
+	public void stop() { super.stop(); }
 
-    // For play() we'll assume it rewinds back to the start, otherwise resume() below is useless
-    public void play() 
-    {
-        if (player != null && getState() != PLAYING) 
-        {
-            player.setMediaTime(0);
-            player.start();
-            playerState = PLAYING;
-        }
-	}
+    public void play() { play(1); }
 
 	public void play(int loop) 
-    {
-        if (player != null && getState() != PLAYING) 
-        {
-            if (loop == 0) { loop = -1; }
-            player.setLoopCount(loop);
-            player.setMediaTime(0);
-            player.start();
-            playerState = PLAYING;
-        }
+    { 
+        super.setEventListener((com.jblend.media.smaf.phrase.PhraseTrackListener) listener);
+        super.play(loop); 
+    }
+
+    public void pause() { super.pause(); }
+
+    public void resume() { super.resume(); }
+
+	public void removePhrase() 
+    { 
+        this.phrase = null; 
+        super.removePhrase();
+    }
+
+    public PhraseTrack getSyncMaster() { return getJPhoneSyncMaster(); }
+
+    public void setSubjectTo(PhraseTrack master) 
+	{ 
+		if(master != null) // Add sync relation
+		{
+			setJPhoneSyncMaster(master);
+			master.slaveJPhonePhrases.add(this);
+		}
+		else // Clear sync relation
+		{
+			getJPhoneSyncMaster().slaveJPhonePhrases.remove(this);
+			setJPhoneSyncMaster(master);
+		}
 	}
 
-    public void pause() 
-    {
-        if (player != null && getState() == PLAYING) 
-        {
-            player.stop();
-            playerState = PAUSED;
-        }
-	}
-
-    public void resume() 
-    {
-        if (player != null && getState() == PAUSED) 
-        {
-            player.start();
-            playerState = PLAYING;
-        }
-    }
-
-	public void removePhrase() { this.phrase = null; }
-
-    public PhraseTrack getSyncMaster() 
-    {
-        /* TODO: Flesh this out */
-        return null;
-    }
-
-    public void setSubjectTo(PhraseTrack phraseTrack) 
-    {
-        /* TODO: Flesh this out */
-    }
-
-    // TODO: Make PlatformPlayer also report events to vodafone listeners
 	public void setEventListener(PhraseTrackListener l) { this.listener = l; }
 }

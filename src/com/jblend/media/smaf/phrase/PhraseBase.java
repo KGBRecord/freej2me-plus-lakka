@@ -20,13 +20,18 @@ import org.recompile.mobile.Mobile;
 
 import java.io.IOException;
 
-abstract class PhraseBase 
+public abstract class PhraseBase 
 {
-	public PhraseBase(byte[] data) { }
+
+	byte[] data;
+
+	public PhraseBase(byte[] data) { this.data = data; }
 
 	public PhraseBase(String url) throws IOException { this(Mobile.getMIDletResourceAsByteArray(url)); }
 
-	public int getSize() { return 0; }
+	public int getSize() { return data.length; }
 
-	public int getUseTracks() { return 0; }
+	public byte[] getData() { return data; }
+
+	public int getUseTracks() { return 1; }
 }

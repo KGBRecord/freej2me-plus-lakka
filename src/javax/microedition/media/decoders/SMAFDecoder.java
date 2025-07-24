@@ -64,6 +64,7 @@ public final class SMAFDecoder
 
     private static final byte[] shortModValues = new byte[] 
     {
+        0x00, // RESERVED
         0x00, // Short type 0x1
         0x08, // Short type 0x2
         0x10, // Short type 0x3
@@ -82,6 +83,7 @@ public final class SMAFDecoder
 
     private static final byte[] shortPitchBendValues = new byte[] 
     {
+        0x00, // RESERVED
         0x08, // Short type 0x1
         0x10, // Short type 0x2
         0x18, // Short type 0x3
@@ -100,6 +102,7 @@ public final class SMAFDecoder
 
     private static final byte[] shortExpressionValues = new byte[] 
     {
+        0x00, // RESERVED
         0x00, // Short type 0x1
         0x1F, // Short type 0x2
         0x27, // Short type 0x3
@@ -117,7 +120,7 @@ public final class SMAFDecoder
     };
 
     // These are used only for debugging
-    private static final String[] formatTypes = {"Handy Phone Standard (MA-1/2)", "Mobile Standard (MA-3/5) - Compressed (Untested)", "Mobile Standard (MA-3/5) - Not Compressed", "Yamaha MA-7 (Unsupported)"};
+    private static final String[] formatTypes = {"Handy Phone Standard (MA-1/2)", "Mobile Standard (MA-3/5) - Compressed (Untested)", "Mobile Standard (MA-3/5) - Not Compressed", "Yamaha MA-7 (Unsupported)", "Extended Voice/Softbank"};
     private static final String[] sequenceTypes = {"Stream Sequence", "Sub-Sequence (UNTESTED)"};
     private static final String[] channelTypes = {"No Care", "Melody", "No Melody", "Rhythm"};
     private static final String[] noteTypes = {"Invalid", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "Invalid", "Invalid", "Invalid"};
@@ -182,7 +185,7 @@ public final class SMAFDecoder
             if(chunkID.contains("MTR")) { decodeScoreTrackChunk(); }
             else if(chunkID.contains("MspI") || chunkID.contains("AspI")) { decodeSeekAndPhraseChunk(); }
             else if(chunkID.contains("Mtsu") || chunkID.contains("Atsu")) { decodeSetupDataChunk(); }
-            else if(chunkID.contains("Mtsq") || chunkID.contains("Atsq"))
+            else if(chunkID.contains("Mtsq") || chunkID.contains("Atsq") || chunkID.contains("SEQU"))
             {
                 scoreTrackSequenceData();
                 // Handy Phone format states that more than 4 channels can be used by having multiple Score Track Sequences (each track has 4)
@@ -190,12 +193,10 @@ public final class SMAFDecoder
             }
             else if(chunkID.contains("Mtsp")) { scoreTrackPCMData(); } // Unfinished as far as spec compliance goes, but works more often than not
             else if(chunkID.contains("Mwa"))  { scoreTrackWaveData(); } // Same as above (in fact, it pretty much ties with the above)
-            else if(chunkID.contains("MMMG")) // TODO, seen in use in some jars meant for Sharp
-            { 
-                Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " This is a non-standard SMAF file usually found in Sharp phones! Trying to parse... ");
-                decodeSharpHeader(); 
-            }
-            else if(chunkID.contains("VOIC")) { decodeSharpVOICChunk(); }
+            else if(chunkID.contains("MMMG")) { decodeMMMGChunk(); }
+            else if(chunkID.contains("VOIC")) { decodeVoiceChunk(); }
+            else if(chunkID.contains("EXVO")) { decodeExclusiveVoiceChunk(); }
+            else if(chunkID.contains("DEVO")) { decodeDEVoiceChunk(); }
             else if(chunkID.contains("ATR"))  { decodePCMScoreTrackChunk(); }
             else if(chunkID.contains("Awa"))  { decodeAudioTrackWaveDataChunk(); }
             else { parsingData = false; }
@@ -414,20 +415,34 @@ public final class SMAFDecoder
         // OK, we're at the start of the "MTR" (Score) Track, which means the content info chunk (content header) has been left behind
     }
 
-    public static void decodeSharpHeader() 
+    public static void decodeMMMGChunk() 
     {
         String MMMG = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++]; // "MMMG"
-        int MMMGChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
-        String data = "" + (char) input[decodePos++] + (char) input[decodePos++];
+        int MMMGChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF); // Size of remaining data minus the next 2 bytes
+        String data = "" + (char) input[decodePos++] + (char) input[decodePos++]; // TODO: What are these meant to be?
 
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- " + MMMG + " HEADER --------------------------");
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"MMMGChunkSize: " + MMMGChunkSize);
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"MMMGChunkData: " + data);
 
+        // MMMG, EXVO, SEQU are all a big TODO
+        formatType = (byte) 0x04; // SMAF with MMMG chunk uses a different format for notes and events
+        TimeBase_D = (byte) 0x11; // TODO: This should be somewhere in one of the chunks following MMMG,
+        TimeBase_G = (byte) 0x11; // TODO: Same as above.
+
         // According to some Sharp SMAFs, this should be followed by the VOIC chunk
+        // TODO: We don't really have sufficient data to decode the PCM sequences and set up the MIDI sequence, but... let's try anyway
+        if(sequence == null) 
+        { 
+            try 
+            {
+                sequence = new Sequence(Sequence.PPQ, 500); // TODO: Maybe revise this? We shouldn't rely on a fixed PPQ value, i think. (though there are separate timebases for duration and gateTime, so who knows, maybe it's correct)
+                track = sequence.createTrack();
+            } catch(InvalidMidiDataException ie) { Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " couldn't create MIDI Sequence to convert:" + ie.getMessage()); }
+        }
     }
 
-    public static void decodeSharpVOICChunk() 
+    public static void decodeVoiceChunk() 
     {
         String voic = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++]; // "VOIC"
         int voicChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
@@ -435,6 +450,40 @@ public final class SMAFDecoder
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- " + voic + " HEADER --------------------------");
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"VOICChunkSize: " + voicChunkSize);
     }
+
+
+    public static void decodeExclusiveVoiceChunk() 
+    {
+        String exvo = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++]; // "EXVO"
+        int exvoChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
+        byte[] exclusiveVoice = new byte[exvoChunkSize];
+
+        for(int i = 0; i < exvoChunkSize; i++) 
+        {
+            exclusiveVoice[i] = (byte) (input[decodePos++] & 0xFF);
+        }
+    
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- " + exvo + " HEADER --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"EXVOChunkSize: " + exvoChunkSize);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"data: " + Arrays.toString(exclusiveVoice));
+    }
+
+    public static void decodeDEVoiceChunk() 
+    {
+        String devo = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++]; // "EXVO"
+        int devoChunkSize = (input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF);
+        byte[] DEVoice = new byte[devoChunkSize];
+
+        for(int i = 0; i < devoChunkSize; i++) 
+        {
+            DEVoice[i] = (byte) (input[decodePos++] & 0xFF);
+        }
+    
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"-------------------------- " + devo + " HEADER --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"DEVOChunkSize: " + devoChunkSize);
+        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"data: " + Arrays.toString(DEVoice));
+    }
+    
 
     public static void decodeScoreTrackChunk()
     {
@@ -672,7 +721,7 @@ public final class SMAFDecoder
 
         byte[] seqBytes = new byte[matsqChunkSize];
         // TODO: Decode these properly
-        if(formatType == (byte) 0x00 || formatType == (byte) 0x02) // Handy Phone and Uncompressed Mobile Standard are about the same here
+        if(formatType == (byte) 0x00 || formatType == (byte) 0x02 || formatType == (byte) 0x04) // These formats are uncompressed, and use the same steps until event decoding
         {
             // Collect sequence data
             while (curPos < matsqChunkSize)
@@ -812,7 +861,7 @@ public final class SMAFDecoder
                 firstDurByte = (byte) (data[offset++] & 0xFF);
                 
                 // Check firt byte's MSB for duration size in bytes
-                if ((firstDurByte & 0x80) == 0) // Single-byte duration
+                if ((firstDurByte & (byte) 0x80) == 0) // Single-byte duration
                 {
                     duration = firstDurByte;
                 } 
@@ -860,15 +909,15 @@ public final class SMAFDecoder
                         switch (eventCategory) 
                         {
                             case 0x0: // Program Change
-                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding program change value 0x" + String.format("%02X", handyPhoneBankToMidi(valueField, channel)) + "(" + handyPhoneBankToMidi(valueField, channel) + ") to channel " + channel);
-                                event.setMessage(ShortMessage.PROGRAM_CHANGE, channel, handyPhoneBankToMidi(valueField, channel), 0);
+                                Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding program change value 0x" + String.format("%02X", valueField) + "(" + valueField + ") to channel " + channel);
+                                event.setMessage(ShortMessage.PROGRAM_CHANGE, channel, valueField, 0);
                                 midiEvent = new MidiEvent(event, totalDuration);
                                 track.add(midiEvent);
                                 break;
 
                             case 0x1: // Bank Select
-                                int bankType = (valueField & 0x80) >> 7; // Check if it's normal or drum bank
-                                int bankNumber = valueField & 0x7F; // Use the lower 7 bits for the bank number
+                                byte bankType = (byte) ((valueField & 0x80) >> 7); // Check if it's normal or drum bank
+                                byte bankNumber = (byte) (valueField & 0x7F); // Use the lower 7 bits for the bank number
                     
                                 // Log the bank type and number
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding bank change value 0x" + String.format("%02X", bankNumber) + "(" + bankNumber + ") of Type: (" + (bankType == 0 ? "Normal" : "Drum") + ") to channel " + channel);
@@ -881,7 +930,7 @@ public final class SMAFDecoder
                                 if (bankType == 1) 
                                 {
                                     Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Channel Drum Bank requested. Altering MIDI mapping for channel " + channel + " until a non-drum bank is requested");
-                                    channelData[channel].usingDrumBank = true;
+                                    channelData[channel].usingDrumBank = true; // TODO: Something with this, right now it's basically ignored
                                 }
                                 else 
                                 {
@@ -892,16 +941,16 @@ public final class SMAFDecoder
                             case 0x2: // Octave Shift (NOTE: MIDI doesn't have anything analogous to this, we have to implement it manually by shifting all notes in the channel after this event)                                
                                 byte octaveShift = 0;
 
-                                if (valueField >= 0x00 && valueField <= 0x04) { octaveShift = valueField; } /* Octave shifts 0 to +4 */
-                                else if (valueField >= 0x81 && valueField <= 0x84) 
+                                if (valueField >= (byte) 0x00 && valueField <= (byte) 0x04) { octaveShift = valueField; } /* Octave shifts 0 to +4 */
+                                else if (valueField >= (byte) 0x81 && valueField <= (byte) 0x84) 
                                 {
-                                    octaveShift = (byte) (valueField - 0x80); // Map to -1 to -4
+                                    octaveShift = (byte) (valueField - (byte) 0x80); // Map to -1 to -4
                                     octaveShift = (byte) -octaveShift; // Convert to negative value
                                 } 
                                 else 
                                 {
                                     Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Reserved octave shift value: 0x" + String.format("%02X", valueField));
-                                    return;
+                                    continue;
                                 }
                                 
                                 channelData[channel].octaveShift = octaveShift;
@@ -916,8 +965,12 @@ public final class SMAFDecoder
                                 break;
 
                             case 0x4: // Pitch Bend (Long Type)
+                                short pitchBend = (short) ((valueField - 128) * 64);
+                                byte pitchBendLSB = (byte) (pitchBend & 0x7F); 
+                                byte pitchBendMSB = (byte) ((pitchBend >> 7) & 0x7F); 
+
                                 Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding pitch bend value 0x" + String.format("%02X", valueField) + "(" + valueField + ") to channel " + channel);
-                                event.setMessage(ShortMessage.PITCH_BEND, channel, valueField);
+                                event.setMessage(ShortMessage.PITCH_BEND, channel, pitchBendLSB, pitchBendMSB);
                                 midiEvent = new MidiEvent(event, totalDuration);
                                 track.add(midiEvent);
                                 break;
@@ -954,24 +1007,28 @@ public final class SMAFDecoder
                         // NOTE: Short values for mod, pitch, expr always go from 0x1 to 0xE, so this is why we access value-1 in the constant arrays
                         if (b5 == 1 && b4 == 0) // Modulation (Short Type)
                         {
-                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding modulation value 0x" + String.format("%02X", shortModValues[shortEventValue-1]) + "(" + shortModValues[shortEventValue-1] + ") to channel " + channel);
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 1, shortModValues[shortEventValue-1]);
+                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding modulation value 0x" + String.format("%02X", shortModValues[shortEventValue]) + "(" + shortModValues[shortEventValue] + ") to channel " + channel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 1, shortModValues[shortEventValue]);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                         }
 
                         if (b5 == 0 && b4 == 1) // Pitch Bend (Short Type)
                         {
-                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding pitch bend value 0x" + String.format("%02X", shortPitchBendValues[shortEventValue-1]) + "(" + shortPitchBendValues[shortEventValue-1] + ") to channel " + channel);
-                            event.setMessage(ShortMessage.PITCH_BEND, channel, shortPitchBendValues[shortEventValue-1]);
+                            short pitchBend = (short) ((shortPitchBendValues[shortEventValue] - 64) * 128);
+                            int pitchBendLSB = (byte) (pitchBend & 0x7F); 
+                            int pitchBendMSB = (byte) ((pitchBend >> 7) & 0x7F); 
+
+                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding pitch bend value 0x" + String.format("%02X", shortPitchBendValues[shortEventValue]) + "(" + shortPitchBendValues[shortEventValue] + ") to channel " + channel);
+                            event.setMessage(ShortMessage.PITCH_BEND, channel, pitchBendLSB, pitchBendMSB);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                         }
 
                         if (b5 == 0 && b4 == 0) // Expression (Short Type)
                         {
-                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding expression value 0x" + String.format("%02X", shortExpressionValues[shortEventValue-1]) + "(" + shortExpressionValues[shortEventValue-1] + ") to channel " + channel);
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 11, shortExpressionValues[shortEventValue-1]);
+                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding expression value 0x" + String.format("%02X", shortExpressionValues[shortEventValue]) + "(" + shortExpressionValues[shortEventValue] + ") to channel " + channel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 11, shortExpressionValues[shortEventValue]);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                         }
@@ -979,10 +1036,10 @@ public final class SMAFDecoder
                 }
                 else if (eventType == (byte) 0xFF) // 0xFF denotes this event is a sysEx message or NOP (No Operation)
                 {
-                    if(data[offset+1] == 0x00) 
+                    byte SysEx = (byte) (data[offset++] & 0xFF);
+                    if(SysEx == (byte) 0x00) 
                     {
                         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "NOP event received");
-                        offset++;
                     }
                     else 
                     {
@@ -1007,8 +1064,8 @@ public final class SMAFDecoder
                     // Read gate time
                     firstGateByte = (byte) (data[offset++] & 0xFF); // First byte for gate time
             
-                    // gateTime works pretty much like duration in how its read
-                    if ((firstGateByte & 0x80) == 0) // Single-byte gate time
+                    // gateTime works pretty much like duration in how it's read
+                    if ((firstGateByte & (byte) 0x80) == 0) // Single-byte gate time
                     { 
                         gateTime = firstGateByte;
                     } 
@@ -1052,13 +1109,13 @@ public final class SMAFDecoder
                     track.add(midiEvent);
                 }
             }
-            else // Mobile Standard formats (with or without compression, as this method will receive uncompressed data either way)
+            else if (formatType == (byte) 0x01 || formatType == (byte) 0x02) // Mobile Standard formats (with or without compression, as this method will receive uncompressed data either way)
             {
                 // In Mobile Standard, both duration and gateTime use the variable length notation, up to 4 bytes
                 // TODO: Values longer than 2 and 3 bytes are untested
                 firstDurByte = (byte) (data[offset++] & 0xFF);
-                if ((firstDurByte & 0x80) == 0) { duration = firstDurByte & 0x7F; } // Single-byte gateTime
-                else // Multi-byte gateTime
+                if ((firstDurByte & (byte) 0x80) == 0) { duration = firstDurByte & 0x7F; } // Single-byte duration
+                else // Multi-byte duration
                 {
                     duration = (firstDurByte & 0x3F) << 7;
 
@@ -1068,7 +1125,7 @@ public final class SMAFDecoder
                         duration |= (nextDurByte & 0x7F) << (7 * (i - 1));
 
                         // Break if the MSB of the next byte is 0 (indicating the end)
-                        if ((nextDurByte & 0x80) == 0) { break; }
+                        if ((nextDurByte & (byte) 0x80) == 0) { break; }
                     }
                 }
 
@@ -1117,7 +1174,7 @@ public final class SMAFDecoder
                             noteNumber = (byte) (data[offset++] & 0x7F); // Note Number
                             // Read gate time
                             firstGateByte = (byte) (data[offset++] & 0xFF);
-                            if ((firstGateByte & 0x80) == 0) { gateTime = firstGateByte & 0x7F; } // Single-byte gateTime
+                            if ((firstGateByte & (byte) 0x80) == 0) { gateTime = firstGateByte & 0x7F; } // Single-byte gateTime
                             else // Multi-byte gateTime
                             {
                                 gateTime = (firstGateByte & 0x3F) << 7;
@@ -1128,7 +1185,7 @@ public final class SMAFDecoder
                                     gateTime |= (nextGateByte & 0x7F) << (7 * (i - 1));
 
                                     // Break if the MSB of the next byte is 0 (indicating the end)
-                                    if ((nextGateByte & 0x80) == 0) { break; }
+                                    if ((nextGateByte & (byte) 0x80) == 0) { break; }
                                 }
                             }
                     
@@ -1160,7 +1217,7 @@ public final class SMAFDecoder
                             channelData[channel].velocity = (byte) (data[offset++] & 0x7F); // Key Velocity
                             // Read gate time
                             firstGateByte = (byte) (data[offset++] & 0xFF);
-                            if ((firstGateByte & 0x80) == 0) { gateTime = firstGateByte & 0x7F; } // Single-byte gateTime
+                            if ((firstGateByte & (byte) 0x80) == 0) { gateTime = firstGateByte & 0x7F; } // Single-byte gateTime
                             else // Multi-byte gateTime
                             {
                                 gateTime = (firstGateByte & 0x3F) << 7;
@@ -1171,7 +1228,7 @@ public final class SMAFDecoder
                                     gateTime |= (nextGateByte & 0x7F) << (7 * (i - 1));
 
                                     // Break if the MSB of the next byte is 0 (indicating the end)
-                                    if ((nextGateByte & 0x80) == 0) { break; }
+                                    if ((nextGateByte & (byte) 0x80) == 0) { break; }
                                 }
                             }
                     
@@ -1230,8 +1287,8 @@ public final class SMAFDecoder
             
                         case 0xE0: // Pitch Bend (0xE0 to 0xEF)
                             channel = (byte) (status & 0x0F);
-                            int pitchBendLSB = data[offset++] & 0x7F; // Pitch Bend Change LSB
-                            int pitchBendMSB = data[offset++] & 0x7F; // Pitch Bend Change MSB
+                            byte pitchBendLSB = (byte) (data[offset++] & 0x7F); // Pitch Bend Change LSB
+                            byte pitchBendMSB = (byte) (data[offset++] & 0x7F); // Pitch Bend Change MSB
                             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding pitch bend MSB " + pitchBendMSB + " LSB " + pitchBendLSB + " to channel " + channel);
                             
                             ShortMessage pitchBend = new ShortMessage();
@@ -1245,6 +1302,258 @@ public final class SMAFDecoder
                             Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Unknown status byte: " + status);
                             break;
                     }
+                }
+            }
+            else if(formatType == (byte) 0x04) // This one is weird, it works similar to DoJa's iMelody in parts, Mobile Standard in some, and Handy Phone in others...
+            {
+                /*
+                 * Based on: 
+                 * https://github.com/umjammer/vavi-sound/blob/master/src/main/java/vavi/sound/smaf/chunk/SequenceDataChunk.java 
+                 * https://github.com/but80/smaf825/blob/v1/smaf/event/event.go
+                 */
+
+                // Set default velocity to 127, the default of 64 makes all conversions of this format much quieter than other SMAF
+                for(int i = 0; i < channelData.length; i++) { channelData[i].velocity = 127; }
+
+                // SEQU chunk format uses the same notation of Handy Phone format for duration and gateTime
+                firstDurByte = (byte) (data[offset++] & 0xFF);
+                if ((firstDurByte & (byte) 0x80) == 0) // Single-byte duration
+                {
+                    duration = firstDurByte;
+                } 
+                else // Dual-byte duration
+                {
+                    byte secondDurByte = (byte) (data[offset++] & 0xFF);
+                    duration = ((firstDurByte & 0x3F) << 7) | (secondDurByte & 0x7F);
+                    duration += 128; // Add 128 to Duration as per the SMAF documentation
+                }
+
+                totalDuration += (duration * timeBasetoMs(TimeBase_D)); // Update total duration
+                byte status = (byte) (data[offset++] & 0xFF); // Read status byte
+
+                if(status == 0x00) // Control event
+                {
+                    ShortMessage event = new ShortMessage();
+
+                    byte controlEvent = (byte) (data[offset++] & 0xFF);
+                    channel = (byte) ((controlEvent >> 6) & 0x03);
+                    byte eventType = (byte) (controlEvent & 0x3f);
+
+                    if(eventType == (byte) 0x00) // Fine tune event (fine pitch bend)
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+                        Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Fine Tune event not implemented. Value:" + String.format("%02X", eventValue));
+                    }
+                    else if (eventType >= (byte) 0x01 && eventType <= (byte) 0x0E) // Short Expression event
+                    {
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding expression value 0x" + String.format("%02X", shortExpressionValues[eventType]) + "(" + shortExpressionValues[eventType] + ") to channel " + channel);
+                        event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 11, shortExpressionValues[eventType]);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    else if (eventType >= (byte) 0x11 && eventType <= (byte) 0x1E) // Short Pitch Bend event
+                    {
+                        short pitchBend = (short) ((shortPitchBendValues[eventType-0x10] - 64) * 128);
+                        byte pitchBendLSB = (byte) (pitchBend & 0x7F); 
+                        byte pitchBendMSB = (byte) ((pitchBend >> 7) & 0x7F); 
+
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding pitch bend value 0x" + String.format("%02X", shortPitchBendValues[eventType-0x10]) + "(" + shortPitchBendValues[eventType-0x10] + ") to channel " + channel);
+                        
+                        event.setMessage(ShortMessage.PITCH_BEND, channel, pitchBendLSB, pitchBendMSB);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    else if (eventType >= (byte) 0x21 && eventType <= (byte) 0x2E) // Short Modulation event
+                    {
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "(short) Adding modulation value 0x" + String.format("%02X", shortModValues[eventType-0x20]) + "(" + shortModValues[eventType-0x20] + ") to channel " + channel);
+                        event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 1, shortModValues[eventType-0x20]);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    else if (eventType == (byte) 0x30) // Program Change event
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0x7F);
+                        
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding program change number " + eventValue + " to channel " + channel);
+                        event.setMessage(ShortMessage.PROGRAM_CHANGE, channel, eventValue, 0);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    else if (eventType == (byte) 0x31) // Bank Select event
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+                        int bankType = (eventValue & 0x80) >> 7; // Check if it's normal or drum bank
+                        int bankNumber = eventValue & 0x7F; // Use the lower 7 bits for the bank number
+            
+                        // Log the bank type and number
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding bank change value 0x" + String.format("%02X", bankNumber) + "(" + bankNumber + ") of Type: (" + (bankType == 0 ? "Normal" : "Drum") + ") to channel " + channel);
+                        event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 0, bankNumber);
+                        // Send the bank select message
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+            
+                        // If it's a drum bank, we'll need to change to a drum instrument by altering the midi instrument mapping
+                        if (bankType == 1) 
+                        {
+                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Channel Drum Bank requested. Altering MIDI mapping for channel " + channel + " until a non-drum bank is requested");
+                            channelData[channel].usingDrumBank = true;
+                        }
+                        else 
+                        {
+                            channelData[channel].usingDrumBank = false;
+                        }
+                    }
+                    else if (eventType == (byte) 0x32) // Octave Shift event
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+                        byte octaveShift = 0;
+
+                        if (eventValue >= (byte) 0x00 && eventValue <= (byte) 0x04) { octaveShift = eventValue; } /* Octave shifts 0 to +4 */
+                        else if (eventValue >= (byte) 0x81 && eventValue <= (byte) 0x84) 
+                        {
+                            octaveShift = (byte) (eventValue - (byte) 0x80); // Map to -1 to -4
+                            octaveShift = (byte) -octaveShift; // Convert to negative value
+                        } 
+                        else 
+                        {
+                            Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Reserved octave shift value: 0x" + String.format("%02X", eventValue));
+                            continue;
+                        }
+                        
+                        channelData[channel].octaveShift = octaveShift;
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding Octave Shift value 0x" + String.format("%02X", eventValue) + "(" + channelData[channel].octaveShift + " octave) to channel " + channel);
+                    }
+                    else if (eventType == (byte) 0x33) // Modulation event
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+                        
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding modulation value 0x" + String.format("%02X", eventValue) + "(" + eventValue + ") to channel " + channel);
+                        event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 1, eventValue);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    else if (eventType == (byte) 0x34) // Pitch Bend event
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+                        short pitchBend = (short) ((eventValue - 128) * 64);
+
+                        byte pitchBendLSB = (byte) (pitchBend & 0x7F); 
+                        byte pitchBendMSB = (byte) ((pitchBend >> 7) & 0x7F); 
+                        
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding pitch bend value 0x" + String.format("%02X", eventValue) + "(" + eventValue + ") to channel " + channel);
+                        event.setMessage(ShortMessage.PITCH_BEND, channel, pitchBendLSB, pitchBendMSB);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    // TODO: Maybe something's missing? This gap doesn't seem normal
+                    else if (eventType == (byte) 0x36) // Expression event
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding expression value 0x" + String.format("%02X", eventValue) + "(" + eventValue + ") to channel " + channel);
+                        event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 11, eventValue);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    else if (eventType == (byte) 0x37) // Volume event
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding volume value 0x" + String.format("%02X", eventValue) + "(" + eventValue + ") to channel " + channel);
+                        event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 7, eventValue);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    // TODO: Same as above, and this gap is even bigger
+                    else if (eventType == (byte) 0x3A) // Panpot event
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding panning value 0x" + String.format("%02X", eventValue) + "(" + eventValue + ") to channel " + channel);
+                        event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 10, eventValue);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    else if (eventType == (byte) 0x3B) // TODO: Expression event again?
+                    {
+                        byte eventValue = (byte) (data[offset++] & 0xFF);
+
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding expression value 0x" + String.format("%02X", eventValue) + "(" + eventValue + ") to channel " + channel);
+                        event.setMessage(ShortMessage.CONTROL_CHANGE, channel, 11, eventValue);
+                        midiEvent = new MidiEvent(event, totalDuration);
+                        track.add(midiEvent);
+                    }
+                    else 
+                    {
+                        Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "unknown control event received:" + String.format("%02X", eventType));
+                        offset++; // Assume it's a long type
+                    }
+                }
+                else if(status == (byte) 0xFF) // SysEx Message (works similarly to the Handy Phone format)
+                {
+                    byte SysEx = (byte) (data[offset++] & 0xFF);
+
+                    if(SysEx == (byte) 0x00) 
+                    {
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "NOP event received");
+                    }
+                    else if(SysEx == (byte) 0xF0)
+                    {
+                        byte size = (byte) (data[offset++] & 0xFF);
+                        List<Byte> exclusiveMessage = new ArrayList<Byte>(); // Seems to relate to SysEx messages, maybe we don't need these?
+                        while(data[offset] != (byte) 0xF7 && size > 1) // 0xF7 as the value marks the end of the SysEx message
+                        {
+                            exclusiveMessage.add(data[offset++]);
+                            size--;
+                        }
+                        offset++; // Move out of offset containing 0xF7 or the last byte according to size (in case there's no 0xF7), as the next one is the next status byte
+                        
+                        Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "SysEx event received");
+                        // TODO: Maybe use this SysEx for something?
+                    }
+                    else 
+                    {
+                        Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Unknown event received:" + String.format("%02X", data[offset+1]));
+                    }
+                }
+                else // Note event
+                {
+                    channel = (byte) ((status >> 6) & 0x03);
+                    byte noteValue = (byte) ((status & 15) + ((status >> 4 & 3) + 3) * 12);
+
+                    firstGateByte = (byte) (data[offset++] & 0xFF);
+                    // gateTime works pretty much like duration in how it's read
+                    if ((firstGateByte & (byte) 0x80) == 0) // Single-byte gate time
+                    { 
+                        gateTime = firstGateByte;
+                    } 
+                    else // Dual-byte gate time
+                    { 
+                        byte secondGateByte = (byte) (data[offset++] & 0xFF);
+                        gateTime = ((firstGateByte & 0x3F) << 7) | (secondGateByte & 0x7F);
+                        gateTime += 128; // Add 128 to gate time as per the SMAF documentation
+                    }
+
+                    // As per the documentation, gateTime cannot be zero, this indicates either a corrupted file or a parse error
+                    if (gateTime <= 0) 
+                    {
+                        Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "note gateTime value cannot be zero. ");
+                        return;
+                    }
+                    
+                    Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Adding note value " + noteValue + " to channel " + channel);
+                    pcmDataPositions.put(totalDuration+gateTime, (int) noteValue);
+                    pcmDataVelocities.put(totalDuration+gateTime, (int) channelData[channel].velocity);
+                    
+                    ShortMessage noteOn = new ShortMessage();
+                    noteOn.setMessage(ShortMessage.NOTE_ON, channel, noteValue, channelData[channel].velocity); // This will always use the default velocity
+                    midiEvent = new MidiEvent(noteOn, totalDuration);
+                    track.add(midiEvent);
+
+                    ShortMessage noteOff = new ShortMessage();
+                    noteOff.setMessage(ShortMessage.NOTE_OFF, channel, noteValue, 0);
+                    midiEvent = new MidiEvent(noteOff, totalDuration+(gateTime * timeBasetoMs(TimeBase_G)));
+                    track.add(midiEvent);
                 }
             }
         }
@@ -1285,78 +1594,6 @@ public final class SMAFDecoder
             case 0x12: return 40;  // 40 ms
             case 0x13: return 50;  // 50 ms
             default: return 4;     // Default to 4 ms
-        }
-    }
-
-    // Handy Phone format has a separate set of instruments for the drum bank (any time the bank change goes over 127), we cannot convert instruments to MIDI 1:1 in those cases
-    private static byte handyPhoneBankToMidi(byte handyInst, byte channel)
-    {
-        if(!channelData[channel].usingDrumBank) { return handyInst; }
-        
-        switch(handyInst) 
-        {
-            case 24: return 108; // SeqClick H
-            case 25: return 106; // Brush Tap
-            case 26: return 107; // Brush Swirl L
-            case 27: return 109; // Brush Slap
-            case 28: return 110; // Brush Swirl H
-            case 29: return 60;  // Snare Roll
-            case 30: return 65;  // Castanet
-            case 31: return 61;  // Snare L
-            case 32: return 36;  // SeqClick H (Acoustic Bass Drum)
-            case 33: return 34;  // Brush Tap (Fingered Bass)
-            case 34: return 35;  // Bass Drum L
-            case 35: return 36;  // Bass Drum M
-            case 36: return 37;  // Closed Rim Shot
-            case 37: return 38;  // Snare M
-            case 38: return 39;  // Hand Clap
-            case 39: return 41;  // Floor Tom L
-            case 40: return 40;  // Snare H
-            case 41: return 43;  // Floor Tom H
-            case 42: return 42;  // Hi-Hat Closed
-            case 43: return 45;  // Floor Tom M
-            case 44: return 46;  // Hi-Hat Pedal
-            case 45: return 47;  // Low Tom
-            case 46: return 48;  // Hi-Hat Open
-            case 47: return 49;  // Mid Tom L
-            case 48: return 50;  // Mid Tom H
-            case 49: return 49;  // Crash Cymbal 1
-            case 50: return 50;  // High Tom
-            case 51: return 51;  // Ride Cymbal 1
-            case 52: return 52;  // Chinese Cymbal
-            case 53: return 53;  // Ride Cymbal Cup
-            case 54: return 54;  // Tambourine
-            case 55: return 57;  // Splash Cymbal
-            case 56: return 58;  // Cowbell
-            case 57: return 59;  // Crash Cymbal 2
-            case 58: return 60;  // Vibraslap
-            case 59: return 61;  // Bongo H
-            case 60: return 62;  // Bongo L
-            case 61: return 63;  // Conga H
-            case 62: return 64;  // Conga H Open
-            case 63: return 65;  // Conga L
-            case 64: return 66;  // Timbale H
-            case 65: return 67;  // Timbale L
-            case 66: return 68;  // Agogo H
-            case 67: return 69;  // Agogo L
-            case 68: return 70;  // Cabasa
-            case 69: return 71;  // Maracas
-            case 70: return 72;  // Tambourine
-            case 71: return 73;  // Triangle
-            case 72: return 74;  // Shaker
-            case 73: return 75;  // Jingle Bell
-            case 74: return 76;  // Bottle Wood Block H
-            case 75: return 77;  // Wood Block L
-            case 76: return 78;  // Cuica Mute
-            case 77: return 79;  // Cuica Open
-            case 78: return 80;  // Square Lead
-            case 79: return 81;  // Triangle Mute
-            case 80: return 82;  // Saw Lead
-            case 81: return 83;  // Triangle Open
-            case 82: return 84;  // Shaker
-            case 83: return 85;  // Jingle Bell
-            case 84: return 86;  // Belltree
-            default: return 0;   // Default case (we should never hit this)
         }
     }
 

@@ -50,8 +50,6 @@ public abstract class Displayable
 
 	public Displayable()
 	{
-		// TODO: see if it's a breaking change and add a compat flag if it is?
-
 		width = MobilePlatform.lcdWidth;
 		height = MobilePlatform.lcdHeight;
 		platformImage = MobilePlatform.getLcdBackbuffer();

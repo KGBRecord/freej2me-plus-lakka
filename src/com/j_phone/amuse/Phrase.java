@@ -16,53 +16,23 @@
 */
 package com.j_phone.amuse;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import javax.microedition.media.Manager;
-import javax.microedition.media.MediaException;
-import javax.microedition.media.Player;
-
-import org.recompile.mobile.Mobile;
-
-// Those Phrase* classes look a lot like vodafone v10's Sound* classes... probably work the same way too.
-public class Phrase 
+public class Phrase extends com.jblend.media.smaf.phrase.Phrase
 {
-    private Player player;
-    byte[] data;
-	String dataLoc;
+    private com.jblend.media.smaf.phrase.Phrase phrase;
 
 	public Phrase(byte[] data) throws IOException 
     {
-		if (data == null) { throw new NullPointerException("sound data cannot be null."); }
-
-        this.data = data;
-        // Vodafone's Sound API doesn't stipulate any specific formats, neat.
-        try 
-        {
-            player = Manager.createPlayer(new ByteArrayInputStream(data), "audio/vodafone");
-            player.realize();
-        } 
-        catch (MediaException e) { Mobile.log(Mobile.LOG_ERROR, Phrase.class.getPackage().getName() + "." + Phrase.class.getSimpleName() + ": " + "Failed to create player: " + e.getMessage()); }
+        super(data);
+        phrase = (com.jblend.media.smaf.phrase.Phrase) this;
 	}
 
 	public Phrase(String data) throws IOException 
     {
-		if (data == null) { throw new NullPointerException("sound data cannot be null."); }
-
-        this.dataLoc = data;
-        // Vodafone's Sound API doesn't stipulate any specific formats, neat.
-        try 
-        {
-            player = Manager.createPlayer(Mobile.getMIDletResourceAsStream(dataLoc), "audio/vodafone");
-            player.realize();
-        } 
-        catch (MediaException e) { Mobile.log(Mobile.LOG_ERROR, Phrase.class.getPackage().getName() + "." + Phrase.class.getSimpleName() + ": " + "Failed to create player: " + e.getMessage()); }
+        super(data);
+		phrase = (com.jblend.media.smaf.phrase.Phrase) this;
 	}
 
-    int getSize() { return data.length; }
-
-    int getUseTracks() { return 1; /* TODO: Return how many tracks the player's MIDI sequence is using */}
-
-	Player getPlayer() { return player; }
+    public com.jblend.media.smaf.phrase.Phrase getPhraseImpl() { return phrase; }
 }

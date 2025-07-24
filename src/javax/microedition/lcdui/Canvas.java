@@ -71,10 +71,10 @@ public abstract class Canvas extends Displayable
 	private int barHeight;
 	private boolean suppressKeyEvents = false; // For GameCanvas
 	private boolean fullscreen = false;
-	private boolean servicing = false;
+	protected boolean servicing = false;
 	private boolean firstDrawn = false;
 
-	private AtomicBoolean pendingRepaint = new AtomicBoolean(false);
+	protected AtomicBoolean pendingRepaint = new AtomicBoolean(false);
 
 	protected Canvas()
 	{

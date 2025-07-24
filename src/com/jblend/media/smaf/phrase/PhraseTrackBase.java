@@ -16,7 +16,18 @@
 */
 package com.jblend.media.smaf.phrase;
 
-abstract class PhraseTrackBase 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.microedition.media.Manager;
+import javax.microedition.media.Player;
+
+import org.recompile.mobile.Mobile;
+import org.recompile.mobile.PlatformPlayer;
+
+public abstract class PhraseTrackBase 
 {
 	public static final int NO_DATA = 1;
 	public static final int READY = 2;
@@ -24,38 +35,206 @@ abstract class PhraseTrackBase
 	public static final int PAUSED = 5;
 	public static final int DEFAULT_VOLUME = 100;
 	public static final int DEFAULT_PANPOT = 64;
-	private int state;
-	private boolean muted;
+	private static final int MAX_VOLUME = 127;
 
-	PhraseTrackBase(int id) { state = READY; }
+	private int ID;
+	private boolean paused = false;
+	protected Phrase phrase;
+	protected AudioPhrase audioPhrase;
+	protected Player player;
+	protected PhraseTrackListener listener;
 
-	public void removePhrase() { }
+	protected PhraseTrack phraseSyncMaster;
+	protected com.j_phone.amuse.PhraseTrack jPhoneSyncMaster;
+	protected com.vodafone.v10.sound.SoundTrack vodafoneSyncMaster;
 
-	public void play() { state = PLAYING; }
+	protected List<PhraseTrack> slavePhrases = new ArrayList<PhraseTrack>();
+	protected List<com.j_phone.amuse.PhraseTrack> slaveJPhonePhrases = new ArrayList<com.j_phone.amuse.PhraseTrack>();
+	protected List<com.vodafone.v10.sound.SoundTrack> slaveVodafonePhrases = new ArrayList<com.vodafone.v10.sound.SoundTrack>();
 
-	public void play(int loop) { state = PLAYING; }
+	public PhraseTrackBase(int id) { ID = id; }
 
-	public void stop() { state = PAUSED; }
+	public void play() 
+	{ 
+		play(1);
+		paused = false; 
+	}
 
-	public void pause() { state = PAUSED; }
+	public void play(int loop) 
+	{ 
+		if(player == null) { throw new RuntimeException("Cannot play: null player"); }
+		if(loop == 0) { loop = -1; } // Loop as 0 means infinite looping here
+		player.setLoopCount(loop);
+		player.setMediaTime(0); // Play starts from the beginning of the track
+		((PlatformPlayer)player).setPhraseListener(listener);
+		player.start();
 
-	public void resume() { state = PLAYING; }
+		// Play any currently set slave phrases
+		for(int i = 0; i < slavePhrases.size(); i++)         { slavePhrases.get(i).play(loop); }
+		for(int i = 0; i < slaveJPhonePhrases.size(); i++)   { slaveJPhonePhrases.get(i).play(loop); }
+		for(int i = 0; i < slaveVodafonePhrases.size(); i++) { slaveVodafonePhrases.get(i).play(loop); }
+		paused = false; 
+	}
 
-	public int getState() { return state; }
+	public void stop() 
+	{ 
+		if(player == null) { throw new RuntimeException("Cannot stop: null player"); }
+		player.stop();
+		player.setMediaTime(0);
+		paused = false; 
 
-	public void setVolume(int value) { }
+		// Stop any currently set slave phrases
+		for(int i = 0; i < slavePhrases.size(); i++)         { slavePhrases.get(i).stop(); }
+		for(int i = 0; i < slaveJPhonePhrases.size(); i++)   { slaveJPhonePhrases.get(i).stop(); }
+		for(int i = 0; i < slaveVodafonePhrases.size(); i++) { slaveVodafonePhrases.get(i).stop(); }
+	}
 
-	public int getVolume() { return 0; }
+	public void pause() 
+	{
+		if(player == null) { throw new RuntimeException("Cannot pause: null player"); }
+		player.stop();
+		paused = true; 
 
-	public void setPanpot(int value) { }
+		// Pause any currently set slave phrases
+		for(int i = 0; i < slavePhrases.size(); i++)         { slavePhrases.get(i).pause(); }
+		for(int i = 0; i < slaveJPhonePhrases.size(); i++)   { slaveJPhonePhrases.get(i).pause(); }
+		for(int i = 0; i < slaveVodafonePhrases.size(); i++) { slaveVodafonePhrases.get(i).pause(); }
+	}
 
-	public int getPanpot() { return 0; }
+	public void resume() 
+	{ 
+		if(player == null) { throw new RuntimeException("Cannot resume: null player"); }
+		player.start();
+		paused = false;
 
-	public void mute(boolean mute) { muted = mute; }
+		// Resume any currently set slave phrases
+		for(int i = 0; i < slavePhrases.size(); i++)         { slavePhrases.get(i).resume(); }
+		for(int i = 0; i < slaveJPhonePhrases.size(); i++)   { slaveJPhonePhrases.get(i).resume(); }
+		for(int i = 0; i < slaveVodafonePhrases.size(); i++) { slaveVodafonePhrases.get(i).resume(); }
+	}
 
-	public boolean isMute() { return muted; }
+	public int getState() 
+	{ 
+		if(paused) { return PAUSED; }
+		else if(player == null || player.getState() == Player.CLOSED) { return NO_DATA; }
+		else if(player.getState() <= Player.PREFETCHED) { return READY; }
+		else { return PLAYING; }
+	}
 
-	public int getID() { return 0; }
+	public void setVolume(int value) 
+	{ 
+		if(value < 0 || value > MAX_VOLUME) { throw new IllegalArgumentException("Value is out of range"); }
+		
+		if(player != null) { ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setLevel(value); }
+	}
 
-	public void setEventListener(PhraseTrackListener l) { }
+	public int getVolume() 
+	{ 
+		return player == null ? DEFAULT_VOLUME : ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).getLevel();
+	}
+
+	public void setPanpot(int value) 
+	{ 
+		if(value < 0 || value > 127) { throw new IllegalArgumentException("Value is out of range"); }
+
+		if(player != null) { ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setPanpot(value); }
+	}
+
+	public int getPanpot() 
+	{ 
+		return player == null ? 64 : ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).getPanpot(); 
+	}
+
+	public void mute(boolean mute) 
+	{ 
+		if(player != null) { ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setMute(mute); }
+	}
+
+	public boolean isMute() 
+	{ 
+		return player == null ? false : ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).isMuted();
+	}
+
+	public int getID() { return ID; }
+
+	public void setEventListener(PhraseTrackListener l) { listener = l; }
+
+	public void setPhrase(Phrase p)
+	{ 
+		if(getState() == PLAYING) { throw new RuntimeException("Cannot set Phrase when the player is running"); }
+		if(p == null) { throw new NullPointerException("Cannot set a null phrase"); }
+		
+		try 
+		{
+			phrase = p;
+			player = Manager.createPlayer(new ByteArrayInputStream(phrase.getData()), "");
+			player.realize();
+		}
+		catch (Exception e) 
+		{ 
+			Mobile.log(Mobile.LOG_WARNING, PhraseTrackBase.class.getPackage().getName() + "." + PhraseTrackBase.class.getSimpleName() + ": " + "Failed to create Player from phrase data :" + e.getMessage()); 
+			throw new RuntimeException("Failed to create Player from phrase data");
+		}
+	}
+
+	public void setAudioPhrase(AudioPhrase p)
+	{ 
+		if(getState() == PLAYING) { throw new RuntimeException("Cannot set AudioPhrase when the player is running"); }
+		if(p == null) { throw new NullPointerException("Cannot set a null AudioPhrase"); }
+		
+		try 
+		{
+			audioPhrase = p;
+			player = Manager.createPlayer(new ByteArrayInputStream(audioPhrase.getData()), "");
+			player.realize();
+		}
+		catch (Exception e) 
+		{ 
+			Mobile.log(Mobile.LOG_WARNING, PhraseTrackBase.class.getPackage().getName() + "." + PhraseTrackBase.class.getSimpleName() + ": " + "Failed to create Player from phrase data :" + e.getMessage()); 
+			throw new RuntimeException("Failed to create Player from phrase data");
+		}
+	}
+
+	// The player can only contain a Phrase or an AudioPhrase at any given time
+	public void removePhrase() 
+	{ 
+		if(getState() == PLAYING) { throw new RuntimeException("Cannot remove Phrase when the player is running"); }
+		if(player != null) { player.close(); }
+		this.phrase = null; 
+	}
+
+	public void removeAudioPhrase() 
+	{ 
+		if(getState() == PLAYING) { throw new RuntimeException("Cannot remove AudioPhrase when the player is running"); }
+		if(player != null) { player.close(); }
+		this.audioPhrase = null;
+	}
+
+
+	public void setPhraseSyncMaster(PhraseTrack master) 
+	{ 
+		if(getState() == PLAYING || phraseSyncMaster != null || !slavePhrases.isEmpty()) { return; }
+		phraseSyncMaster = master; 
+	}
+
+	public void setJPhoneSyncMaster(com.j_phone.amuse.PhraseTrack master) 
+	{ 
+		if(getState() == PLAYING || jPhoneSyncMaster != null || !slaveJPhonePhrases.isEmpty()) { return; }
+		jPhoneSyncMaster = master; 
+	}
+
+	public void setVodafoneSyncMaster(com.vodafone.v10.sound.SoundTrack master) 
+	{ 
+		if(getState() == PLAYING || vodafoneSyncMaster != null || !slaveVodafonePhrases.isEmpty()) { return; }
+		vodafoneSyncMaster = master; 
+	}
+
+	public PhraseTrack getPhraseSyncMaster() { return phraseSyncMaster; }
+
+	public com.j_phone.amuse.PhraseTrack getJPhoneSyncMaster() { return jPhoneSyncMaster; }
+
+	public com.vodafone.v10.sound.SoundTrack getVodafoneSyncMaster() { return vodafoneSyncMaster; }
+
+	// J_Phone's extensions
+	public boolean isPlaying() { return getState() == PLAYING; }
 }

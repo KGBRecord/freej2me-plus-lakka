@@ -16,36 +16,28 @@
 */
 package com.jblend.media.smaf.phrase;
 
-public class PhrasePlayer 
+public class PhrasePlayer extends PhrasePlayerBase
 {
-	private static final PhrasePlayer phrasePlayer = new PhrasePlayer();
+	protected static PhrasePlayer phrasePlayer;
 
-	protected int trackCount;
-	protected int audioTrackCount;
+	public static PhrasePlayer getPlayer() 
+	{ 
+		PhrasePlayerBase.setup();
+		phrasePlayer = new PhrasePlayer();
+		return phrasePlayer; 
+	}
 
-	public static PhrasePlayer getPlayer() { return phrasePlayer; }
+	public void disposePlayer() 
+	{ 
+		super.dispose();
+		phrasePlayer = null;
+	}
 
-	public void disposePlayer() { }
+	public PhraseTrack getTrack() { return super.getPhraseTrack(); }
 
-	public PhraseTrack getTrack() { return new PhraseTrack(trackCount++); }
+	public AudioPhraseTrack getAudioTrack() { return super.getAudioTrack(); }
 
-	public AudioPhraseTrack getAudioTrack() { return new AudioPhraseTrack(audioTrackCount++); }
+	public PhraseTrack getTrack(int track) { return super.getPhraseTrack(); }
 
-	public int getTrackCount() { return 16; }
-
-	public int getAudioTrackCount() { return 16; }
-
-	public PhraseTrack getTrack(int track) { return new PhraseTrack(track); }
-
-	public AudioPhraseTrack getAudioTrack(int track) { return new AudioPhraseTrack(track); }
-
-	public void disposeTrack(PhraseTrack t) { }
-
-	public void disposeAudioTrack(AudioPhraseTrack t) { }
-
-	public void kill() { }
-
-	public void pause() { }
-
-	public void resume() { }
+	public void disposeTrack(PhraseTrack t) { super.disposePhraseTrack(t); }
 }

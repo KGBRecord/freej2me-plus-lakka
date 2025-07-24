@@ -51,8 +51,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected int[] imgPixels;
 	protected PlatformImage baseImage, lastImage;
 
-	protected Color awtColor;
-
 	// Gaussian blur kernel (7x7) for Motorola's FunLights
 	protected static final float[] gaussianKernel = 
 	{
@@ -154,13 +152,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 		setColor(0,0,0);
 		setStrokeStyle(SOLID);
-		gc.setBackground(new Color(0, 0, 0, 0));
 		gc.setFont(font.platformFont.awtFont);
 
-		// Assuming we ever decide to implement configurable Java Graphics rendering options (2D smoothing, AA, etc), they should be applied here
-
-		// Example: Enable font AA (GASP uses font resource information to apply AA when appropriate)
-        //gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	}
 
@@ -193,53 +186,105 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
 
+		if(width <= 0 || height <= 0) { return; }
+
 		gc.clearRect(x, y, width, height);
 	}
 
 	public void copyArea(int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) 
 	{
 		if (width <= 0 || height <= 0) { return; }
-	
+
 		x_dest = AnchorX(x_dest, width, anchor);
 		y_dest = AnchorY(y_dest, height, anchor);
-	
+
 		x_src += getTranslateX();
 		y_src += getTranslateY();
-	
+
 		// Check if the source area is within bounds before doing any draw operations
 		if (x_src < 0 || y_src < 0 || 
 			x_src + width > canvas.getWidth() || 
 			y_src + height > canvas.getHeight()) {
 			throw new IllegalArgumentException("Source area exceeds the bounds of the graphics object.");
 		}
-	
+
 		/* 
-		 * A neat trick here is that we don't need to check for types, as the copied
-		 * subregion will always have the same data type as the original canvas it
-		 * was copied from, be it INT_RGB, INT_ARGB, etc.
-		 */
+			* A neat trick here is that we don't need to check for types, as the copied
+			* subregion will always have the same data type as the original canvas it
+			* was copied from, be it INT_RGB, INT_ARGB, etc.
+			*/
 		// Create a data buffer to hold the copied pixel area
 		final int[] subPixels = new int[width * height];
-	
+
+		int srcIndex, destIndex;
 		for (int j = 0; j < height; j++) 
 		{
 			for (int i = 0; i < width; i++) 
 			{
-				subPixels[j * width + i] = canvasData[(y_src + j) * canvas.getWidth() + (x_src + i)];
+				srcIndex = (y_src + j) * canvas.getWidth() + x_src;
+				System.arraycopy(canvasData, srcIndex, subPixels, j * width, width);
 			}
 		}
-	
+
+		int destStartY = Math.max(y_dest, 0);
+		int destEndY = Math.min(y_dest + height, canvas.getHeight());
+		int srcStartY = Math.max(0, -y_dest);
+		
+		for (int j = destStartY; j < destEndY; j++) 
+		{
+			destIndex = j * canvas.getWidth() + x_dest;
+			srcIndex = (srcStartY + (j - destStartY)) * width;
+
+			if (x_dest >= 0 && x_dest + width <= canvas.getWidth()) 
+			{
+				System.arraycopy(subPixels, srcIndex, canvasData, destIndex, width);
+			}
+		}
+	}
+
+	// Basically same as copyArea, but copies from one image to another, instead of operating on the same image
+	public void copyToFrameBuffer(Image frameBuffer, int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) 
+	{
+		if (width <= 0 || height <= 0 || frameBuffer == null) { return; }
+
+		x_dest = AnchorX(x_dest, width, anchor);
+		y_dest = AnchorY(y_dest, height, anchor);
+
+		x_src += getTranslateX();
+		y_src += getTranslateY();
+
+		if (x_src < 0 || y_src < 0 || 
+			x_src + width > canvas.getWidth() || 
+			y_src + height > canvas.getHeight()) {
+			throw new IllegalArgumentException("Source area exceeds the bounds of the graphics object.");
+		}
+
+		final int[] fbPixels = ((DataBufferInt) frameBuffer.getCanvas().getRaster().getDataBuffer()).getData();
+
+		final int[] subPixels = new int[width * height];
+
+		int srcIndex, destIndex;
 		for (int j = 0; j < height; j++) 
 		{
 			for (int i = 0; i < width; i++) 
 			{
-				// The image data CAN go out of the destination bounds, we just can't draw it whenever it does.
-				if (x_dest + i >= 0 && y_dest + j >= 0 && 
-					x_dest + i < canvas.getWidth() && 
-					y_dest + j < canvas.getHeight()) 
-				{
-					canvasData[(y_dest + j) * canvas.getWidth() + (x_dest + i)] = subPixels[j * width + i];
-				}
+				srcIndex = (y_src + j) * canvas.getWidth() + x_src;
+				System.arraycopy(canvasData, srcIndex, subPixels, j * width, width);
+			}
+		}
+
+		int destStartY = Math.max(y_dest, 0);
+		int destEndY = Math.min(y_dest + height, canvas.getHeight());
+		int srcStartY = Math.max(0, -y_dest);
+		
+		for (int j = destStartY; j < destEndY; j++) 
+		{
+			destIndex = j * canvas.getWidth() + x_dest;
+			srcIndex = (srcStartY + (j - destStartY)) * width;
+
+			if (x_dest >= 0 && x_dest + width <= canvas.getWidth()) 
+			{
+				System.arraycopy(subPixels, srcIndex, fbPixels, destIndex, width);
 			}
 		}
 	}
@@ -249,6 +294,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
 
 		if (width < 0 || height < 0) { return; }
+
 		gc.drawArc(x, y, width, height, startAngle, arcAngle);
 	}
 
@@ -259,6 +305,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawChars(char[] data, int offset, int length, int x, int y, int anchor)
 	{
+		if(data.length == 0) { return; }
+
 		char[] str = new char[length];
 		for(int i=offset; i<offset+length; i++)
 		{
@@ -531,6 +579,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void drawRect(int x, int y, int width, int height)
 	{
 		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
+		
 		if (width < 0 || height < 0) { return; }
 
 		gc.drawRect(x, y, width, height);
@@ -547,7 +596,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawString(String str, int x, int y, int anchor)
 	{
-		if(str!=null)
+		if(str != null && str.length() > 0)
 		{
 			x = AnchorX(x, gc.getFontMetrics().stringWidth(str), anchor);
 			int ascent = gc.getFontMetrics().getAscent();
@@ -602,6 +651,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
 
+		if(rgb == color) { return; }
+
 		setColor((rgb>>16) & 0xFF, (rgb>>8) & 0xFF, rgb & 0xFF);
 	}
 
@@ -609,32 +660,27 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
 
+		if(((r<<16) + (g<<8) + b) == color) { return; }
+		
 		color = (r<<16) + (g<<8) + b;
-		awtColor = new Color(r, g, b);
-		gc.setColor(awtColor);
+		gc.setColor(new Color(color));
 	}
 
 	public void setGrayScale(int value) { setColor(value, value, value); }
 
 	public int getGrayScale() 
 	{
-		int r = gc.getColor().getRed();
-		int g = gc.getColor().getGreen();
-		int b = gc.getColor().getBlue();
-
-		return 0x4CB2 * r + 0x9691 * g + 0x1D3E * b >> 16;
+		// calculate this based on a simplified perceived color brightness formula from W3C: https://www.w3.org/TR/AERT/#color-contrast
+		return (int) (0.299 * getRedComponent() + 0.587 * getGreenComponent() + 0.114 * getBlueComponent());
 	}
 
-	public int getRedComponent() { return gc.getColor().getRed(); }
+	public int getRedComponent() { return (color >> 16) & 0xFF; }
 
-	public int getGreenComponent() { return gc.getColor().getGreen(); }
+	public int getGreenComponent() { return (color >> 8) & 0xFF; }
 
-	public int getBlueComponent() { return gc.getColor().getBlue(); }
+	public int getBlueComponent() { return color & 0xFF; }
 
-	public int getColor() 
-	{
-		return (gc.getColor().getRed() << 16) | (gc.getColor().getGreen() << 8) | gc.getColor().getBlue();
-	}
+	public int getColor() { return color; }
 
 	public int getDisplayColor(int color) { return color; }
 
@@ -642,6 +688,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setStrokeStyle(int stroke) 
 	{
+		if(stroke == strokeStyle) { return; }
+
 		if (strokeStyle == DOTTED) 
 		{
 			float[] dotPattern = {2.0f, 2.0f}; // Dot of length 2 px, followed by 2 px of gap
@@ -658,6 +706,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setFont(Font font)
 	{
+		if(this.font == font) { return;} 
+
 		if(font == null) { font = Font.getDefaultFont(); }
 		this.font = font;
 		gc.setFont(font.platformFont.awtFont);
@@ -734,6 +784,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setARGBColor(int argbColor)
 	{
+		if(argbColor == colorAlpha) { return; }
 		colorAlpha = (argbColor>>>24) & 0xFF;
 		setAlphaRGB(argbColor);
 	}
@@ -1314,7 +1365,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 		newGc.translate(getTranslateX(), getTranslateY());
 		newGc.setClip(getClipX(), getClipY(), getClipWidth(), getClipHeight());
-		newGc.setARGBColor(gc.getColor().getRGB());
+		newGc.setColor(color);
 		newGc.setStrokeStyle(getStrokeStyle());
 
 		return newGc;
@@ -1340,7 +1391,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void drawString(String str, int x, int y)
 	{
 		if(contextDisposed) { throw new UIException(1, "This graphics context has been disposed"); }
-		if(str!=null) { drawString(str, x, y, BOTTOM | LEFT); }
+		if(str != null && str.length() > 0) { drawString(str, x, y, BOTTOM | LEFT); }
 		else { throw new NullPointerException("Null string received"); }
 	}
 

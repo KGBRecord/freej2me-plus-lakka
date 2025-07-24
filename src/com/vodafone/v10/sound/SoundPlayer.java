@@ -16,82 +16,26 @@
 */
 package com.vodafone.v10.sound;
 
-public class SoundPlayer 
+public class SoundPlayer extends com.jblend.media.smaf.phrase.PhrasePlayerBase
 {
-	private SoundTrack[] tracks = new SoundTrack[] // 16 tracks 
-	{
-		new SoundTrack(), new SoundTrack(), new SoundTrack(), new SoundTrack(),
-		new SoundTrack(), new SoundTrack(), new SoundTrack(), new SoundTrack(), 
-		new SoundTrack(), new SoundTrack(), new SoundTrack(), new SoundTrack(),
-		new SoundTrack(), new SoundTrack(), new SoundTrack(), new SoundTrack()
-	};
+    protected static SoundPlayer soundPlayer;
 
-	public static SoundPlayer getPlayer() { return new SoundPlayer(); }
-
-	public SoundTrack getTrack() 
-    {
-		for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] == null) 
-            {
-				tracks[i] = new SoundTrack();
-				return tracks[i];
-			}
-		}
-        return null;
-	}
-
-    public SoundTrack getTrack(int track)
-    {
-        if(track < 0 || track > tracks.length-1) { throw new IllegalArgumentException("invalid track index"); }
-        return tracks[track];
-	}
-
-    public int getTrackCount() { return tracks.length; }
-
-    public void disposeTrack(SoundTrack t) 
-    { 
-        if(t == null) { throw new NullPointerException("disposeTrack received a null argument"); }
-        for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] == t) 
-            {
-				tracks[i] = null;
-                return;
-			}
-		}
-    }
-
-    public void kill() 
+	public static SoundPlayer getPlayer() 
 	{ 
-		for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] != null) 
-            {
-				tracks[i].stop();
-			}
-		}
+		com.jblend.media.smaf.phrase.PhrasePlayerBase.setup();
+		soundPlayer = new SoundPlayer();
+		return soundPlayer; 
 	}
 
-    public void pause() 
+	public void disposePlayer() 
 	{ 
-		for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] != null) 
-            {
-				tracks[i].pause();
-			}
-		}
+		super.dispose();
+		soundPlayer = null;
 	}
 
-    public void resume() 
-	{ 
-		for (int i = 0; i < tracks.length; i++) 
-        {
-			if (tracks[i] != null) 
-            {
-				tracks[i].resume();
-			}
-		}
-	}
+	public SoundTrack getTrack() { return super.getVodafoneTrack(); } 
+
+	public SoundTrack getTrack(int track) { return super.getVodafoneTrack(track); }
+
+	public void disposeTrack(SoundTrack t) { super.disposeVodafoneTrack(t); }
 }

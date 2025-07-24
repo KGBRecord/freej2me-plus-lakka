@@ -16,7 +16,4 @@
 */
 package com.j_phone.amuse;
 
-public abstract interface PhraseTrackListener 
-{
-	public abstract void eventOccurred(int paramInt);
-}
+public abstract interface PhraseTrackListener extends com.jblend.media.smaf.phrase.PhraseTrackListener { }

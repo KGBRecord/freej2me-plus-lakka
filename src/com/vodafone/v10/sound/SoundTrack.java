@@ -16,130 +16,73 @@
 */
 package com.vodafone.v10.sound;
 
-import javax.microedition.media.MediaException;
-import javax.microedition.media.Player;
+public class SoundTrack extends com.jblend.media.smaf.phrase.PhraseTrack 
+{ 
 
-import org.recompile.mobile.PlatformPlayer;
-
-public class SoundTrack 
-{
-
-	public static final int NO_DATA = 0;
-	public static final int PAUSED = 3;
-	public static final int PLAYING = 2;
-	public static final int READY = 1;
-	private static final int MAX_VOLUME = 127;
 	private Sound sound;
-	private Player player;
-    private int playerState = NO_DATA;
 	private SoundTrackListener listener;
 
-    public int getID() { return 0; } /* TODO: Flesh this out */
+    public SoundTrack(int id) { super(id); }
 
-    public int getPanpot() { return 64; } /* TODO: Flesh this out */
+    public int getID() { return super.getID(); }
 
 	public Sound getSound() { return sound; }
+
+    public int getState() { return super.getState(); }
 
 	public void setSound(Sound p) 
     {
 		this.sound = p;
-		this.player = p.getPlayer();
+		super.setPhrase(sound.getPhraseImpl());
 	}
 
-	public int getState() { return playerState; }
+	public boolean isPlaying() { return super.getState() == PLAYING; }
 
-    public boolean isMute() 
-    { 
-        if(player == null) { return true; }
-        else { return ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).isMuted(); }
-    }
+    public boolean isMute() { return super.isMute(); }
 
-    public void setPanpot(int value) 
-    {
-        /* TODO: Flesh this out. (0 left, 64 center, 127 right) */
-    }
+	public void setVolume(int value) { super.setVolume(value); }
 
-	public void setVolume(int value) 
-    {
-        if(player == null) { return; }
+    public void mute(boolean mute) { super.mute(mute); }
 
-		if (value < 0) { value = 0; }
-		if (value > MAX_VOLUME) { value = MAX_VOLUME; }
-        ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setLevel(value);
-	}
+    public void setPanpot(int value) { super.setPanpot(value); }
 
-    public void setMute(boolean mute) 
-    {
-        if(player == null) { return; }
+	public int getPanpot() { return super.getPanpot(); }
 
-        ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setMute(mute);
-	}
+	public void stop() { super.stop(); }
 
-	public void stop() 
-    { 
-        if(player != null && getState() == PLAYING) 
-        { 
-            player.stop(); 
-            player.setMediaTime(0);
-            playerState = READY;
-        } 
-    }
-
-    // For play() we'll assume it rewinds back to the start, otherwise resume() below is useless
-    public void play() 
-    {
-        if (player != null && getState() != PLAYING) 
-        {
-            player.setMediaTime(0);
-            player.start();
-            playerState = PLAYING;
-        }
-	}
+    public void play() { play(1); }
 
 	public void play(int loop) 
-    {
-        if (player != null && getState() != PLAYING) 
-        {
-            if (loop == 0) { loop = -1; }
-            player.setLoopCount(loop);
-            player.setMediaTime(0);
-            player.start();
-            playerState = PLAYING;
-        }
-	}
-
-    public void pause() 
-    {
-        if (player != null && getState() == PLAYING) 
-        {
-            player.stop();
-            playerState = PAUSED;
-        }
-	}
-
-    public void resume() 
-    {
-        if (player != null && getState() == PAUSED) 
-        {
-            player.start();
-            playerState = PLAYING;
-        }
+    { 
+        super.setEventListener((com.jblend.media.smaf.phrase.PhraseTrackListener) listener);
+        super.play(loop); 
     }
 
-	public void removeSound() { this.sound = null; }
+    public void pause() { super.pause(); }
 
-    public SoundTrack getSyncMaster() 
-    {
-        /* TODO: Flesh this out */
-        return null;
+    public void resume() { super.resume(); }
+
+	public void removePhrase() 
+    { 
+        this.sound = null; 
+        super.removePhrase();
     }
+
+    public SoundTrack getSyncMaster() { return getVodafoneSyncMaster(); }
 
     public void setSubjectTo(SoundTrack master) 
-    {
-        /* TODO: Flesh this out */
-    }
+	{ 
+		if(master != null) // Add sync relation
+		{
+			setVodafoneSyncMaster(master);
+			master.slaveVodafonePhrases.add(this);
+		}
+		else // Clear sync relation
+		{
+			getVodafoneSyncMaster().slaveVodafonePhrases.remove(this);
+			setVodafoneSyncMaster(master);
+		}
+	}
 
-    // TODO: Make PlatformPlayer also report events to vodafone listeners
 	public void setEventListener(SoundTrackListener l) { this.listener = l; }
-
 }

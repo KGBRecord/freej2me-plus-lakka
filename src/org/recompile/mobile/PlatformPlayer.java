@@ -106,6 +106,8 @@ public class PlatformPlayer implements Player
 	private com.nttdocomo.ui.MediaListener doJaListener;
 	private com.nttdocomo.ui.AudioPresenter doJaPresenter;
 
+	private com.jblend.media.smaf.phrase.PhraseTrackListener phraseListener;
+
 	protected boolean disableControls = false; // For when a given audio format is not supported
 	protected Control[] controls;
 
@@ -158,7 +160,9 @@ public class PlatformPlayer implements Player
 						contentType = "audio/mpeg";
 						player = new MP3Player(new ByteArrayInputStream(data));
 					}
-					else if(data.length >= 4 && data[0] == 'M' && data[1] == 'M' && data[2] == 'M' && data[3] == 'D')
+					else if((data.length >= 4 && data[0] == 'M' && data[1] == 'M' && data[2] == 'M' && data[3] == 'D') ||
+							(data.length >= 6 && data[2] == 'M' && data[3] == 'M' && data[4] == 'M' && data[5] == 'D') // SMAF files go so insanely off-spec it isn't even funny
+					)
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is SMAF/MMF! (not fully supported yet)");
 						contentType = "audio/mmf (beta)";
@@ -243,7 +247,7 @@ public class PlatformPlayer implements Player
 		// Set up control interfaces based on player type.
 		controls[0] = new volumeControl(this.player); // Midi Player with Tones might not use this
 
-		/* Midi Player has a few additional controls */
+		/* MIDI Player has a few additional controls */
 		if(player instanceof midiPlayer)
 		{
 			/* If we're using midiPlayer to play tones, only set it up with ToneControl. */
@@ -394,6 +398,16 @@ public class PlatformPlayer implements Player
 		doJaPresenter = presenter;
 	}
 
+	// JBlend/Vodafone/KDDI, etc Phrase listeners
+	public void setPhraseListener(com.jblend.media.smaf.phrase.PhraseTrackListener listener) 
+	{
+		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot add SoundListener to an UNINITIALIZED Sound"); }
+		
+		if(listener == null) { return; }
+
+		phraseListener = listener;
+	}
+
 	public void notifyListeners(String event, Object eventData)
 	{
 		// Paused events will never happen for these three
@@ -444,6 +458,16 @@ public class PlatformPlayer implements Player
 			else if(event == PlayerListener.STOPPED)  { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_PAUSED, doJaData); }
 			else if(event == PlayerListener.END_OF_MEDIA) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_COMPLETE, doJaData); }
 			else if(event == PlayerListener.LOOPED) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_LOOPED, doJaData); }
+		}
+
+		if(phraseListener != null) 
+		{
+			// Phrase listeners don't have events types for STOP and START, but they do have quite a few USER_* events though...
+			//if(event == PlayerListener.CLOSED) { phraseListener.mediaAction(com.nttdocomo.ui.AudioPresenter.AUDIO_STOPPED); }
+			//else if(event == PlayerListener.STARTED) { phraseListener.mediaAction(com.nttdocomo.ui.AudioPresenter.EV); }
+			if(event == PlayerListener.STOPPED)  { phraseListener.eventOccurred(com.jblend.media.smaf.phrase.PhraseEventType.EV_PAUSE); }
+			else if(event == PlayerListener.END_OF_MEDIA) { phraseListener.eventOccurred(com.jblend.media.smaf.phrase.PhraseEventType.EV_END); }
+			else if(event == PlayerListener.LOOPED) { phraseListener.eventOccurred(com.jblend.media.smaf.phrase.PhraseEventType.EV_LOOP); }
 		}
 	}
 
@@ -830,6 +854,7 @@ public class PlatformPlayer implements Player
 		private Transmitter transmitter;
 		private int numLoops = 0;
 		private long curTime = 0;
+		private int panValue = 64; // Center panning
 
 		// Meanwhile, sampled data will be treated like "additional" instruments
 		private boolean isPlaying = false;
@@ -946,6 +971,7 @@ public class PlatformPlayer implements Player
 
 			midi.start();
 			((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
+			((volumeControl)getControl("VolumeControl")).setPanpot(getPanning());
 			while (isPlaying && wavClips != null) 
 			{
 				int mediaTime = (int) (getMediaTime() / 1000);
@@ -1098,6 +1124,10 @@ public class PlatformPlayer implements Player
 			try { midiSequence = MidiSystem.getSequence(sequence); }
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set MIDI sequence:" + e.getMessage());  }
 		}
+
+		public void setPanning(int panning) { this.panValue = panning; }
+
+		public int getPanning() { return panValue; }
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
@@ -1638,7 +1668,7 @@ public class PlatformPlayer implements Player
 		{  
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: shortMidiEvent() untested");
 
-			if(type < 0x80 || type == 0xF0 || type == 0xF7 || data1 < 0 || data1 > 127 || data2 < 0 || data2 > 127) { throw new IllegalArgumentException("MmidiControl: Invalid arguments for shortMidiEvent()"); }
+			if(type < 0x80 || type == 0xF0 || type == 0xF7 || data1 < 0 || data1 > 127 || data2 < 0 || data2 > 127) { throw new IllegalArgumentException("midiControl: Invalid arguments for shortMidiEvent()"); }
 
 			try 
 			{
@@ -1782,6 +1812,32 @@ public class PlatformPlayer implements Player
 		}
 
 		public boolean isMuted() { return muted; }
+
+		// These two are only really used for SMAF
+		public void setPanpot(int panning) 
+		{
+			if (player instanceof SMAFPlayer) 
+			{
+				SMAFPlayer sequencer = (SMAFPlayer) player;
+
+				MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
+
+				if(sequencer.isRunning())
+				{
+					for (int channel = 0; channel < midiChannels.length; channel++) 
+					{
+						midiChannels[channel].controlChange(7, panning);
+						LockSupport.parkNanos(10000);
+					}
+				}
+
+				sequencer.setPanning(panning);
+			}
+
+			
+		}
+
+		public int getPanpot() { return player instanceof SMAFPlayer ? ((SMAFPlayer)player).getPanning() : 64; }
 	}
 
 	/* This one hasn't been tested yet, no jar was found at the time it was implemented */
