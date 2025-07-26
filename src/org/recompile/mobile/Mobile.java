@@ -51,7 +51,7 @@ public class Mobile
 	private static MobilePlatform platform;
 
 	// Logging
-	private static File logFile;
+	public static File logFile;
 	private static BufferedWriter logWriter;
 	private static final Queue<Runnable> pendingLogs = new LinkedList<Runnable>();
 
@@ -863,6 +863,7 @@ public class Mobile
 					{
 						logWriter.write(logText);
 						logWriter.newLine();
+						logWriter.flush();
 					} catch (IOException e) { System.out.println("Couldn't write to log file: " + e.getMessage()); e.printStackTrace(); }
 				}
 			}); 

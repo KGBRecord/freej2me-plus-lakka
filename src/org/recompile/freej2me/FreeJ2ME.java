@@ -266,6 +266,12 @@ public class FreeJ2ME
 	{
 		// Setup Device //
 		boolean fullscreenAtStartup = false;
+		if(args.length>=1) 
+		{ 
+			try { MobilePlatform.fileName = getFormattedLocation(URLDecoder.decode(args[0], Mobile.textEncoding)); }
+			catch(Exception e) { }
+		}
+
 		if(args.length>=2)
 		{
 			fullscreenAtStartup = (Integer.parseInt(args[1]) == 1);
@@ -293,11 +299,8 @@ public class FreeJ2ME
 
 		constructFreeJ2MEGUI();
 
-		if(args.length>=1) // Only now we can load the jar passed as argument
-		{
-			try { awtGUI.loadJarFile(getFormattedLocation(URLDecoder.decode(args[0], Mobile.textEncoding))); }
-			catch(Exception e) { }
-		}
+		// Only now we can load the jar passed as argument
+		if(MobilePlatform.fileName != null) { awtGUI.loadJarFile(MobilePlatform.fileName); }
 
 		/* Inputs should only be registered if a jar has been loaded, otherwise AWT will throw NullPointerException */
 		lcd.addKeyListener(new KeyListener()
@@ -384,13 +387,10 @@ public class FreeJ2ME
 				/* Set menuBar option states based on loaded config */
 				if(awtGUI.hasJustLoaded()) { awtGUI.updateOptions(); }
 
-				/* Only update mem dialog's stats if it is visible */
-				if(awtGUI.awtDialogs[2].isVisible()) { awtGUI.updateMemStatDialog(); }
-
 				/* Whenever AWT GUI notifies that its menu options were changed, update settings */
 				if(awtGUI.hasChanged()) { settingsChanged(); awtGUI.clearChanged(); }
 
-				lcd.repaint();
+				lcd.repaint();				
 			}
 		});
 
@@ -673,7 +673,7 @@ public class FreeJ2ME
 		resize();
 		if(!isFullscreen) { main.setSize(lcdWidth*scaleFactor+xborder, lcdHeight*scaleFactor+yborder); }
 
-		awtGUI.updateMemStatDialog();
+		awtGUI.updateDialogs();
 	}
 
 	private class LCD extends Canvas
@@ -713,11 +713,14 @@ public class FreeJ2ME
 
 		public void paint(Graphics g)
 		{
+			/* Only update mem dialog's stats and console window if they are visible */
+			if(awtGUI.awtDialogs[2].isVisible()) { awtGUI.updateDialogs(); }
+
 			if(!showDragMessage) 
 			{
-				if (!Mobile.rotateDisplay) {
-					g.drawImage(Mobile.getPlatform().getLcdFrontbufferImage(), cx, cy, cw, ch, null);
-				} else {
+				if (!Mobile.rotateDisplay) { g.drawImage(Mobile.getPlatform().getLcdFrontbufferImage(), cx, cy, cw, ch, null); } 
+				else 
+				{
 					// Rotate the FB 90 degrees counterclockwise with an adjusted pivot
 					((Graphics2D) g).rotate(Math.toRadians(-90), ch/2, ch/2);
 					// Draw the rotated FB with adjusted cy and cx values

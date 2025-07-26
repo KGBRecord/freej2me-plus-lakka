@@ -16,6 +16,7 @@
 */
 package org.recompile.freej2me;
 
+import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.CheckboxMenuItem;
 import java.awt.Choice;
@@ -29,18 +30,23 @@ import java.awt.GridLayout;
 import java.awt.Label;
 import java.awt.Menu;
 import java.awt.MenuItem;
+import java.awt.ScrollPane;
+import java.awt.TextArea;
 import java.awt.MenuBar;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
-
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 
 import java.util.Arrays;
@@ -93,6 +99,7 @@ public final class AWTGUI
 		new Dialog(main, "FreeJ2ME MemStat", false),
 		new Dialog(main, "Restart Required", true),
 		new Dialog(main, "Key Mapping", true),
+		new Dialog(main, "Console Log", false),
 	};
 	
 	final Button[] awtButtons = 
@@ -156,11 +163,6 @@ public final class AWTGUI
 	private final int newInputKeycodes[] = Arrays.copyOf(inputKeycodes, inputKeycodes.length);
 
 	final Choice resChoice = new Choice();
-
-	Label totalMemLabel = new Label("Total Mem: 000000000 KB");
-	Label freeMemLabel = new Label("Free Mem : 000000000 KB");
-	Label usedMemLabel = new Label("Used Mem : 000000000 KB");
-	Label maxMemLabel = new Label("Max Mem  : 000000000 KB");
 
 	/* Items for each of the bar's menus */
 	final UIListener menuItemListener = new UIListener();
@@ -285,25 +287,30 @@ public final class AWTGUI
 	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("Delete KJX files' temporary JAR/JAD");
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
 	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump Graphics Objects");
-	final CheckboxMenuItem showMemoryUsage = new CheckboxMenuItem("Show VM Memory Usage");
+	final CheckboxMenuItem showDebugWindows = new CheckboxMenuItem("Show Debug Windows");
 	
 	// M3G Debugging
 	final CheckboxMenuItem M3GUntextured = new CheckboxMenuItem("Draw Only Vertex Colors");
 	final CheckboxMenuItem M3GWireframe = new CheckboxMenuItem("Wireframe Mode");
 
+	final TextArea logArea = new TextArea();
+	final TextArea memArea = new TextArea();
+	final Font dialogFont = new Font(Font.DIALOG, Font.BOLD, 12);
+
+	private StringBuilder debugContent = null;
+	private BufferedReader logReader = null;
 
 	public AWTGUI(Config config)
 	{
 		this.config = config;
 
-		resChoice.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+		debugContent = new StringBuilder();
+		try { logReader = new BufferedReader(new FileReader(Mobile.logFile)); }
+		catch(Exception e) { System.out.println("Failed to create log window writer:" + e.getMessage()); }
+
+		resChoice.setFont(dialogFont);
 		resChoice.setBackground(FreeJ2ME.freeJ2MEBGColor);
 		resChoice.setForeground(Color.ORANGE);
-
-		totalMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
-		freeMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
-		usedMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
-		maxMemLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
 
 		awtButtons[0].setBackground(FreeJ2ME.freeJ2MEDragColor);
 		awtButtons[0].setForeground(Color.ORANGE);
@@ -352,17 +359,6 @@ public final class AWTGUI
 		awtDialogs[0].add(awtButtons[1]);
 		awtDialogs[0].add(awtButtons[2]);
 
-
-		awtDialogs[2].setBackground(FreeJ2ME.freeJ2MEBGColor);
-		awtDialogs[2].setForeground(Color.ORANGE);
-		awtDialogs[2].setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
-		awtDialogs[2].setSize(240, 145);
-		awtDialogs[2].setResizable(false);
-		awtDialogs[2].add(totalMemLabel);
-		awtDialogs[2].add(freeMemLabel);
-		awtDialogs[2].add(usedMemLabel);
-		awtDialogs[2].add(maxMemLabel);
-
 		/* Input mapping dialog: It's a grid, so a few tricks had to be employed to align everything up */
 		awtDialogs[4].setBackground(FreeJ2ME.freeJ2MEBGColor);
         awtDialogs[4].setForeground(Color.ORANGE);
@@ -371,7 +367,6 @@ public final class AWTGUI
 		awtDialogs[4].setLocationRelativeTo(main);
 		awtDialogs[4].setResizable(false);
 		
-
 		// Setup input button colors
 		awtButtons[5].setBackground(FreeJ2ME.freeJ2MEDragColor);
 		awtButtons[5].setForeground(Color.GREEN);
@@ -472,14 +467,50 @@ public final class AWTGUI
 
 		awtDialogs[3].setBackground(FreeJ2ME.freeJ2MEBGColor);
 		awtDialogs[3].setForeground(Color.ORANGE);
-		awtDialogs[3].setLayout( new FlowLayout(FlowLayout.CENTER, 10, 10));  
+		awtDialogs[3].setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));  
 		awtDialogs[3].setUndecorated(true);
 		awtDialogs[3].setSize(230, 80);
 		awtDialogs[3].setLocationRelativeTo(main);
 		awtDialogs[3].add(new Label("This change requires a restart to apply!"));
 		awtDialogs[3].add(awtButtons[3]);
 		awtDialogs[3].add(awtButtons[4]);
+
+
+		// Mem stats window
+		memArea.setBackground(FreeJ2ME.freeJ2MEBGColor);
+		memArea.setForeground(Color.ORANGE);
+        memArea.setEditable(false); // Make the log area read-only
+
+		ScrollPane memScrollPane = new ScrollPane(ScrollPane.SCROLLBARS_NEVER);
+        memScrollPane.add(memArea);
+
+		awtDialogs[2].setBackground(FreeJ2ME.freeJ2MEBGColor);
+		awtDialogs[2].setForeground(Color.ORANGE);
+		awtDialogs[2].setLayout(new BorderLayout());
+		awtDialogs[2].setSize(200, 80);
+		awtDialogs[2].setFont(dialogFont);
+		awtDialogs[2].setResizable(false);
+		awtDialogs[2].setUndecorated(true);
+		awtDialogs[2].add(memScrollPane, BorderLayout.CENTER);
+
+		// Console Log window
+		logArea.setBackground(FreeJ2ME.freeJ2MEBGColor);
+		logArea.setForeground(Color.ORANGE);
+        logArea.setEditable(false); // Make the log area read-only
+
+		ScrollPane logScrollPane = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
+        logScrollPane.add(logArea);
 		
+		awtDialogs[5].setBackground(FreeJ2ME.freeJ2MEBGColor);
+        awtDialogs[5].setForeground(Color.ORANGE);
+		awtDialogs[5].setLayout(new BorderLayout());
+		awtDialogs[5].setSize(720, 320);
+		awtDialogs[5].setFont(dialogFont);
+		awtDialogs[5].setLocationRelativeTo(main);
+		awtDialogs[5].setResizable(false);
+		awtDialogs[5].setUndecorated(true);
+        awtDialogs[5].add(logScrollPane, BorderLayout.CENTER);
+
 		openMenuItem.setActionCommand("Open");
 		restartMenuItem.setActionCommand("RestartNow");
 		closeMenuItem.setActionCommand("Close");
@@ -523,6 +554,12 @@ public final class AWTGUI
 		setActionListeners();
 
 		buildMenuBar();
+	}
+
+	public void updateDialogLocations(Frame mainFrame) 
+	{
+		awtDialogs[2].setLocation(mainFrame.getLocation().x+mainFrame.getSize().width, mainFrame.getLocation().y);
+		awtDialogs[5].setLocation(mainFrame.getLocation().x+mainFrame.getSize().width, mainFrame.getLocation().y+awtDialogs[2].getHeight());
 	}
 
 	private void addInputButtonListeners() 
@@ -873,14 +910,23 @@ public final class AWTGUI
 			}
 		});
 
-		// This one is specific to AWTGUI
-		showMemoryUsage.addItemListener(new ItemListener() 
+		// These are specific to AWTGUI
+		showDebugWindows.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
 				/* Mem stats frame won't be centered on FreeJ2ME's frame, instead, it will sit right by its side, that's why "setLocationRelativeTo(main)" isn't used */
-				if(showMemoryUsage.getState()) { awtDialogs[2].setLocation(main.getLocation().x+main.getSize().width, main.getLocation().y); awtDialogs[2].setVisible(true); }
-				else { awtDialogs[2].setVisible(false); }
+				if(showDebugWindows.getState()) 
+				{ 
+					updateDialogLocations(main); 
+					awtDialogs[2].setVisible(true); 
+					awtDialogs[5].setVisible(true); 
+				}
+				else 
+				{ 
+					awtDialogs[2].setVisible(false); 
+					awtDialogs[5].setVisible(false); 
+				}
 			}
 		});
 	}
@@ -919,7 +965,7 @@ public final class AWTGUI
 		debugMenu.add(deleteTemporaryKJXFiles);
 		debugMenu.add(dumpAudioData);
 		debugMenu.add(dumpGraphicsData);
-		debugMenu.add(showMemoryUsage);
+		debugMenu.add(showDebugWindows);
 		debugMenu.add(logLevel);
 		debugMenu.add(M3GDebug);
 		
@@ -1016,14 +1062,6 @@ public final class AWTGUI
 
 			/* We only need to do this call once, when the jar first loads */
 			firstLoad = false;
-	}
-
-	public void updateMemStatDialog() 
-	{
-		totalMemLabel.setText(new String("Total Mem: " + (Runtime.getRuntime().totalMemory() / 1024) + " KB"));
-		freeMemLabel.setText(new String("Free Mem : " + (Runtime.getRuntime().freeMemory() / 1024) + " KB"));
-		usedMemLabel.setText(new String("Used Mem : " + ((Runtime.getRuntime().totalMemory() / 1024) - (Runtime.getRuntime().freeMemory() / 1024)) + " KB"));
-		maxMemLabel.setText(new String("Max Mem  : " + (Runtime.getRuntime().maxMemory() / 1024) + " KB"));
 	}
 
 	class UIListener implements ActionListener 
@@ -1133,7 +1171,16 @@ public final class AWTGUI
 
 	public boolean hasLoadedFile() { return fileLoaded; }
 
-	public void setMainFrame(Frame main) { this.main = main; }
+	public void setMainFrame(Frame mainFrame) 
+	{ 
+		main = mainFrame; 
+		// So that the console window and memory stats follow the main window around
+		main.addComponentListener(new ComponentAdapter() 
+		{
+            public void componentMoved(ComponentEvent e) { updateDialogLocations(main); }
+            public void componentResized(ComponentEvent e) { updateDialogLocations(main); }
+        });
+	}
 
 	public String getJarPath() { return jarfile; }
 
@@ -1144,4 +1191,24 @@ public final class AWTGUI
 		awtDialogs[3].setLocationRelativeTo(main);
 		awtDialogs[3].setVisible(true);
 	}
+
+	public void updateDialogs() 
+	{
+		String line;
+		try
+		{
+			while ((line = logReader.readLine()) != null) { debugContent.append(line).append("\n"); }
+			logArea.setText(new String(debugContent.toString()));
+			logArea.setCaretPosition(logArea.getText().length());
+		} 
+		catch (Exception e) { logArea.append("Error reading log file: " + e.getMessage() + "\n"); }
+
+		memArea.setText
+		(
+			"Total Mem: " + (Runtime.getRuntime().totalMemory() / 1024) + " KB\n" + 
+			"Free Mem : " + (Runtime.getRuntime().freeMemory() / 1024) + " KB\n" + 
+			"Used Mem : " + ((Runtime.getRuntime().totalMemory() / 1024) - (Runtime.getRuntime().freeMemory() / 1024)) + " KB\n" + 
+			"Max Mem  : " + (Runtime.getRuntime().maxMemory() / 1024) + " KB"
+		);
+    }
 }
