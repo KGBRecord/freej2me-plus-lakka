@@ -16,7 +16,9 @@
 */
 package javax.microedition.media.decoders;
 
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -170,7 +172,7 @@ public final class MLDDecoder
             else if (chunkID.equals("copy")) { decodeCOPYChunk(); } 
             else if (chunkID.equals("cuep")) { decodeCUEPChunk(); } // TODO: Untested
             else if (chunkID.equals("date")) { decodeDATEChunk(); } 
-            else if (chunkID.equals("exst")) { decodeEXSTChunk(); } // TODO: Untested
+            else if (chunkID.equals("exst")) { decodeEXSTChunk(); }
             else if (chunkID.equals("note")) { decodeNOTEChunk(); } 
             else if (chunkID.equals("prot")) { decodePROTChunk(); } 
             else if (chunkID.equals("sorc")) { decodeSORCChunk(); } 
@@ -241,7 +243,9 @@ public final class MLDDecoder
                 cuePoints = new int[numTracks];
                 channelData = new MLDChannelData[4*numTracks];
                 for(int i = 0; i < 4*numTracks; i++) { channelData[i] = new MLDChannelData(); }
-                sequence = new Sequence(Sequence.PPQ, 48); // TODO: Default timebase for CMF/MFi is 48, see if keeping it as such works well on different timebase-tempo settings
+                
+                // Default timebase for CMF/MFi is 48, we make it the highest possible of 960 for MIDI so we can better round any on-the-fly timebase and tempo adjustments with enough precision
+                sequence = new Sequence(Sequence.PPQ, 960);
                 track = sequence.createTrack();
             } 
             catch(InvalidMidiDataException ie) { Mobile.log(Mobile.LOG_ERROR, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + " couldn't create MIDI Sequence to convert:" + ie.getMessage()); }
@@ -412,9 +416,9 @@ public final class MLDDecoder
         int numStreams = (input[decodePos++] & 0xFF);
         int hasPCMData = (input[decodePos++] & 0xFF);
         
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"-------------------------- AUDIO INFO CHUNK --------------------------");
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Amount of (AD)PCM streams: " + numStreams);
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Has following (AD)PCM streams: " + (hasPCMData == 0 ? "Yes" : "No"));
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"-------------------------- AUDIO INFO CHUNK --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Amount of (AD)PCM streams: " + numStreams);
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Has following (AD)PCM streams: " + (hasPCMData == 0 ? "Yes" : "No"));
     }
 
     public static void decodeADATChunk() 
@@ -425,10 +429,10 @@ public final class MLDDecoder
         int dataFormat = (input[decodePos++] & 0xFF);
         int dataAttribute = (input[decodePos++] & 0xFF);
         
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"-------------------------- AUDIO DATA CHUNK --------------------------");
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Header Length: " + adpmHeaderLen);
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Data format: " + dataFormat);
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Data attribute: " + dataAttribute);
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"-------------------------- AUDIO DATA CHUNK --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Header Length: " + adpmHeaderLen);
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Data format: " + dataFormat);
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Data attribute: " + dataAttribute);
     }
 
     public static void decodeADPMChunk() 
@@ -453,18 +457,27 @@ public final class MLDDecoder
             waveData[i] = input[decodePos++];
         }
 
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"-------------------------- ADPCM DATA CHUNK --------------------------");
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Sample Rate: " + (sampleRate * 1000) + "Hz");
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Bit Depth: " + bitDepth + " bits"); // This is either 2 or 4 bits
-        Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Channel type: " + (numChannels == 1 ? "Mono" : "Stereo"));
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"-------------------------- ADPCM DATA CHUNK --------------------------");
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Sample Rate: " + (sampleRate * 1000) + "Hz");
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Bit Depth: " + bitDepth + " bits"); // This is either 2 or 4 bits
+        Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Channel type: " + ((numChannels & 0x07) == 1 ? "Mono " : "Stereo ") + ((numChannels & 0x08) == 0 ? "Non-Interleaved" : "Interleaved"));
 
-        if(bitDepth == 4) { /* pcmData.add(new ByteArrayInputStream(WAVYamahaADPCMDecoder.ADPCMADecode(waveData, sampleRate, numChannels))); */  } // TODO: Not working properly yet
+        // TODO: MLD seems to use Yamaha's ADPCM Z (YMZ* chips).
+        if(bitDepth == 4) { pcmData.add(new ByteArrayInputStream(WAVYamahaADPCMDecoder.ADPCMZDecode(waveData, sampleRate * 1000, numChannels & 0x07))); }
         else { Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"2-bit depth decoding not supported!"); }
     }
 
     public static void decodeTRACChunk() 
     {
         String chunkName = "" + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++] + (char) input[decodePos++];
+        
+        // Gradius Neo Imperial has an MLD file that contains a track chunk with no size (and thus nothing after it), so return immediately in those cases
+        if(decodePos == input.length) 
+        { 
+            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Track has no data. Skipping");
+            return; 
+        }
+        
         int chunkSize = ((input[decodePos++] & 0xFF) << 24 | (input[decodePos++] & 0xFF) << 16 | (input[decodePos++] & 0xFF) << 8 | (input[decodePos++] & 0xFF));
         
         chunkSize = Math.min(chunkSize, input.length-decodePos); // The final track chunk might report an incorrect chunkSize (happens in some Gradius NEO Imperial files)
@@ -500,15 +513,22 @@ public final class MLDDecoder
         int totalDuration = 0;
         byte status = 0;
 
+        byte eventChannel = 0;
+        int gateTime = 0;
+        byte noteNumber = 0;
+        byte octaveShift = 0;
+        byte velocity = 127; // Assume max velocity for all notes, as 3 byte notes do not have velocity changes
+        MidiEvent midiEvent = null;
+
+        int centsAdjustment = 0, pitchBendValue = 0, msb = 0, lsb = 0;
+
+        // TODO: This shouldn't be needed, but some MLD files with PCM streams refuse to play PCM otherwise (they only have gateTime = 0 notes)
+        ShortMessage pcmWorkaround = new ShortMessage();
+        pcmWorkaround.setMessage(ShortMessage.NOTE_OFF, 0, 0, 0);
+        track.add(new MidiEvent(pcmWorkaround, Math.round(1 * getMillisecondsPerTick())));
+
         while (offset < data.length) 
         {
-            int eventChannel = 0;
-            int gateTime = 0;
-            byte noteNumber = 0;
-            byte octaveShift = 0;
-            byte velocity = 127; // Assume max velocity for all notes, as 3 byte notes do not have velocity changes
-
-            MidiEvent midiEvent = null;
 
             totalDuration += Math.round((data[offset++] & 0xFF) * getMillisecondsPerTick()); // Update total duration
             status = (byte) (data[offset++] & 0xFF); // Read status byte
@@ -527,12 +547,9 @@ public final class MLDDecoder
                 }
                 else if(eventParam >= (byte) 0x80 && eventParam < (byte) 0xF0) // ExtB Status Message
                 {
-                    int eventValue = data[offset++] & 0xFF;
-                    int eventChannelIndex = eventValue >> 6;
-                    eventChannel          = (curTrack * 4 + eventChannelIndex);
-                    
-
-                    int centsAdjustment = 0, pitchBendValue = 0, msb = 0, lsb = 0;
+                    int eventValue = (data[offset++] & 0xFF);
+                    byte eventChannelIndex = (byte) ((eventValue >> 6) & 0x03);
+                    eventChannel           = (byte) (curTrack * 4 + eventChannelIndex);
                     
                     ShortMessage event = new ShortMessage();
 
@@ -549,9 +566,9 @@ public final class MLDDecoder
                     switch (eventParam) 
                     {
                         case (byte) 0x80: // AUDIO CHANNEL VOLUME TODO: Is this where PCM samples are set to be played?
-                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Audio channel volume (PCM) event not implemented! value " + (eventValue & 0x3f) + ", channel " + eventChannel);
-                            pcmDataPositions.put(totalDuration+gateTime, eventChannel);
-                            pcmDataVelocities.put(totalDuration+gateTime, (eventValue & 0x3f) * 2);
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding audio channel volume (PCM) event value " + ((eventValue & 0x3F) * 2) + ", channel " + eventChannel);
+                            pcmDataPositions.put(totalDuration, (int) eventChannel);
+                            pcmDataVelocities.put(totalDuration, (eventValue & 0x3F) * 2);
                             break;
 
                         case (byte) 0xB0: // MASTER_VOLUME
@@ -565,10 +582,10 @@ public final class MLDDecoder
                             break;
 
                         case (byte) 0xB1: // MASTER_BALANCE
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Setting Master Balance to " + (eventValue & 0x3F));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Setting Master Balance to " + (eventValue & 0x7F));
                             for(int i = 0; i < MIDI_CHANNELS; i++) 
                             {
-                                event.setMessage(ShortMessage.CONTROL_CHANGE, i, 10, (eventValue & 0x3F));
+                                event.setMessage(ShortMessage.CONTROL_CHANGE, i, 10, (eventValue & 0x7F));
                                 midiEvent = new MidiEvent(event, totalDuration);
                                 track.add(midiEvent);
                             }
@@ -605,16 +622,30 @@ public final class MLDDecoder
                             break;
 
                         case (byte) 0xBA: // Drum bank enable
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding drum bank enable " + ((eventValue & 1) != 0) + " event " + " to channel " + eventChannel);
-                            boolean enableDrumBank = (eventValue & 1) != 0;
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, (eventValue >> 3 & 15), (enableDrumBank ? handyPhoneBankToMidi(channelData[(eventValue >> 3 & 15)].currentInstrument) : channelData[(eventValue >> 3 & 15)].currentInstrument), 0);
-                            midiEvent = new MidiEvent(event, totalDuration);
-                            track.add(midiEvent);
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "(Unsupported) Adding drum bank enable " + ((eventValue & 1) != 0) + " event " + " to channel " + eventChannel);
+                            //event.setMessage(ShortMessage.CONTROL_CHANGE, (eventValue >> 3 & 15), channelData[(eventValue >> 3 & 15)].currentInstrument, 0);
+                            //midiEvent = new MidiEvent(event, totalDuration);
+                            //track.add(midiEvent);
                             break;
 
                         case (byte) 0xD0: // CUEPOINT
                             Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Cue point event type (not implemented): " + (eventValue == 0x00 ? "StartPoint" : "EndPoint") + " at time " + totalDuration);
-                            // TODO: Apply these to the MIDI data (by dropping any notes outside of the cuepoint range maybe?)
+                            
+                            // startPoint TODO: Properly implement this, right now it just sets the POSITION POINTER
+                            if(eventValue == 0x00) 
+                            {
+                                event.setMessage(ShortMessage.SONG_POSITION_POINTER, totalDuration & 0x7F, (totalDuration >> 7) & 0x7F);
+                                midiEvent = new MidiEvent(event, totalDuration);
+                                track.add(midiEvent);
+                            }
+                            else // endpoint TODO: Might not be correct
+                            {
+                                event.setMessage(ShortMessage.STOP);
+                                midiEvent = new MidiEvent(event, totalDuration);
+                                track.add(midiEvent);
+                                return;
+                            }
+                            
                             break;
 
                         case (byte) 0xD1: // JUMP
@@ -649,7 +680,6 @@ public final class MLDDecoder
             
                         case (byte) 0xE0: // Program Change
                             Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding program change number " + (eventValue & 0x3F) + " to channel " + eventChannel);
-                            channelData[eventChannel].currentInstrument = (byte) (eventValue & 0x3F);
                             event.setMessage(ShortMessage.PROGRAM_CHANGE, eventChannel, (eventValue & 0x3F), 0);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
@@ -674,7 +704,7 @@ public final class MLDDecoder
                             } 
                             else if ((eventValue & 0x3F) == 63) // Drum bank identical to MIDI Percussion Key Map
                             {
-                                event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 0, (eventValue & 0x3F)); // Bank select for drums
+                                event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 0, (eventValue & 0x3F)); // TODO: Bank select for drums (might not be supported in MIDI)
                                 midiEvent = new MidiEvent(event, totalDuration);
                                 track.add(midiEvent);
                             }
@@ -682,24 +712,23 @@ public final class MLDDecoder
                             break;
 
                         case (byte) 0xE2: // Volume change
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding volume change " + eventValue +" to channel " + eventChannel);
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 7, (eventValue & 0x3F));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding volume change " + ((eventValue & 0x3F) * 2) +" to channel " + eventChannel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 7, (eventValue & 0x3F) * 2);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
 
                         case (byte) 0xE3: // Panpot change
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding panpot value" + (eventValue & 0x3F) + " to channel " + eventChannel);
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 10, (eventValue & 0x3F));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding panpot value" + ((eventValue & 0x3F) * 2) + " to channel " + eventChannel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 10, (eventValue & 0x3F) * 2);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
 
                         case (byte) 0xE4: // Pitch Bend (Basing off of CMF's Table)
-                            int pitchBendIndex = eventValue & 0x3F;
-
-                            if (pitchBendIndex < 32) { centsAdjustment = -(32 - pitchBendIndex) * 100; } 
-                            else { centsAdjustment = (pitchBendIndex - 32) * 100; }
+                            
+                            if ((eventValue & 0x3F) < 32) { centsAdjustment = -((32 - (eventValue & 0x3F)) * channelData[eventChannel].pitchBendRange) * 100; } 
+                            else { centsAdjustment = (((eventValue & 0x3F) - 32) * channelData[eventChannel].pitchBendRange) * 100; }
 
                             pitchBendValue = (centsAdjustment * 32) / 100;
                             pitchBendValue += 8192;
@@ -715,13 +744,13 @@ public final class MLDDecoder
                             break;
 
                         case (byte) 0xE5: // CHANNEL_ASSIGN
-                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Channel Change event not implemented! Voice: " + (eventValue & 0xC0) + " Channel:" + (eventValue & 0x0F));
-                            //channelData[eventChannel].pitchBendRange = (byte) (eventValue & 0x3F);
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Channel Assign event not implemented! Voice: " + (eventValue & 0xC0) + " Channel:" + (eventValue & 0x0F));
+                            channelData[eventChannel].assignedChannel = (byte) (eventValue & 0x0F);
                             break;
 
                         case (byte) 0xE6: // Expression change
-                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding Expression change event value:" + (eventValue & 0x7F) + " to channel" + eventChannel);
-                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 11, (eventValue & 0x7F));
+                            Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding Expression change event value:" + ((eventValue & 0x3F) * 2) + " to channel" + eventChannel);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 11, (eventValue & 0x3F) * 2);
                             midiEvent = new MidiEvent(event, totalDuration);
                             track.add(midiEvent);
                             break;
@@ -732,17 +761,17 @@ public final class MLDDecoder
                             break;
 
                         case (byte) 0xE8: // FINE_PITCH_BEND_A / WAVE_CHANNEL_VOLUME
-                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Fine Pitch Bend A (Wave volume) not implemented! Value: " + (eventValue & 0x7F));
-                            //event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 1, (eventValue & 0x3F) * 2);
-                            //midiEvent = new MidiEvent(event, totalDuration);
-                            //track.add(midiEvent);
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Fine Pitch Bend A (Wave volume) not implemented! Value: " + ((eventValue & 0x3F) * 2));
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 7, (eventValue & 0x3F) * 2);
+                            midiEvent = new MidiEvent(event, totalDuration);
+                            track.add(midiEvent);
                             break;
 
                         case (byte) 0xE9: // FINE_PITCH_BEND_B / WAVE_CHANNEL_PANPOT
                             Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Fine Pitch Bend B (Wave Panpot) not implemented! Value: " + (eventValue & 0x3F));
-                            //event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 1, (eventValue & 0x3F) * 2);
-                            //midiEvent = new MidiEvent(event, totalDuration);
-                            //track.add(midiEvent);
+                            event.setMessage(ShortMessage.CONTROL_CHANGE, eventChannel, 10, (eventValue & 0x3F) * 2);
+                            midiEvent = new MidiEvent(event, totalDuration);
+                            track.add(midiEvent);
                             break;
                         
                         case (byte) 0xEA: // MODULATION DEPTH
@@ -752,14 +781,38 @@ public final class MLDDecoder
                             track.add(midiEvent);
                             break;
 
-                        // These are not supported at all yet, and thus, are skipped
                         case (byte) 0xB9: // PART_CONFIGURATION
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Part Configuration event is reserved!");
+                            break;
+
                         case (byte) 0xBD: // PAUSE
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding Pause event to sequence");
+                            event.setMessage(ShortMessage.STOP);
+                            midiEvent = new MidiEvent(event, totalDuration);
+                            track.add(midiEvent);
+
                         case (byte) 0xBF: // RESET
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding Reset event to sequence");
+                            event.setMessage(ShortMessage.SYSTEM_RESET);
+                            midiEvent = new MidiEvent(event, totalDuration);
+                            track.add(midiEvent);
+                            break;
+                            
                         case (byte) 0xBE: // STOP
                             Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Skipping event type: " + String.format("0x%02X", eventParam));
+                            // According to CMF, this sets all notes to off at current duration (which here means just stopping any previously playing notes)
+                            for(int i = 0; i < channelData.length; i++) 
+                            {
+                                ShortMessage noteOff = new ShortMessage();
+                                noteOff.setMessage(ShortMessage.NOTE_OFF, i, channelData[i].lastNote, 0);
+                                midiEvent = new MidiEvent(noteOff, totalDuration);
+                                track.add(midiEvent);
+                            }
                             break;
                         
+                        // Unknown status bytes
+                        case (byte) 0x8C: // Bomberman '08 has a MLD file that contains PCM and this status byte
+                        case (byte) 0x92: // Bomberman '08 has a MLD file that contains PCM and this status byte
                         default:
                             // Unknown status
                             Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Unknown status byte: " + String.format("0x%02X", eventParam));
@@ -769,7 +822,7 @@ public final class MLDDecoder
                 else if (eventParam > (byte) 0xEF && eventParam <= (byte) 0xFF) // ExtInfo Status Message, SysEx
                 {
                     int length = (data[offset++] & 0xFF) << 8 | (data[offset++] & 0xFF);
-                    Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Ext info event. Type: " + extInfoTypes[eventParam & 0x0F]);
+                    Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Ext info event. Type: " + extInfoTypes[eventParam & 0x0F]);
                     byte[] evtData = new byte[2+length];
                     evtData[0] = (byte) ((length / 0x100) & 0xff);
                     evtData[1] = (byte) ((length % 0x100) & 0xff);
@@ -781,7 +834,8 @@ public final class MLDDecoder
             }
             else // If it didn't match above, we're dealing with a note message
             {
-                eventChannel = (status >> 6) & 0x03;
+                byte eventChannelIndex = (byte) ((status >> 6) & 0x03);
+                eventChannel = (byte) (curTrack * 4 + eventChannelIndex);
                 noteNumber = (byte) ((status & 0x3F) + 45); // Note 15 in CMF/MFi is C4, which means that all note values should be increased by 45 (60 is C4 in midi)
         
                 gateTime = Math.round((data[offset++] & 0xFF) * getMillisecondsPerTick());
@@ -793,11 +847,11 @@ public final class MLDDecoder
                     return;
                 }
 
-                if(!noteHas3Bytes) // Notes with 4 bytes have an additional byte for octaveShift and velocity
+                if(!noteHas3Bytes && offset < data.length) // Notes with 4 bytes have an additional byte for octaveShift and velocity
                 {
                     byte additionalByte = (byte) (data[offset++] & 0xFF);
-                    //velocity = (byte) ((additionalByte & 0x3F) * 2); // TODO: Does it really work like this though? Doesn't sound right
-                    octaveShift = (byte) ((additionalByte >> 6) & 0x03);
+                    velocity = (byte) ((additionalByte >> 2 & 0x3F) * 2);
+                    octaveShift = (byte) (additionalByte & 0x03);
 
                     switch (octaveShift) 
                     {
@@ -819,117 +873,41 @@ public final class MLDDecoder
                 if (noteNumber < 0) { noteNumber = 0; } 
                 else if (noteNumber > 127) { noteNumber = 127; }
                 
-                if(noteNumber < 20)
-                {
-                    Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding PCM Request/Note value " + noteNumber + " to channel " + (eventChannel) + " at duration " + totalDuration);
-                    pcmDataPositions.put(totalDuration+gateTime, (int) noteNumber);
-                }
-                else { Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + eventChannel); }
+                Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Adding note value " + noteNumber + " to channel " + eventChannel);
                 
-                // We still add the notes no matter, just so that the sequencer can actually reach the PCM request time
                 ShortMessage noteOn = new ShortMessage();
-                noteOn.setMessage(ShortMessage.NOTE_ON, eventChannel, noteNumber, velocity);
+                noteOn.setMessage(ShortMessage.NOTE_ON, channelData[eventChannel].assignedChannel == -1 ? eventChannel : channelData[eventChannel].assignedChannel, noteNumber, velocity);
                 midiEvent = new MidiEvent(noteOn, totalDuration);
                 track.add(midiEvent);
                 
                 channelData[eventChannel].lastNote = noteNumber;
 
                 ShortMessage noteOff = new ShortMessage();
-                noteOff.setMessage(ShortMessage.NOTE_OFF, eventChannel, channelData[eventChannel].lastNote, 0);
+                noteOff.setMessage(ShortMessage.NOTE_OFF, channelData[eventChannel].assignedChannel == -1 ? eventChannel : channelData[eventChannel].assignedChannel, channelData[eventChannel].lastNote, 0);
                 midiEvent = new MidiEvent(noteOff, totalDuration+gateTime);
                 track.add(midiEvent);
-                
                 continue;
             }
         }
         Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Sequence finished. Returning.");
     }
 
+    // Doesn't translate directly to MIDI ticks, those run at a faster rate so we can round tempo and timebase adjustments with good enough precision.
     public static final float getMillisecondsPerTick() 
     { 
-        float tickMultiplier = Math.round(60000.0f / (globalTempo * globalTimebase)); // With the default timeBase of 48 and tempo of 125, this results in 10(ms), and the ratio adjusts based on timebase and tempo
-        return tickMultiplier / 10f; // Return the multiplier for gateTime and totalDuration, as we can't really change the MIDI sequence's PPQ after creating it
-    }
-
-    // TODO: Maybe MLD's functionality is different from SMAF's handy phone format for Drum banks, has to be researched
-    private static byte handyPhoneBankToMidi(byte instr)
-    {        
-        switch(instr) 
-        {
-            case 24: return 108; // SeqClick H
-            case 25: return 106; // Brush Tap
-            case 26: return 107; // Brush Swirl L
-            case 27: return 109; // Brush Slap
-            case 28: return 110; // Brush Swirl H
-            case 29: return 60;  // Snare Roll
-            case 30: return 65;  // Castanet
-            case 31: return 61;  // Snare L
-            case 32: return 36;  // SeqClick H (Acoustic Bass Drum)
-            case 33: return 34;  // Brush Tap (Fingered Bass)
-            case 34: return 35;  // Bass Drum L
-            case 35: return 36;  // Bass Drum M
-            case 36: return 37;  // Closed Rim Shot
-            case 37: return 38;  // Snare M
-            case 38: return 39;  // Hand Clap
-            case 39: return 41;  // Floor Tom L
-            case 40: return 40;  // Snare H
-            case 41: return 43;  // Floor Tom H
-            case 42: return 42;  // Hi-Hat Closed
-            case 43: return 45;  // Floor Tom M
-            case 44: return 46;  // Hi-Hat Pedal
-            case 45: return 47;  // Low Tom
-            case 46: return 48;  // Hi-Hat Open
-            case 47: return 49;  // Mid Tom L
-            case 48: return 50;  // Mid Tom H
-            case 49: return 49;  // Crash Cymbal 1
-            case 50: return 50;  // High Tom
-            case 51: return 51;  // Ride Cymbal 1
-            case 52: return 52;  // Chinese Cymbal
-            case 53: return 53;  // Ride Cymbal Cup
-            case 54: return 54;  // Tambourine
-            case 55: return 57;  // Splash Cymbal
-            case 56: return 58;  // Cowbell
-            case 57: return 59;  // Crash Cymbal 2
-            case 58: return 60;  // Vibraslap
-            case 59: return 61;  // Bongo H
-            case 60: return 62;  // Bongo L
-            case 61: return 63;  // Conga H
-            case 62: return 64;  // Conga H Open
-            case 63: return 65;  // Conga L
-            case 64: return 66;  // Timbale H
-            case 65: return 67;  // Timbale L
-            case 66: return 68;  // Agogo H
-            case 67: return 69;  // Agogo L
-            case 68: return 70;  // Cabasa
-            case 69: return 71;  // Maracas
-            case 70: return 72;  // Tambourine
-            case 71: return 73;  // Triangle
-            case 72: return 74;  // Shaker
-            case 73: return 75;  // Jingle Bell
-            case 74: return 76;  // Bottle Wood Block H
-            case 75: return 77;  // Wood Block L
-            case 76: return 78;  // Cuica Mute
-            case 77: return 79;  // Cuica Open
-            case 78: return 80;  // Square Lead
-            case 79: return 81;  // Triangle Mute
-            case 80: return 82;  // Saw Lead
-            case 81: return 83;  // Triangle Open
-            case 82: return 84;  // Shaker
-            case 83: return 85;  // Jingle Bell
-            case 84: return 86;  // Belltree
-            default: return 0;   // Default case (we should never hit this)
-        }
+        float tickMultiplier = 120000.0f / (globalTempo * globalTimebase); // With the default timeBase of 48 and tempo of 125, this should result in a duration of 10ms, and the ratio adjusts based on timebase and tempo
+        return tickMultiplier; // Return the multiplier for gateTime and totalDuration, as we can't really change the MIDI sequence's PPQ after creating it
     }
 }
 
 class MLDChannelData 
 {
-    public byte currentInstrument, pitchBendRange, lastNote = 0;
-    public boolean hasPendingNoteEvent = false;
+    public byte pitchBendRange, lastNote, assignedChannel;
 
     MLDChannelData() 
     {
-        currentInstrument = 0;
-        pitchBendRange = 0;
+        assignedChannel = -1;
+        pitchBendRange = 2; // Default according to CMF
+        lastNote = 0;
     }
 }

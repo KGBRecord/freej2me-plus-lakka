@@ -120,7 +120,7 @@ public final class SMAFDecoder
     };
 
     // These are used only for debugging
-    private static final String[] formatTypes = {"Handy Phone Standard (MA-1/2)", "Mobile Standard (MA-3/5) - Compressed (Untested)", "Mobile Standard (MA-3/5) - Not Compressed", "Yamaha MA-7 (Unsupported)", "Extended Voice/Softbank"};
+    private static final String[] formatTypes = {"Handy Phone Standard (MA-1/2)", "Mobile Standard (MA-3/5) - Compressed", "Mobile Standard (MA-3/5) - Not Compressed", "Yamaha MA-7 (Unsupported)", "Extended Voice/Softbank"};
     private static final String[] sequenceTypes = {"Stream Sequence", "Sub-Sequence (UNTESTED)"};
     private static final String[] channelTypes = {"No Care", "Melody", "No Melody", "Rhythm"};
     private static final String[] noteTypes = {"Invalid", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "Invalid", "Invalid", "Invalid"};
@@ -188,8 +188,8 @@ public final class SMAFDecoder
             else if(chunkID.contains("Mtsq") || chunkID.contains("Atsq") || chunkID.contains("SEQU"))
             {
                 scoreTrackSequenceData();
-                // Handy Phone format states that more than 4 channels can be used by having multiple Score Track Sequences (each track has 4)
-                if(formatType == 0x00) { handyChannelIdx += 4; }
+                // Handy Phone format states that more than 4 channels can be used by having multiple Score Track Sequences (each track has 4). Softbank also needs this
+                if(formatType == (byte) 0x00 || formatType == (byte) 0x04) { handyChannelIdx += 4; }
             }
             else if(chunkID.contains("Mtsp")) { scoreTrackPCMData(); } // Unfinished as far as spec compliance goes, but works more often than not
             else if(chunkID.contains("Mwa"))  { scoreTrackWaveData(); } // Same as above (in fact, it pretty much ties with the above)
@@ -214,8 +214,8 @@ public final class SMAFDecoder
             */
         }
 
-        // Warn if the parser is somehow exiting earlier than the file's expected byte data size.
-        if(decodePos < data.length - CRCSize) 
+        // Warn if the parser is somehow exiting earlier than the file's expected byte data size (we could CRC check for huffman, but appending any decoded chunks into the original array is too costly).
+        if(decodePos < data.length - CRCSize && formatType != 0x01) 
         { 
             Mobile.log(Mobile.LOG_WARNING, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + " Early exit: Parsed " + decodePos + " of " + (data.length - CRCSize) + " bytes. Decoded file might be missing data..."); 
         }
@@ -548,7 +548,7 @@ public final class SMAFDecoder
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"TimeBase_Duration: " + getTimeBaseDescription(TimeBase_D));
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"TimeBase_GateTime: " + getTimeBaseDescription(TimeBase_G));
         Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"channelStatus: ");
-        for(int i = 0; i < (formatType == (byte) 0x00 ? 4 : channelData.length); i++) // Format 0x00 has 4 channels, 0x01 and 0x02 have 16
+        for(int i = 0; i < ((formatType == (byte) 0x00 || formatType == (byte) 0x04) ? 4 : channelData.length); i++) // Format 0x00 and 0x04 have 4 channels, 0x01 and 0x02 have 16
         {
             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"\tChannel" + (i+1) + ": ");
             Mobile.log(Mobile.LOG_DEBUG, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"\t\tKeyControlStatus:" + channelData[i].keyControl);
@@ -743,7 +743,6 @@ public final class SMAFDecoder
                             ((input[decodePos++] & 0xFF) << 8) |
                             (input[decodePos++] & 0xFF);
 
-            List<Node> huffmanNodes = new ArrayList<Node>();
             while (curPos < matsqChunkSize - 4) // We already read the size above, so we need to decrease the actual data to be read
             {
                 seqBytes[curPos] = input[decodePos++];
@@ -753,14 +752,8 @@ public final class SMAFDecoder
             Mobile.log(Mobile.LOG_INFO, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"orig len:" + seqBytes.length);
             Mobile.log(Mobile.LOG_INFO, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " +"dec len:" + decodedSize);
 
-            BitReader bitReader = new BitReader(seqBytes, 0); // Start after the size field
-
-            // Build the Huffman tree
-            HuffmanDecoder decoder = new HuffmanDecoder();
-            decoder.buildTree(bitReader);
-
             // Decode the data
-            byte[] decodedData = decoder.decode(seqBytes, decodedSize);
+            byte[] decodedData = HuffmanDecoder.huffmanDecode(decodedSize, seqBytes);
 
             try { convertSequenceEvents(decodedData); }
             catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, SMAFDecoder.class.getPackage().getName() + "." + SMAFDecoder.class.getSimpleName() + ": " + "Couldn't decode sequence events:" + e.getMessage()); e.printStackTrace(); }
@@ -850,11 +843,16 @@ public final class SMAFDecoder
         int gateTime = 0;
         byte firstGateByte = 0;
         byte noteNumber = 0;
+        MidiEvent midiEvent = null;
 
+        // Set default velocity to 127 for Handy Phone and Softbank formats, the default of 64 makes the convertion of these much quieter than Mobile Standard
+        if(formatType == (byte) 0x00 || formatType == (byte) 0x04) 
+        {
+            for(int i = 0; i < channelData.length; i++) { channelData[i].velocity = 127; }
+        }
     
         while (offset < data.length) 
         {
-            MidiEvent midiEvent = null;
 
             if(formatType == (byte) 0x00) // Handy Phone format
             {
@@ -1058,6 +1056,7 @@ public final class SMAFDecoder
                 {
                     // Extract channel, octave, and note number from the eventType
                     channel = (byte) ((eventType >> 6) & 0x03); // Bits 6-7 for channel
+                    channel += handyChannelIdx;
                     byte octave = (byte) ((eventType >> 4) & 0x03); // Bits 4-5 for octave
                     noteNumber = (byte) (eventType & 0x0F); // Bits 0-3 for note number
                 
@@ -1086,10 +1085,10 @@ public final class SMAFDecoder
                     int midiNoteNumber = 0;
                     switch (octave) 
                     {
-                        case 0x00: midiNoteNumber = (byte) (48 + noteNumber - 1); break; // Low
-                        case 0x01: midiNoteNumber = (byte) (60 + noteNumber - 1); break; // Mid Low
-                        case 0x02: midiNoteNumber = (byte) (72 + noteNumber - 1); break; // Mid High
-                        case 0x03: midiNoteNumber = (byte) (84 + noteNumber - 1); break; // High
+                        case 0x00: midiNoteNumber = (byte) (36 + noteNumber); break; // Low
+                        case 0x01: midiNoteNumber = (byte) (48 + noteNumber); break; // Mid Low
+                        case 0x02: midiNoteNumber = (byte) (60 + noteNumber); break; // Mid High
+                        case 0x03: midiNoteNumber = (byte) (72 + noteNumber); break; // High
                     }
                     midiNoteNumber += 12 * channelData[channel].octaveShift;
 
@@ -1312,9 +1311,6 @@ public final class SMAFDecoder
                  * https://github.com/but80/smaf825/blob/v1/smaf/event/event.go
                  */
 
-                // Set default velocity to 127, the default of 64 makes all conversions of this format much quieter than other SMAF
-                for(int i = 0; i < channelData.length; i++) { channelData[i].velocity = 127; }
-
                 // SEQU chunk format uses the same notation of Handy Phone format for duration and gateTime
                 firstDurByte = (byte) (data[offset++] & 0xFF);
                 if ((firstDurByte & (byte) 0x80) == 0) // Single-byte duration
@@ -1337,6 +1333,7 @@ public final class SMAFDecoder
 
                     byte controlEvent = (byte) (data[offset++] & 0xFF);
                     channel = (byte) ((controlEvent >> 6) & 0x03);
+                    channel += handyChannelIdx;
                     byte eventType = (byte) (controlEvent & 0x3f);
 
                     if(eventType == (byte) 0x00) // Fine tune event (fine pitch bend)
@@ -1519,6 +1516,7 @@ public final class SMAFDecoder
                 else // Note event
                 {
                     channel = (byte) ((status >> 6) & 0x03);
+                    channel += handyChannelIdx;
                     byte noteValue = (byte) ((status & 15) + ((status >> 4 & 3) + 3) * 12);
 
                     firstGateByte = (byte) (data[offset++] & 0xFF);
@@ -1674,119 +1672,85 @@ class SmafCRC
     }
 }
 
-class Node 
-{
-    Node left;
-    Node right;
-    byte value; // Only used for leaf nodes
-    boolean isLeaf;
-
-    Node(boolean isLeaf) {
-        this.isLeaf = isLeaf;
-    }
-}
-
 // Huffman decoding largely based on how MMFtool does it
-class BitReader 
+class HuffmanDecoder 
 {
-    private byte[] data;
-    private int byteOffset;
-    private int bitOffset;
+    // Huffman tree variables
+    private static final int N = 256; // Number of characters (decoded values go from 0x00 to 0xFF in range)
+    private static final int[] left = new int[2 * N - 1];
+    private static final int[] right = new int[2 * N - 1];
+    private static int avail = 0;
 
-    public BitReader(byte[] data, int startOffset) 
+    // Bit-reading vars and methods
+    private static byte[] data;
+    private static int size;
+    private static int byteOffset;
+    private static int bitOffset;
+    private static byte currentByte;
+
+    public static int bitRead() 
     {
-        this.data = data;
-        this.byteOffset = startOffset;
-        this.bitOffset = 0;
-    }
-
-    // Read a single bit
-    public int readBit() 
-    {
-        if (byteOffset >= data.length) { return -1; } // We're at EOF
-        
-        int bit = (data[byteOffset] >> (7 - bitOffset)) & 0x01;
-
-        // Move to the next bit
-        bitOffset++;
         if (bitOffset == 8) 
         {
+            if (++byteOffset >= size){ return -1; }
             bitOffset = 0;
-            byteOffset++;
+            currentByte = data[byteOffset];
         }
 
-        return bit;
+        return (currentByte >> (7 - bitOffset++)) & 0x01;
     }
 
-    public int readBits(int n) 
+    public static int bitNRead(int n) 
     {
         int bits = 0;
         for (int i = 0; i < n; i++) 
         {
-            int bit = readBit();
-            if (bit == -1) { return -1; } // Reached EOF
-            bits = (bits << 1) | bit; // Shift left and add the new bit
+            int bit = bitRead();
+            if (bit == -1) { return 0; } // End of data
+            bits = (bits << 1) | bit;
         }
         return bits;
     }
-}
 
-class HuffmanDecoder 
-{
-    private Node root;
-
-    // Method to read the Huffman tree recursively
-    private int readTree(BitReader bf, List<Node> nodes) 
+    // Huffman Tree and decoding
+    public static int readTree(boolean init) 
     {
-        int b = bf.readBit(); // Read one bit
+        int b = bitRead();
+        if (init) { avail = N; }
+
         if (b == -1) { return -1; }
-
-        if (b == 1) // Internal node
-        { 
-            Node internalNode = new Node(false);
-            int index = nodes.size();
-            nodes.add(internalNode);
-
-            // Recursively read left and right children
-            internalNode.left = nodes.get(readTree(bf, nodes));
-            internalNode.right = nodes.get(readTree(bf, nodes));
-            return index; // Return the index of the new internal node
-        } 
-        else // Leaf node
-        { 
-            int leafValue = bf.readBits(8); // Read the byte value for the leaf
-            Node leafNode = new Node(true);
-            leafNode.value = (byte) leafValue; // Store the actual value
-            nodes.add(leafNode);
-            return nodes.size() - 1; // Return the index of the new leaf
-        }
-    }
-
-    // Build the Huffman tree from the bit stream
-    public void buildTree(BitReader bf) 
-    {
-        List<Node> nodes = new ArrayList<Node>();
-        int rootIndex = readTree(bf, nodes);
-        root = nodes.get(rootIndex); // Set the root node
-    }
-
-    // Decode the encoded data
-    public byte[] decode(byte[] encodedData, int decodedSize) 
-    {
-        byte[] decodedData = new byte[decodedSize];
-        int decodedIndex = 0;
-        int bitIndex = 0; // Track current bit index in encodedData
-
-        while (decodedIndex < decodedSize) 
+        if (b == 1) 
         {
-            Node currentNode = root;
-            while (!currentNode.isLeaf) 
+            int i = avail++;
+            if (avail > 2 * N - 1) { return -1; }
+            if ((left[i] = readTree(false)) == -1)  { return -1; }
+            if ((right[i] = readTree(false)) == -1) { return -1; }
+            return i;
+        } 
+        else { return bitNRead(8); }
+    }
+
+    public static byte[] huffmanDecode(int destSize, byte[] src) 
+    {
+        final byte[] decodedData = new byte[destSize];
+        int root;
+        data = src;
+        size = src.length;
+        byteOffset = -1;
+        bitOffset = 8;
+        
+        if ((root = readTree(true)) == -1) { return null; }
+
+        for (int k = 0; k < destSize; k++) 
+        {
+            int j = root;
+            while (j >= N) 
             {
-                int bit = (encodedData[bitIndex / 8] >> (7 - (bitIndex % 8))) & 0x01; // Read the bit
-                currentNode = (bit == 0) ? currentNode.left : currentNode.right;
-                bitIndex++;
+                int b = bitRead();
+                if (b == -1) { return null; }
+                j = (b == 1) ? right[j] : left[j];
             }
-            decodedData[decodedIndex++] = currentNode.value; // We reached a leaf, store the decoded value
+            decodedData[k] = (byte) j;
         }
 
         return decodedData;

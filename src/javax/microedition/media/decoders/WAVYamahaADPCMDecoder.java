@@ -45,27 +45,34 @@ public final class WAVYamahaADPCMDecoder
         -1, -1, -1, -1, 2, 5, 7, 9
     };
 
+    private static final int[] ADPCMZ_STEP_TABLE = 
+    {
+        230, 230, 230, 230, 307, 409, 512, 614
+    };
+
     private static final int clamp(int x, int low, int high) { return (x > high) ? high : (x < low) ? low : x; }
+
+    private static int stepSize, delta, out, adjustedStep, sign, diff, newval, nstep;
 
     private static final int ADPCMAStep(int step, int[] history, int[] stepHist) 
     {
-        int stepSize = ADPCMA_STEP_TABLE[stepHist[0]];
-        int delta = (DELTA_TABLE[step & 15] * stepSize) >> 3;
-        int out = (history[0] + delta) & 0xFFF; // No saturation
+        stepSize = ADPCMA_STEP_TABLE[stepHist[0]];
+        delta = (DELTA_TABLE[step & 15] * stepSize) >> 3;
+        out = (history[0] + delta) & 0xFFF; // No saturation
         //out |= (out & 0x800) != 0 ? ~0xFFF : 0;
         history[0] = out;
-        int adjustedStep = clamp(stepHist[0] + ADJUST_TABLE[step & 7], 0, 48);
+        adjustedStep = clamp(stepHist[0] + ADJUST_TABLE[step & 7], 0, 48);
         stepHist[0] = adjustedStep;
         return out;
     }
 
     private static final int ADPCMBStep(int step, int[] history, int[] stepSize) 
     {
-        int sign = step & 8;
-        int delta = step & 7;
-        int diff = ((1 + (delta << 1)) * stepSize[0]) >> 3;
-        int newval = history[0] + (sign > 0 ? -diff : diff);
-        int nstep = (ADPCMB_STEP_TABLE[delta] * stepSize[0]) >> 6;
+        sign = step & 8;
+        delta = step & 7;
+        diff = ((1 + (delta << 1)) * stepSize[0]) >> 3;
+        newval = history[0] + (sign > 0 ? -clamp(diff, 0, 32767) : clamp(diff, 0, 32767));
+        nstep = ADPCMB_STEP_TABLE[delta] * stepSize[0] >> 6;
 
         stepSize[0] = clamp(nstep, 1280, 32767); // Seems to work better on a wide sample of PCM SMAF data
         //stepSize[0] = clamp(nstep, 127, 24576); // Original code's step clamping
@@ -74,19 +81,32 @@ public final class WAVYamahaADPCMDecoder
         return newval;
     }
 
+    private static final int ADPCMZStep(int step, int[] history, int[] stepSize)
+    {
+        sign = step & 8;
+        delta = step & 7;
+        diff = ((1 + (delta << 1)) * stepSize[0]) >> 3;
+        newval = history[0] + (sign > 0 ? -clamp(diff, 0, 32767) : clamp(diff, 0, 32767));
+        nstep = ADPCMZ_STEP_TABLE[delta] * stepSize[0] >> 8;
+        stepSize[0] = clamp(nstep, 1280, 32767); // Same as ADPCM-B, works better on a wide sample of PCM MLD data
+        //stepSize[0] = clamp(nstep, 127, 24576); // Original code's step clamping
+        history[0] = newval = clamp(newval, -32768, 32767);
+        return newval;
+    }
+
     public static final byte[] ADPCMADecode(byte[] buffer, int originalSampleRate, int numChannels) 
     {
         int[] history    = {0};
-        int[] stepHist   = {0}; // Changed to int[] for consistency
+        int[] stepHist   = {0}; 
         byte[] outBuffer = new byte[buffer.length * 4]; // 4 bytes for each input byte (yamaha and ima adpcm go from 4 bits to 16)
 
-        int outputIndex = 0;
+        int outputIndex = 0, step = 0, decodedSample = 0;
 
         for (int i = 0; i < buffer.length; i++) 
         {
             // lower nibble
-            int step = (buffer[i] & 0x0F);
-            int decodedSample = ADPCMAStep(step, history, stepHist) << 4;
+            step = (buffer[i] & 0x0F);
+            decodedSample = ADPCMAStep(step, history, stepHist) << 4;
             outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
 
@@ -102,23 +122,51 @@ public final class WAVYamahaADPCMDecoder
 
     public static final byte[] ADPCMBDecode(byte[] buffer, int originalSampleRate, int numChannels) 
     {
-        int[] history    = {0}; // History as an array for mutability
-        int[] stepSize   = {127}; // Step size as an array for mutability
+        int[] history    = {0};
+        int[] stepSize   = {127};
         byte[] outBuffer = new byte[buffer.length * 4]; // 4 bytes per input byte
 
-        int outputIndex = 0;
+        int outputIndex = 0, step = 0, decodedSample = 0;
 
         for (int i = 0; i < buffer.length; i++) 
         {
             // lower nibble
-            int step = (buffer[i] & 0x0F);
-            int decodedSample = ADPCMBStep(step, history, stepSize);
+            step = (buffer[i] & 0x0F);
+            decodedSample = ADPCMBStep(step, history, stepSize);
             outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
 
             // upper nibble
             step = (buffer[i] >> 4) & 0x0F;
             decodedSample = ADPCMBStep(step, history, stepSize);
+            outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
+            outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
+        }
+
+        return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16, outBuffer.length);
+    }
+
+    public static final byte[] ADPCMZDecode(byte[] buffer, int originalSampleRate, int numChannels) 
+    {
+        int[] history    = {0};
+        int[] stepSize   = {127};
+        byte[] outBuffer = new byte[buffer.length * 4]; // 4 bytes per input byte
+
+        int outputIndex = 0, step = 0, decodedSample = 0;
+        
+        for (int i = 0; i < buffer.length; i++) 
+        {
+            history[0] *= (254 / 256); // Apply a bit of High pass to the historical sample
+
+            // lower nibble
+            step = (buffer[i] & 0x0F);
+            decodedSample = ADPCMZStep(step, history, stepSize);
+            outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
+            outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
+
+            // upper nibble
+            step = (buffer[i] >> 4) & 0x0F;
+            decodedSample = ADPCMZStep(step, history, stepSize);
             outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
         }
