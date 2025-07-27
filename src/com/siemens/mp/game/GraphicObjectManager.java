@@ -71,14 +71,12 @@ public class GraphicObjectManager extends com.siemens.mp.misc.NativeMem
 	
 	public void paint(ExtendedImage img, int x, int y) { paint(img.getImage(), x, y); }
 
-	// This one paints to an offscreen image, so we should limit the framerate here
 	public void paint(Image image, int x, int y) 
 	{ 
 		for (GraphicObject obj : list) 
 		{
 			if (obj.getVisible()) { obj.paint(image.getGraphics(), x, y); }
 		}
-		Mobile.getPlatform().limitFps();
 	}
 
 }

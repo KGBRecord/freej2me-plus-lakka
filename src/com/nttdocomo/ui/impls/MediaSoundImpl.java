@@ -75,7 +75,7 @@ public class MediaSoundImpl implements com.nttdocomo.ui.MediaSound
         catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, MediaSoundImpl.class.getPackage().getName() + "." + MediaSoundImpl.class.getSimpleName() + ": " + "Failed to create Player from byte array:" + e.getMessage()); }
     }
 
-	public void use() throws ConnectionException, UIException { }
+	public void use() throws ConnectionException, UIException { player.realize(); }
 
 	public void unuse() { player.deallocate(); }
 

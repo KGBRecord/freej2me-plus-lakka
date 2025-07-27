@@ -326,6 +326,8 @@ public final class WAVTools
 
 	public static final byte[] upsample(byte[] input, int originalSampleRate, int newSampleRate, short numChannels, short numBits, int inputLength) 
 	{
+		inputLength = Math.min(input.length, inputLength); // Some wav files might report a sample length bigger than the actual data (Shadow Shoot)
+
 		int newLength = (int) (inputLength * ((double) newSampleRate / originalSampleRate));
 		byte[] upsampled;
 

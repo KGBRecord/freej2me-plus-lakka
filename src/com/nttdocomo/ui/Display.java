@@ -148,7 +148,7 @@ public class Display
 
     public static boolean isColor() { return true; }
 
-    public static int numColors() { return 167772162; }
+    public static int numColors() { return Integer.MAX_VALUE; }
 
     public static void setCurrent(Frame frame) 
     {
@@ -164,7 +164,7 @@ public class Display
             // Some jars call upon a canvas repaint() once they're ready. If the canvas still hasn't been shown at this time, wait a bit longer before forcing a repaint
             if(current instanceof Canvas && !((Canvas) current).hasBeenDrawnAfterSet())
             { 
-                int maxWait = 200; // Wait for a max of 200ms, i don't want to start littering FreeJ2ME-Plus with compatibility flags
+                int maxWait = 66; // Wait for a max of 66ms, i don't want to start littering FreeJ2ME-Plus with compatibility flags
 
                 while(!((Canvas) current).hasBeenDrawnAfterSet() && maxWait > 0) 
                 {

@@ -106,7 +106,7 @@ public class Font
 
 	public static void updateDefaultFont() 
 	{
-		defaultFont.platformFont = new PlatformFont(new Font(defaultFont.face, defaultFont.style, defaultFont.size));
+		defaultFont = new Font(defaultFont.face, defaultFont.style, defaultFont.size);
 	}
 
 	public int getFace() { return face; }

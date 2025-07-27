@@ -1190,7 +1190,7 @@ public class PlatformPlayer implements Player
 					stream.read(tmpStream, 0, stream.available());
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "WAV Format is " + wavHeaderData[0] + " Trying to load as PCM WAV.");
 				}
-			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prepare wav stream:" + e.getMessage());}
+			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prepare wav stream:" + e.getMessage()); }
 		}
 
 		public void realize() 

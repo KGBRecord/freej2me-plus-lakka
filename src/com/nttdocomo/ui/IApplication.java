@@ -88,12 +88,9 @@ public abstract class IApplication
 		properties = initProperties;
 	}
 
-    public String getSourceURL() { return properties.get("PackageURL"); }
+    public String getSourceURL() { return "dojanetstub://" + properties.get("PackageURL"); }
 
-    public static final IApplication getCurrentApp() 
-    {
-        return Mobile.iAppli; 
-    }
+    public static final IApplication getCurrentApp() { return Mobile.iAppli; }
 
     public String getParameter(String name)
 	{

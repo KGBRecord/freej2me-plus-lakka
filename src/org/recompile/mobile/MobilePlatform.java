@@ -68,8 +68,6 @@ public class MobilePlatform
 	private long sleepTime = 0;
 
 	// Whether the user has toggled the ShowFPS option
-	private final int OVERLAY_WIDTH = 100;
-	private final int OVERLAY_HEIGHT = 20;
 	public static String showFPS = "Off";
 
 	// Canvas command bar focus
@@ -92,7 +90,7 @@ public class MobilePlatform
 	// MobilePlatform will handle the input repeats as well
 	public static boolean[] pressedKeys = new boolean[23];
 
-	public static Runnable painter;
+	public static Runnable painter, postDraw;
 
 	public MobilePlatform(int width, int height)
 	{
@@ -170,6 +168,8 @@ public class MobilePlatform
 	public static PlatformImage getLcdBackbuffer() { return lcd; }
 
 	public BufferedImage getLcdFrontbufferImage() { return lcdFrontbuffer.getCanvas(); }
+
+	public Graphics getLcdFrontbufferGraphics() { return (Graphics) gcFrontbuffer; }
 
 	public void setPainter(Runnable r) { painter = r; }
 
@@ -809,14 +809,16 @@ public class MobilePlatform
 		if(!Mobile.isPaused)
 		{
 			gcFrontbuffer.flushGraphics(img, x, y, width, height);
-			
+			if(postDraw != null) { postDraw.run(); postDraw = null; }
 			painter.run();
-
+			
 			if(focusCommandBar)
 			{
 				timeToUnfocus -= (System.nanoTime()-lastRenderTime);
 				if(timeToUnfocus <= 0) { focusCommandBar = false; }
 			}
+
+			Mobile.getPlatform().limitFps();
 		}
 	}
 
@@ -840,4 +842,8 @@ public class MobilePlatform
 		focusCommandBar = true;
 		timeToUnfocus = 3000000000L;
 	}
+
+	// LCDUI command bar and other "overlay" renders:
+
+	public void setPostFlushDraw(Runnable r) { postDraw = r; }
 }

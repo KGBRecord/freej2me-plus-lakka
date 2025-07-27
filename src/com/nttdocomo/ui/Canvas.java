@@ -22,14 +22,12 @@ import org.recompile.mobile.MobilePlatform;
 public abstract class Canvas extends Frame 
 {
 	
-	private int barHeight;
 	private boolean firstDrawn = false;
 
     public Canvas() 
     { 
         super(); 
 
-		barHeight = Font.getDefaultFont().getHeight();
         Mobile.log(Mobile.LOG_INFO, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Create I-Appli Canvas:" + width+", "+height);
     }
 
@@ -81,39 +79,42 @@ public abstract class Canvas extends Frame
 			e.printStackTrace();
 		}
 
-		// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-		if (labelVisible) { paintCommandsBar(); }
+		// Draw command bar whenever the canvas is not fullscreen, and always queue it to draw after the flush
+		if (labelVisible) 
+		{ 
+			Mobile.getPlatform().setPostFlushDraw(new Runnable() 
+			{
+				@Override
+				public void run() { paintCommandsBar(); }
+			});
+		}
 
-		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, labelVisible ? height+barHeight : height); // Extend the draw area if we have the commands bar visible
-		Mobile.getPlatform().limitFps();
+		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
 	}
 
 	private void paintCommandsBar() 
 	{
-		// labels should work independently of the current graphics translation, so translate back to 0,0 before any drawing and restore at the end
-		int restoreX = graphics.getTranslateX(), restoreY = graphics.getTranslateY();
-		int clipX = graphics.getClipX(), clipY = graphics.getClipY(), clipW = graphics.getClipWidth(), clipH = graphics.getClipHeight();
+		// The command bar shouldn't influence canvas drawing operations, so it's added directly to the frontBuffer after swapping.
+		javax.microedition.lcdui.Graphics graphics = Mobile.getPlatform().getLcdFrontbufferGraphics();
 
-		graphics.setOrigin(0, 0);
-		graphics.clearClip();
-
+		final int barHeight = javax.microedition.lcdui.Font.getDefaultFont().getHeight(); // For consistent commandBar size between DoJa and MIDP
 		// Fade the command bar if there's one second left to hide it
 		long fadeStart = 1000000000L;
 		if (MobilePlatform.timeToUnfocus < fadeStart) 
 		{
 			graphics.setAlphaRGB(((byte)(0xFF * Math.max(0, Math.min(1, MobilePlatform.timeToUnfocus / 1000000000.0))) << 24) | Mobile.lcduiBGColor);
-		} 
-		else { graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiBGColor); }
-
-		graphics.fillRect(0, height-barHeight, width, barHeight);
-
-		if (MobilePlatform.timeToUnfocus < fadeStart) 
-		{
+			graphics.fillRect(0, Mobile.lcdHeight-barHeight, Mobile.lcdWidth, barHeight);
 			graphics.setAlphaRGB(((byte)(0xFF * Math.max(0, Math.min(1, MobilePlatform.timeToUnfocus / 1000000000.0))) << 24) | Mobile.lcduiTextColor);
 		} 
-		else { graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiTextColor); }
-		graphics.drawLine(0, height-barHeight, width, height-barHeight);
-		graphics.drawLine(width/2, height-barHeight, width/2, height);
+		else 
+		{ 
+			graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiBGColor); 
+			graphics.fillRect(0, Mobile.lcdHeight-barHeight, Mobile.lcdWidth, barHeight);
+			graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiTextColor);
+		}
+		
+		graphics.drawLine(0, Mobile.lcdHeight-barHeight, Mobile.lcdWidth, Mobile.lcdHeight-barHeight);
+		graphics.drawLine(Mobile.lcdWidth/2, Mobile.lcdHeight-barHeight, Mobile.lcdWidth/2, Mobile.lcdHeight);
 
 		// Command text drawing
 		int textCenter;
@@ -121,16 +122,13 @@ public abstract class Canvas extends Frame
 
 		String label = softLabels[0] != null ? softLabels[0] : "";
 		textCenter = (graphics.getGraphics2D().getFontMetrics().stringWidth(label))/2;
-		xPos = (width / 4) - textCenter;
-		graphics.drawString(label, xPos, height-barHeight, Graphics.LEFT);
+		xPos = (Mobile.lcdWidth / 4) - textCenter;
+		graphics.drawString(label, xPos, Mobile.lcdHeight-barHeight, Graphics.LEFT);
 
 		label = softLabels[1] != null ? softLabels[1] : "";
 		textCenter = (graphics.getGraphics2D().getFontMetrics().stringWidth(label))/2;
-		xPos = (3 * width / 4) - textCenter;
-		graphics.drawString(softLabels[1], xPos, height-barHeight, Graphics.LEFT);
-
-		graphics.setOrigin(restoreX, restoreY);
-		graphics.setClip(clipX, clipY, clipW, clipH);
+		xPos = (3 * Mobile.lcdWidth / 4) + textCenter;
+		graphics.drawString(softLabels[1], xPos, Mobile.lcdHeight-barHeight, Graphics.RIGHT);
 	}
 
 	public final boolean hasBeenDrawnAfterSet() { return firstDrawn; }

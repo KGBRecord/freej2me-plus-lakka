@@ -253,11 +253,17 @@ public abstract class Canvas extends Displayable
 			e.printStackTrace();
 		}
 
-		// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-		if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
+		// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar, and always queue it to draw after the flush
+		if (!fullscreen && !commands.isEmpty()) 
+		{ 
+			Mobile.getPlatform().setPostFlushDraw(new Runnable() 
+			{
+				@Override
+				public void run() { paintCommandsBar(); }
+			});
+		}
 
-		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, (!fullscreen && !commands.isEmpty()) ? height+barHeight : height); // Extend draw area if commands are visible
-		Mobile.getPlatform().limitFps();
+		Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height); 
 	}
 
 	public void serviceRepaints() 
@@ -299,9 +305,7 @@ public abstract class Canvas extends Displayable
 
 	public int getHeight() 
 	{
-		if (Mobile.isKDDI) {
-			return (height - ((!fullscreen ) ? barHeight : 0));
-		}
+		if (Mobile.isKDDI) { return (height - ((!fullscreen ) ? barHeight : 0)); }
 		return height;
 	}
 
@@ -309,30 +313,26 @@ public abstract class Canvas extends Displayable
 
 	private void paintCommandsBar() 
 	{
-		// LCDUI should work independently of the current graphics translation, so translate back to 0,0 before any drawing and restore at the end
-		int restoreX = graphics.getTranslateX(), restoreY = graphics.getTranslateY();
-		int clipX = graphics.getClipX(), clipY = graphics.getClipY(), clipW = graphics.getClipWidth(), clipH = graphics.getClipHeight();
-
-		graphics.setOrigin(0, 0);
-		graphics.clearClip();
+		// The command bar shouldn't influence canvas drawing operations, so it's added directly to the frontBuffer after swapping.
+		javax.microedition.lcdui.Graphics graphics = Mobile.getPlatform().getLcdFrontbufferGraphics();
 
 		// Fade the command bar if there's one second left to hide it
 		long fadeStart = 1000000000L;
 		if (MobilePlatform.timeToUnfocus < fadeStart) 
 		{
 			graphics.setAlphaRGB(((byte)(0xFF * Math.max(0, Math.min(1, MobilePlatform.timeToUnfocus / 1000000000.0))) << 24) | Mobile.lcduiBGColor);
-		} 
-		else { graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiBGColor); }
-		
-		graphics.fillRect(0, height-barHeight, width, barHeight);
-
-		if (MobilePlatform.timeToUnfocus < fadeStart) 
-		{
+			graphics.fillRect(0, Mobile.lcdHeight-barHeight, Mobile.lcdWidth, barHeight);
 			graphics.setAlphaRGB(((byte)(0xFF * Math.max(0, Math.min(1, MobilePlatform.timeToUnfocus / 1000000000.0))) << 24) | Mobile.lcduiTextColor);
 		} 
-		else { graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiTextColor); }
-		graphics.drawLine(0, height-barHeight, width, height-barHeight);
-		graphics.drawLine(width/2, height-barHeight, width/2, height);
+		else 
+		{ 
+			graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiBGColor); 
+			graphics.fillRect(0, Mobile.lcdHeight-barHeight, Mobile.lcdWidth, barHeight);
+			graphics.setAlphaRGB((0xFF << 24) | Mobile.lcduiTextColor);
+		}
+		
+		graphics.drawLine(0, Mobile.lcdHeight-barHeight, Mobile.lcdWidth, Mobile.lcdHeight-barHeight);
+		graphics.drawLine(Mobile.lcdWidth/2, Mobile.lcdHeight-barHeight, Mobile.lcdWidth/2, Mobile.lcdHeight);
 		
 		// Command text drawing
 		int textCenter;
@@ -342,18 +342,13 @@ public abstract class Canvas extends Displayable
 		{
 			String label = commands.size() > 2 ? "Options" : commands.get(0).getLabel();
 			textCenter = (graphics.getGraphics2D().getFontMetrics().stringWidth(label))/2;
-			xPos = (width / 4) - textCenter;
-			graphics.drawString(label, xPos, height-barHeight, Graphics.LEFT);
-		}
-		if (commands.size() == 2) 
-		{
-			textCenter = (graphics.getGraphics2D().getFontMetrics().stringWidth(commands.get(1).getLabel()))/2;
-			xPos = (3 * width / 4) - textCenter;
-			graphics.drawString(commands.get(1).getLabel(), xPos, height-barHeight, Graphics.LEFT);
-		}
+			xPos = (Mobile.lcdWidth / 4) - textCenter;
+			graphics.drawString(label, xPos, Mobile.lcdHeight-barHeight, Graphics.LEFT);
 
-		graphics.setOrigin(restoreX, restoreY);
-		graphics.setClip(clipX, clipY, clipW, clipH);
+			textCenter = (graphics.getGraphics2D().getFontMetrics().stringWidth(commands.size() > 1 ? commands.get(1).getLabel() : ""))/2;
+			xPos = (3 * Mobile.lcdWidth / 4) + textCenter;
+			graphics.drawString(commands.size() > 1 ? commands.get(1).getLabel() : "", xPos, Mobile.lcdHeight-barHeight, Graphics.RIGHT);
+		}
 	}
 
 	public void addCommand(Command cmd)	{ super.addCommand(cmd); }

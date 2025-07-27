@@ -1742,6 +1742,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		// Set the font color and draw it
 		setColor(0xFFAF00); // Text color is orange
 		drawString(fpsText, 0, 0, TOP | LEFT);
-		reset();
+		setOrigin(0, 0);
+		setColor(0, 0, 0);
 	}
 }

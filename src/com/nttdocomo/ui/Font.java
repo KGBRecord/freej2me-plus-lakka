@@ -61,7 +61,7 @@ public class Font
 	protected int style;
 	protected int size;
 
-	protected static Font defaultDoJaFont = null;
+	protected static Font defaultFont = null;
 
 	public PlatformFont platformFont;
 
@@ -88,7 +88,7 @@ public class Font
 		else if (minSize < 220) { screenType = 2; }
 		else                    { screenType = 3; }
 		
-		defaultDoJaFont = new Font(FACE_SYSTEM, STYLE_PLAIN, convertSize(SIZE_MEDIUM));   
+		defaultFont = new Font(FACE_SYSTEM, STYLE_PLAIN, convertSize(SIZE_MEDIUM));   
 	}
 
 	public int getAscent() { return platformFont.getAscent();  }
@@ -99,16 +99,16 @@ public class Font
 
 	public static Font getFont(int type) { return getDefaultFont(); }
 
-	public static Font getDefaultFont() { return defaultDoJaFont; }
+	public static Font getDefaultFont() { return defaultFont; }
 
 	public static void setDefaultFont(Font font) 
 	{
-		if(font != null) { defaultDoJaFont = font; }
+		if(font != null) { defaultFont = font; }
 	}
 
 	public static void updateDefaultFont() 
 	{
-		defaultDoJaFont.platformFont = new PlatformFont(new Font(defaultDoJaFont.face, defaultDoJaFont.style, defaultDoJaFont.size));
+		defaultFont = new Font(defaultFont.face, defaultFont.style, defaultFont.size);
 	}
 
 	public int getDescent() { return 0; }

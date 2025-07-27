@@ -183,17 +183,17 @@ public class PlatformImage
 		
 		if(image == null) { throw new IllegalArgumentException("Can't load image from byte array, as the returned image is null."); }
 
-		if(mutable) 
-		{ 
-			if(!Mobile.isDoJa) { gc = new Graphics(this); }
-			else { djgc = new com.nttdocomo.ui.Graphics(this); }
-		}
-
 		if(image.getType() == BufferedImage.TYPE_INT_ARGB || image.getType() == BufferedImage.TYPE_INT_RGB) { canvas = image; }
 		else 
 		{
 			canvas = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
 			canvas.getGraphics().drawImage(image, 0, 0, null);
+		}
+
+		if(mutable) 
+		{ 
+			if(!Mobile.isDoJa) { gc = new Graphics(this); }
+			else { djgc = new com.nttdocomo.ui.Graphics(this); }
 		}
 
 		isMutable = mutable;

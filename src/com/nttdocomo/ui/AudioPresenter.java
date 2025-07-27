@@ -17,6 +17,10 @@
 package com.nttdocomo.ui;
 
 import com.nttdocomo.ui.impls.MediaSoundImpl;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformPlayer;
 
@@ -58,15 +62,27 @@ public class AudioPresenter implements MediaPresenter
 
     private int priority;
 
+    private static Map<Integer, AudioPresenter> usedPorts =  new HashMap<Integer, AudioPresenter>();
+
     protected AudioPresenter() {}
 
-    public static AudioPresenter getAudioPresenter() { return new AudioPresenter();  }
+    public static AudioPresenter getAudioPresenter() { return getAudioPresenter(0); }
 
-    public static AudioPresenter getAudioPresenter(int param) 
+    public static AudioPresenter getAudioPresenter(int port) 
     {
         AudioPresenter presenter = new AudioPresenter();
+
+        // See if the port is already in use and override its currently placed AudioPresenter.
+        if(!usedPorts.containsKey(port)) 
+        {
+            usedPorts.put(port, new AudioPresenter());
+        }
+        else 
+        {
+            usedPorts.replace(port, new AudioPresenter());
+        }
         
-        return presenter;
+        return usedPorts.get(port);
     }
 
     public static AudioTrackPresenter getAudioTrackPresenter() { return new AudioTrackPresenter(); }
@@ -115,7 +131,6 @@ public class AudioPresenter implements MediaPresenter
     public void setSound(MediaSound sound) 
     { 
         this.mediaSound = (MediaSoundImpl) sound; 
-        this.mediaSound.getPlayer().realize();
     }
 
     public void setAttribute(int attribute, int value) 
@@ -141,10 +156,10 @@ public class AudioPresenter implements MediaPresenter
                 break;
             case SET_VOLUME:
                 Mobile.log(Mobile.LOG_DEBUG, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setVolume:" + value);
-                //if(mediaSound.getPlayer() != null) { ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(value); }
+                if(mediaSound.getPlayer() != null) { ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(value); }
                 break;
             case LOOP_COUNT:
-                mediaSound.getPlayer().setLoopCount(value);
+                if(mediaSound.getPlayer() != null) { mediaSound.getPlayer().setLoopCount(value); }
                 break;
             default:
                 throw new IllegalArgumentException("Invalid attribute: " + attribute);

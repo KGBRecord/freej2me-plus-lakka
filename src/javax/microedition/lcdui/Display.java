@@ -254,7 +254,7 @@ public class Display
 
 	public int numAlphaLevels() { return 256; }
 
-	public int numColors() { return 16777216; }
+	public int numColors() { return Integer.MAX_VALUE; }
 
 	public void setCurrent(final Displayable next)
 	{
@@ -298,11 +298,10 @@ public class Display
 				// Paint displayable block
 				try 
 				{
-					
 					// Some jars call upon a canvas repaint() once they're ready. If the canvas still hasn't been shown at this time, wait a bit longer before forcing a repaint
 					if(current instanceof Canvas && !((Canvas) current).hasBeenDrawnAfterSet())
 					{ 
-						int maxWait = 200; // Wait for a max of 200ms, i don't want to start littering FreeJ2ME-Plus with compatibility flags
+						int maxWait = 66; // Wait for a max of 66ms (~15fps interval), i don't want to start littering FreeJ2ME-Plus with compatibility flags
 
 						while(!((Canvas) current).hasBeenDrawnAfterSet() && maxWait > 0) 
 						{
@@ -314,14 +313,14 @@ public class Display
 						if(!((Canvas) current).hasBeenDrawnAfterSet()) { ((Canvas) current).repaint(0, 0, current.getWidth(), current.getHeight()); }
 					}
 					else { current.notifySetCurrent(); } // Displayables other than canvas have drawing dictated entirely by FreeJ2ME, so always force a draw to happen on setCurrent
-
-					Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
 				}
 				catch (Exception e)
 				{
 					Mobile.log(Mobile.LOG_ERROR, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "SetCurrent paint block failed: " + e.getMessage());
 					e.printStackTrace();
 				}
+
+				Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
 			}
 		});
 		if(Mobile.compatImmediateRepaints) { setCurrentRequest.getAndSet(null).run(); }
