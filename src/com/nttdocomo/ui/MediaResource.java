@@ -20,7 +20,12 @@ public interface MediaResource
 {
 	public static String AUDIO_3D_RESOURCES = "3d.resources";
 	
+	public String getProperty(String key);
+	public void setProperty(String key, String value);
+	public boolean isRedistributable();
+	public boolean setRedistributable(boolean redistributable);
     public void use() throws com.nttdocomo.io.ConnectionException, UIException;
+	public void use(MediaResource overwritten, boolean useOnce) throws com.nttdocomo.io.ConnectionException, UIException;
     public void unuse();
     public void dispose();
 }

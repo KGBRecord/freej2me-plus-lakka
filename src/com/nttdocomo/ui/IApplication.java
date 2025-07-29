@@ -115,4 +115,9 @@ public abstract class IApplication
         }
 		System.exit(0);
     }
+
+    public final void launch(int target, String[] arguments) 
+    { 
+        Mobile.log(Mobile.LOG_WARNING, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "launch(int, String[]) not implemented");
+    }
 }

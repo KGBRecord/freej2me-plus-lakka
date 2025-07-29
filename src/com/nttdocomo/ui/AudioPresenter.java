@@ -21,6 +21,8 @@ import com.nttdocomo.ui.impls.MediaSoundImpl;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.microedition.media.Player;
+
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformPlayer;
 
@@ -59,12 +61,13 @@ public class AudioPresenter implements MediaPresenter
     
     private MediaData mediaData = null;
     private MediaSoundImpl mediaSound = null;
+    private MediaListener listener = null;
 
-    private int priority;
+    private int priority, loopCount = 1, volume = 100;
 
     private static Map<Integer, AudioPresenter> usedPorts =  new HashMap<Integer, AudioPresenter>();
 
-    protected AudioPresenter() {}
+    protected AudioPresenter() { }
 
     public static AudioPresenter getAudioPresenter() { return getAudioPresenter(0); }
 
@@ -97,6 +100,7 @@ public class AudioPresenter implements MediaPresenter
 
     public Audio3D getAudio3D() 
     {
+        Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "getAudio3D (not implemented)");
         return new Audio3D();
     }
 
@@ -104,29 +108,77 @@ public class AudioPresenter implements MediaPresenter
 
     public void play(int time) 
     {
-        mediaSound.getPlayer().setMediaTime(time);
+        if((mediaSound == null && mediaData == null) ||
+            (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
+            /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
+            
+        )
+        { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
+        if(time < 0) { throw new IllegalArgumentException("Invalid value received for time");}
+
+        if(mediaSound.getPlayer().getState() >= Player.REALIZED) { mediaSound.getPlayer().setMediaTime(time); }
+        if(mediaSound.getPlayer().getState() >= Player.REALIZED && mediaSound.getPlayer().getState() < Player.STARTED) { mediaSound.getPlayer().setLoopCount(loopCount); }
+        ((PlatformPlayer)mediaSound.getPlayer()).setDoJaListener(listener, this);
+        if(mediaSound.getPlayer().getState() >= Player.REALIZED) 
+        { 
+            ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(volume);
+        }
         mediaSound.getPlayer().start();
     }
 
     public void stop() 
     {
+        if((mediaSound == null && mediaData == null) ||
+            (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
+            /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
+            
+        )
+        { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
+
         mediaSound.getPlayer().stop();
-        mediaSound.getPlayer().setMediaTime(0);
+        if(mediaSound.getPlayer().getState() >= Player.REALIZED) { mediaSound.getPlayer().setMediaTime(0); }
     }
 
     // Despite the name, this is actually a resume call
     public void restart() 
     {
+        if((mediaSound == null && mediaData == null) ||
+            (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
+            /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
+            
+        )
+        { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
+
+        ((PlatformPlayer)mediaSound.getPlayer()).setDoJaListener(listener, this);
+        if(mediaSound.getPlayer().getState() >= Player.REALIZED) 
+        { 
+            ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(volume);
+        }
         mediaSound.getPlayer().start();
     }
 
-    public void pause() { mediaSound.getPlayer().stop(); }
+    public void pause() 
+    { 
+        if((mediaSound == null && mediaData == null) ||
+            (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
+            /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
+            
+        )
+        { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
 
-    public int getCurrentTime() { return (int) (mediaSound.getPlayer().getMediaTime() / 1000); }
+        mediaSound.getPlayer().stop(); 
+    }
 
-    public int getTotalTime() { return (int) (mediaSound.getPlayer().getDuration() / 1000); }
+    public int getCurrentTime() { return mediaSound.getPlayer() == null || mediaSound.getPlayer().getState() == Player.CLOSED ? 0 : (int) (mediaSound.getPlayer().getMediaTime() / 1000); }
 
-    public void setData(MediaData data) { this.mediaData = data; }
+    public int getTotalTime() { return mediaSound.getPlayer() == null || mediaSound.getPlayer().getState() == Player.CLOSED ? 0 : (int) (mediaSound.getPlayer().getDuration() / 1000); }
+
+    public void setData(MediaData data) 
+    { 
+        Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setData called (not implemented)");
+        System.out.println("setDat");
+        this.mediaData = data; 
+    }
 
     public void setSound(MediaSound sound) 
     { 
@@ -156,27 +208,21 @@ public class AudioPresenter implements MediaPresenter
                 break;
             case SET_VOLUME:
                 Mobile.log(Mobile.LOG_DEBUG, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setVolume:" + value);
-                if(mediaSound.getPlayer() != null) { ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(value); }
+                volume = value;
                 break;
             case LOOP_COUNT:
-                if(mediaSound.getPlayer() != null) { mediaSound.getPlayer().setLoopCount(value); }
+                Mobile.log(Mobile.LOG_DEBUG, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setLoopCount:" + value);
+                loopCount = value;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid attribute: " + attribute);
         }
     }
 
-    public void setMediaListener(MediaListener listener) 
-    { 
-        if(mediaSound != null) { ((PlatformPlayer)mediaSound.getPlayer()).setDoJaListener(listener, this); }
-    }
+    public void setMediaListener(MediaListener listener) { this.listener = listener; }
 
     public void setSyncEvent(int channel, int key) 
     { 
-        Mobile.log(Mobile.LOG_DEBUG, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setSyncEvent not implemented. channel: " + channel + " key:" + key);
+        Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setSyncEvent not implemented. channel: " + channel + " key:" + key);
     }
-
-    public void unuse() { }
-
-    public void dispose() { }
 }

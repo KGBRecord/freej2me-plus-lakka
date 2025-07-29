@@ -497,9 +497,10 @@ public final class MLDDecoder
         try { decodeTRACEvents(byteData); curTrack++; }
         catch(Exception e) 
         {
-            Mobile.log(Mobile.LOG_ERROR, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Failed to decode track events: " + e.getMessage());
+            Mobile.log(Mobile.LOG_ERROR, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Failed to decode track events: " + e.getMessage() + " ");
             e.printStackTrace();
-            SequenceData = null;
+            throw new NullPointerException();
+            //SequenceData = null;
         }
     }
 
@@ -570,6 +571,16 @@ public final class MLDDecoder
                             pcmDataPositions.put(totalDuration, (int) eventChannel);
                             pcmDataVelocities.put(totalDuration, (eventValue & 0x3F) * 2);
                             break;
+                        case (byte) 0x81: // Sonic 2 Trial uses this, seems to be ADPCM panpot
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Unsupported audio channel panpot (PCM) event value " + ((eventValue & 0x3F) * 2) + ", channel " + eventChannel);
+                            //voice is 2 bits "((eventValue >> 6) & 0x03)", panpot is 6 bits "(eventValue & 0x3F) * 2"
+                            //pcmDataPositions.put(totalDuration, (int) eventChannel);
+                            //pcmDataVelocities.put(totalDuration, (eventValue & 0x3F) * 2);
+                            break;
+
+                        case (byte) 0x90: // Sonic 2 Trial uses this, seems to be 3D positioning 
+                            Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Unsupported 3D positioning (PCM) event value " + ((eventValue & 0x3F) * 2) + ", channel " + eventChannel);
+
 
                         case (byte) 0xB0: // MASTER_VOLUME
                             Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Setting Master Volume to " + (eventValue & 0x7F));
@@ -811,8 +822,8 @@ public final class MLDDecoder
                             break;
                         
                         // Unknown status bytes
-                        case (byte) 0x8C: // Bomberman '08 has a MLD file that contains PCM and this status byte
-                        case (byte) 0x92: // Bomberman '08 has a MLD file that contains PCM and this status byte
+                        case (byte) 0x8C: // Bomberman '08 uses this
+                        case (byte) 0x92: // Bomberman '08 uses this
                         default:
                             // Unknown status
                             Mobile.log(Mobile.LOG_WARNING, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " + "Unknown status byte: " + String.format("0x%02X", eventParam));
@@ -838,6 +849,7 @@ public final class MLDDecoder
                 eventChannel = (byte) (curTrack * 4 + eventChannelIndex);
                 noteNumber = (byte) ((status & 0x3F) + 45); // Note 15 in CMF/MFi is C4, which means that all note values should be increased by 45 (60 is C4 in midi)
         
+                if(offset >= data.length) { return; } // TODO: This shouldn't be needed. Most likely it is the result of an improper parsing of events above
                 gateTime = Math.round((data[offset++] & 0xFF) * getMillisecondsPerTick());
 
                 // TODO: On SMAF documentation, gateTime cannot be zero. This indicates either a corrupted file or a parse error... let's assume the same for CMF/MFi

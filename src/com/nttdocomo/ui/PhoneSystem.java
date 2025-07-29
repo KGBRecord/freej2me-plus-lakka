@@ -92,14 +92,11 @@ public class PhoneSystem
     public static final int DEV_KEYPAD = 8;
     public static final int DEV_AUDIO_SURROUND = 10;
     public static final int DEV_AREAINFO = 11;
+
+    public static final int DEV_UNKNOWN = 7; // Taiko no Tatsujin 4 requests this
    
-    
-    
-    
-    
 
-
-    private static int[] attributes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    private static int[] attributes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     private PhoneSystem() {}
 
@@ -114,7 +111,7 @@ public class PhoneSystem
 
     public static int getAttribute(int attr) 
     {
-        if (!isValidAttribute(attr, 0)) { throw new IllegalArgumentException("Invalid attribute to get."); }
+        if (!isValidAttribute(attr, 0)) { throw new IllegalArgumentException("Invalid attribute to get:" + attr); }
         return attributes[attr];
     }
 
@@ -153,7 +150,9 @@ public class PhoneSystem
                     value == ATTR_AREAINFO_ROAMINGOUT || value == ATTR_AREAINFO_SELFMODE ||
                     value == ATTR_AREAINFO_UNKNOWN;
             case DEV_KEYPAD:
-                return true; // TODO                
+                return true; // TODo
+            case DEV_UNKNOWN:
+                return true;
         }
         return false;
     }

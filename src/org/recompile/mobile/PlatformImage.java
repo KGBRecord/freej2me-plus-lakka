@@ -236,7 +236,7 @@ public class PlatformImage
 		canvas = transformImage(sub, transform);
 	}
 
-	// These constructors are exclusive to DoJa's Image classes
+	// These constructors and methods are exclusive to DoJa's Image classes
 	public PlatformImage(com.nttdocomo.ui.Image source) 
 	{
 		// Create a copy from a DoJa Image
@@ -260,6 +260,21 @@ public class PlatformImage
 		System.arraycopy(data, off, canvasPixels, 0, Width * Height);
 		
 		isMutable = true;
+	}
+
+	// This only iterates through colors that changed in order to save time (see 'com.nttdocomo.ui.PalettedImage')
+	public void updateImagePalette(int[] originalColors, int[] newColors) 
+	{
+		for(int y = 0; y < getHeight(); y++) 
+		{
+			for(int x = 0; x < getWidth(); x++) 
+			{
+				for(int i = 0; i < originalColors.length; i++) 
+				{
+					if(getPixel(x, y) == originalColors[i]) { setPixel(x, y, newColors[i]); }
+				}
+			}
+		}
 	}
 
 	// Siemens methods

@@ -19,6 +19,7 @@ package com.nttdocomo.ui;
 public class Palette 
 {
     private int[] entries;
+    private PalettedImage img;
 
     public Palette(int n) 
     {
@@ -34,6 +35,7 @@ public class Palette
         if (colors.length == 0) { throw new IllegalArgumentException("Colors array must have at least one entry"); }
         if (colors.length > 256) { throw new IllegalArgumentException("Palette can have a maximum of 256 colors"); }
 
+        // Has to be a copy of the received argument
         entries = new int[colors.length];
         System.arraycopy(colors, 0, entries, 0, colors.length);
     }
@@ -50,7 +52,12 @@ public class Palette
     public void setEntry(int index, int color) 
     {
         if (index < 0 || index >= entries.length) { throw new ArrayIndexOutOfBoundsException("Index out of bounds"); }
-        // TODO: Validate the color value (do we really need to?)
+        if(color < 0x000000 || color > 0xFFFFFF) { throw new IllegalArgumentException("Invalid color value"); }
+     
+        img.updateImagePalette(new int[] {(0xFF << 24) | entries[index]}, new int[] {(0xFF << 24) | color});
         entries[index] = color;
     }
+
+    public void setImage(PalettedImage image) { img = image; }
+
 }

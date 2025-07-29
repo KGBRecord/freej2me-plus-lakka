@@ -33,6 +33,8 @@ public class MediaSoundImpl implements com.nttdocomo.ui.MediaSound
 {
     private javax.microedition.media.Player player;
 
+	private boolean isSingleUse = false, disposed = false, isRedistributable = false;
+
 	public MediaSoundImpl(final String s) 
     { 
         try 
@@ -58,7 +60,7 @@ public class MediaSoundImpl implements com.nttdocomo.ui.MediaSound
 				player = Manager.createPlayer(new ByteArrayInputStream(meloData), "audio/x-mld");
 			}
 			else { player = Manager.createPlayer(s); }
-			
+			//player.realize();
 		}
         catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, MediaSoundImpl.class.getPackage().getName() + "." + MediaSoundImpl.class.getSimpleName() + ": " + "Failed to create Player from "+ s + " :" + e.getMessage()); }
     }
@@ -75,11 +77,38 @@ public class MediaSoundImpl implements com.nttdocomo.ui.MediaSound
         catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, MediaSoundImpl.class.getPackage().getName() + "." + MediaSoundImpl.class.getSimpleName() + ": " + "Failed to create Player from byte array:" + e.getMessage()); }
     }
 
-	public void use() throws ConnectionException, UIException { player.realize(); }
+	public void use() throws ConnectionException, UIException { use(null, false); }
+
+	public void use(com.nttdocomo.ui.MediaResource overwritten, boolean useOnce) throws ConnectionException, UIException 
+	{ 
+		if(overwritten == this) { throw new IllegalArgumentException("Cannot overwrite object area of this same object");}
+		if(disposed || isSingleUse) { throw new UIException(UIException.ILLEGAL_STATE, "MediaResource has already been disposed"); }
+
+		if(overwritten != null) 
+		{
+			// TODO: Do we actually need to overwrite any prior resource's memory area? We aren't under memory constraints
+		}
+		
+		player.realize(); 
+		isSingleUse = useOnce;
+	}
 
 	public void unuse() { player.deallocate(); }
 
-	public void dispose() { player.close(); player = null; }
+	public void dispose() 
+	{ 
+		disposed = true;
+		player.close(); 
+		player = null; 
+	}
+
+	public boolean setRedistributable(boolean redistributable) { return isRedistributable = redistributable; }
+
+	public boolean isRedistributable() { return isRedistributable; }
+
+	public void setProperty(String key, String value) { /* TODO */ }
+
+	public String getProperty(String key) { return ""; /* TODO */ }
 
     public javax.microedition.media.Player getPlayer() { return player; }
 }

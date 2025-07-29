@@ -42,6 +42,7 @@ public class Display
     public static final int KEY_DOWN = 0x13;
     public static final int KEY_LEFT = 0x10;
     public static final int KEY_RIGHT = 0x12;
+    public static final int KEY_SELECT = 0x14;
     public static final int KEY_LOWER_LEFT = 0x1d;
     public static final int KEY_LOWER_RIGHT = 0x1c;
     public static final int KEY_UPPER_LEFT = 0x1a;

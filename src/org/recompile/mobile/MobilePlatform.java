@@ -410,65 +410,84 @@ public class MobilePlatform
 	// For a reference of these shift values, look into com.nttdocomo.ui.Display
 	private static void updateDoJaKeyState(int key, boolean pressed)
 	{
-		int mask=0;
+		int mask = 0, eventKey = 0;
 		switch (key) 
 		{
 			case Canvas.UP:
 				mask = 1 << 0x11;
+				eventKey = com.nttdocomo.ui.Display.KEY_UP;
 				break;
 			case Canvas.LEFT:
 				mask = 1 << 0x10;
+				eventKey = com.nttdocomo.ui.Display.KEY_LEFT;
 				break;
 			case Canvas.RIGHT:
 				mask = 1 << 0x12; 
+				eventKey = com.nttdocomo.ui.Display.KEY_RIGHT;
 				break;
 			case Canvas.DOWN:
 				mask = 1 << 0x13; 
+				eventKey = com.nttdocomo.ui.Display.KEY_DOWN;
 				break;
 			case Canvas.FIRE:
 				mask = 1 << 0x14;
+				eventKey = com.nttdocomo.ui.Display.KEY_SELECT;
 				break;
 			case Canvas.KEY_NUM0:
 				mask = 1; 
+				eventKey = com.nttdocomo.ui.Display.KEY_0;
 				break;
 			case Canvas.KEY_NUM1:
 				mask = 1 << 1; 
+				eventKey = com.nttdocomo.ui.Display.KEY_1;
 				break;
 			case Canvas.KEY_NUM2:
 				mask = 1 << 2; 
+				eventKey = com.nttdocomo.ui.Display.KEY_2;
 				break;
 			case Canvas.KEY_NUM3:
 				mask = 1 << 3; 
+				eventKey = com.nttdocomo.ui.Display.KEY_3;
 				break;
 			case Canvas.KEY_NUM4:
 				mask = 1 << 4;
+				eventKey = com.nttdocomo.ui.Display.KEY_4;
 				break;
 			case Canvas.KEY_NUM5:
 				mask = 1 << 5; 
+				eventKey = com.nttdocomo.ui.Display.KEY_5;
 				break;
 			case Canvas.KEY_NUM6:
 				mask = 1 << 6; 
+				eventKey = com.nttdocomo.ui.Display.KEY_6;
 				break;
 			case Canvas.KEY_NUM7:
 				mask = 1 << 7; 
+				eventKey = com.nttdocomo.ui.Display.KEY_7;
 				break;
 			case Canvas.KEY_NUM8:
 				mask = 1 << 8; 
+				eventKey = com.nttdocomo.ui.Display.KEY_8;
 				break;
 			case Canvas.KEY_NUM9:
 				mask = 1 << 9; 
+				eventKey = com.nttdocomo.ui.Display.KEY_9;
 				break;
 			case Canvas.KEY_STAR:
 				mask = 1 << 0x0a;
+				eventKey = com.nttdocomo.ui.Display.KEY_ASTERISK;
 				break;
 			case Canvas.KEY_POUND:
 				mask = 1 << 0x0b;
+				eventKey = com.nttdocomo.ui.Display.KEY_POUND;
 				break;
 			case Canvas.KEY_SOFT_LEFT:
 				mask = 1 << 0x15;
+				eventKey = com.nttdocomo.ui.Display.KEY_SOFT1;
 				break;
 			case Canvas.KEY_SOFT_RIGHT:
 				mask = 1 << 0x16;
+				eventKey = com.nttdocomo.ui.Display.KEY_SOFT2;
 				break;
 			default:
 				mask = 0;
@@ -481,14 +500,14 @@ public class MobilePlatform
 			doJaKeyState |= mask;
 			if(canvasPresent)
 			{
-				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_PRESSED_EVENT, doJaKeyState);
+				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_PRESSED_EVENT, eventKey);
 			}
 		}
 		else // Send the released event BEFORE changing the mask (or else this will always send 0 as the key value)
 		{
 			if(canvasPresent)
 			{
-				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_RELEASED_EVENT, doJaKeyState);
+				((com.nttdocomo.ui.Canvas)com.nttdocomo.ui.Display.getCurrent()).processEvent(com.nttdocomo.ui.Display.KEY_RELEASED_EVENT, eventKey);
 			}
 			doJaKeyState ^= mask;
 		}

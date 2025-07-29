@@ -14,16 +14,35 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.system;
 
-import java.io.InputStream;
-
-// Like ImageImpl, we only really use this to properly instantiate a PalettedImage
-public class PalettedImageImpl extends PalettedImage 
+public class StoreException extends Exception 
 {
 
-	public PalettedImageImpl(int width, int height) { super(width, height); }
+    public static final int NOT_FOUND = 2;
+    public static final int STORE_FULL = 1;
+    public static final int UNDEFINED = 0;
 
-	public PalettedImageImpl(byte[] data) { super(data); }
+    private final int status;
 
+    // Default constructor
+    public StoreException() 
+    {
+        super();
+        this.status = UNDEFINED;
+    }
+
+    public StoreException(int status) 
+    {
+        super();
+        this.status = status;
+    }
+
+    public StoreException(int status, String msg) 
+    {
+        super(msg);
+        this.status = status;
+    }
+
+    public int getStatus() { return status; }
 }

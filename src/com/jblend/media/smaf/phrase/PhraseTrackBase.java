@@ -52,6 +52,8 @@ public abstract class PhraseTrackBase
 	protected List<com.j_phone.amuse.PhraseTrack> slaveJPhonePhrases = new ArrayList<com.j_phone.amuse.PhraseTrack>();
 	protected List<com.vodafone.v10.sound.SoundTrack> slaveVodafonePhrases = new ArrayList<com.vodafone.v10.sound.SoundTrack>();
 
+	private int volume = 100, panpot = 64;
+
 	public PhraseTrackBase(int id) { ID = id; }
 
 	public void play() 
@@ -64,9 +66,12 @@ public abstract class PhraseTrackBase
 	{ 
 		if(player == null) { throw new RuntimeException("Cannot play: null player"); }
 		if(loop == 0) { loop = -1; } // Loop as 0 means infinite looping here
+		
 		player.setLoopCount(loop);
 		player.setMediaTime(0); // Play starts from the beginning of the track
 		((PlatformPlayer)player).setPhraseListener(listener);
+		((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setPanpot(panpot);
+		((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setLevel(volume);
 		player.start();
 
 		// Play any currently set slave phrases
@@ -79,6 +84,7 @@ public abstract class PhraseTrackBase
 	public void stop() 
 	{ 
 		if(player == null) { throw new RuntimeException("Cannot stop: null player"); }
+		
 		player.stop();
 		player.setMediaTime(0);
 		paused = false; 
@@ -92,6 +98,7 @@ public abstract class PhraseTrackBase
 	public void pause() 
 	{
 		if(player == null) { throw new RuntimeException("Cannot pause: null player"); }
+		
 		player.stop();
 		paused = true; 
 
@@ -104,6 +111,10 @@ public abstract class PhraseTrackBase
 	public void resume() 
 	{ 
 		if(player == null) { throw new RuntimeException("Cannot resume: null player"); }
+		
+		((PlatformPlayer)player).setPhraseListener(listener);
+		((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setPanpot(panpot);
+		((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setLevel(volume);
 		player.start();
 		paused = false;
 
@@ -125,25 +136,19 @@ public abstract class PhraseTrackBase
 	{ 
 		if(value < 0 || value > MAX_VOLUME) { throw new IllegalArgumentException("Value is out of range"); }
 		
-		if(player != null) { ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setLevel(value); }
+		volume = value;
 	}
 
-	public int getVolume() 
-	{ 
-		return player == null ? DEFAULT_VOLUME : ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).getLevel();
-	}
+	public int getVolume() { return volume; }
 
 	public void setPanpot(int value) 
 	{ 
 		if(value < 0 || value > 127) { throw new IllegalArgumentException("Value is out of range"); }
 
-		if(player != null) { ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).setPanpot(value); }
+		panpot = value;
 	}
 
-	public int getPanpot() 
-	{ 
-		return player == null ? 64 : ((PlatformPlayer.volumeControl)player.getControl("VolumeControl")).getPanpot(); 
-	}
+	public int getPanpot() { return panpot; }
 
 	public void mute(boolean mute) 
 	{ 

@@ -33,8 +33,7 @@ public final class MediaManager
     public static MediaSound createMediaSound(int bytes) 
     {
         Mobile.log(Mobile.LOG_WARNING, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " createMediaSound bytes: " + bytes);
-        return null;
-        //return new MediaSound(bytes);
+        return new MediaSoundImpl(new byte[bytes]);
     }
     
     public static AvatarData getAvatarData(byte[] data) 

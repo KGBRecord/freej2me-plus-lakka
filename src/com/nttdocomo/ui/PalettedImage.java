@@ -17,21 +17,30 @@
 package com.nttdocomo.ui;
 
 import java.io.InputStream;
-
-import org.recompile.mobile.PlatformImage;
+import java.util.ArrayList;
+import java.util.List;
 
 // TODO: This class is not yet complete
 public abstract class PalettedImage extends Image 
 {
-    protected Image image;
     protected Palette palette;
-    protected byte[] imageData;
-    protected int transparentIndex = -1;
+    protected int transparentIndex = 0, colorTableSize = 0;
 
-    protected PalettedImage() 
+    protected PalettedImage() { }
+
+    protected PalettedImage(int width, int height)
     {
-        super();
-        this.palette = new Palette(256); // Palette has 256 colors
+        super(width, height);
+        // Palette will be set by the app
+        this.colorTableSize = 256; // Max amount of colors, the app must be able to set any valid palette
+    }
+
+    protected PalettedImage(byte[] data) 
+    {
+        super(data, 0, data.length);
+        this.palette = extractPalette(data);
+        this.colorTableSize = palette.getEntryCount();
+        this.palette.setImage(this);
     }
 
     public static PalettedImage createPalettedImage(byte[] data) 
@@ -57,26 +66,36 @@ public abstract class PalettedImage extends Image
 
     public void changeData(byte[] data) 
     {
-        this.imageData = data;
+        setCanvas(createImage(data, 0, data.length).getCanvas());
         this.palette = extractPalette(data);
+        this.colorTableSize = palette.getEntryCount();
+        this.palette.setImage(this);
     }
 
     public void changeData(InputStream in) 
     {
-        try { in.read(imageData, 0, in.available()); }
+        try 
+        { 
+            byte[] tmpData = new byte[in.available()];
+            in.read(tmpData, 0, in.available());
+            setCanvas(createImage(tmpData, 0, tmpData.length).getCanvas());
+            this.palette = extractPalette(tmpData);
+            this.colorTableSize = palette.getEntryCount();
+            this.palette.setImage(this);
+        }
         catch (Exception e) { }
     }
 
     public static Palette extractPalette(byte[] imageData) 
     {
         if (imageData.length < 4) { throw new IllegalArgumentException("Image data is too short."); }
-    
+
         // Check for GIF signature. If it's not GIF, it should be a Microsoft BMP signature, and if not, we don't support it
         if (imageData[0] == 'G' && imageData[1] == 'I' && imageData[2] == 'F') { return extractPaletteFromGIF(imageData); }
         else if (imageData[0] == 'B' && imageData[1] == 'M') { return extractPaletteFromBMP(imageData); } 
         else { throw new UnsupportedOperationException("Unsupported image format."); }
     }
-    
+
     private static Palette extractPaletteFromGIF(byte[] gifData) 
     {
         int colorTableSize = 0;
@@ -152,17 +171,44 @@ public abstract class PalettedImage extends Image
 
     public Palette getPalette() { return palette; }
 
-    public void setPalette(Palette palette) { this.palette = palette; }
+    public void setPalette(Palette palette) 
+    { 
+        if(palette.getEntryCount() < colorTableSize) { throw new IllegalArgumentException("New palette has less entries than the current one"); }
+        
+        /*  TODO: Doesn't seem needed here
+        List<Integer> originalColors = new ArrayList<Integer>();
+        List<Integer> newColors = new ArrayList<Integer>();
+        // Update the image's data based on the new palette first
+        for(int i = 0; i < palette.getEntryCount(); i++) 
+        {
+            if(this.palette.getEntry(i) != palette.getEntry(i)) 
+            { 
+                originalColors.add(this.palette.getEntry(i));
+                newColors.add(palette.getEntry(i));
+            }
+        }
+
+        int[] originalPalette = new int[originalColors.size()];
+        int[] newPalette = new int[newColors.size()];
+        for (int i = 0; i < originalColors.size(); i++) 
+        {
+            originalPalette[i] = originalColors.get(i);
+            newPalette[i] = newColors.get(i); 
+        }
+        
+        updateImagePalette(originalPalette, newPalette);
+        */
+
+        palette.setImage(this);
+        this.palette = palette; 
+    }
+
+    public int getTransparentColor() { throw new UnsupportedOperationException("getTransparentColor() cannot be called on PalettedImage."); }
 
     public int getTransparentIndex() { return transparentIndex; }
 
     public void setTransparentIndex(int index) { this.transparentIndex = index; }
 
-    public void setTransparentEnabled(boolean enabled) { }
-
     public Graphics getGraphics() { throw new UnsupportedOperationException("getGraphics() is not supported for PalettedImage."); }
 
-    public int getWidth() { return super.getWidth(); }
-
-    public int getHeight() { return super.getWidth(); }
 }

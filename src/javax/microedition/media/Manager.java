@@ -390,7 +390,7 @@ public class Manager
 			if(synthIdxInUse[i] == false) { return i; }
 		}
 
-		return 0; // We have no option but to reuse a synth here, as the four exclusive ones are all in use
+		return NUM_EXCLUSIVE_SYNTHS-1; // We have no option but to reuse a synth here, as the four exclusive ones are all in use
 	}
 
 	public static Soundbank getCustomSoundfont() { return customSoundfont; }

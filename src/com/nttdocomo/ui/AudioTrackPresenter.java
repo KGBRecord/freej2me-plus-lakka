@@ -21,7 +21,7 @@ public class AudioTrackPresenter extends AudioPresenter
 
     protected AudioTrackPresenter() { }
 
-    public Audio3D getAudio3D() { return super.getAudio3D(); }
+    public Audio3D getAudio3D() { throw new UnsupportedOperationException("getAudio3D() cannot be called on AudioTrackPresenter."); }
 
     public int getCurrentTime() { return super.getCurrentTime(); }
 
@@ -37,9 +37,9 @@ public class AudioTrackPresenter extends AudioPresenter
 
     public void setAttribute(int attr, int value) { super.setAttribute(attr, value); }
 
-    public void setSound(MediaImage sound) { }
+    public void setSound(MediaImage sound) { /* TODO */ }
 
-    public void setSound(MediaSound sound) { super.setSound(sound); }
+    public void setSound(MediaSound sound) { throw new UnsupportedOperationException("setSound(MediaSound) cannot be called on AudioTrackPresenter."); }
 
-    public void setSyncEvent(int channel, int key) { super.setSyncEvent(channel, key); }
+    public void setSyncEvent(int channel, int key) { throw new UnsupportedOperationException("setSyncEvent() cannot be called on AudioTrackPresenter."); }
 }

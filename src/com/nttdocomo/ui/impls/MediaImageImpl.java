@@ -27,6 +27,8 @@ public class MediaImageImpl implements com.nttdocomo.ui.MediaImage
 {
 	private ImageImpl doJaImage;
 
+	private boolean isSingleUse = false, disposed = false, isRedistributable = false;
+
 	public MediaImageImpl(int width, int height) { doJaImage = new ImageImpl(width, height); }
 
 	public MediaImageImpl(String str) throws IOException { doJaImage = new ImageImpl(str); }
@@ -41,15 +43,34 @@ public class MediaImageImpl implements com.nttdocomo.ui.MediaImage
     
     public Image getImage() { return doJaImage; }
 
-    public void dispose() { doJaImage = null; }
+    public void dispose() { doJaImage = null; disposed = true; }
 
 	public void setExifData(com.nttdocomo.ui.ExifData exif) { }
 
 	public com.nttdocomo.ui.ExifData getExifData() { return null; }
 
-	public void use() throws com.nttdocomo.io.ConnectionException { }
+	public void use() throws com.nttdocomo.io.ConnectionException { use(null, false); }
 
-	public void use(com.nttdocomo.ui.MediaResource overwritten, boolean useOnce) throws com.nttdocomo.io.ConnectionException { }
+	public void use(com.nttdocomo.ui.MediaResource overwritten, boolean useOnce) throws com.nttdocomo.io.ConnectionException 
+	{ 
+		if(overwritten == this) { throw new IllegalArgumentException("Cannot overwrite object area of this same object");}
+		if(disposed || isSingleUse) { throw new UIException(UIException.ILLEGAL_STATE, "MediaResource has already been disposed"); }
+
+		if(overwritten != null) 
+		{
+			// TODO: Do we actually need to overwrite any prior resource's memory area? We aren't under memory constraints
+		}
+		
+		isSingleUse = useOnce;
+	}
+
+	public boolean setRedistributable(boolean redistributable) { return isRedistributable = redistributable; }
+
+	public boolean isRedistributable() { return isRedistributable; }
+
+	public void setProperty(String key, String value) { /* TODO */ }
+
+	public String getProperty(String key) { return ""; /* TODO */ }
 
 	public void unuse() { }
 

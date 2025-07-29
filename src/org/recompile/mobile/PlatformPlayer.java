@@ -436,7 +436,7 @@ public class PlatformPlayer implements Player
 		if(kddiListeners.size() > 0) 
 		{
 			int kddiEvent = 0;
-			int kddiData = (int) getMediaTime(); // This is an optional integer argument according to KDDI docs, but let's send the current media time nonetheless
+			int kddiData = getState() == Player.CLOSED ? 0 : (int) getMediaTime(); // This is an optional integer argument according to KDDI docs, but let's send the current media time nonetheless
 			if(event == PlayerListener.STARTED && kddiData == 0) { kddiEvent = com.kddi.media.MediaPlayerBox.PLAY; }
 			if(event == PlayerListener.STARTED && kddiData != 0) { kddiEvent = com.kddi.media.MediaPlayerBox.RESUME; }
 			else if(event == PlayerListener.CLOSED) { kddiEvent = com.kddi.media.MediaPlayerBox.STOP; }
@@ -451,7 +451,7 @@ public class PlatformPlayer implements Player
 		
 		if(doJaListener != null) 
 		{
-			int doJaData = (int) getMediaTime();
+			int doJaData = getState() == Player.CLOSED ? 0 : (int) getMediaTime();
 			if(event == PlayerListener.CLOSED) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_STOPPED, doJaData); }
 			else if(event == PlayerListener.STARTED && doJaData == 0) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_PLAYING, doJaData); }
 			else if(event == PlayerListener.STARTED && doJaData != 0) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_RESTARTED, doJaData); }
