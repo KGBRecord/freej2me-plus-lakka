@@ -523,11 +523,11 @@ struct retro_core_option_v2_definition core_options[] =
         "0"
     },
     {
-        "freej2me_compatdonottranslatedrawrgb",
-        "Compatibility Settings > Don't translate drawRGB calls",
-        "Don't translate drawRGB calls",
-        "In the J2ME spec, drawRGB calls should be affected by the current graphics context translation. However, Peggle for Sony Ericsson 240x320 is a game that expects those calls to NOT be affected by the graphics context translation whereas Nokia versions work as they should, this is also replicated in real hardware. Use this setting whenever objects aren't where they should be.",
-        "In the J2ME spec, drawRGB calls should be affected by the current graphics context translation. However, Peggle for Sony Ericsson 240x320 is a game that expects those calls to NOT be affected by the graphics context translation whereas Nokia versions work as they should, this is also replicated in real hardware. Use this setting whenever objects aren't where they should be.",
+        "freej2me_compatfantasyzonefix",
+        "Compatibility Settings > Fix for Fantasy Zone 176x208 weird mirroring",
+        "Fix for Fantasy Zone 176x208 weird mirroring",
+        "Fantasy Zone 176x208's MIDP version goes entirely out of spec with its mirroring operation. It's broken on every other emulator out there and even on actual devices that aren't some Nokia S40 devices. This setting fixes it at the expense of breaking other applications that use the same draw path for S40.",
+        "Fantasy Zone 176x208's MIDP version goes entirely out of spec with its mirroring operation. It's broken on every other emulator out there and even on actual devices that aren't some Nokia S40 devices. This setting fixes it at the expense of breaking other applications that use the same draw path for S40.",
         "compat_settings",
         {
             { "on",  "Enabled"            },
@@ -963,9 +963,9 @@ struct retro_core_option_definition core_options_v1 [] =
         "0"
     },
     {
-        "freej2me_compatdonottranslatedrawrgb",
-        "Don't translate drawRGB calls",
-        "In the J2ME spec, drawRGB calls should be affected by the current graphics context translation. However, Peggle for Sony Ericsson 240x320 is a game that expects those calls to NOT be affected by the graphics context translation whereas Nokia versions work as they should, this is also replicated in real hardware. Use this setting whenever objects aren't where they should be.",
+        "freej2me_compatfantasyzonefix",
+        "Fix for Fantasy Zone 176x208 weird mirroring",
+        "Fantasy Zone 176x208's MIDP version goes entirely out of spec with its mirroring operation. It's broken on every other emulator out there and even on actual devices that aren't some Nokia S40 devices. This setting fixes it at the expense of breaking other applications that use the same draw path for S40.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -1136,9 +1136,9 @@ static const struct retro_variable vars[] =
         "freej2me_spdhackfpsunlock",
         "Framerate Unlock Hack; 0|1|2|3"
     },
-    { /* Don't translate drawRGB calls setting */
-        "freej2me_compatdonottranslatedrawrgb",
-        "Don't translate drawRGB calls; off|on"
+    { /* Fix for Fantasy Zone 176x208 setting */
+        "freej2me_compatfantasyzonefix",
+        "Fix for Fantasy Zone 176x208 weird mirroring; off|on"
     },
     { /* Translate to origin on gfx reset setting */
         "freej2me_compattranstooriginongfxreset",

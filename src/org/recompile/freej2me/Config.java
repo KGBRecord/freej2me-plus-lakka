@@ -134,7 +134,7 @@ public class Config
 				settings.put("textfont", "Default");
 				settings.put("fontoffset", "0");
 				settings.put("spdhacknoalpha", "off");
-				settings.put("compatdonottranslatedrawrgb", "off");
+				settings.put("compatfantasyzonefix", "off");
 				settings.put("compattranstooriginonreset", "off");
 				settings.put("compatimmediaterepaints", "off");
 				settings.put("compatoverrideplatchecks", "on");
@@ -186,6 +186,7 @@ public class Config
 			if(settings.containsKey("height")) { settings.remove("height"); }
 			if(settings.containsKey("compatignoregccalls")) { settings.remove("compatignoregccalls"); } // These are now ignored by default, after some bug fixes to lcdui canvas
 			if(settings.containsKey("compatnonfatalnullimage")) { settings.remove("compatnonfatalnullimage"); } // No longer needed
+			if(settings.containsKey("compatdonottranslatedrawrgb")) { settings.remove("compatdonottranslatedrawrgb"); } // No longer needed
 
 			// Add any missing settings
 			if(!settings.containsKey("scrwidth")) { settings.put("scrwidth", ""+width); }
@@ -199,7 +200,7 @@ public class Config
 			if(!settings.containsKey("textfont")) { settings.put("textfont", "Default"); }
 			if(!settings.containsKey("fontoffset")) { settings.put("fontoffset", "0"); }
 			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
-			if(!settings.containsKey("compatdonottranslatedrawrgb")) { settings.put("compatdonottranslatedrawrgb", "off"); }
+			if(!settings.containsKey("compatfantasyzonefix")) { settings.put("compatfantasyzonefix", "off"); }
 			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", "off"); }
 			if(!settings.containsKey("compatimmediaterepaints")) { settings.put("compatimmediaterepaints", "off"); }
 			if(!settings.containsKey("compatoverrideplatchecks")) { settings.put("compatoverrideplatchecks", "on"); }
@@ -401,10 +402,10 @@ public class Config
 		onChange.run();
 	}
 
-	public void updateCompatDoNotTranslateDrawRGB(String value)
+	public void updateCompatFantasyZoneFix(String value)
 	{
-		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatdonottranslatedrawrgb "+value);
-		settings.put("compatdonottranslatedrawrgb", value);
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatfantasyzonefix "+value);
+		settings.put("compatfantasyzonefix", value);
 		saveConfig();
 		onChange.run();
 	}

@@ -38,6 +38,7 @@ public class ScheduleDate
 
         this.type = type;
         this.calendar = Calendar.getInstance(zone);
+        this.calendar.setTimeInMillis(System.currentTimeMillis());
     }
 
     public int getType() { return type; }

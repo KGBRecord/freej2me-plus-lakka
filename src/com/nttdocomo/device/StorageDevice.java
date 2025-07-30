@@ -19,8 +19,9 @@ package com.nttdocomo.device;
 import com.nttdocomo.fs.AccessToken;
 import com.nttdocomo.fs.Folder;
 
-public class StorageDevice extends Object {
-
+public class StorageDevice
+{
+    
     public static final String CAPABILITY_FAT_LONG_NAME = "FAT_LONG_NAME";
     public static final String CAPABILITY_FAT12 = "FAT12";
     public static final String CAPABILITY_FAT16 = "FAT16";
@@ -45,25 +46,29 @@ public class StorageDevice extends Object {
 
     public String getPrintName() { return "FreeJ2ME-DoJa SD"; }
 
-    public boolean isAccessible() {
+    public boolean isAccessible() 
+    {
         return true;
     }
 
-    public boolean isReadable() {
+    public boolean isReadable() 
+    {
         return true; 
     }
 
-    public boolean isRemovable() {
+    public boolean isRemovable() 
+    {
         return false;
     }
 
-    public boolean isWritable() {
+    public boolean isWritable() 
+    {
         return true;
     }
 
-    // Todo
-    public String[] getCapability(String category) {
-        return new String[] {};
+    public String[] getCapability(String category) 
+    {
+        return null;
     }
 
     public Folder getFolder(AccessToken accessToken) 

@@ -278,7 +278,7 @@ public final class AWTGUI
 	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("No alpha on blank images");
 	
 	// Compatibility settings
-	final CheckboxMenuItem doNotTranslateDrawRGB = new CheckboxMenuItem("Don't translate DrawRGB calls");
+	final CheckboxMenuItem fantasyZoneFix = new CheckboxMenuItem("Fix for Fantasy Zone 176x208 weird mirroring");
 	final CheckboxMenuItem transToOriginOnReset = new CheckboxMenuItem("Translate to origin on gfx reset");
 	final CheckboxMenuItem immediateRepaints = new CheckboxMenuItem("Process canvas repaints immediately");
 	final CheckboxMenuItem overridePlatChecks = new CheckboxMenuItem("Override Mobile Platform checks");
@@ -666,12 +666,12 @@ public final class AWTGUI
 		});
 
 		// Compatibility settings
-		doNotTranslateDrawRGB.addItemListener(new ItemListener()
+		fantasyZoneFix.addItemListener(new ItemListener()
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
-				if(doNotTranslateDrawRGB.getState()){ config.updateCompatDoNotTranslateDrawRGB("on"); hasPendingChange = true; }
-				else{ config.updateCompatDoNotTranslateDrawRGB("off"); hasPendingChange = true; }
+				if(fantasyZoneFix.getState()){ config.updateCompatFantasyZoneFix("on"); hasPendingChange = true; }
+				else{ config.updateCompatFantasyZoneFix("off"); hasPendingChange = true; }
 
 				showRestartDialog();
 			}
@@ -991,7 +991,7 @@ public final class AWTGUI
 
 		speedHackMenu.add(noAlphaOnBlankImages);
 
-		compatSettingsMenu.add(doNotTranslateDrawRGB);
+		compatSettingsMenu.add(fantasyZoneFix);
 		compatSettingsMenu.add(transToOriginOnReset);
 		compatSettingsMenu.add(immediateRepaints);
 		compatSettingsMenu.add(overridePlatChecks);
@@ -1029,7 +1029,7 @@ public final class AWTGUI
 
 			noAlphaOnBlankImages.setState(config.settings.get("spdhacknoalpha").equals("on"));
 
-			doNotTranslateDrawRGB.setState(config.settings.get("compatdonottranslatedrawrgb").equals("on"));
+			fantasyZoneFix.setState(config.settings.get("compatfantasyzonefix").equals("on"));
 
 			transToOriginOnReset.setState(config.settings.get("compattranstooriginonreset").equals("on"));
 

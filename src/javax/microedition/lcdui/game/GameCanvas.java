@@ -36,12 +36,14 @@ public abstract class GameCanvas extends Canvas
 	public static final int GAME_C_PRESSED = 1 << Canvas.GAME_C;
 	public static final int GAME_D_PRESSED = 1 << Canvas.GAME_D;
 
-	private final Image buffer;
+	private Image buffer = null;
 
 	protected GameCanvas(boolean suppressKeyEvents)
 	{
 		super(suppressKeyEvents);
-		buffer = Image.createImage(width, getHeight());
+
+		// Only create the off-screen buffer if the application really wants to use it
+		if(getWidth() > 0 && getHeight() > 0) { buffer = Image.createImage(getWidth(), getHeight()); }
 	}
 
 	protected Graphics getGraphics() 

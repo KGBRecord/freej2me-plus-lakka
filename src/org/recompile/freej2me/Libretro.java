@@ -131,9 +131,9 @@ public class Libretro
 		/* LCD Backlight Mask color index. */
 		Mobile.maskIndex = Integer.parseInt(args[10]);
 
-		/* Compat setting to not translate drawRGB calls */
-		if(Integer.parseInt(args[11]) == 0) { Mobile.compatDoNotTranslateDrawRGB = false; }
-		else { Mobile.compatDoNotTranslateDrawRGB = true; }
+		/* Compat setting to fix Fantasy Zone 176x208 weird mirroring */
+		if(Integer.parseInt(args[11]) == 0) { Mobile.compatFantasyZoneFix = false; }
+		else { Mobile.compatFantasyZoneFix = true; }
 
 		/* Compat setting to translate back to the origin whenever graphics object is reset */
 		if(Integer.parseInt(args[12]) == 0) { Mobile.compatTranslateToOriginOnReset = false; }
@@ -338,8 +338,8 @@ public class Libretro
 										else if(Mobile.maskIndex == 4) { Mobile.config.settings.put("backlightcolor", "Violet"); }
 										else if(Mobile.maskIndex == 5) { Mobile.config.settings.put("backlightcolor", "Red"); }
 
-										if(!Mobile.compatDoNotTranslateDrawRGB) { Mobile.config.settings.put("compatdonottranslatedrawrgb", "off"); }
-										else                                 { Mobile.config.settings.put("compatdonottranslatedrawrgb", "on"); }
+										if(!Mobile.compatFantasyZoneFix) { Mobile.config.settings.put("compatfantasyzonefix", "off"); }
+										else                                 { Mobile.config.settings.put("compatfantasyzonefix", "on"); }
 
 										if(!Mobile.compatTranslateToOriginOnReset) { Mobile.config.settings.put("compattranstooriginonreset", "off"); }
 										else                                       { Mobile.config.settings.put("compattranstooriginonreset", "on"); }
@@ -460,8 +460,8 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[11])==4) { Mobile.config.settings.put("backlightcolor", "Violet"); }
 									if(Integer.parseInt(cfgtokens[11])==5) { Mobile.config.settings.put("backlightcolor", "Red"); }
 
-									if(Integer.parseInt(cfgtokens[12])==0) { Mobile.config.settings.put("compatdonottranslatedrawrgb", "off");  }
-									else { Mobile.config.settings.put("compatdonottranslatedrawrgb", "on"); }
+									if(Integer.parseInt(cfgtokens[12])==0) { Mobile.config.settings.put("compatfantasyzonefix", "off");  }
+									else { Mobile.config.settings.put("compatfantasyzonefix", "on"); }
 
 									if(Integer.parseInt(cfgtokens[13])==0) { Mobile.config.settings.put("compattranstooriginonreset", "off");  }
 									else { Mobile.config.settings.put("compattranstooriginonreset", "on"); }

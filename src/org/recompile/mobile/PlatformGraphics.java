@@ -40,16 +40,7 @@ import com.nttdocomo.ui.UIException;
 public abstract class PlatformGraphics implements DirectGraphics
 {
 
-	// FPS Counter variables
-	private static int frameCount = 0;
-	private static long lastFpsTime = System.nanoTime();
-    private static int fps = 0;
-
-	protected BufferedImage canvas;
-	protected Graphics2D gc;
-	protected int[] canvasData;
-	protected int[] imgPixels;
-	protected PlatformImage baseImage, lastImage;
+	protected static final int ALPHA_BLEND_DENOMINATOR = 255;
 
 	// Gaussian blur kernel (7x7) for Motorola's FunLights
 	protected static final float[] gaussianKernel = 
@@ -72,24 +63,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public static final int SOLID    = 0;
 	public static final int TOP      = 16;
 	public static final int VCENTER  = 2;
-
-
-	protected int translateX = 0;
-	protected int translateY = 0;
-
-	protected int resetTransX = 0;
-	protected int resetTransY = 0;
-	private boolean firstReset = true;
-
-	protected int color = 0xFFFFFF;
-	protected Font font = Font.getDefaultFont();
-	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
-	protected int strokeStyle = SOLID;
-
-	protected int dojaLockCount = 0;
-	protected int dojaflipMode = 0;
-	protected boolean usePictoColor = false;
-	protected boolean contextDisposed = false;
 
 	/* 
 	 * Both DirectGraphics and Sprite's rotations are counter-clockwise, flipping
@@ -140,6 +113,35 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public static final int FLIP_ROTATE_RIGHT_HORIZONTAL = 6;
 	public static final int FLIP_ROTATE_RIGHT_VERTICAL = 7;
 
+	// FPS Counter variables
+	private static int frameCount = 0;
+	private static long lastFpsTime = System.nanoTime();
+	private static int fps = 0;
+
+	// Graphics context variables
+	protected BufferedImage canvas;
+	protected Graphics2D gc;
+	protected int[] canvasData;
+	protected int[] imgPixels;
+	protected PlatformImage baseImage, lastImage;
+
+	protected int translateX = 0;
+	protected int translateY = 0;
+
+	protected int resetTransX = 0;
+	protected int resetTransY = 0;
+	private boolean firstReset = true;
+
+	protected int color = 0xFFFFFF;
+	protected Font font = Font.getDefaultFont();
+	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
+	protected int strokeStyle = SOLID;
+
+	protected int dojaLockCount = 0;
+	protected int dojaflipMode = 0;
+	protected boolean usePictoColor = false;
+	protected boolean contextDisposed = false;
+
 	public PlatformGraphics(PlatformImage image)
 	{
 		this.baseImage = image;
@@ -148,21 +150,19 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
-		gc.setClip(0, 0, canvas.getWidth(), canvas.getHeight());
+		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 
-		setColor(0,0,0);
-		setStrokeStyle(SOLID);
 		gc.setFont(font.platformFont.awtFont);
 
 		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	}
 
-	public void reset() //Internal use method, resets the Graphics object to its inital values
+	public void reset() // Internal use method, resets the Graphics object to its inital values
 	{
 		reset(0, 0, canvas.getWidth(), canvas.getHeight());
 	}
 	
-	public void reset(int clipx, int clipy, int clipw, int cliph) //Internal use method, resets the Graphics object to its inital values
+	public void reset(int clipx, int clipy, int clipw, int cliph) // Internal use method, resets the Graphics object to its inital values
 	{
 		if(firstReset) // Save the translation state prior to the very first graphics reset, so it can be restored later (Jars may use this to set their fixed drawing position)
 		{
@@ -172,6 +172,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		}
 		if(!Mobile.compatTranslateToOriginOnReset) { setOrigin(resetTransX, resetTransY); }
 		else { setOrigin(0, 0); }
+
 		setClip(clipx, clipy, clipw, cliph);
 		setColor(0,0,0);
 		setFont(Font.getDefaultFont());
@@ -185,8 +186,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void clearRect(int x, int y, int width, int height)
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
-
-		if(width <= 0 || height <= 0) { return; }
 
 		gc.clearRect(x, y, width, height);
 	}
@@ -226,9 +225,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 			}
 		}
 
-		int destStartY = Math.max(y_dest, 0);
-		int destEndY = Math.min(y_dest + height, canvas.getHeight());
-		int srcStartY = Math.max(0, -y_dest);
+		int destStartY = (y_dest < 0) ? 0 : y_dest;
+		int destEndY = (y_dest + height > canvas.getHeight()) ? canvas.getHeight() : (y_dest + height);
+		int srcStartY = (-y_dest < 0) ? 0 : -y_dest;
 		
 		for (int j = destStartY; j < destEndY; j++) 
 		{
@@ -245,7 +244,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	// Basically same as copyArea, but copies from one image to another, instead of operating on the same image
 	public void copyToFrameBuffer(Image frameBuffer, int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) 
 	{
-		if (width <= 0 || height <= 0 || frameBuffer == null) { return; }
+		if (frameBuffer == null) { return; }
 
 		x_dest = AnchorX(x_dest, width, anchor);
 		y_dest = AnchorY(y_dest, height, anchor);
@@ -273,9 +272,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 			}
 		}
 
-		int destStartY = Math.max(y_dest, 0);
-		int destEndY = Math.min(y_dest + height, canvas.getHeight());
-		int srcStartY = Math.max(0, -y_dest);
+		int destStartY = (y_dest < 0) ? 0 : y_dest;
+		int destEndY = (y_dest + height > canvas.getHeight()) ? canvas.getHeight() : (y_dest + height);
+		int srcStartY = (-y_dest < 0) ? 0 : -y_dest;
 		
 		for (int j = destStartY; j < destEndY; j++) 
 		{
@@ -291,9 +290,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
 	{
+		if(width < 0 || height < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
-
-		if (width < 0 || height < 0) { return; }
 
 		gc.drawArc(x, y, width, height, startAngle, arcAngle);
 	}
@@ -305,8 +303,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawChars(char[] data, int offset, int length, int x, int y, int anchor)
 	{
-		if(data.length == 0) { return; }
-
 		char[] str = new char[length];
 		for(int i=offset; i<offset+length; i++)
 		{
@@ -350,18 +346,23 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		// called by MobilePlatform.flushGraphics/repaint
 
-		// Ensure image's width and height are still positive
-		if (width <= 0 || height <= 0) { return; }
-
 		try
 		{
-			final int startX = Math.max(getClipX() - x, 0);
-			final int endX = Math.min(getClipX() + getClipWidth() - x, width);
-			final int startY = Math.max(getClipY() - y, 0);
-			final int endY = Math.min(getClipY() + getClipHeight() - y, height);
 			final int canvasWidth = canvas.getWidth();
 			final int canvasHeight = canvas.getHeight();
 			final int imageWidth = image.getWidth();
+
+			/* 
+			 * We don't need to check for clipping or translation here, the frontBuffer 
+			 * is always at (0,0) and has a clip region equal to the canvas dimensions.
+			 * 
+			 * A simple check against the image bounds is enough
+			 */ 
+			if(x < 0) { x = 0; }
+			if(y < 0) { y = 0; }
+			if(width + x > canvasWidth)   { width = canvasWidth - x; }
+			if(height + y > canvasHeight) { height = canvasHeight - y; }
+
 			int[] overlayData = null;
 
 			// Only spend time reallocating this if we really are drawing from a different image than the last (speeds things up a bit)
@@ -381,44 +382,29 @@ public abstract class PlatformGraphics implements DirectGraphics
 				drawFunLights(overlayData, width, height);
 			}
 		
-			int destRowIndex, srcRowIndex, destIndex, srcIndex, srcAlpha, existingPixel, destAlpha, newAlpha, newRed, newGreen, newBlue, invSrcAlpha;
+			int destRowIndex, srcRowIndex;
 			// Render the resulting image
-			for (int j = startY + y; j < endY + y; j++) 
+			for (int j = y; j < y + height; j++) 
 			{
 				// If there's no masking or overlay needed, we can copy a whole row at once, which is faster
 				if(fastBlit)
 				{
-					destRowIndex = j * canvasWidth + startX + x;
-					srcRowIndex = j * imageWidth + startX + x;
-					System.arraycopy(imgPixels, srcRowIndex, canvasData, destRowIndex, endX - startX);
+					destRowIndex = j * canvasWidth + x;
+					srcRowIndex = j * imageWidth + x;
+					System.arraycopy(imgPixels, srcRowIndex, canvasData, destRowIndex, width);
 				}
 				else
 				{
-					for (int i = startX + x; i < endX + x; i++) 
+					destRowIndex = j * canvasWidth;
+					srcRowIndex = j * imageWidth;
+					
+					for (int i = x; i < x + width; i++) 
 					{
-						destIndex = j * canvasWidth + i;
-						srcIndex = j * imageWidth + i;
-
 						// Only apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
-						canvasData[destIndex] = imgPixels[srcIndex] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
+						canvasData[destRowIndex + i] = imgPixels[srcRowIndex + i] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
 
 						// If funLights overlay is requested by the game, apply its pixels to the screen area
-						if(Mobile.funLightsEnabled) 
-						{
-							srcAlpha = (overlayData[srcIndex] >> 24) & 0xFF; // Source alpha
-							existingPixel = canvasData[destIndex]; // Current pixel in the canvas
-							destAlpha = (existingPixel >> 24) & 0xFF;
-
-							invSrcAlpha = (255 - srcAlpha);
-		
-							// Blend alpha and color values using the srcOver alpha compositing method
-							newAlpha = Math.min(255, srcAlpha + destAlpha);
-							newRed = (((overlayData[srcIndex] >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * invSrcAlpha) / newAlpha;
-							newGreen = (((overlayData[srcIndex] >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * invSrcAlpha) / newAlpha;
-							newBlue = ((overlayData[srcIndex] & 0xFF) * srcAlpha + (existingPixel & 0xFF) * invSrcAlpha) / newAlpha;
-
-							canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
-						}
+						if(Mobile.funLightsEnabled) { canvasData[destRowIndex + i] = blendPixels(overlayData[srcRowIndex + i], canvasData[destRowIndex + i]); }
 					}
 				}
 			}
@@ -434,8 +420,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawRegion(Image image, int subx, int suby, int subw, int subh, int transform, int x, int y, int anchor)
 	{
-		if (subw <= 0 || subh <= 0) { return; }
-
 		if (image == null) { throw new NullPointerException("Source image cannot be null"); }
 
 		if (subx < 0 || suby < 0 || subx + subw > image.getCanvas().getWidth() || suby + subh > image.getCanvas().getHeight()) 
@@ -499,7 +483,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height, boolean processAlpha) 
 	{
-		if (width <= 0 || height <= 0) { return; }
 		if (rgbData == null) { throw new NullPointerException(); }
 		if (offset < 0 || offset >= rgbData.length) { throw new ArrayIndexOutOfBoundsException(); }
 	
@@ -516,55 +499,30 @@ public abstract class PlatformGraphics implements DirectGraphics
 				throw new ArrayIndexOutOfBoundsException("DrawRGB Area is out of bounds (scanlength " + scanlength + ")");
 			}
 		}
-	
-		if(!Mobile.compatDoNotTranslateDrawRGB) 
-		{
-			x += getTranslateX();
-			y += getTranslateY();
-		}
+		
+		x += translateX;
+		y += translateY;
 	
 		final int canvasWidth = canvas.getWidth();
-		final int clipX = Math.max(getClipX(), 0);
-		final int clipY = Math.max(getClipY(), 0);
-		final int clipWidth = Math.min(getClipWidth()+clipX, canvasWidth);
-		final int clipHeight = Math.min(getClipHeight()+clipY, canvas.getHeight());
+		final int clipX = (getClipX() + translateX < 0) ? 0 : (getClipX() + translateX);
+		final int clipY = (getClipY() + translateY < 0) ? 0 : (getClipY() + translateY);
+		final int clipWidth = (getClipWidth() + clipX > canvasWidth) ? canvasWidth : (getClipWidth() + clipX);
+		final int clipHeight = (getClipHeight() + clipY > canvas.getHeight()) ? canvas.getHeight() : (getClipHeight() + clipY);
 	
-		int rowOffset, destRow, pixelIndex, destIndex, pixel, srcAlpha, existingPixel, destAlpha, newAlpha, invSrcAlpha, newRed, newGreen, newBlue, i;
-		// Directly manipulate the canvasData
+		int rowOffset, destRow;
 		for (int j = 0; j < height; j++) // The array's x and y positions start from 0, as the offset is what dictates where the data should start being read from
 		{
-			if ((y + j - getTranslateY()) < clipY || (y + j - getTranslateY()) >= clipHeight || (y + j) >= canvas.getHeight()) { continue; }
-			rowOffset = offset + (j * scanlength); // Calculate the starting index for the current row
+			if ((y + j) < clipY || (y + j) >= clipHeight) { continue; }
+
+			rowOffset = offset + (j * scanlength);
 			destRow = (y + j) * canvasWidth;
 	
-			for (i = 0; i < width; i++)
+			for (int i = 0; i < width; i++)
 			{
-				if ((x + i - getTranslateX()) < clipX || (x + i - getTranslateX()) >= clipWidth || (x + i) >= canvasWidth) { continue; }
+				if ((x + i) < clipX || (x + i) >= clipWidth) { continue; }
 
-				pixelIndex = rowOffset + i; // Source index in rgbData
-				destIndex = destRow + x + i;
-
-				pixel = rgbData[pixelIndex];
-				if (!processAlpha) { canvasData[destIndex] = pixel | 0xFF000000; } // Set pixel as fully opaque
-				else // Handle alpha blending
-				{
-					srcAlpha = (pixel >> 24) & 0xFF; // Source alpha
-					if(srcAlpha == 255) { canvasData[destIndex] = pixel; }
-					else if (srcAlpha > 0)
-					{
-						existingPixel = canvasData[destIndex];
-						destAlpha = (existingPixel >> 24) & 0xFF;
-
-						newAlpha = Math.min(255, srcAlpha + destAlpha);
-						invSrcAlpha = 255 - srcAlpha;
-
-						newRed = (((pixel >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * invSrcAlpha) / newAlpha;
-						newGreen = (((pixel >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * invSrcAlpha) / newAlpha;
-						newBlue = ((pixel & 0xFF) * srcAlpha + (existingPixel & 0xFF) * invSrcAlpha) / newAlpha;
-
-						canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
-					}
-				}
+				if (!processAlpha) { canvasData[destRow + x + i] = rgbData[rowOffset + i] | 0xFF000000; } // Set pixel as fully opaque
+				else { canvasData[destRow + x + i] = blendPixels(rgbData[rowOffset + i], canvasData[destRow + x + i]); } // Handle alpha blending
 			}
 		}
 	}
@@ -578,18 +536,16 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawRect(int x, int y, int width, int height)
 	{
+		if(width < 0 || height < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
-		if (width < 0 || height < 0) { return; }
-
 		gc.drawRect(x, y, width, height);
 	}
 
 	public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight)
 	{
+		if(width < 0 || height < 0 || arcWidth < 0 || arcHeight < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
-
-		if (width < 0 || height < 0) { return; }
 
 		gc.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
 	}
@@ -598,9 +554,21 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(str != null && str.length() > 0)
 		{
-			x = AnchorX(x, gc.getFontMetrics().stringWidth(str), anchor);
-			int ascent = gc.getFontMetrics().getAscent();
-			int height = gc.getFontMetrics().getHeight();
+			int ascent = 0;
+			int height = 0;
+
+			if(Mobile.isDoJa) 
+			{
+				x = AnchorX(x, dojaFont.stringWidth(str), anchor);
+				ascent = dojaFont.getAscent();
+				height = dojaFont.getHeight();
+			}
+			else 
+			{
+				x = AnchorX(x, font.stringWidth(str), anchor);
+				ascent = font.getBaselinePosition();
+				height = font.getHeight();
+			}
 
 			y += ascent - 1;
 			
@@ -622,27 +590,24 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle)
 	{
+		if(width < 0 || height < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
-
-		if (width <= 0 || height <= 0) { return; }
 
 		gc.fillArc(x, y, width, height, startAngle, arcAngle);
 	}
 
 	public void fillRect(int x, int y, int width, int height)
 	{
+		if(width < 0 || height < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
-
-		if (width <= 0 || height <= 0) { return; }
 
 		gc.fillRect(x, y, width, height);
 	}
 
 	public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight)
 	{
+		if(width < 0 || height < 0 || arcWidth < 0 || arcHeight < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
-
-		if (width < 0 || height < 0) { return; }
 
 		gc.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
 	}
@@ -651,16 +616,12 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
-		if(rgb == color) { return; }
-
 		setColor((rgb>>16) & 0xFF, (rgb>>8) & 0xFF, rgb & 0xFF);
 	}
 
 	public void setColor(int r, int g, int b)
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
-
-		if(((r<<16) + (g<<8) + b) == color) { return; }
 		
 		color = (r<<16) + (g<<8) + b;
 		gc.setColor(new Color(color));
@@ -689,7 +650,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void setStrokeStyle(int stroke) 
 	{
 		if(stroke == strokeStyle) { return; }
-
+		
 		if (strokeStyle == DOTTED) 
 		{
 			float[] dotPattern = {2.0f, 2.0f}; // Dot of length 2 px, followed by 2 px of gap
@@ -706,8 +667,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setFont(Font font)
 	{
-		if(this.font == font) { return;} 
-
 		if(font == null) { font = Font.getDefaultFont(); }
 		this.font = font;
 		gc.setFont(font.platformFont.awtFont);
@@ -715,6 +674,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setClip(int x, int y, int width, int height)
 	{
+		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		
 		if(!Mobile.isDoJa) { gc.setClip(x, y, width, height); }
 		else { gc.setClip(x-getTranslateX(), y-getTranslateY(), width, height); }
 	}
@@ -722,7 +683,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void clipRect(int x, int y, int width, int height)
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
-
+		
 		gc.clipRect(x, y, width, height);
 	}
 
@@ -784,27 +745,30 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setARGBColor(int argbColor)
 	{
-		if(argbColor == colorAlpha) { return; }
 		colorAlpha = (argbColor>>>24) & 0xFF;
 		setAlphaRGB(argbColor);
 	}
 
 	public void drawImage(javax.microedition.lcdui.Image img, int x, int y, int anchor, int manipulation)
 	{
-		setClip(getClipX()-getTranslateX(), getClipY()-getTranslateY(), getClipWidth(), getClipHeight());
-
+		if(Mobile.compatFantasyZoneFix) 
+		{
+			setClip(getClipX()-getTranslateX(), getClipY()-getTranslateY(), getClipWidth(), getClipHeight());
+		}
+		
 		BufferedImage image = manipulateImage(img.getCanvas(), manipulation);
 		x = AnchorX(x, image.getWidth(), anchor);
 		y = AnchorY(y, image.getHeight(), anchor);
 		gc.drawImage(image, x, y, null);
 
-		// Restore clip back to original value
-		setClip(getClipX()+getTranslateX(), getClipY()+getTranslateY(), getClipWidth(), getClipHeight());
+		if(Mobile.compatFantasyZoneFix) 
+		{
+			setClip(getClipX()-getTranslateX(), getClipY()-getTranslateY(), getClipWidth(), getClipHeight());
+		}
 	}
 
 	public void drawPixels(byte[] pixels, byte[] transparencyMask, int offset, int scanlength, int x, int y, int width, int height, int manipulation, int format)
 	{
-		if (width == 0 || height == 0) { return; }
 		if (width < 0 || height < 0) { throw new IllegalArgumentException("drawPixels(byte) received negative width or height"); }
 		if (pixels == null) { throw new NullPointerException("drawPixels(byte) received a null pixel array"); }
 		if (offset < 0 || offset >= (pixels.length * 8)) { throw new ArrayIndexOutOfBoundsException("drawPixels(byte) index out of bounds:" + width + " * " + height + "| pixels len:" + (pixels.length * 8) + "| offset:" + offset); }
@@ -873,7 +837,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawPixels(int[] pixels, boolean transparency, int offset, int scanlength, int x, int y, int width, int height, int manipulation, int format) 
 	{
-		if (width == 0 || height == 0) { return; }
 		if (width < 0 || height < 0) { throw new IllegalArgumentException("drawPixels(int) received negative width or height"); }
 		if (pixels == null) { throw new NullPointerException("drawPixels(int) received a null pixel array"); }
 		if (offset < 0 || offset >= pixels.length) { throw new ArrayIndexOutOfBoundsException("drawPixels(int) index out of bounds:" + width + " * " + height + "| len:" + pixels.length); }
@@ -901,7 +864,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void drawPixels(short[] pixels, boolean transparency, int offset, int scanlength, int x, int y, int width, int height, int manipulation, int format)
 	{
-		if (width == 0 || height == 0) { return; }
 		if (width < 0 || height < 0) { throw new IllegalArgumentException("drawPixels(short) received negative width or height"); }
 		if (pixels == null) { throw new NullPointerException("drawPixels(short) received a null pixel array"); }
 		if (offset < 0 || offset >= pixels.length) { throw new ArrayIndexOutOfBoundsException("drawPixels(short) index out of bounds:" + width + " * " + height + "| len:" + pixels.length); }
@@ -917,7 +879,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			{
 				if(srcIndex + col >= pixels.length) { continue; } // Ignore if accessing out of bounds
 				data[row * width + col] = pixelToColor(pixels[srcIndex + col], format);
-				if (!transparency) { data[row * width + col] = (data[row * width + col] & 0x00FFFFFF) | 0xFF000000; } // Set alpha to 255
+				if (!transparency) { data[row * width + col] |= 0xFF000000; } // Set alpha to 255
 			}
 		}
 
@@ -988,13 +950,11 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void getPixels(byte[] pixels, byte[] transparencyMask, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
-		if (width <= 0 || height <= 0) { return; } // We have no pixels to copy
 		if (pixels == null) { throw new NullPointerException("Byte array cannot be null");}
 		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
 		{
 			throw new IllegalArgumentException("Requested copy area exceeds bounds of the image");
 		}
-		if (Math.abs(scanlength) < width) { throw new IllegalArgumentException("scanlength must be >= width");}
 	
 		// Just like DrawPixels(byte), we only handle BYTE_1_GRAY_VERTICAL and BYTE_1_GRAY yet
 		switch (format) 
@@ -1040,19 +1000,26 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void getPixels(int[] pixels, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
-		if (width <= 0 || height <= 0) { return; } // We have no pixels to copy
 		if (pixels == null) { throw new NullPointerException("int array cannot be null"); }
 		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
 		{
 			throw new IllegalArgumentException("Requested copy area exceeds bounds of the image");
 		}
-		
-		canvas.getRGB(x, y, width, height, pixels, offset, scanlength);
+
+		for (int row = 0; row < height; row++) 
+		{
+			for(int col = 0; col < width; col++) 
+			{
+				int canvasPixel = canvasData[col + x + (row + y) * canvas.getWidth()];
+				int pixelIndex = offset + col + (row * scanlength);
+				// getPixels(short[]) explains why blending is done here
+				pixels[pixelIndex] = blendPixels(canvasPixel, pixels[pixelIndex]);
+			}
+		}
 	}
 
 	public void getPixels(short[] pixels, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
-		if (width <= 0 || height <= 0) { return; } // We have no pixels to copy
 		if (pixels == null) { throw new NullPointerException("short array cannot be null"); }
 		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
 		{
@@ -1063,8 +1030,11 @@ public abstract class PlatformGraphics implements DirectGraphics
 		{
 			for (int col=0; col<width; col++)
 			{
+				int canvasPixel = canvasData[col + x + (row + y) * canvas.getWidth()];
 				int pixelIndex = offset + col + (row * scanlength);
-				pixels[pixelIndex] = colorToShortPixel(canvasData[col+x + (row+y)*canvas.getWidth()], format);
+				// We have to alpha blend this, Lemmings is a game that reuses the same short[] array for drawing terrain here
+				// If we just add the canvas pixel directly to it, the transparency will override anything previously in the array pos
+				pixels[pixelIndex] = colorToShortPixel(blendPixels(canvasPixel, pixelToColor(pixels[pixelIndex], format)), format);
 			}
 		}
 	}
@@ -1138,7 +1108,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 	private short colorToShortPixel(int c, int format) 
 	{
 		int a, r, g, b;
-		int out = 0;
 
 		/* 
 		 * Here we cast to USHORT_4444_ARGB if the game just tries sending the pixels with the 
@@ -1154,37 +1123,31 @@ public abstract class PlatformGraphics implements DirectGraphics
 				r = (c >> 19) & 0x1F;
 				g = (c >> 11) & 0x1F;
 				b = (c >> 3) & 0x1F;
-				out = (a << 15) | (r << 10) | (g << 5) | b;
-				break;
+				return (short) ((a << 15) | (r << 10) | (g << 5) | b);
 			case DirectGraphics.TYPE_USHORT_444_RGB:
 				r = (c >> 20) & 0xF;
 				g = (c >> 12) & 0xF;
 				b = (c >> 4) & 0xF;
-				out = (r << 8) | (g << 4) | b;
-				break;
+				return (short) ((r << 8) | (g << 4) | b);
 			case DirectGraphics.TYPE_USHORT_4444_ARGB:
 				a = (c >>> 28) & 0xF;
 				r = (c >> 20) & 0xF;
 				g = (c >> 12) & 0xF;
 				b = (c >> 4) & 0xF;
-				out = (a << 12) | (r << 8) | (g << 4) | b;
-				break;
+				return (short) ((a << 12) | (r << 8) | (g << 4) | b);
 			case DirectGraphics.TYPE_USHORT_555_RGB:
 				r = (c >> 19) & 0x1F;
 				g = (c >> 11) & 0x1F;
 				b = (c >> 3) & 0x1F;
-				out = (r << 10) | (g << 5) | b;
-				break;
+				return (short) ((r << 10) | (g << 5) | b);
 			case DirectGraphics.TYPE_USHORT_565_RGB:
 				r = (c >> 19) & 0x1F;
 				g = (c >> 10) & 0x3F;
 				b = (c >> 3) & 0x1F;
-				out = (r << 11) | (g << 5) | b;
-				break;
+				return (short) ((r << 11) | (g << 5) | b);
 			default:
 				throw new IllegalArgumentException("Unsupported format: " + format);
 		}
-		return (short) out;
 	}
 
 	private static final BufferedImage manipulateImage(final BufferedImage image, final int manipulation)
@@ -1222,6 +1185,27 @@ public abstract class PlatformGraphics implements DirectGraphics
 		return image;
 	}
 
+	// Used everywhere alpha blending might be needed, be it getPixels, flushGraphics, etc.
+	private static final int blendPixels(int srcPixel, int destPixel) 
+	{
+		int srcAlpha = (srcPixel >> 24) & 0xFF; // Source alpha
+		if(srcAlpha == 255) { return srcPixel; }
+		else if(srcAlpha == 0) { return destPixel; }
+		else
+		{
+			int destAlpha = (destPixel >> 24) & 0xFF;
+
+			int invSrcAlpha = (255 - srcAlpha);
+
+			int newAlpha = (srcAlpha + destAlpha > 255) ? 255 : (srcAlpha + destAlpha);
+
+			int newRed = ((((srcPixel >> 16) & 0xFF) * srcAlpha) + (((destPixel >> 16) & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
+			int newGreen =  ((((srcPixel >> 8) & 0xFF) * srcAlpha) + (((destPixel >> 8) & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
+			int newBlue = (((srcPixel & 0xFF) * srcAlpha) + ((destPixel & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
+
+			return (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
+		}
+	}
 
 	/*
 		****************************
@@ -1292,10 +1276,10 @@ public abstract class PlatformGraphics implements DirectGraphics
 					}
 				}
 	
-				int newAlpha = Math.min(255, (int)(a / weightSum));
-				int newRed = Math.min(255, (int)(r / weightSum));
-				int newGreen = Math.min(255, (int)(g / weightSum));
-				int newBlue = Math.min(255, (int)(b / weightSum));
+				int newAlpha = (a / weightSum < 255) ? (int)(a / weightSum) : 255;
+				int newRed =   (r / weightSum < 255) ? (int)(r / weightSum) : 255;
+				int newGreen = (g / weightSum < 255) ? (int)(g / weightSum) : 255;
+				int newBlue =  (b / weightSum < 255) ? (int)(b / weightSum) : 255;
 	
 				result[y * width + x] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 			}
@@ -1328,10 +1312,10 @@ public abstract class PlatformGraphics implements DirectGraphics
 					}
 				}
 	
-				int newAlpha = Math.min(255, (int)(a / weightSum));
-				int newRed = Math.min(255, (int)(r / weightSum));
-				int newGreen = Math.min(255, (int)(g / weightSum));
-				int newBlue = Math.min(255, (int)(b / weightSum));
+				int newAlpha = (a / weightSum < 255) ? (int)(a / weightSum) : 255;
+				int newRed =   (r / weightSum < 255) ? (int)(r / weightSum) : 255;
+				int newGreen = (g / weightSum < 255) ? (int)(g / weightSum) : 255;
+				int newBlue =  (b / weightSum < 255) ? (int)(b / weightSum) : 255;
 	
 				result[y * width + x] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 			}
@@ -1502,7 +1486,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
-		translate(x-getTranslateX(), y-getTranslateY()); // Reset from previous translation
+		translate(x-translateX, y-translateY); // Reset from previous translation
 	}
 
 	public void clearClip() 
@@ -1639,6 +1623,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
+		Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawSpriteSet is untested ");
+
 		for (com.nttdocomo.ui.Sprite sprite : sprites.getSprites())  // TODO: Support flip modes
 		{
 			gc.drawImage(sprite.getImage().getCanvas(), sprite.getX(), sprite.getY(), null);
@@ -1648,6 +1634,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void drawImageMap(com.nttdocomo.ui.ImageMap map, int x, int y) 
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+
+		Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImageMap is untested ");
 
 		map.setWindowLocation(x, y);
 		
@@ -1750,8 +1738,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 		
 		if(MobilePlatform.showFPS.equals("TopLeft"))          { setOrigin(2, 2); }
 		else if(MobilePlatform.showFPS.equals("TopRight"))    { setOrigin(MobilePlatform.lcdWidth-scaledWidth-2, 2); }
-		else if(MobilePlatform.showFPS.equals("BottomLeft"))  { setOrigin(2, MobilePlatform.lcdHeight-scaledHeight-2); }
-		else if(MobilePlatform.showFPS.equals("BottomRight")) { setOrigin(MobilePlatform.lcdWidth-scaledWidth-2, MobilePlatform.lcdHeight-scaledHeight-2); }
+		else if(MobilePlatform.showFPS.equals("BottomLeft"))  { setOrigin(2, MobilePlatform.lcdHeight-scaledHeight-2 - (MobilePlatform.focusCommandBar ? font.getHeight() : 0)); }
+		else if(MobilePlatform.showFPS.equals("BottomRight")) { setOrigin(MobilePlatform.lcdWidth-scaledWidth-2, MobilePlatform.lcdHeight-scaledHeight-2 - (MobilePlatform.focusCommandBar ? font.getHeight() : 0)); }
 
 		// Set the overlay background and draw
 		setARGBColor(0x96000069); // BG is a semi-transparent dark blue
