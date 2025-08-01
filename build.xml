@@ -2,16 +2,11 @@
 
 <!--
 ****************************************************
-*    AWT, Libretro, SDL
+*    Class compilation
 ****************************************************
 -->
-    <property name="lib.dir" value="lib"/>
 	<property name="source.version" value="1.6"/>
 	<property name="target.version" value="1.6"/>
-
-    <path id="classpath">
-        <fileset dir="${lib.dir}" includes="**/*.jar"/>
-    </path>
 
 	<mkdir dir="build/classes"/>
 	<mkdir dir="build/classes/org/objectweb"/>
@@ -30,11 +25,10 @@
 	<compilerarg value="-nowarn"/>
 	</javac>
 
-    <echo message="Building FreeJ2ME - AWT | Libretro | SDL" />
+    <echo message="Building FreeJ2ME - AWT + Libretro" />
 	<javac
 		srcdir="src"
 		destdir="build/classes"
-		classpathref="classpath"
 		includeantruntime="false"
 		source="${source.version}"
 		target="${target.version}"
@@ -57,7 +51,7 @@
 	<echo message="Building JAR - AWT" />
 	<jar
 		destfile="build/freej2me.jar">
-		<fileset dir="build/classes" excludes="**/Libretro*.class, **/Anbu*.class"/> <!-- Exclude Libretro and SDL classes -->
+		<fileset dir="build/classes" excludes="**/Libretro*.class"/> <!-- Exclude Libretro classes -->
 		<fileset dir="resources" />
 		<metainf dir="META-INF" />
 		<manifest>
@@ -70,7 +64,7 @@
 	<echo message="Building JAR - Libretro" />
 	<jar
 		destfile="build/freej2me-lr.jar">
-		<fileset dir="build/classes" excludes="**/AWTGUI*.class, **/FreeJ2ME*.class, **/Anbu*.class, **/ProgressBar*.class, **/ScreenShot*.class"/> <!-- Exclude AWT and SDL classes (FreeJ2ME.class is part of the AWT standalone) -->
+		<fileset dir="build/classes" excludes="**/AWTGUI*.class, **/FreeJ2ME*.class, org/recompile/freej2me/ProgressBar.class, **/ScreenShot*.class"/> <!-- Exclude AWT classes (FreeJ2ME.class is only needed for AWT) -->
 		<fileset dir="resources" />
 		<metainf dir="META-INF" />
 		<manifest>
@@ -79,20 +73,5 @@
 			<attribute name="Implementation-Title" value="FreeJ2ME"/>
 		</manifest>
 	</jar>
-
-	<echo message="Building JAR - SDL" />
-	<jar
-		destfile="build/freej2me-sdl.jar">
-		<fileset dir="build/classes" excludes="**/AWTGUI*.class, **/FreeJ2ME*.class, **/Libretro*.class, **/ProgressBar*.class, , **/ScreenShot*.class"/> <!-- Exclude AWT and SDL classes (FreeJ2ME.class is part of the AWT standalone) -->
-		<fileset dir="resources" />
-		<zipgroupfileset dir="lib" excludes="META-INF/**" includes="*.jar"/>
-		<metainf dir="META-INF" />
-		<manifest>
-			<!-- SDL Version -->
-			<attribute name="Main-Class" value="org.recompile.freej2me.Anbu"/>
-			<attribute name="Implementation-Title" value="FreeJ2ME"/>
-		</manifest>
-	</jar>
-
 
 </project>
