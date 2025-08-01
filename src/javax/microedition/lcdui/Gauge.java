@@ -132,8 +132,17 @@ public class Gauge extends Item
 	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
 		graphics.getGraphics2D().translate(x, y);
+
+		final int arrowWidth = Font.getDefaultFont().getHeight()/2;
+		final int arrowMargin = Font.getDefaultFont().getHeight()/15;
+		final int arrowPadding = Font.getDefaultFont().getHeight()/2;
+		final int arrowSpacing = arrowWidth+arrowMargin+arrowPadding;
 		
-		int arrowSpacing = _drawArrow(graphics, -1,  value > 0, 0, 0, width, Font.getDefaultFont().getHeight());
+		if(interactive)
+		{
+			graphics.drawString("<", arrowSpacing-1, 0, Graphics.RIGHT); // Arrow left
+			graphics.drawString(">", arrowSpacing + (width-2*arrowSpacing) + 2, 0, Graphics.LEFT); // Arrow right
+		}
 
 		graphics.setColor(Mobile.lcduiTextColor);
 		graphics.drawRect(arrowSpacing, 0, width-2*arrowSpacing, Font.getDefaultFont().getHeight());
@@ -148,10 +157,8 @@ public class Gauge extends Item
 		if(maxValue != INDEFINITE) { text = Integer.toString(value) + " (" + String.format("%.0f", (value / (float) maxValue * 100f)) + "%)"; }
 		else { text = "? (?%)"; }
 		int textWidth = (graphics.getGraphics2D().getFontMetrics().stringWidth(text));
-		graphics.drawString(text, (width-textWidth)/2 + 1, 0, Graphics.LEFT); // Using Grapyics' HCENTER doesn't work as expected here, so centering has to be done manually
-		
-		_drawArrow(graphics, 1,  value < maxValue, 0, 0, width, Font.getDefaultFont().getHeight());
-	
+		graphics.drawString(text, (width-textWidth)/2 + 1, 0, Graphics.LEFT); // Using Graphics' HCENTER doesn't work as expected here, so centering has to be done manually
+			
 		graphics.getGraphics2D().translate(-x, -y);
 	}
 

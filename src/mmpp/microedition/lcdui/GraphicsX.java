@@ -16,6 +16,7 @@
 */
 package mmpp.microedition.lcdui;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 import org.recompile.mobile.PlatformImage;
@@ -63,14 +64,14 @@ public class GraphicsX extends org.recompile.mobile.PlatformGraphics
 
     public void setAlpha(int alpha) { setAlphaRGB(alpha); }
 
-    public void setPaintMode() { }
+    public void setPaintMode() { gc.setPaintMode(); }
 
     public void setPixel(int x, int y, int RGB) 
     {
         img.setPixel(x, y, RGB);
     }
 
-    public void setXORMode(int RGB) { }
+    public void setXORMode(int RGB) { gc.setXORMode(new Color(RGB)); }
 
     public int[] toIntArray(BufferedImage image) {
         int width = image.getWidth();

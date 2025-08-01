@@ -76,7 +76,7 @@ import javax.microedition.media.decoders.MLDDecoder;
 /* IMA ADPCM WAV support */
 import javax.microedition.media.decoders.WAVTools;
 import javax.microedition.media.decoders.WAVImaADPCMDecoder;
-/* IMA ADPCM WAV support */
+/* EMS iMelody support */
 import javax.microedition.media.decoders.EMSiMelodyDecoder;
 /* audio/mpeg support */
 import javazoom.jl.player.MPEGPlayer;

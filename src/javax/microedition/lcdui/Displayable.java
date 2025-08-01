@@ -194,9 +194,12 @@ public abstract class Displayable
 			xPos = (width / 4) - textCenter;
 			graphics.drawString("Okay", xPos, currentY+titlePadding, Graphics.LEFT);
 
-			textCenter = (graphics.getGraphics2D().getFontMetrics().stringWidth("Back"))/2;
-			xPos = (3 * width / 4) - textCenter;
-			graphics.drawString("Back", xPos, currentY+titlePadding, Graphics.LEFT);
+			if(hasBackCommand()) 
+			{
+				textCenter = (graphics.getGraphics2D().getFontMetrics().stringWidth("Back"))/2;
+				xPos = (3 * width / 4) - textCenter;
+				graphics.drawString("Back", xPos, currentY+titlePadding, Graphics.LEFT);
+			}
 		}
 		else // Render Items
 		{
@@ -284,12 +287,10 @@ public abstract class Displayable
 			doCommand(currentCommand);
 			listCommands = false;
 		}
-		else
+		else if(commands.size()>0 && commands.size()<=2)
 		{
-			if(commands.size()>0 && commands.size()<=2)
-			{
-				doCommand(0);
-			}
+			doCommand(0);
+			currentCommand = 0;
 		}
 	}
 
@@ -297,7 +298,15 @@ public abstract class Displayable
 	{
 		if(commands.size()>1 && commands.size()<=2)
 		{
-			doCommand(1);
+			for(int i = 0; i < commands.size(); i++) 
+			{
+				if(commands.get(i).getCommandType() == Command.BACK) 
+				{ 
+					doCommand(i); 
+					currentCommand = 0;
+					return; 
+				}
+			}
 		}
 	}
 
@@ -312,4 +321,13 @@ public abstract class Displayable
 		}); 
 	}
 
+	public boolean hasBackCommand() 
+	{
+		for(int i = 0; i < commands.size(); i++) 
+		{
+			if(commands.get(i).getCommandType() == Command.BACK) { return true; }
+		}
+
+		return false;
+	}
 }

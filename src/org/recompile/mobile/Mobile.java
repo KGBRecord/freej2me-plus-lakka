@@ -796,6 +796,58 @@ public class Mobile
 				case NOKIAKB_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
+		if (sagem) 
+		{
+			switch (keycode) 
+			{
+				case SAGEM_UP:    return Canvas.UP; // Up
+				case SAGEM_DOWN:  return Canvas.DOWN; // Down
+				case SAGEM_LEFT:  return Canvas.LEFT; // Left
+				case SAGEM_RIGHT: return Canvas.RIGHT; // Right
+				case SAGEM_SOFT3: return Canvas.FIRE; // Y
+				case SAGEM_SOFT1: return Canvas.KEY_SOFT_LEFT;
+				case SAGEM_SOFT2: return Canvas.KEY_SOFT_RIGHT;
+			}
+		}
+		if (siemens) 
+		{
+			switch (keycode) 
+			{
+				case SIEMENS_UP:    return Canvas.UP; // Up
+				case SIEMENS_DOWN:  return Canvas.DOWN; // Down
+				case SIEMENS_LEFT:  return Canvas.LEFT; // Left
+				case SIEMENS_RIGHT: return Canvas.RIGHT; // Right
+				case SIEMENS_FIRE:  return Canvas.FIRE; // Y
+				case SIEMENS_SOFT1: return Canvas.KEY_SOFT_LEFT;
+				case SIEMENS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
+			}
+		}
+		if (sharp) 
+		{
+			switch (keycode) 
+			{
+				case SHARP_UP:    return Canvas.UP; // Up
+				case SHARP_DOWN:  return Canvas.DOWN; // Down
+				case SHARP_LEFT:  return Canvas.LEFT; // Left
+				case SHARP_RIGHT: return Canvas.RIGHT; // Right
+				case SHARP_FIRE:  return Canvas.FIRE; // Y
+				case SHARP_SOFT1: return Canvas.KEY_SOFT_LEFT;
+				case SHARP_SOFT2: return Canvas.KEY_SOFT_RIGHT;
+			}
+		}
+		if (skt)
+		{
+			switch (keycode)
+			{
+				case Canvas.KEY_UP:    return Canvas.UP; // Up
+				case Canvas.KEY_DOWN:  return Canvas.DOWN; // Down
+				case Canvas.KEY_LEFT:  return Canvas.LEFT; // Left
+				case Canvas.KEY_RIGHT: return Canvas.RIGHT; // Right
+				case Canvas.KEY_FIRE:  return Canvas.FIRE; // Y
+				case Canvas.KEY_COML:  return Canvas.KEY_SOFT_LEFT;
+				case Canvas.KEY_COMR:  return Canvas.KEY_SOFT_RIGHT;
+			}
+		}
 		
 		// J2ME Canvas standard keycodes, to match against any keys not covered above (Canvas does not handle left/right soft keys).
 		switch (keycode) // TODO: This can probably be turned into a single 'return Canvas.getKeyCode(keycode)''

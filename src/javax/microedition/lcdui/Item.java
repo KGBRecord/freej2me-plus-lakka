@@ -168,34 +168,4 @@ public abstract class Item
 	protected boolean traverse(int dir, int viewportWidth, int viewportHeight, int[] visRect_inout) { return false; }
 
 	protected void traverseOut() { }
-
-	protected int _drawArrow(Graphics graphics, int dir, boolean active, int x, int y, int width, int height) 
-	{
-		// zb3: these parameters are for the field, not for the arrow
-
-		int arrowWidth = height/2;
-		int arrowMargin = height/15;
-		int arrowPadding = height/2;
-		int arrowHeight = height/2;
-
-		graphics.setColor(active ? Mobile.lcduiTextColor : Mobile.lcduiBGColor);
-
-		if (dir == -1) 
-		{
-			graphics.fillPolygon(
-				new int[]{x+arrowMargin, x+arrowMargin+arrowWidth, x+arrowMargin+arrowWidth}, 0,
-				new int[]{y+height/2, y+height/2-arrowHeight/2, y+height/2+arrowHeight/2}, 0, 3, Mobile.lcduiTextColor
-			);
-		} 
-		else if (dir == 1) 
-		{
-			graphics.fillPolygon(
-				new int[]{x+width-arrowWidth-arrowMargin-1, x+width-arrowMargin-1, x+width-arrowWidth-arrowMargin-1}, 0,
-				new int[]{y+height/2-arrowHeight/2, y+height/2, y+height/2+arrowHeight/2}, 0, 3, Mobile.lcduiTextColor
-			);
-		}
-
-		return arrowWidth+arrowMargin+arrowPadding;
-	}
-
 }

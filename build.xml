@@ -14,15 +14,19 @@
     </path>
 
 	<mkdir dir="build/classes"/>
+	<mkdir dir="build/classes/org/objectweb"/>
+
     <echo message="Building Objectweb asm libraries" />
 	<javac
-		srcdir="src/org/objectweb/"
+		srcdir="src"
 		destdir="build/classes"
 		includeantruntime="false"
 		source="${source.version}"
 		target="${target.version}"
 		bootclasspath="${java.home}/lib/rt.jar"
 	>
+	<include name="org/objectweb/asm/**"/>
+	<exclude name="org/objectweb/asm/package.html"/>
 	<compilerarg value="-nowarn"/>
 	</javac>
 
@@ -36,7 +40,8 @@
 		target="${target.version}"
 		bootclasspath="${java.home}/lib/rt.jar"
 	>
-    <exclude name="src/org/objectweb/**"/>
+    <exclude name="org/objectweb/**"/>
+	<exclude name="libretro/**"/>
 	<compilerarg value="-Xlint:unchecked"/>
 	<compilerarg value="-Xlint:deprecation"/>
 	<compilerarg line="-encoding utf-8"/>

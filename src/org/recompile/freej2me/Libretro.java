@@ -505,8 +505,8 @@ public class Libretro
 								case 15:
 
 									// Check if the frontend is fast-forwarding
-									if(din[4] == 0) { MobilePlatform.pressedKeys[19] = false; }
-									else { MobilePlatform.pressedKeys[19] = true; }
+									if(din[4] == 0) { MobilePlatform.pressedKeys[20] = false; }
+									else { MobilePlatform.pressedKeys[20] = true; }
 
 									/* Send Frame to Libretro */
 									try

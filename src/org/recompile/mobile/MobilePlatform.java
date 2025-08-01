@@ -489,6 +489,10 @@ public class MobilePlatform
 				mask = 1 << 0x16;
 				eventKey = com.nttdocomo.ui.Display.KEY_SOFT2;
 				break;
+			case Mobile.KDDI_CLR:
+				mask = 1 << 0x20;
+				eventKey = com.nttdocomo.ui.Display.KEY_CLEAR;
+				break;
 			default:
 				mask = 0;
 		}
@@ -546,14 +550,12 @@ public class MobilePlatform
 				{
 					showCommandBar();
 					displayable.doLeftCommand();
-					displayable.currentCommand = 0;
 					return true;
 				}
 				else if (key == Canvas.KEY_SOFT_RIGHT) 
 				{
 					showCommandBar();
 					displayable.doRightCommand();
-					displayable.currentCommand = 0;
 					return true;
 				}
 			}

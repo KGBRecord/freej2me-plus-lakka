@@ -16,6 +16,8 @@
 */
 package com.nttdocomo.opt.ui;
 
+import com.nttdocomo.ui.Image;
+import com.nttdocomo.ui.impls.ImageImpl;
 import org.recompile.mobile.Mobile;
 
 // This class is used by some DoJa jars, but there's zero documentation on it
@@ -26,5 +28,13 @@ public abstract class Graphics2 extends org.recompile.mobile.PlatformGraphics
 	public void setRenderMode(int operation, int arg1, int arg2) 
 	{
 		Mobile.log(Mobile.LOG_WARNING, Graphics2.class.getPackage().getName() + "." + Graphics2.class.getSimpleName() + ": " + "setRenderMode not implemented " + operation + " " + arg1 + " " + arg2);
+	}
+
+	// Those argument names are all assumptions (this function seems to copy an area from the Graphics canvas into a frameBuffer)
+	public Image getImage(int x, int y, int width, int height) 
+	{
+		Image subArea = new ImageImpl(width, height);
+		copyToFrameBuffer(subArea, x, y, width, height, 0, 0, 0);
+		return subArea;
 	}
 }

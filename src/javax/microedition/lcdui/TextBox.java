@@ -95,7 +95,7 @@ public class TextBox extends Screen
 		caretPosition = text.length();
 
 		// these can't be static because of Font.getDefaultFont().getHeight()
-		padding = Font.getDefaultFont().getHeight() / 5;
+		padding = Font.getDefaultFont().getHeight() / 3;
 		margin = Font.getDefaultFont().getHeight() / 5;
 	}
 
@@ -303,11 +303,11 @@ public class TextBox extends Screen
 
 		// Fill the whole textField area with specified BG color. TODO: Make sure everything is inside the textField area, right now up/down arrows and the inputMode hint aren't.
 		graphics.setColor(Mobile.lcduiBGColor);
-		graphics.fillRect(margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
-
+		graphics.fillRect(margin, 0, width - 1 - margin * 2, Font.getDefaultFont().getHeight() + 3*padding);
+		
 		// Draw the border of the field
 		graphics.setColor(Mobile.lcduiTextColor);
-		graphics.drawRect(margin, margin, width - margin, Font.getDefaultFont().getHeight() + margin);
+		graphics.drawRect(margin, 0, width - 1 - margin * 2, Font.getDefaultFont().getHeight() + 3*padding);
 
 		// Replace line breaks, they aren't visible by default.
 		String formattedText = text.replace('\n', '↳');
@@ -350,8 +350,8 @@ public class TextBox extends Screen
 
 		// Draw arrows using "^" and "v" characters to hint the user that the current field can be altered
 		graphics.setColor(Mobile.lcduiTextColor); // Set arrow color
-		graphics.drawString("^", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + padding - Font.getDefaultFont().getHeight() + padding, 0); // Arrow up
-		graphics.drawString("v", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + padding + Font.getDefaultFont().getHeight(), 0); // Arrow down
+		graphics.drawString("^", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin - Font.getDefaultFont().getHeight() / 3, 0); // Arrow up
+		graphics.drawString("v", margin + padding + caretWidth + caretCharWidth / 2 - 2, margin + Font.getDefaultFont().getHeight(), 0); // Arrow down
 
 		// Render the characterSet hint
 		String hintText = new String(charSetHint[charSetIdx]);
@@ -359,10 +359,10 @@ public class TextBox extends Screen
 	
 		// Draw background for hint text (it follows the same logic as the highlighted caret char)
 		graphics.setColor(Mobile.lcduiTextColor);
-		graphics.fillRect(width - margin - hintWidth - padding, margin + padding - 11, hintWidth+1, Font.getDefaultFont().getHeight() - 4);
+		graphics.fillRect(width - margin - hintWidth, padding + Font.getDefaultFont().getHeight(), hintWidth, Font.getDefaultFont().getHeight() - padding - 1);
 	
 		graphics.setColor(Mobile.lcduiBGColor);
-		graphics.drawString(hintText, width - margin - hintWidth - padding, margin + padding - 12, 0);
+		graphics.drawString(hintText, width - margin - hintWidth, margin + Font.getDefaultFont().getHeight(), 0);
 
 		graphics.getGraphics2D().translate(-x, -y);
 

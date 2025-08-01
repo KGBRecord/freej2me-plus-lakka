@@ -277,12 +277,16 @@ public class ChoiceGroup extends Item implements Choice
 		
 		if (type == Choice.POPUP) 
 		{
-			int arrowSpacing = _drawArrow(graphics, -1,  selectedIndex > 0, 0, 0, width, height);
+			final int arrowWidth = Font.getDefaultFont().getHeight()/2;
+			final int arrowMargin = Font.getDefaultFont().getHeight()/15;
+			final int arrowPadding = Font.getDefaultFont().getHeight()/2;
+			final int arrowSpacing = arrowWidth+arrowMargin+arrowPadding;
+
+			graphics.drawString("<", arrowSpacing-1, 0, Graphics.RIGHT); // Arrow left
+			graphics.drawString(">", arrowSpacing + (width-2*arrowSpacing) + 2, 0, Graphics.LEFT); // Arrow right
 
 			graphics.setColor(Mobile.lcduiTextColor);
 			graphics.drawString(strings.get(selectedIndex), arrowSpacing, 0, 0);
-
-			_drawArrow(graphics, 1, selectedIndex < size()-1, 0, 0, width, height);
 		} 
 		else 
 		{

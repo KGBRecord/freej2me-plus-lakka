@@ -132,10 +132,12 @@ public abstract class PlatformGraphics implements DirectGraphics
 	protected int resetTransY = 0;
 	private boolean firstReset = true;
 
-	protected int color = 0xFFFFFF;
+	protected int color = 0xFF000000;
 	protected Font font = Font.getDefaultFont();
 	protected com.nttdocomo.ui.Font dojaFont = com.nttdocomo.ui.Font.getDefaultFont();
 	protected int strokeStyle = SOLID;
+	// Array for fixed solid and dotted stroke
+	protected BasicStroke[] strokes = new BasicStroke[] {new BasicStroke(1.0f), new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[] {4.0f}, 0.0f)};
 
 	protected int dojaLockCount = 0;
 	protected int dojaflipMode = 0;
@@ -151,8 +153,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
 		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
-
 		gc.setFont(font.platformFont.awtFont);
+		setColor(color);
 
 		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	}
@@ -242,7 +244,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	}
 
 	// Basically same as copyArea, but copies from one image to another, instead of operating on the same image
-	public void copyToFrameBuffer(Image frameBuffer, int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) 
+	public void copyToFrameBuffer(BufferedImage frameBuffer, int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) 
 	{
 		if (frameBuffer == null) { return; }
 
@@ -258,7 +260,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 			throw new IllegalArgumentException("Source area exceeds the bounds of the graphics object.");
 		}
 
-		final int[] fbPixels = ((DataBufferInt) frameBuffer.getCanvas().getRaster().getDataBuffer()).getData();
+		final int[] fbPixels = ((DataBufferInt) frameBuffer.getRaster().getDataBuffer()).getData();
 
 		final int[] subPixels = new int[width * height];
 
@@ -288,12 +290,14 @@ public abstract class PlatformGraphics implements DirectGraphics
 		}
 	}
 
-	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
+	public void copyToFrameBuffer(Image frameBuffer, int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) 
 	{
-		if(width < 0 || height < 0) { return; }
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		copyToFrameBuffer(frameBuffer.getCanvas(), x_src, y_src, width, height, x_dest, y_dest, anchor);
+	}
 
-		gc.drawArc(x, y, width, height, startAngle, arcAngle);
+	public void copyToFrameBuffer(com.nttdocomo.ui.Image frameBuffer, int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) 
+	{
+		copyToFrameBuffer(frameBuffer.getCanvas(), x_src, y_src, width, height, x_dest, y_dest, anchor);
 	}
 
 	public void drawChar(char character, int x, int y, int anchor)
@@ -531,7 +535,19 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{ 
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
+		gc.setStroke(strokes[strokeStyle]);
 		gc.drawLine(x1, y1, x2, y2); 
+		gc.setStroke(strokes[SOLID]);
+	}
+
+	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
+	{
+		if(width < 0 || height < 0) { return; }
+		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+
+		gc.setStroke(strokes[strokeStyle]);
+		gc.drawArc(x, y, width, height, startAngle, arcAngle);
+		gc.setStroke(strokes[SOLID]);
 	}
 
 	public void drawRect(int x, int y, int width, int height)
@@ -539,7 +555,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 		if(width < 0 || height < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
+		gc.setStroke(strokes[strokeStyle]);
 		gc.drawRect(x, y, width, height);
+		gc.setStroke(strokes[SOLID]);
 	}
 
 	public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight)
@@ -547,7 +565,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 		if(width < 0 || height < 0 || arcWidth < 0 || arcHeight < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
+		gc.setStroke(strokes[strokeStyle]);
 		gc.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
+		gc.setStroke(strokes[SOLID]);
 	}
 
 	public void drawString(String str, int x, int y, int anchor)
@@ -623,7 +643,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
-		color = (r<<16) + (g<<8) + b;
+		color = (0xFF << 24) | (r<<16) | (g<<8) | b; // Alpha is ignored below, we set it just so the color variable is accurate
 		gc.setColor(new Color(color));
 	}
 
@@ -649,18 +669,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setStrokeStyle(int stroke) 
 	{
-		if(stroke == strokeStyle) { return; }
-		
-		if (strokeStyle == DOTTED) 
-		{
-			float[] dotPattern = {2.0f, 2.0f}; // Dot of length 2 px, followed by 2 px of gap
-			BasicStroke dottedStroke = new BasicStroke(2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dotPattern, 0.0f);
-			
-			gc.setStroke(dottedStroke); 
-		} 
-		else { gc.setStroke(new BasicStroke(1.0f)); } // Solid stroke with width of 2 px
-
-		strokeStyle = stroke;
+		if(stroke != strokeStyle) { strokeStyle = stroke; } // We set the stroke when actually drawing in draw* operations
 	}
 
 	public int getStrokeStyle() { return strokeStyle;}
@@ -737,16 +746,16 @@ public abstract class PlatformGraphics implements DirectGraphics
 	*/
 	// http://www.j2megame.org/j2meapi/Nokia_UI_API_1_1/com/nokia/mid/ui/DirectGraphics.html
 
-	private int colorAlpha;
+	
 
 	public int getNativePixelFormat() { return 0; } // Don't explicitly set any native format for color, let the jar send in whatever it has and we'll convert.
 
-	public int getAlphaComponent() { return colorAlpha; }
+	public int getAlphaComponent() { return (color >> 24 & 0xFF); }
 
 	public void setARGBColor(int argbColor)
 	{
-		colorAlpha = (argbColor>>>24) & 0xFF;
-		setAlphaRGB(argbColor);
+		color = argbColor;
+		setAlphaRGB(color);
 	}
 
 	public void drawImage(javax.microedition.lcdui.Image img, int x, int y, int anchor, int manipulation)
@@ -904,7 +913,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 			x[i] = xPoints[xOffset+i];
 			y[i] = yPoints[yOffset+i];
 		}
+		gc.setStroke(strokes[strokeStyle]);
 		gc.drawPolygon(x, y, nPoints);
+		gc.setStroke(strokes[SOLID]);
 		setColor(temp);
 	}
 
@@ -1569,20 +1580,24 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
+		gc.setStroke(strokes[strokeStyle]);
 		for (int i = 0; i < nPoints - 1; i++) 
 		{
 			drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
 		}
+		gc.setStroke(strokes[SOLID]);
 	}
 
 	public void drawPolyline(int[] xPoints, int[] yPoints, int offset, int count) 
 	{
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
+		gc.setStroke(strokes[strokeStyle]);
 		for (int i = offset; i < offset + count - 1; i++) 
 		{
 			drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
 		}
+		gc.setStroke(strokes[SOLID]);
 	}
 
 	// Those Polygon methods are used by Gang Bullets 2 and Dragon Ball RPG

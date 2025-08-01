@@ -147,9 +147,10 @@ public class Form extends Screen
 				traversed = doTraverseItem(focusedItem, key);
 			
 				// we assume that traversed returning false for a limit doesn't imply traverseOut yet
-				// and if we've trafersed internally, there's nothing left
+				// and if we've traversed internally, there's nothing left
 
-				if (!traversed) {
+				if (!traversed) 
+				{
 					// check if we should scroll
 
 					int reasonablePadding = 10;
@@ -164,7 +165,8 @@ public class Form extends Screen
 						{
 							// focusedItem--;
 							traverseDir = -1;
-						} else if (scrollY > 0) 
+						} 
+						else if (scrollY > 0) 
 						{
 							scrollY = Math.max(0, scrollY - scrollAmount);
 							shouldInvalidate = true;
@@ -177,7 +179,8 @@ public class Form extends Screen
 						if (focusedItem < items.size()-1 && itemBounds[focusedItem+1].intersects(reasonableViewport)) {
 							// focusedItem++;
 							traverseDir = 1;
-						} else if (scrollY < maxScroll) {
+						} 
+						else if (scrollY < maxScroll) {
 							scrollY = Math.min(maxScroll, scrollY + scrollAmount);
 							shouldInvalidate = true;
 						}
@@ -198,7 +201,6 @@ public class Form extends Screen
 				}
 				handled = true;
 			}
-			
 		}
 		
 		if (shouldInvalidate) { _invalidate(); }

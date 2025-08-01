@@ -43,8 +43,6 @@ import com.nttdocomo.util.ScratchPadConnection;
 public class PlatformImage
 {
 	protected BufferedImage canvas;
-	protected Graphics gc;
-	protected com.nttdocomo.ui.Graphics djgc;
 
 	private boolean isMutable = false;
 
@@ -54,16 +52,23 @@ public class PlatformImage
 
 	public void setCanvas(BufferedImage newCanvas) { canvas = newCanvas; }
 
+	/* 
+	 * Previously these reused the same graphics object, but this lead to issues due
+	 * to the object potentially not being in its init state.
+	 *  
+	 * Returning a new Graphics object for each call might use a bit more memory for
+	 * jars that request many of them without clearing, but should be very marginal, and
+	 */
 	public Graphics getMIDPGraphics() 
 	{ 
 		if(!isMutable()) { throw new IllegalStateException("Image is immutable, cannot access Graphics object"); }
-		return gc;
+		return new Graphics(this);
 	}
 
 	public com.nttdocomo.ui.Graphics getDoJaGraphics() 
 	{ 
 		if(!isMutable()) { throw new IllegalStateException("Image is immutable, cannot access Graphics object"); }
-		return djgc; 
+		return new com.nttdocomo.ui.Graphics(this); 
 	}
 
 	public PlatformImage() { }
@@ -75,9 +80,6 @@ public class PlatformImage
 		else { canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB); }
 		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		
-
-		gc = new Graphics(this);
-		djgc = new com.nttdocomo.ui.Graphics(this);
 		Arrays.fill(canvasData, 0xFFFFFFFF);
 
 		isMutable = true;
@@ -89,7 +91,6 @@ public class PlatformImage
 		canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
 		int[] canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		
-		gc = new Graphics(this);
 		Arrays.fill(canvasData, ARGBcolor);
 
 		isMutable = true;
@@ -190,12 +191,6 @@ public class PlatformImage
 			canvas.getGraphics().drawImage(image, 0, 0, null);
 		}
 
-		if(mutable) 
-		{ 
-			if(!Mobile.isDoJa) { gc = new Graphics(this); }
-			else { djgc = new com.nttdocomo.ui.Graphics(this); }
-		}
-
 		isMutable = mutable;
 	}
 
@@ -254,7 +249,6 @@ public class PlatformImage
 	{
 		// Create DoJa image from int array starting from a given offset
 		canvas = new BufferedImage(Width, Height, BufferedImage.TYPE_INT_ARGB);
-		djgc = new com.nttdocomo.ui.Graphics(this);
 
 		int[] canvasPixels = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 		System.arraycopy(data, off, canvasPixels, 0, Width * Height);
@@ -282,15 +276,7 @@ public class PlatformImage
 
     public boolean is2Bpp() { return is2bpp; }
 
-	public void setMutable(boolean mutable) 
-	{
-		isMutable = mutable;
-		if(isMutable) 
-		{
-			if(!Mobile.isDoJa) { gc = new Graphics(this); }
-			else { djgc = new com.nttdocomo.ui.Graphics(this); }
-		}
-	}
+	public void setMutable(boolean mutable) { isMutable = mutable; }
 
 	// Common methods
 	public int getWidth() { return canvas.getWidth(); }

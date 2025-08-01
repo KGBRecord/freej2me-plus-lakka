@@ -59,19 +59,13 @@ public class StringItem extends Item
 
 	protected boolean keyPressed(int key) 
 	{ 
-		boolean handled = false;
-		
-		if (!handled) 
+		if (key == Canvas.FIRE || key == Canvas.KEY_NUM5 || key == Canvas.KEY_SOFT_LEFT) 
 		{
-			if (key == Canvas.FIRE || key == Canvas.KEY_NUM5 || key == Canvas.KEY_SOFT_LEFT) 
-			{
-				doDefaultCommand();
-				handled = true;
-			}
-			
+			doDefaultCommand();
 		}
-	
-		return handled;
+
+		// We don't need to set handled to true here
+		return false;
 	}
 
 	protected int getContentHeight(int width) 
