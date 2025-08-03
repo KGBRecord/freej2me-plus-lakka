@@ -284,14 +284,11 @@ public class FreeJ2ME
 					else if(value == 0 && Mobile.isFastForwarding) { Mobile.isFastForwarding = false; app.releaseKey(new KeyEvent(app.main, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, KeyEvent.CHAR_UNDEFINED)); }
 					break;
 				case 21: // Rotation - ro
-					if(value == 1 && !Mobile.rotateDisplay)
+					if(value == 1)
 					{
-						Mobile.config.settings.put("rotate",  "on");
-						app.settingsChanged();
-					}
-					else if(value == 0 && Mobile.rotateDisplay)
-					{
-						Mobile.config.settings.put("rotate",  "off");
+						int rotation = Mobile.rotateDisplay + 90;
+						if(rotation == 360) { rotation = 0; }
+						Mobile.config.settings.put("rotate",  "" + rotation);
 						app.settingsChanged();
 					}
 					break;
@@ -383,10 +380,20 @@ public class FreeJ2ME
 					int y = (int)((e.getY()-lcd.cy) * lcd.scaley);
 
 					// Adjust the pointer coords if the screen is rotated, same for mouseReleased
-					if(Mobile.rotateDisplay)
+					if(Mobile.rotateDisplay == 90)
 					{
-						x = (int)((lcd.ch-(e.getY()-lcd.cy)) * lcd.scaley);
-						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
+						x = (int)((e.getY() - lcd.cy) * lcd.scalex);
+						y = (int)((lcd.cw - (e.getX() - lcd.cx)) * lcd.scaley);
+					}
+					if(Mobile.rotateDisplay == 180)
+					{
+						x = (int)((lcd.cw - (e.getX() - lcd.cx)) * lcd.scalex);
+						y = (int)((lcd.ch - (e.getY() - lcd.cy)) * lcd.scaley);
+					}
+					if(Mobile.rotateDisplay == 270)
+					{
+						x = (int)((lcd.ch - (e.getY() - lcd.cy)) * lcd.scaley);
+						y = (int)((e.getX() - lcd.cx) * lcd.scalex);
 					}
 
 					MobilePlatform.pointerPressed(x, y);
@@ -400,10 +407,20 @@ public class FreeJ2ME
 					int x = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					int y = (int)((e.getY()-lcd.cy) * lcd.scaley);
 
-					if(Mobile.rotateDisplay)
+					if(Mobile.rotateDisplay == 90)
 					{
-						x = (int)((lcd.ch-(e.getY()-lcd.cy)) * lcd.scaley);
-						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
+						x = (int)((e.getY() - lcd.cy) * lcd.scalex);
+						y = (int)((lcd.cw - (e.getX() - lcd.cx)) * lcd.scaley);
+					}
+					if(Mobile.rotateDisplay == 180)
+					{
+						x = (int)((lcd.cw - (e.getX() - lcd.cx)) * lcd.scalex);
+						y = (int)((lcd.ch - (e.getY() - lcd.cy)) * lcd.scaley);
+					}
+					if(Mobile.rotateDisplay == 270)
+					{
+						x = (int)((lcd.ch - (e.getY() - lcd.cy)) * lcd.scaley);
+						y = (int)((e.getX() - lcd.cx) * lcd.scalex);
 					}
 
 					MobilePlatform.pointerReleased(x, y);
@@ -425,10 +442,20 @@ public class FreeJ2ME
 					int x = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					int y = (int)((e.getY()-lcd.cy) * lcd.scaley);
 
-					if(Mobile.rotateDisplay)
+					if(Mobile.rotateDisplay == 90)
 					{
-						x = (int)((lcd.ch-(e.getY()-lcd.cy)) * lcd.scaley);
-						y = (int)((e.getX()-lcd.cx) * lcd.scalex);
+						x = (int)((e.getY() - lcd.cy) * lcd.scalex);
+						y = (int)((lcd.cw - (e.getX() - lcd.cx)) * lcd.scaley);
+					}
+					if(Mobile.rotateDisplay == 180)
+					{
+						x = (int)((lcd.cw - (e.getX() - lcd.cx)) * lcd.scalex);
+						y = (int)((lcd.ch - (e.getY() - lcd.cy)) * lcd.scaley);
+					}
+					if(Mobile.rotateDisplay == 270)
+					{
+						x = (int)((lcd.ch - (e.getY() - lcd.cy)) * lcd.scaley);
+						y = (int)((e.getX() - lcd.cx) * lcd.scalex);
 					}
 					
 					MobilePlatform.pointerDragged(x, y);
@@ -539,7 +566,9 @@ public class FreeJ2ME
 				case KeyEvent.VK_R: // Toggle rotation
 					if(e.isAltDown() && e.isControlDown())
 					{
-						Mobile.config.settings.put("rotate",  (Mobile.rotateDisplay ? "off" : "on"));
+						int rotation = Mobile.rotateDisplay + 90;
+						if(rotation == 360) { rotation = 0; }
+						Mobile.config.settings.put("rotate",  "" + rotation);
 						settingsChanged();
 					}
 				break;
@@ -624,7 +653,7 @@ public class FreeJ2ME
 		{
 			Mobile.getPlatform().resizeLCD(Mobile.lcdWidth, Mobile.lcdHeight);
 
-			if(!Mobile.rotateDisplay)
+			if(Mobile.rotateDisplay == 0 || Mobile.rotateDisplay == 180)
 			{
 				lcdWidth = Mobile.lcdWidth;
 				lcdHeight = Mobile.lcdHeight;
@@ -779,13 +808,24 @@ public class FreeJ2ME
 
 			if(!showDragMessage) 
 			{
-				if (!Mobile.rotateDisplay) { g.drawImage(Mobile.getPlatform().getLcdFrontbufferImage(), cx, cy, cw, ch, null); } 
+				if (Mobile.rotateDisplay == 0) { g.drawImage(Mobile.getPlatform().getLcdFrontbufferImage(), cx, cy, cw, ch, null); } 
 				else 
 				{
-					// Rotate the FB 90 degrees counterclockwise with an adjusted pivot
-					((Graphics2D) g).rotate(Math.toRadians(-90), ch/2, ch/2);
-					// Draw the rotated FB with adjusted cy and cx values
-					g.drawImage(Mobile.getPlatform().getLcdFrontbufferImage(), 0, cx, ch, cw, null);
+					if(Mobile.rotateDisplay == 90) 
+					{
+						((Graphics2D) g).rotate(Math.toRadians(90), cw/2, cw/2);
+						g.drawImage(Mobile.getPlatform().getLcdFrontbufferImage(), 0, cx, ch, cw, null);
+					}
+					else if(Mobile.rotateDisplay == 180) 
+					{
+						((Graphics2D) g).rotate(Math.toRadians(180), cw/2, ch/2);
+        				g.drawImage(Mobile.getPlatform().getLcdFrontbufferImage(), -cx, cy, cw, ch, null);
+					}
+					else if(Mobile.rotateDisplay == 270) 
+					{
+						((Graphics2D) g).rotate(Math.toRadians(270), ch/2, ch/2);
+						g.drawImage(Mobile.getPlatform().getLcdFrontbufferImage(), 0, cx, ch, cw, null);
+					}
 				}
 				
 				if(Mobile.isPaused)

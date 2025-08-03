@@ -88,6 +88,7 @@ public final class AWTGUI
 	final Menu unlockFPSHack = new Menu("Unlock FPS Hack");
 	final Menu showFPS = new Menu("Show FPS Counter");
 	final Menu phoneType = new Menu("Phone Key Layout");
+	final Menu screenRotation = new Menu("Screen Rotation (Ctrl+Alt+R)");
 	final Menu backlightColor = new Menu("Backlight Color");
 	final Menu fontOffset = new Menu("Font Size Offset");
 
@@ -181,10 +182,18 @@ public final class AWTGUI
 	final MenuItem showPlayer = new MenuItem("J2ME Media Player");
 
 	final CheckboxMenuItem fullScreen = new CheckboxMenuItem("Toggle Fullscreen (Ctrl+Alt+F)");
-	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("Rotate Screen (Ctrl+Alt+R)", false);
 	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("Enable Audio", false);
 	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("Use custom midi soundfont", false);
 	final CheckboxMenuItem useCustomFont = new CheckboxMenuItem("Use custom text font", false);
+
+	final CheckboxMenuItem[] rotations = 
+	{
+		new CheckboxMenuItem("No rotation", true),
+		new CheckboxMenuItem("90 degrees",  false),
+		new CheckboxMenuItem("180 degrees", false),
+		new CheckboxMenuItem("270 degrees", false)
+	};
+	final String[] rotationValues = {"0", "90", "180", "270"};
 
 	final CheckboxMenuItem[] layoutOptions = 
 	{
@@ -199,7 +208,6 @@ public final class AWTGUI
 		new CheckboxMenuItem("Sharp", false),
 		new CheckboxMenuItem("Siemens", false),
 		new CheckboxMenuItem("SKT", false)
-		
 	};
 	final String[] layoutValues = {"Standard", "KDDI", "LG", "Motorola", "MotoV8", "MotoTriplets", "NokiaKeyboard", "Sagem", "Sharp", "Siemens", "SKT"};
 	
@@ -624,15 +632,6 @@ public final class AWTGUI
 			}
 		});
 
-		enableRotation.addItemListener(new ItemListener() 
-		{
-			public void itemStateChanged(ItemEvent e) 
-			{
-				if(enableRotation.getState()){ config.updateRotate("on"); hasPendingChange = true; }
-				else{ config.updateRotate("off"); hasPendingChange = true; }
-			}
-		});
-
 		useCustomMidi.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
@@ -716,6 +715,28 @@ public final class AWTGUI
 				showRestartDialog();
 			}
 		});
+
+		// Screen rotations
+		for(byte i = 0; i < rotations.length; i++) 
+		{
+			final byte index = i;
+			rotations[i].addItemListener(new ItemListener() 
+			{
+				public void itemStateChanged(ItemEvent e) 
+				{
+					if(!rotations[index].getState()){ rotations[index].setState(true); }
+					if(rotations[index].getState())
+					{ 
+						config.updateRotate(rotationValues[index]);
+						for(int j = 0; j < rotations.length; j++) 
+						{
+							if(j != index) { rotations[j].setState(false); }
+						}
+						hasPendingChange = true;
+					}
+				}
+			});
+		}
 
 		// Layout options
 		for(byte i = 0; i < layoutOptions.length; i++) 
@@ -945,13 +966,13 @@ public final class AWTGUI
 		fileMenu.add(exitMenuItem);
 
 		optionMenu.add(fullScreen);
-		optionMenu.add(enableRotation);
 		optionMenu.add(enableAudio);
 		optionMenu.add(useCustomMidi);
 		optionMenu.add(useCustomFont);
 		optionMenu.add(resChangeMenuItem);
 		optionMenu.add(mapInputs);
 		optionMenu.add(phoneType);
+		optionMenu.add(screenRotation);
 		optionMenu.add(backlightColor);
 		optionMenu.add(fpsCap);
 		optionMenu.add(unlockFPSHack);
@@ -982,6 +1003,7 @@ public final class AWTGUI
 		M3GDebug.add(M3GWireframe);
 
 		for(int i = 0; i < config.supportedResolutions.length; i++) { resChoice.add(config.supportedResolutions[i]); }
+		for(int i = 0; i < rotations.length; i++) { screenRotation.add(rotations[i]); }
 		for(int i = 0; i < layoutOptions.length; i++) { phoneType.add(layoutOptions[i]); }
 		for(int i = 0; i < backlightOptions.length; i++) { backlightColor.add(backlightOptions[i]); }
 		for(int i = 0; i < fpsOptions.length; i++) { fpsCap.add(fpsOptions[i]); }
@@ -1007,9 +1029,10 @@ public final class AWTGUI
 	{
 			fullScreen.setState(FreeJ2ME.isFullscreen);
 			enableAudio.setState(config.settings.get("sound").equals("on"));
-			enableRotation.setState(config.settings.get("rotate").equals("on"));
 			useCustomMidi.setState(config.settings.get("soundfont").equals("Custom"));
 			useCustomFont.setState(config.settings.get("textfont").equals("Custom"));
+
+			for(int i = 0; i < rotations.length; i++) { rotations[i].setState(config.settings.get("rotate").equals(rotationValues[i])); }
 
 			for(int i = 0; i < fpsOptions.length; i++) { fpsOptions[i].setState(config.settings.get("fps").equals(fpsValues[i])); }
 

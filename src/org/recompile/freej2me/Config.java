@@ -128,7 +128,7 @@ public class Config
 				settings.put("sound", "on");
 				settings.put("phone", "Standard");
 				settings.put("backlightcolor", "Disabled");
-				settings.put("rotate", "off");
+				settings.put("rotate", "0");
 				settings.put("fps", "0");
 				settings.put("soundfont", "Default");
 				settings.put("textfont", "Default");
@@ -187,6 +187,11 @@ public class Config
 			if(settings.containsKey("compatignoregccalls")) { settings.remove("compatignoregccalls"); } // These are now ignored by default, after some bug fixes to lcdui canvas
 			if(settings.containsKey("compatnonfatalnullimage")) { settings.remove("compatnonfatalnullimage"); } // No longer needed
 			if(settings.containsKey("compatdonottranslatedrawrgb")) { settings.remove("compatdonottranslatedrawrgb"); } // No longer needed
+			if(settings.containsKey("rotate")) // Compatibility with older, more limited rotation toggle
+			{ 
+				if(settings.get("rotate").equals("on")) { settings.replace("rotate", "270"); }
+				else if(settings.get("rotate").equals("off")) { settings.replace("rotate", "0"); }
+			}
 
 			// Add any missing settings
 			if(!settings.containsKey("scrwidth")) { settings.put("scrwidth", ""+width); }
@@ -194,7 +199,7 @@ public class Config
 			if(!settings.containsKey("sound")) { settings.put("sound", "on"); }
 			if(!settings.containsKey("phone")) { settings.put("phone", "Standard"); }
 			if(!settings.containsKey("backlightcolor")) { settings.put("backlightcolor", "Disabled"); }
-			if(!settings.containsKey("rotate")) { settings.put("rotate", "off"); }
+			if(!settings.containsKey("rotate")) { settings.put("rotate", "0"); }
 			if(!settings.containsKey("fps")) { settings.put("fps", "0"); }
 			if(!settings.containsKey("soundfont")) { settings.put("soundfont", "Default"); }
 			if(!settings.containsKey("textfont")) { settings.put("textfont", "Default"); }

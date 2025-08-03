@@ -159,7 +159,7 @@ char *systemPath; /* Path of FreeJ2ME's jar */
 char** params; /* Char matrix containing launch arguments */
 unsigned int optstrlen; /* length of the string above */
 unsigned long int screenRes[2]; /* {width, height} */
-int rotateScreen; /* Acts as a boolean */
+int rotateScreen = 0; /* Allows rotations between 0, 90, 180 and 270 degrees */
 int phoneType = 0; /* 0=Standard (Nokia/Sony/Samsung), 1=LG, 2=Motorola/SoftBank, 3=Motorola Triplets... */
 int backlightColor = 1; /* 0=Disabled, 1=Green, etc. */
 int gameFPS; /* Auto(0), 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10 */
@@ -344,8 +344,10 @@ static void check_variables(bool first_time_startup)
 	var.key = "freej2me_rotate";
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
 	{
-		if (!strcmp(var.value, "off"))     { rotateScreen = 0; }
-		else if (!strcmp(var.value, "on")) { rotateScreen = 1; }
+		if (!strcmp(var.value, "0"))        { rotateScreen = 0; }
+		else if (!strcmp(var.value, "90"))  { rotateScreen = 1; }
+		else if (!strcmp(var.value, "180")) { rotateScreen = 2; }
+		else if (!strcmp(var.value, "270")) { rotateScreen = 3; }
 	}
 
 
@@ -1131,7 +1133,7 @@ void retro_run(void)
 				rumbleTime = preRumbleTime;
 			}
 
-			if(r!=0)
+			if(r == 1 || r == 3)
 			{
 				t = w;
 				w = h;
@@ -1169,20 +1171,43 @@ void retro_run(void)
 
 		if(status>0)
 		{
-			if(r==0)
+			t = 0;
+			if(r == 0)
 			{
-				/* copy frameBuffer to frame (Received from jar as BGR, and converted to RGB here) */
-				t = 0;
+				/* copy frameBuffer to frame directly */
 				for(i=0; i<frameSize; i++)
 				{
 					frame[i] = (frameBuffer[t]<<16) | (frameBuffer[t+1]<<8) | (frameBuffer[t+2]);
 					t+=3;
 				}
 			}
-			else
+			else if(r == 1) 
 			{
-				/* copy frameBuffer to frame rotated 90 degrees anticlockwise */
-				t = 0;
+				/* copy frameBuffer to frame rotated 90 degrees */
+				for (j = 0; j < frameWidth; j++) 
+				{
+					for (i = 0; i < frameHeight; i++) 
+					{
+						frame[(i * frameWidth) + (frameWidth - 1 - j)] = (frameBuffer[t] << 16) | (frameBuffer[t + 1] << 8) | (frameBuffer[t + 2]);
+						t += 3;
+					}
+				}
+			}
+			else if (r == 2) 
+			{
+				/* copy frameBuffer to frame rotated 180 degrees */
+				for (i = 0; i < frameHeight; i++) 
+				{
+					for (j = 0; j < frameWidth; j++) 
+					{
+						frame[(frameHeight - 1 - i) * frameWidth + (frameWidth - 1 - j)] = (frameBuffer[t] << 16) | (frameBuffer[t + 1] << 8) | (frameBuffer[t + 2]);
+						t += 3;
+					}
+				}
+			}
+			else if(r == 3)
+			{
+				/* copy frameBuffer to frame rotated 270 degrees */
 				for(j=0; j<frameWidth; j++)
 				{
 					for(i=frameHeight-1; i>=0; i--)
@@ -1204,7 +1229,8 @@ void retro_run(void)
 			{
 				for (j=0; j<17; j++)
 				{
-					t = ((joymouseY + i)*frameWidth)+(joymouseX + j);
+					// the -3 and -5 are so that the tip of the pointer aligns with the position that will be clicked
+					t = ((joymouseY + i - 3)*frameWidth)+(joymouseX + j - 6);
 					if(t>=0 && t<sizeof(frame))
 					{
 						switch (joymouseClickedImage[(i*17)+j])
@@ -1227,7 +1253,8 @@ void retro_run(void)
 			{
 				for (j=0; j<17; j++)
 				{
-					t = ((joymouseY + i)*frameWidth)+(joymouseX + j);
+					// the -3 and -5 are so that the tip of the pointer aligns with the position that will be clicked
+					t = ((joymouseY + i - 3)*frameWidth)+(joymouseX + j - 6);
 					if(t>=0 && t<sizeof(frame))
 					{
 						switch (joymouseImage[(i*17)+j])

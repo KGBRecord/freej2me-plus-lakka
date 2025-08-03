@@ -84,8 +84,7 @@ public class Libretro
 		lcdWidth =  Integer.parseInt(args[0]);
 		lcdHeight = Integer.parseInt(args[1]);
 
-		if(Integer.parseInt(args[2]) == 0) { Mobile.rotateDisplay = false; }
-		else { Mobile.rotateDisplay = true; }
+		Mobile.rotateDisplay = Integer.parseInt(args[2]) * 90;
 
 		Mobile.kddi = false;
 		Mobile.lg = false;
@@ -253,11 +252,19 @@ public class Libretro
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
 									
-									if(!Mobile.rotateDisplay)
+									if(Mobile.rotateDisplay == 0)
 									{
 										MobilePlatform.pointerReleased(mousex, mousey);
 									}
-									else
+									if(Mobile.rotateDisplay == 90)
+									{
+										MobilePlatform.pointerReleased(mousey, lcdHeight - mousex);
+									}
+									if(Mobile.rotateDisplay == 180) 
+									{
+										MobilePlatform.pointerReleased(lcdWidth - mousex, lcdHeight - mousey);
+									}
+									if(Mobile.rotateDisplay == 270)
 									{
 										MobilePlatform.pointerReleased(lcdWidth-mousey, mousex);
 									}
@@ -267,11 +274,19 @@ public class Libretro
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
 
-									if(!Mobile.rotateDisplay)
+									if(Mobile.rotateDisplay == 0)
 									{
 										MobilePlatform.pointerPressed(mousex, mousey);
 									}
-									else
+									if(Mobile.rotateDisplay == 90)
+									{
+										MobilePlatform.pointerPressed(mousey, lcdHeight - mousex);
+									}
+									if(Mobile.rotateDisplay == 180) 
+									{
+										MobilePlatform.pointerPressed(lcdWidth - mousex, lcdHeight - mousey);
+									}
+									if(Mobile.rotateDisplay == 270)
 									{
 										MobilePlatform.pointerPressed(lcdWidth-mousey, mousex);
 									}
@@ -281,13 +296,21 @@ public class Libretro
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
 
-									if(!Mobile.rotateDisplay)
+									if(Mobile.rotateDisplay == 0)
 									{
-										MobilePlatform.pointerPressed(mousex, mousey);
+										MobilePlatform.pointerDragged(mousex, mousey);
 									}
-									else
+									if(Mobile.rotateDisplay == 90)
 									{
-										MobilePlatform.pointerPressed(lcdWidth-mousey, mousex);
+										MobilePlatform.pointerDragged(mousey, lcdHeight - mousex);
+									}
+									if(Mobile.rotateDisplay == 180) 
+									{
+										MobilePlatform.pointerDragged(lcdWidth - mousex, lcdHeight - mousey);
+									}
+									if(Mobile.rotateDisplay == 270)
+									{
+										MobilePlatform.pointerDragged(lcdWidth-mousey, mousex);
 									}
 								break;
 
@@ -305,8 +328,7 @@ public class Libretro
 										Mobile.config.settings.put("scrwidth",  ""+lcdWidth);
 										Mobile.config.settings.put("scrheight", ""+lcdHeight);
 
-										if(Mobile.rotateDisplay)   { Mobile.config.settings.put("rotate", "on");  }
-										if(!Mobile.rotateDisplay)  { Mobile.config.settings.put("rotate", "off"); }
+										Mobile.config.settings.put("rotate", "" + Mobile.rotateDisplay);
 
 										if(Mobile.kddi)               { Mobile.config.settings.put("phone", "KDDI");    }
 										else if(Mobile.lg)            { Mobile.config.settings.put("phone", "LG");    }
@@ -422,8 +444,7 @@ public class Libretro
 									Mobile.config.settings.put("scrwidth",  ""+Integer.parseInt(cfgtokens[1]));
 									Mobile.config.settings.put("scrheight", ""+Integer.parseInt(cfgtokens[2]));
 
-									if(Integer.parseInt(cfgtokens[3])==1) { Mobile.config.settings.put("rotate", "on");  }
-									if(Integer.parseInt(cfgtokens[3])==0) { Mobile.config.settings.put("rotate", "off"); }
+									Mobile.config.settings.put("rotate", "" + (Integer.parseInt(cfgtokens[3])*90));
 
 									if(Integer.parseInt(cfgtokens[4])==0)  { Mobile.config.settings.put("phone", "Standard"); }
 									if(Integer.parseInt(cfgtokens[4])==1)  { Mobile.config.settings.put("phone", "LG");    }
@@ -581,8 +602,7 @@ public class Libretro
 	{
 		Mobile.updateSettings();
 
-		if(Mobile.rotateDisplay == true) { frameHeader[5] = (byte)1; } 
-		else                             { frameHeader[5] = (byte)0; }
+		frameHeader[5] = (byte) (Mobile.rotateDisplay / 90);
 		
 		if(lcdWidth != Mobile.lcdWidth || lcdHeight != Mobile.lcdHeight)
 		{

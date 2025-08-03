@@ -174,15 +174,17 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_rotate",
         "System > Rotate Screen",
         "Rotate Screen",
-        "Some games, especially ones that support touch controls, tend to expect the screen to be rotated. This option comes in handy on those cases.",
-        "Some games, especially ones that support touch controls, tend to expect the screen to be rotated. This option comes in handy on those cases.",
+        "For applications that expect the screen to be rotated, this option allows you to set the rotation in 90-degree steps. 270 degrees is the most commonly used",
+        "For applications that expect the screen to be rotated, this option allows you to set the rotation in 90-degree steps. 270 degrees is the most commonly used",
         "system_settings",
         {
-            { "off", "Disabled" },
-            { "on",  "Enabled"  },
+            { "0",   "Disabled" },
+            { "90",  "90 degrees"  },
+            { "180", "180 degrees"  },
+            { "270", "270 degrees"  },
             { NULL, NULL },
         },
-        "off"
+        "0"
     },
     {
         "freej2me_phone",
@@ -676,13 +678,15 @@ struct retro_core_option_definition core_options_v1 [] =
     {
         "freej2me_rotate",
         "Rotate Screen",
-        "Some games, especially ones that support touch controls, tend to expect the screen to be rotated. This option comes in handy on those cases.",
+        "For applications that expect the screen to be rotated, this option allows you to set the rotation in 90-degree steps. 270 degrees is the most commonly used",
         {
-            { "off", "Disabled" },
-            { "on",  "Enabled"  },
+            { "0",   "Disabled" },
+            { "90",  "90 degrees"  },
+            { "180", "180 degrees"  },
+            { "270", "270 degrees"  },
             { NULL, NULL },
         },
-        "off"
+        "0"
     },
     {
         "freej2me_phone",
@@ -1054,7 +1058,7 @@ static const struct retro_variable vars[] =
     },
     { /* Screen Rotation */
         "freej2me_rotate",
-        "Rotate Screen; off|on" 
+        "Rotate Screen; 0|90|180|270" 
     },
     { /* Phone Control Type */
         "freej2me_phone",

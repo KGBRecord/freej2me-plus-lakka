@@ -82,8 +82,8 @@ public class Mobile
 	public static int lcdWidth = 240;
 	public static int lcdHeight = 320;
 
-	// State of display rotation.
-	public static boolean rotateDisplay = false;
+	// Display rotation in degrees.
+	public static int rotateDisplay = 0;
 
 	// Support for loading custom MIDI soundfonts
 	public static boolean useCustomMidi = false;
@@ -1065,14 +1065,14 @@ public class Mobile
 
 		// Rotation is left at the end since it governs this method's return value
 		String rotate = config.settings.get("rotate");
-		if(rotate.equals("on") && rotateDisplay != true) 
+
+		// Compat for older rotation scheme
+		if(rotate.equals("on"))  { rotate = "270"; }
+		if(rotate.equals("off")) { rotate = "0"; }
+
+		if(Integer.parseInt(rotate) != rotateDisplay) 
 		{
-			rotateDisplay = true;
-			return true;
-		}
-		if(rotate.equals("off") && rotateDisplay != false) 
-		{
-			rotateDisplay = false;
+			rotateDisplay = Integer.parseInt(rotate);
 			return true;
 		}
 		// If no rotation has to be done, return false
