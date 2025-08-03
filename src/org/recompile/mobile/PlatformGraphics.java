@@ -121,9 +121,12 @@ public abstract class PlatformGraphics implements DirectGraphics
 	// Graphics context variables
 	protected BufferedImage canvas;
 	protected Graphics2D gc;
+	protected int canvasWidth;
+	protected int canvasHeight;
 	protected int[] canvasData;
 	protected int[] imgPixels;
 	protected PlatformImage baseImage, lastImage;
+	protected boolean fastBlit;
 
 	protected int translateX = 0;
 	protected int translateY = 0;
@@ -150,9 +153,12 @@ public abstract class PlatformGraphics implements DirectGraphics
 		canvas = image.getCanvas();
 		gc = canvas.createGraphics();
 
+		canvasWidth = canvas.getWidth();
+		canvasHeight = canvas.getHeight();
+
 		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
-		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
+		setClip(0, 0, canvasWidth, canvasHeight);
 		gc.setFont(font.platformFont.awtFont);
 		setColor(color);
 
@@ -161,7 +167,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void reset() // Internal use method, resets the Graphics object to its inital values
 	{
-		reset(0, 0, canvas.getWidth(), canvas.getHeight());
+		reset(0, 0, canvasWidth, canvasHeight);
 	}
 	
 	public void reset(int clipx, int clipy, int clipw, int cliph) // Internal use method, resets the Graphics object to its inital values
@@ -204,8 +210,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 		// Check if the source area is within bounds before doing any draw operations
 		if (x_src < 0 || y_src < 0 || 
-			x_src + width > canvas.getWidth() || 
-			y_src + height > canvas.getHeight()) {
+			x_src + width > canvasWidth || 
+			y_src + height > canvasHeight) {
 			throw new IllegalArgumentException("Source area exceeds the bounds of the graphics object.");
 		}
 
@@ -222,21 +228,21 @@ public abstract class PlatformGraphics implements DirectGraphics
 		{
 			for (int i = 0; i < width; i++) 
 			{
-				srcIndex = (y_src + j) * canvas.getWidth() + x_src;
+				srcIndex = (y_src + j) * canvasWidth + x_src;
 				System.arraycopy(canvasData, srcIndex, subPixels, j * width, width);
 			}
 		}
 
 		int destStartY = (y_dest < 0) ? 0 : y_dest;
-		int destEndY = (y_dest + height > canvas.getHeight()) ? canvas.getHeight() : (y_dest + height);
+		int destEndY = (y_dest + height > canvasHeight) ? canvasHeight : (y_dest + height);
 		int srcStartY = (-y_dest < 0) ? 0 : -y_dest;
 		
 		for (int j = destStartY; j < destEndY; j++) 
 		{
-			destIndex = j * canvas.getWidth() + x_dest;
+			destIndex = j * canvasWidth + x_dest;
 			srcIndex = (srcStartY + (j - destStartY)) * width;
 
-			if (x_dest >= 0 && x_dest + width <= canvas.getWidth()) 
+			if (x_dest >= 0 && x_dest + width <= canvasWidth) 
 			{
 				System.arraycopy(subPixels, srcIndex, canvasData, destIndex, width);
 			}
@@ -255,8 +261,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 		y_src += getTranslateY();
 
 		if (x_src < 0 || y_src < 0 || 
-			x_src + width > canvas.getWidth() || 
-			y_src + height > canvas.getHeight()) {
+			x_src + width > canvasWidth || 
+			y_src + height > canvasHeight) {
 			throw new IllegalArgumentException("Source area exceeds the bounds of the graphics object.");
 		}
 
@@ -269,21 +275,21 @@ public abstract class PlatformGraphics implements DirectGraphics
 		{
 			for (int i = 0; i < width; i++) 
 			{
-				srcIndex = (y_src + j) * canvas.getWidth() + x_src;
+				srcIndex = (y_src + j) * canvasWidth + x_src;
 				System.arraycopy(canvasData, srcIndex, subPixels, j * width, width);
 			}
 		}
 
 		int destStartY = (y_dest < 0) ? 0 : y_dest;
-		int destEndY = (y_dest + height > canvas.getHeight()) ? canvas.getHeight() : (y_dest + height);
+		int destEndY = (y_dest + height > canvasHeight) ? canvasHeight : (y_dest + height);
 		int srcStartY = (-y_dest < 0) ? 0 : -y_dest;
 		
 		for (int j = destStartY; j < destEndY; j++) 
 		{
-			destIndex = j * canvas.getWidth() + x_dest;
+			destIndex = j * canvasWidth + x_dest;
 			srcIndex = (srcStartY + (j - destStartY)) * width;
 
-			if (x_dest >= 0 && x_dest + width <= canvas.getWidth()) 
+			if (x_dest >= 0 && x_dest + width <= canvasWidth) 
 			{
 				System.arraycopy(subPixels, srcIndex, fbPixels, destIndex, width);
 			}
@@ -352,9 +358,29 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 		try
 		{
-			final int canvasWidth = canvas.getWidth();
-			final int canvasHeight = canvas.getHeight();
-			final int imageWidth = image.getWidth();
+			fastBlit = (!Mobile.renderLCDMask || Mobile.maskIndex == 0) && !Mobile.funLightsEnabled;
+
+			// Only spend time reallocating this if we really are drawing from a different image than the last (speeds things up a bit)
+			if(image != lastImage)
+			{
+				imgPixels = ((DataBufferInt) image.getCanvas().getRaster().getDataBuffer()).getData();
+				lastImage = image;
+			}
+			
+			if(fastBlit && imgPixels == canvasData) { return; } // No need to copy anything, they're already the same
+			if(fastBlit && x == 0 && y == 0 && width == canvasWidth && height == canvasHeight) 
+			{ 
+				/* 
+				 * If the area to be drawn is the whole canvas, and no special treatment
+				 * has to be done to the image, we can copy the whole image data into the FrontBuffer
+				 * at once and return early. 
+				 * 
+				 * The canvas is always positive-sized and positioned at (0,0), so we don't even 
+				 * need to do any of the checks below.
+				 */
+				System.arraycopy(imgPixels, 0, canvasData, 0, canvasWidth*canvasHeight);
+				return; 
+			}
 
 			/* 
 			 * We don't need to check for clipping or translation here, the frontBuffer 
@@ -369,16 +395,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 			int[] overlayData = null;
 
-			// Only spend time reallocating this if we really are drawing from a different image than the last (speeds things up a bit)
-			if(image != lastImage)
-			{
-				imgPixels = ((DataBufferInt) image.getCanvas().getRaster().getDataBuffer()).getData();
-				lastImage = image;
-			}
-
-			boolean fastBlit = (!Mobile.renderLCDMask || Mobile.maskIndex == 0) && !Mobile.funLightsEnabled;
-			if (fastBlit && imgPixels == canvasData) { return; }
-
 			// This one is rather costly, as it has to draw overlays on the corners of the screen with gaussian filtering applied.
 			if(Mobile.funLightsEnabled)
 			{
@@ -386,23 +402,23 @@ public abstract class PlatformGraphics implements DirectGraphics
 				drawFunLights(overlayData, width, height);
 			}
 		
-			int destRowIndex, srcRowIndex;
+			int destRowIndex, srcRowIndex, i, j;
 			// Render the resulting image
-			for (int j = y; j < y + height; j++) 
+			for (j = y; j < y + height; j++) 
 			{
 				// If there's no masking or overlay needed, we can copy a whole row at once, which is faster
 				if(fastBlit)
 				{
 					destRowIndex = j * canvasWidth + x;
-					srcRowIndex = j * imageWidth + x;
+					srcRowIndex = j * image.getWidth() + x;
 					System.arraycopy(imgPixels, srcRowIndex, canvasData, destRowIndex, width);
 				}
 				else
 				{
 					destRowIndex = j * canvasWidth;
-					srcRowIndex = j * imageWidth;
+					srcRowIndex = j * image.getWidth();
 					
-					for (int i = x; i < x + width; i++) 
+					for (i = x; i < x + width; i++) 
 					{
 						// Only apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
 						canvasData[destRowIndex + i] = imgPixels[srcRowIndex + i] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
@@ -496,7 +512,8 @@ public abstract class PlatformGraphics implements DirectGraphics
 			{
 				throw new ArrayIndexOutOfBoundsException("DrawRGB Area is out of bounds (scanlength " + scanlength + ")");
 			}
-		} else 
+		} 
+		else 
 		{
 			if (offset + width > rgbData.length || offset + scanlength * (height - 1) < 0) 
 			{
@@ -507,24 +524,25 @@ public abstract class PlatformGraphics implements DirectGraphics
 		x += translateX;
 		y += translateY;
 	
-		final int canvasWidth = canvas.getWidth();
 		final int clipX = (getClipX() + translateX < 0) ? 0 : (getClipX() + translateX);
 		final int clipY = (getClipY() + translateY < 0) ? 0 : (getClipY() + translateY);
 		final int clipWidth = (getClipWidth() + clipX > canvasWidth) ? canvasWidth : (getClipWidth() + clipX);
-		final int clipHeight = (getClipHeight() + clipY > canvas.getHeight()) ? canvas.getHeight() : (getClipHeight() + clipY);
+		final int clipHeight = (getClipHeight() + clipY > canvasHeight) ? canvasHeight : (getClipHeight() + clipY);
 	
-		int rowOffset, destRow;
-		for (int j = 0; j < height; j++) // The array's x and y positions start from 0, as the offset is what dictates where the data should start being read from
-		{
-			if ((y + j) < clipY || (y + j) >= clipHeight) { continue; }
+		if(y + height > clipHeight) { height -= ((y + height) - clipHeight); }
+		if(x + width > clipWidth) { width -= ((x + width) - clipWidth); }
 
+		if(width <= 0 || height <= 0) { return; } // Nothing to draw, exit early
+
+		int rowOffset, destRow;
+		// The array's x and y positions start from either 0 or the first valid drawable position, as the offset is what dictates where the data should start being read from
+		for (int j = (y >= clipY) ? 0 : (clipY - y); j < height; j++)
+		{
 			rowOffset = offset + (j * scanlength);
 			destRow = (y + j) * canvasWidth;
 	
-			for (int i = 0; i < width; i++)
+			for (int i = (x >= clipX) ? 0 : (clipX - x); i < width; i++)
 			{
-				if ((x + i) < clipX || (x + i) >= clipWidth) { continue; }
-
 				if (!processAlpha) { canvasData[destRow + x + i] = rgbData[rowOffset + i] | 0xFF000000; } // Set pixel as fully opaque
 				else { canvasData[destRow + x + i] = blendPixels(rgbData[rowOffset + i], canvasData[destRow + x + i]); } // Handle alpha blending
 			}
@@ -962,7 +980,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void getPixels(byte[] pixels, byte[] transparencyMask, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
 		if (pixels == null) { throw new NullPointerException("Byte array cannot be null");}
-		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
+		if (x < 0 || y < 0 || x + width > canvasWidth || y + height > canvasHeight) 
 		{
 			throw new IllegalArgumentException("Requested copy area exceeds bounds of the image");
 		}
@@ -975,7 +993,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 				{
 					for (int col = 0; col < width; col++) 
 					{
-						int pixelIndex = (y + row) * canvas.getWidth() + (x + col);
+						int pixelIndex = (y + row) * canvasWidth + (x + col);
 						int pixelValue = canvasData[pixelIndex];
 
 						// Store pixel value as a bit in the pixels array
@@ -994,7 +1012,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 				{
 					for (int col = 0; col < width; col++) 
 					{
-						int pixelIndex = (y + row) * canvas.getWidth() + (x + col);
+						int pixelIndex = (y + row) * canvasWidth + (x + col);
 						int pixelValue = canvasData[pixelIndex];
 						int byteIndex = (offset / 8) + ((row * width + col) / 8);
 						int bitIndex = (row * width + col) % 8;
@@ -1012,7 +1030,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void getPixels(int[] pixels, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
 		if (pixels == null) { throw new NullPointerException("int array cannot be null"); }
-		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
+		if (x < 0 || y < 0 || x + width > canvasWidth || y + height > canvasHeight) 
 		{
 			throw new IllegalArgumentException("Requested copy area exceeds bounds of the image");
 		}
@@ -1021,7 +1039,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		{
 			for(int col = 0; col < width; col++) 
 			{
-				int canvasPixel = canvasData[col + x + (row + y) * canvas.getWidth()];
+				int canvasPixel = canvasData[col + x + (row + y) * canvasWidth];
 				int pixelIndex = offset + col + (row * scanlength);
 				// getPixels(short[]) explains why blending is done here
 				pixels[pixelIndex] = blendPixels(canvasPixel, pixels[pixelIndex]);
@@ -1032,7 +1050,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	public void getPixels(short[] pixels, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
 		if (pixels == null) { throw new NullPointerException("short array cannot be null"); }
-		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
+		if (x < 0 || y < 0 || x + width > canvasWidth || y + height > canvasHeight) 
 		{
 			throw new IllegalArgumentException("Requested copy area exceeds bounds of the image");
 		}
@@ -1041,7 +1059,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		{
 			for (int col=0; col<width; col++)
 			{
-				int canvasPixel = canvasData[col + x + (row + y) * canvas.getWidth()];
+				int canvasPixel = canvasData[col + x + (row + y) * canvasWidth];
 				int pixelIndex = offset + col + (row * scanlength);
 				// We have to alpha blend this, Lemmings is a game that reuses the same short[] array for drawing terrain here
 				// If we just add the canvas pixel directly to it, the transparency will override anything previously in the array pos
@@ -1197,22 +1215,22 @@ public abstract class PlatformGraphics implements DirectGraphics
 	}
 
 	// Used everywhere alpha blending might be needed, be it getPixels, flushGraphics, etc.
-	private static final int blendPixels(int srcPixel, int destPixel) 
+	private static final int blendPixels(final int srcPixel, final int destPixel) 
 	{
-		int srcAlpha = (srcPixel >> 24) & 0xFF; // Source alpha
+		final int srcAlpha = (srcPixel >> 24) & 0xFF; // Source alpha
 		if(srcAlpha == 255) { return srcPixel; }
 		else if(srcAlpha == 0) { return destPixel; }
 		else
 		{
-			int destAlpha = (destPixel >> 24) & 0xFF;
+			final int destAlpha = (destPixel >> 24) & 0xFF;
 
-			int invSrcAlpha = (255 - srcAlpha);
+			final int invSrcAlpha = (255 - srcAlpha);
 
-			int newAlpha = (srcAlpha + destAlpha > 255) ? 255 : (srcAlpha + destAlpha);
+			final int newAlpha = (srcAlpha + destAlpha > 255) ? 255 : (srcAlpha + destAlpha);
 
-			int newRed = ((((srcPixel >> 16) & 0xFF) * srcAlpha) + (((destPixel >> 16) & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
-			int newGreen =  ((((srcPixel >> 8) & 0xFF) * srcAlpha) + (((destPixel >> 8) & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
-			int newBlue = (((srcPixel & 0xFF) * srcAlpha) + ((destPixel & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
+			final int newRed = ((((srcPixel >> 16) & 0xFF) * srcAlpha) + (((destPixel >> 16) & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
+			final int newGreen =  ((((srcPixel >> 8) & 0xFF) * srcAlpha) + (((destPixel >> 8) & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
+			final int newBlue = (((srcPixel & 0xFF) * srcAlpha) + ((destPixel & 0xFF) * invSrcAlpha)) / ALPHA_BLEND_DENOMINATOR;
 
 			return (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 		}
@@ -1504,7 +1522,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{ 
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
-		setClip(0, 0, canvas.getWidth(), canvas.getHeight()); 
+		setClip(0, 0, canvasWidth, canvasHeight); 
 	}
 
 	public void setFont(com.nttdocomo.ui.Font dojaFont) 
@@ -1681,11 +1699,11 @@ public abstract class PlatformGraphics implements DirectGraphics
 	// These are used in some DoJa versions of Gradius, like Gradius II
 	public int getPixel(int x, int y) { return this.getRGBPixel(x, y); }
 
-	public int getRGBPixel(int x, int y) { return canvasData[y*canvas.getWidth()+x]; }
+	public int getRGBPixel(int x, int y) { return canvasData[y*canvasWidth+x]; }
 
 	// These aren't documented, but some DoJa jars use them (space Manbow uses setRGBPixel right at the menu for example)
 	// They don't seem all too different from lcdui Image's set/getPixel(s) as far as logic goes
-	public void setPixel(int x, int y) { canvasData[y*canvas.getWidth()+x] = getColor(); }
+	public void setPixel(int x, int y) { canvasData[y*canvasWidth+x] = getColor(); }
 
 	public void setPixel(int x, int y, int color) 
 	{

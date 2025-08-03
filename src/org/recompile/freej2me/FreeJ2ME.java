@@ -777,7 +777,12 @@ public class FreeJ2ME
 		public double scalex=1;
 		public double scaley=1;
 
-		public LCD() { setDropTarget(); }
+		public LCD() 
+		{ 
+			setDropTarget();
+			setBackground(Color.WHITE);
+			setIgnoreRepaint(true); // Improves fullscreen and general paint performance
+		}
 
 		public void updateScale(int vw, int vh)
 		{
@@ -787,13 +792,11 @@ public class FreeJ2ME
 			ch = vh;
 			scalex = (double)lcdWidth/(double)vw;
 			scaley = (double)lcdHeight/(double)vh;
+			repaint();
 		}
 
 		@Override
-        public void update(Graphics g) {
-            // Use paint method directly to avoid flicker
-            paint(g);
-        }
+        public void update(Graphics g) { paint(g); }
 
 		// Used to clear the entire framebuffer when rotated in fullscreen to remove garbage pixels
 		public void clearScreen() 

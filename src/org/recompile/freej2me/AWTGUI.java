@@ -138,7 +138,7 @@ public final class AWTGUI
 		new Button("NumPad-5"),
 		new Button("NumPad-6"),
 		new Button("NumPad-1"),
-		new Button("NumPad=2"),
+		new Button("NumPad-2"),
 		new Button("NumPad-3"),
 		new Button("E"),
 		new Button("NumPad-0"),
@@ -446,7 +446,7 @@ public final class AWTGUI
 
 		awtDialogs[4].add(new Label("Hotkeys"));
 		awtDialogs[4].add(new Label(""));
-		awtDialogs[4].add(new Label("(Ctrl + *)"));
+		awtDialogs[4].add(new Label("(Ctrl+Alt+*)"));
 
 		awtDialogs[4].add(new Label(""));
 		awtDialogs[4].add(new Label(""));
