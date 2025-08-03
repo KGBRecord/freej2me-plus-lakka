@@ -159,7 +159,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
 		setClip(0, 0, canvasWidth, canvasHeight);
-		gc.setFont(font.platformFont.awtFont);
+		gc.setFont(font.awtFont);
 		setColor(color);
 
 		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -696,7 +696,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 	{
 		if(font == null) { font = Font.getDefaultFont(); }
 		this.font = font;
-		gc.setFont(font.platformFont.awtFont);
+		gc.setFont(font.awtFont);
 	}
 
 	public void setClip(int x, int y, int width, int height)
@@ -1531,7 +1531,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 		if(dojaFont == null) { dojaFont = com.nttdocomo.ui.Font.getDefaultFont(); }
 		this.dojaFont = dojaFont;
-		gc.setFont(dojaFont.platformFont.awtFont);
+		gc.setFont(dojaFont.awtFont);
 	}
 
 	public void lock() 

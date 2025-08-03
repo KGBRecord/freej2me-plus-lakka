@@ -16,10 +16,12 @@
 */
 package com.nttdocomo.ui;
 
+import com.nttdocomo.lang.XString;
+
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformFont;
 
-public class Font
+public class Font extends PlatformFont
 {
 
 	public static final int FACE_MONOSPACE = 0x72000000;
@@ -29,6 +31,7 @@ public class Font
 	public static final int SIZE_LARGE = 0x70000300;
 	public static final int SIZE_MEDIUM = 0x70000200;
 	public static final int SIZE_SMALL = 0x70000100;
+	public static final int SIZE_TINY = 0x70000400;
 
 	public static final int STYLE_BOLD = 0x70110000;
 	public static final int STYLE_BOLDITALIC = 0x70130000;
@@ -38,117 +41,46 @@ public class Font
 	public static final int TYPE_DEFAULT = 0x00000000;
 	public static final int TYPE_HEADING = 0x00000001;
 
-	// Aside from the smallest screen res, DoJa will use slightly smaller fonts than MIDP.
-	protected static final int[] fontSizes = 
+	public Font(int face, int style, int size)
 	{
-		8, 10, 12, // < 128 minimum px dimension
-		11, 13, 14, // < 176 minimum px dimension
-		12, 13, 15, // < 220 minimum px dimension
-		14, 16, 18, // >= 220 minimum px dimension
-	};
-
-	// Helps LCDUI to better adjust for different screen sizes.
-	public static final int[] fontPadding =
-	{
-		1, // < 128 minimum px dimension
-		2, // < 176 minimum px dimension
-		2, // < 220 minimum px dimension
-		3 // >= 220 minimum px dimension
-	};
-
-	public static int screenType = -4;
-	protected int face;
-	protected int style;
-	protected int size;
-
-	protected static Font defaultFont = null;
-
-	public PlatformFont platformFont;
-
-	protected Font(int face, int style, int size)
-	{
-		if(face != FACE_SYSTEM && face != FACE_PROPORTIONAL && face != FACE_MONOSPACE
-			&& style != STYLE_PLAIN && style != STYLE_ITALIC && style != STYLE_BOLD && style != STYLE_BOLDITALIC
-			&& size != SIZE_SMALL && size != SIZE_MEDIUM && size != SIZE_LARGE) 
-		{
-			throw new IllegalArgumentException("Cannot create a font with invalid face, style or size. style " + style + " face " + face + " size " + size);
-		}
-
-		this.face = face;
-		this.style = style;
-		this.size = size;
-		platformFont = new PlatformFont(this);
+		super(face, style, size, false);
 	}
 
-	public static void setScreenSize(int width, int height)
-	{
-		final int minSize = Math.min(width, height);
-		if (minSize < 128)      { screenType = 0; }
-		else if (minSize < 176) { screenType = 1; }
-		else if (minSize < 220) { screenType = 2; }
-		else                    { screenType = 3; }
-		
-		defaultFont = new Font(FACE_SYSTEM, STYLE_PLAIN, convertSize(SIZE_MEDIUM));   
-	}
+	public int getBBoxHeight(String str) { return getHeight(); }
 
-	public int getAscent() { return platformFont.getAscent();  }
+	public int getBBoxWidth(String str) { return stringWidth(str); }
 
-	public int getBBoxHeight(String str) { return 0; }
+	public int getBBoxHeight(XString xStr) { return getHeight(); }
 
-	public int getBBoxWidth(String str) { return 0; }
+	public int getBBoxWidth(XString xStr) { return getBBoxWidth(xStr.getString()); }
+
+	public int getBBoxWidth(XString xStr, int off, int len) { return substringWidth(xStr.toString(), off, len); }
 
 	public static Font getFont(int type) { return getDefaultFont(); }
 
-	public static Font getDefaultFont() { return defaultFont; }
+	public static Font getDefaultFont() { return defaultDoJaFont; }
 
 	public static void setDefaultFont(Font font) 
 	{
-		if(font != null) { defaultFont = font; }
+		if(font != null) { defaultDoJaFont = font; }
 	}
 
-	public static void updateDefaultFont() 
+	public int getLineBreak(XString xStr, int off, int len, int width) { return getLineBreak(xStr.getString(), off, len, width); }
+
+	public int getLineBreak(String str, int off, int len, int width) 
 	{
-		defaultFont = new Font(defaultFont.face, defaultFont.style, defaultFont.size);
-	}
-
-	public int getDescent() { return 0; }
-
-	public int getHeight() { return platformFont.getHeight(); }
-
-	public int getLineBreak(String str, int off, int len, int width) { return off + len; }
-
-	public int stringWidth(String str) 
-	{
-		if(str == null) { throw new NullPointerException("Cannot get stringWidth from a null String"); }
-
-		return platformFont.stringWidth(str); 
-	}
-
-	public int getFace() { return face; }
-
-	public int getSize() { return size; }
-
-	public int getPointSize() { return convertSize(size); }
-
-	public int getStyle() { return style; }
-
-	public int getLCDUIStyle() 
-	{ 
-		if(style == STYLE_PLAIN) { return javax.microedition.lcdui.Font.STYLE_PLAIN; }
-		else if(style == STYLE_ITALIC) { return javax.microedition.lcdui.Font.STYLE_ITALIC; }
-		else if(style == STYLE_BOLD) { return javax.microedition.lcdui.Font.STYLE_BOLD; }
-		else if(style == STYLE_BOLDITALIC) { return javax.microedition.lcdui.Font.STYLE_UNDERLINED; }
-		else { return style; } 
-	}
-
-	private static int convertSize(int size)
-	{
-		switch(size)
+		int currentWidth = 0;
+		for (int i = off; i < off + len; i++) 
 		{
-			case SIZE_LARGE  : return fontSizes[3*screenType + 2]+Mobile.fontSizeOffset;
-			case SIZE_MEDIUM : return fontSizes[3*screenType + 1]+Mobile.fontSizeOffset;
-			case SIZE_SMALL  :
-			default          : return fontSizes[3*screenType]+Mobile.fontSizeOffset;
+			currentWidth += stringWidth(str.substring(i, i + 1)); 
+			if (currentWidth > width) { return i; }
 		}
+		return off + len;
 	}
+
+	public int[] getSupportedFontSizes() { return fontSizes; }
+
+	public int stringWidth(XString xStr) { return stringWidth(xStr.getString()); }
+	
+	public int stringWidth(XString xStr, int off, int len) { return substringWidth(xStr.getString(), off, len); }
 }

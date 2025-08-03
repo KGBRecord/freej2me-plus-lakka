@@ -39,7 +39,6 @@ import java.awt.RenderingHints;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.game.GameCanvas;
 
@@ -128,8 +127,7 @@ public class MobilePlatform
 		lcdWidth = width;
 		lcdHeight = height;
 
-		Font.setScreenSize(width, height);
-		com.nttdocomo.ui.Font.setScreenSize(width, height);
+		org.recompile.mobile.PlatformFont.setScreenSize(width, height);
 
 		lcdFrontbuffer = new PlatformImage(width, height);
 		lcd = new PlatformImage(width, height);

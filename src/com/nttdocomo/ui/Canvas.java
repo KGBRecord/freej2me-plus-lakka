@@ -97,7 +97,7 @@ public abstract class Canvas extends Frame
 		// The command bar shouldn't influence canvas drawing operations, so it's added directly to the frontBuffer after swapping.
 		javax.microedition.lcdui.Graphics graphics = Mobile.getPlatform().getLcdFrontbufferGraphics();
 
-		final int barHeight = javax.microedition.lcdui.Font.getDefaultFont().getHeight(); // For consistent commandBar size between DoJa and MIDP
+		final int barHeight = Font.getDefaultFont().getHeight();
 		// Fade the command bar if there's one second left to hide it
 		long fadeStart = 1000000000L;
 		if (MobilePlatform.timeToUnfocus < fadeStart) 

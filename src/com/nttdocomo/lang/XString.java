@@ -36,8 +36,10 @@ public final class XString extends XObject
         return new XString(this.str + xStr.str);
     }
 
+    public String getString() { return str; }
+
     @Override
-    public String toString() { return "[XString]"; }
+    public String toString() { return "[XString] " + str; }
 
     @Override
     public boolean equals(Object obj) { return this == obj; }
