@@ -400,14 +400,14 @@ public class MIDletLoader extends URLClassLoader
 		}
 	}
 
-	public static void parseDescriptorInto(InputStream is, Map<String, String> keyValueMap, String charset)
+	public static void parseDescriptorInto(InputStream is, Map<String, String> keyValueMap)
 	{
 		boolean hasMIDlet = false;
         String currentKey = null;
         StringBuilder currentValue = new StringBuilder();
         try
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader(is, charset));
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 			try 
 			{
 				String line;
@@ -469,7 +469,7 @@ public class MIDletLoader extends URLClassLoader
 	
 		try
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader(is, "Shift_JIS")); // DoJa uses the Shift_JIS charset in its descriptor
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 			String line;
 			while ((line = br.readLine()) != null) 
 			{
@@ -521,7 +521,7 @@ public class MIDletLoader extends URLClassLoader
 
 		if(url != null) // Standard MIDlet manifest is present (at least i assume so)
 		{
-			try { parseDescriptorInto(url.openStream(), properties, "UTF-8"); }
+			try { parseDescriptorInto(url.openStream(), properties); }
 			catch (Exception e) 
 			{
 				Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Jar Manifest!");

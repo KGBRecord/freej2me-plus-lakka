@@ -318,7 +318,7 @@ public class Libretro
 									buffer = new byte[code];
 									bytesRead = System.in.read(buffer);
 
-									path = new String(buffer, 0, bytesRead, "UTF-8");
+									path = new String(buffer, 0, bytesRead);
 
 									if(Mobile.getPlatform().load(getFormattedLocation(URLDecoder.decode(path.toString(), Mobile.textEncoding))))
 									{
@@ -425,7 +425,7 @@ public class Libretro
 									buffer = new byte[code];
 									bytesRead = System.in.read(buffer);
 
-									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead, "UTF-8");
+									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead);
 								break;
 
 								case 13:
@@ -433,7 +433,7 @@ public class Libretro
 									buffer = new byte[code];
 									bytesRead = System.in.read(buffer);
 									
-									String cfgvars = new String(buffer, 0, bytesRead, "UTF-8");
+									String cfgvars = new String(buffer, 0, bytesRead);
 									/* Tokens: [0]="FJ2ME_LR_OPTS:", [1]=width, [2]=height, [3]=rotate, [4]=phone, [5]=fps, ... */
 									cfgtokens = cfgvars.split("[| x]", 0);
 									/* 
@@ -458,7 +458,7 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[4])==9)  { Mobile.config.settings.put("phone", "SKT"); }
 									if(Integer.parseInt(cfgtokens[4])==10) { Mobile.config.settings.put("phone", "KDDI"); }
 
-									Mobile.config.settings.put("fps", ""+cfgtokens[5]);
+									Mobile.config.settings.put("fps", ""+ Integer.parseInt(cfgtokens[5]));
 
 									if(Integer.parseInt(cfgtokens[6])==1) { Mobile.config.settings.put("sound", "on");  }
 									if(Integer.parseInt(cfgtokens[6])==0) { Mobile.config.settings.put("sound", "off"); }

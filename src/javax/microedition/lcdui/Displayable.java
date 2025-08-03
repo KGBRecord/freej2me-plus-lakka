@@ -298,9 +298,14 @@ public abstract class Displayable
 	{
 		if(commands.size()>1 && commands.size()<=2)
 		{
+			doCommand(1); 
+			currentCommand = 0;
+		}
+		else if(commands.size() > 2)
+		{
 			for(int i = 0; i < commands.size(); i++) 
 			{
-				if(commands.get(i).getCommandType() == Command.BACK) 
+				if(commands.get(i).getCommandType() == Command.BACK) // Find the back command
 				{ 
 					doCommand(i); 
 					currentCommand = 0;

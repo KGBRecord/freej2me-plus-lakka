@@ -658,7 +658,7 @@ public class MobilePlatform
 				try
 				{
 					InputStream targetStream = new FileInputStream(tmpfile);
-					MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties, "UTF-8");
+					MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties);
 					targetStream.close();
 				}
 				catch (IOException e) 
@@ -726,17 +726,15 @@ public class MobilePlatform
 
 			if (isJad || isMsd) 
 			{
-				String jadCharset = "UTF-8";
 				if (isMsd) 
 				{ 
-					jadCharset = "CP949"; 
 					Mobile.isSKT = true; 
 					Mobile.textEncoding = "EUC_KR"; 
 					MobilePlatform.checkFileEncoding();
 				}
 
 				String preparedFileName = fileName.replace("file:", "").trim();
-				try { preparedFileName = URLDecoder.decode(preparedFileName, "UTF-8"); }
+				try { preparedFileName = URLDecoder.decode(preparedFileName, Mobile.textEncoding); }
 				catch (Exception e) 
 				{
 					System.err.println("Error decoding file name: " + e.getMessage());
@@ -747,7 +745,7 @@ public class MobilePlatform
 				try 
 				{
 					targetStream = new FileInputStream(preparedFileName);
-					try { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties, jadCharset); } 
+					try { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); } 
 					finally { targetStream.close(); }
 				} 
 				catch (IOException e) 
