@@ -68,7 +68,14 @@ public abstract class MIDlet
 
 	protected abstract void pauseApp();
 
+	// These are only called by FreeJ2ME-Plus
 	public void callPauseApp() { pauseApp(); }
+
+	public void callStartApp() 
+	{ 
+		try { startApp();  }
+		catch(MIDletStateChangeException e) { Mobile.log(Mobile.LOG_WARNING, MIDlet.class.getPackage().getName() + "." + MIDlet.class.getSimpleName() + ": " + "Failed to resume MIDlet"); }
+	}
 
 	public final boolean platformRequest(String URL) { return false; }
 

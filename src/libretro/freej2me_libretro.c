@@ -21,19 +21,12 @@
 #include <errno.h>
 #include <signal.h>
 #ifdef __linux__
-    #include <unistd.h>
-    #include <sys/types.h>
-    #include <sys/wait.h>
-#elif defined(_WIN32)
-    #include <windows.h>
-    #include <tlhelp32.h>
-    #include <direct.h>
-	#include <compat/strl.h>
-    #include <io.h>
-    #define getcwd _getcwd
-    #ifndef PATH_MAX
-        #define PATH_MAX MAX_PATH
-    #endif
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#elif _WIN32
+#include <windows.h>
+#include <tlhelp32.h>
 #endif
 #include "freej2me_libretro.h"
 #include <file/file_path.h>
@@ -787,15 +780,11 @@ bool retro_load_game(const struct retro_game_info *info)
 	/* Tell java app to load and run game */
 	char romPath[PATH_MAX_LENGTH];
 
-char cwd[PATH_MAX_LENGTH] = {0};
-if (getcwd(cwd, sizeof(cwd)))
-    {
-        fill_pathname_resolve_relative(romPath, cwd, info->path, PATH_MAX_LENGTH);
-    }
-else
-    {
-        strlcpy(romPath, info->path, PATH_MAX_LENGTH);
-    }
+#ifdef __linux__
+	realpath(info->path, romPath);
+#elif _WIN32
+	_fullpath(romPath, info->path, PATH_MAX_LENGTH);
+#endif
 
 	len = strlen(romPath);
 	log_fn(RETRO_LOG_INFO, "Loading actual jar app from %s\n", romPath);
@@ -810,20 +799,6 @@ else
 }
 
 void retro_unload_game(void) { /* FreeJ2ME closes the game by itself */ }
-
-// TODO: FreeJ2ME doesn't pause perfectly yet, biggest offender being the MIDI Sequencer.
-void pauseFreeJ2ME(bool pause) 
-{
-#ifdef __linux__
-	// NOTE: Despite being a "kill" function, it really just sends a signal to stop and continue the process here 
-	if(pause) { kill(javaProcess, SIGSTOP); }
-	else { kill(javaProcess, SIGCONT); }
-#elif _WIN32
-	// NOTE: Doesn't work properly, check the comment in retro_deinit() to understand why
-	if(pause) { SuspendThread(javaProcess.hThread); }
-	else { ResumeThread(javaProcess.hThread); }
-#endif
-}
 
 void retro_run(void)
 {
@@ -840,9 +815,6 @@ void retro_run(void)
 
 	// These are only used if useAnalogAsEntireKeypad is enabled.
 	bool num1pressed = false, num3pressed = false, num7pressed = false, num9pressed = false;
-
-	// If paused, unpause FreeJ2ME in order to request a frame and send input data to it
-	pauseFreeJ2ME(false);
 
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated_vars) && updated_vars) { check_variables(false); }
 
@@ -1282,8 +1254,6 @@ void retro_run(void)
  	 * frame. This also means that frame advance is kinda supported, although not perfect.
  	 */
 	if(resetRequested) { retro_reset(); }
-	else { pauseFreeJ2ME(true); }
-
 	
 }
 

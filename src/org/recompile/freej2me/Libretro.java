@@ -36,6 +36,10 @@ public class Libretro
 	int[] lcdData;
 
 	private boolean soundEnabled = true;
+	private static boolean libretroReady = false;
+
+	private static final long PAUSE_DELAY_MS = 150;
+	private static long lastCoreUpdateTime = System.currentTimeMillis(); // Tracks last core update for pause checks
 
 	private byte[] frameBuffer = new byte[800*800*3];
 	private final byte[] frameHeader = new byte[]{(byte)0xFE,
@@ -181,6 +185,15 @@ public class Libretro
 		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight), new Runnable() { public void run() { settingsChanged(); } });
 		lcdData = ((DataBufferInt) Mobile.getPlatform().getLcdFrontbufferImage().getRaster().getDataBuffer()).getData();
 
+		// The painter here is only really used to check for frontend pauses
+		Mobile.getPlatform().setPainter(new Runnable()
+		{
+			public void run()
+			{
+				updatePauseTimer();
+			}
+		});
+
 		lio = new LibretroIO();
 
 		lio.start();
@@ -195,7 +208,7 @@ public class Libretro
 
 		public void start()
 		{
-			keytimer = new Timer();
+			keytimer = new Timer("Libretro-Timer");
 			keytimer.schedule(new LibretroTimerTask(), 0, 1);
 		}
 
@@ -215,8 +228,18 @@ public class Libretro
 				{
 					while(true)
 					{
-						bin = System.in.read();
+						bin = System.in.read(); // Blocks until there's data available
 						if(bin==-1) { return; }
+
+						// Reaching here, the code above unblocked. Reset the timer to prevent pausing
+						lastCoreUpdateTime = System.currentTimeMillis();
+						if(Mobile.isPaused) // Resume if it was paused previously
+						{ 
+							MobilePlatform.pauseResumeApp(); 
+						}
+
+						if(!libretroReady) { libretroReady = true; }
+
 						//System.out.print(" "+bin);
 						din[count] = (int)(bin & 0xFF);
 						count++;
@@ -524,7 +547,6 @@ public class Libretro
 								break;
 
 								case 15:
-
 									// Check if the frontend is fast-forwarding
 									if(din[4] == 0) { MobilePlatform.pressedKeys[20] = false; }
 									else { MobilePlatform.pressedKeys[20] = true; }
@@ -582,6 +604,19 @@ public class Libretro
 			}
 		} // timer
 	} // LibretroIO
+
+	private static void updatePauseTimer() 
+	{
+		if(!libretroReady) { return; } // Only start counting this after libretro is ready to communicate
+		long currentTime = System.currentTimeMillis();
+		
+		// Check if the timer has expired since the last core update, as anything beyond the PAUSE_DELAY_MS delta 
+		// between core updates means the frontend is pretty much effectively paused as well)
+		if (!Mobile.isPaused && (currentTime - lastCoreUpdateTime >= PAUSE_DELAY_MS)) 
+		{
+			MobilePlatform.pauseResumeApp(); // Call to pause the app
+		}
+	}
 
 	private static String getFormattedLocation(String loc)
 	{

@@ -195,7 +195,7 @@ public class MobilePlatform
 				
 				((Canvas) displayable).showNotify();
 				
-				try { Mobile.midlet.resumeRequest(); } 
+				try { Mobile.midlet.callStartApp(); } 
 				catch (Exception e) { e.printStackTrace(); }
 
 				painter.run();
