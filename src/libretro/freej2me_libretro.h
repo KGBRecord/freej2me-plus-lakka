@@ -55,17 +55,33 @@ static const struct retro_controller_info ports[] =
 
 #define FRAMES_DROPPED_MSG 0
 #define INVALID_STATUS_MSG 1
-#define COULD_NOT_START_MSG 2
-#define CORE_HAS_LOADED_MSG 3
+#define IMPROPER_CHILDPROC_MSG 2
+#define SYSTEM_NOT_FOUND_MSG 3
+#define COULD_NOT_START_MSG 4
+#define UNEXPECTED_CLOS_MSG 5
+#define PIPE_WRITE_FAIL_MSG 6
+#define PIPE_READ_FAIL_MSG 7
+#define CHILDPROC_CLOSED_MSG 8
+#define CORE_HAS_LOADED_MSG 9
 
 static const struct retro_message_ext messages[] =
 {
-   /* Message string to be displayed/logged */
-   {"Too many frames dropped!!! Please restart the core.", 8000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
-   {"Invalid status received!!! Please restart the core.", 8000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
-   {"FreeJ2ME could not start!!! \nMake sure > freej2me-lr.jar < is in the 'system' dir and that you have Java 8 or newer installed.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
-   {"FreeJ2ME child process loaded successfully!", 4000, 1, RETRO_LOG_INFO, RETRO_MESSAGE_TARGET_OSD, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
-   {"", 0, 0, 0, 0, 0, 0}
+    /* Message string to be displayed/logged */
+    {"Too many frames dropped! Please restart the core.", 5000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"Invalid status received! Please restart the core.", 5000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"FreeJ2ME failed to setup pipes for communication!!! \nPlease restart the core.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+#ifdef __linux__
+    {"FreeJ2ME system files not found! \nMake sure > freej2me-lr.jar < is in the 'system' dir.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+#elif _WIN32
+    {"FreeJ2ME system files not found! \nMake sure > freej2me-lr.jar < is in the 'system' dir.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+#endif
+    {"FreeJ2ME could not start! \nMake sure that you have Java 6 or newer installed.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"FreeJ2ME closed unexpectedly!!! \nPlease restart the core.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"Pipe Write failed! Might be trivial, if you notice issues, please restart.", 5000, 3, RETRO_LOG_WARN, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"Pipe Read failed! Might be trivial, if you notice issues, please restart.", 5000, 3, RETRO_LOG_WARN, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"FreeJ2ME not running! Either the game crashed, or it was closed.", 5000, 3, RETRO_LOG_WARN, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"FreeJ2ME child process loaded successfully!", 3000, 1, RETRO_LOG_INFO, RETRO_MESSAGE_TARGET_OSD, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"", 0, 0, 0, 0, 0, 0}
 };
 
 /* This is responsible for exposing the joypad input mappings to the frontend */

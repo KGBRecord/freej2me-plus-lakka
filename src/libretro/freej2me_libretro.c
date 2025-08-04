@@ -14,19 +14,17 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <errno.h>
-#include <signal.h>
 #ifdef __linux__
+#include <stdarg.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #elif _WIN32
 #include <windows.h>
 #include <tlhelp32.h>
+#include <io.h>
 #endif
 #include "freej2me_libretro.h"
 #include <file/file_path.h>
@@ -35,6 +33,13 @@
 #define NUM_ARGUMENTS 28
 
 const char *slash = path_default_slash();
+
+// These may change to .so and .dll at some point
+#ifdef __linux__
+const char *freej2meapp = "freej2me-lr.jar";
+#elif _WIN32
+const char *freej2meapp = "freej2me-lr.jar";
+#endif
 
 retro_environment_t Environ;
 retro_video_refresh_t Video;
@@ -94,7 +99,7 @@ struct retro_game_geometry Geometry;
 
 
 bool isRunning();
-void javaOpen(char *cmd, char **params);
+bool javaOpen(char *cmd, char **params);
 
 #ifdef __linux__
 int javaProcess;
@@ -119,8 +124,8 @@ long joymouseTime = 0; /* countdown to show/hide mouse cursor */
 long joymouseClickedTime = 0; /* Countdown to show/hide the cursor in the clicked state */
 bool joymouseAnalog = false; /* flag - using analog stick for mouse movement */
 int mouseLpre = 0; /* old mouse button state */
-int rumbleTime = 0; /* Rumble duration calculated based on data received from FreeJ2ME-lr.jar */
-unsigned short rumbleStrength = 0xFFFF; /* Rumble strength calculated based on data received from FreeJ2ME-lr.jar */
+int rumbleTime = 0; /* Rumble duration calculated based on data received from FreeJ2ME's app */
+unsigned short rumbleStrength = 0xFFFF; /* Rumble strength calculated based on data received from FreeJ2ME's app */
 bool uses_mouse = true;
 bool uses_pointer = false;
 bool booted = false;
@@ -128,8 +133,9 @@ bool restarting = false;
 bool useAnalogAsEntireKeypad = false; // Enhancement for games like Time Crisis Elite which use the keypad's diagonals exclusively, and not 2+4, 6+8, etc.
 float analogDeadzone = 0.10f; // Additional Deadzone over libretro for input reads
 
+bool stoppedRunning = false;
 bool resetRequested = false;
-unsigned int characterEncoding = 0; // Character encoding used by FreeJ2ME's jar. Normally starts with UTF-8
+unsigned int characterEncoding = 0; // Character encoding used by FreeJ2ME's app. Normally starts with UTF-8
 
 unsigned char readBuffer[PIPE_READ_BUFFER_SIZE];
 
@@ -148,7 +154,7 @@ int framesDropped = 0;
 /* Libretro exposed config variables START */
 
 char *options_update; /* String containing the options updated in check_variables() */
-char *systemPath; /* Path of FreeJ2ME's jar */
+char *systemPath; /* Path of FreeJ2ME's app */
 char** params; /* Char matrix containing launch arguments */
 unsigned int optstrlen; /* length of the string above */
 unsigned long int screenRes[2]; /* {width, height} */
@@ -256,12 +262,13 @@ unsigned int joymouseClickedImage[408] =
  * pipe write/read is requested.
  */
 #ifdef __linux__
-void write_to_pipe(int pipe, void *data, int datasize) { write(pipe, data, datasize); }
-int read_from_pipe(int pipe, void *data, int datasize) { return read(pipe, data, datasize); }
+void write_to_pipe(int pipe, void *data, int datasize) { if(isRunning()) { write(pipe, data, datasize); } }
+int read_from_pipe(int pipe, void *data, int datasize) { return isRunning() ? read(pipe, data, datasize) : -1; }
 
 #elif _WIN32
 void write_to_pipe(void* pipe, void *data, int datasize)
 {
+	if(!isRunning()) { return; }
 	BOOL succeeded = FALSE;
 	succeeded = WriteFile(
 		pipe,               /* pipe handle */
@@ -271,13 +278,14 @@ void write_to_pipe(void* pipe, void *data, int datasize)
 		NULL);              /* not overlapped */
 	if (!succeeded)
 	{
-		log_fn(RETRO_LOG_ERROR, "Failed to write to pipe. Error: %d!\n", GetLastError() );
-		retro_deinit();
+		log_fn(RETRO_LOG_WARN, "Failed to write to pipe. Error: %d!\n", GetLastError() );
+		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[PIPE_WRITE_FAIL_MSG]);
 	}
 }
 
 int read_from_pipe(void* pipe, void *data, int datasize)
 {
+	if(!isRunning()) { return -1; }
 	BOOL succeeded = FALSE;
 	/*
 	 * BytesRead is basically a long unsigned int which is
@@ -296,13 +304,22 @@ int read_from_pipe(void* pipe, void *data, int datasize)
 		NULL);
 	if (!succeeded)
 	{
-		log_fn(RETRO_LOG_ERROR, "Failed to read from pipe. Error: %d!\n", GetLastError() );
-		retro_deinit();
+		log_fn(RETRO_LOG_WARN, "Failed to read from pipe. Error: %d!\n", GetLastError() );
+		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[PIPE_READ_FAIL_MSG]);
 	}
 
 	return (int) bytesRead;
 }
 #endif
+
+int freej2me_present(const char *path) 
+{
+#ifdef _WIN32
+    return _access(path, 0) == 0;
+#else
+    return access(path, F_OK) == 0;
+#endif
+}
 
 // Fast-forward state tracker
 void check_fast_forwarding(void) 
@@ -674,20 +691,26 @@ void retro_init(void)
 	sprintf(compatSiemensFriendlyDrawArg, "%d", compatSiemensFriendlyDraw);
 
 	/* We need to clean up any argument memory from the previous launch arguments in order to load up updated ones */
-	if (restarting)
-	{
-		log_fn(RETRO_LOG_INFO, "Restart: Cleaning up previous resources.\n");
-		if (params)
-		{
-			for (int i = 0; params[i] != NULL; i++) { free(params[i]); }
-			free(params);
-		}
-	}
+	if (restarting) { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME-Plus.\n"); }
 	else // System path is not meant to change on restarts
 	{
 		log_fn(RETRO_LOG_INFO, "Setting up FreeJ2ME-Plus' System Path.\n");
 		Environ(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemPath);
 	}
+
+	/* Check if freej2me's app actually exists and notify the user if it doesn't */
+	char *freej2mePath = malloc(sizeof(char) * PIPE_MAX_LEN);
+    snprintf(freej2mePath, sizeof(char) * PIPE_MAX_LEN, "%s/%s", systemPath, freej2meapp);
+
+    if (!freej2me_present(freej2mePath)) 
+	{
+		free(freej2mePath);
+		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[SYSTEM_NOT_FOUND_MSG]);
+        log_fn(RETRO_LOG_ERROR, "Error: %s does not exist in the system dir.\n", freej2meapp);
+		return;
+    }
+
+	free(freej2mePath);
 
 	/* Allocate memory for launch arguments */
 	params = (char**)malloc(sizeof(char*) * NUM_ARGUMENTS);
@@ -698,7 +721,7 @@ void retro_init(void)
 #endif
 	params[1] = strdup("-jar");
 	params[2] = strdup(supported_encodings[characterEncoding]);
-	params[3] = strdup("freej2me-lr.jar");
+	params[3] = strdup(freej2meapp);
 	params[4] = strdup(resArg[0]);
 	params[5] = strdup(resArg[1]);
 	params[6] = strdup(rotateArg);
@@ -726,23 +749,21 @@ void retro_init(void)
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
 
-	javaOpen(params[0], params);
+	booted = javaOpen(params[0], params);
 
-	/* wait for java process */
-	int t = 0;
-	int status = 0;
-
-	while(status<1 && isRunning())
+	// Parameters are no longer needed now
+	if (params)
 	{
-		status = read_from_pipe(pRead[0], &t, 1);
-		if(status<0 && errno != EAGAIN) { Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[INVALID_STATUS_MSG]); }
+		for (int i = 0; params[i] != NULL; i++) { free(params[i]); }
+		free(params);
 	}
 
-	if(!isRunning()) { Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[COULD_NOT_START_MSG]); }
-	else 
-	{
-		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[CORE_HAS_LOADED_MSG]);
+	if(!booted) 
+	{ 
+		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[COULD_NOT_START_MSG]); 
+		return; 
 	}
+
 	/* Setup keyboard input */
 	struct retro_keyboard_callback kb = { Keyboard };
 	Environ(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &kb);
@@ -752,6 +773,7 @@ void retro_init(void)
 	else { log_fn(RETRO_LOG_INFO, "Rumble environment not supported.\n"); }
 
 	log_fn(RETRO_LOG_INFO, "All preparations done and java app is ready. Keyboard callback set.\n");
+	Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[CORE_HAS_LOADED_MSG]);
 }
 
 bool retro_load_game(const struct retro_game_info *info)
@@ -763,7 +785,8 @@ bool retro_load_game(const struct retro_game_info *info)
 	/* Send savepath to java */
 	char *savedir;
 	Environ(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &savedir);
-	if (savedir[0] == '\0') {
+	if (savedir[0] == '\0') 
+	{
 		Environ(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &savedir);
 	}
 
@@ -787,7 +810,7 @@ bool retro_load_game(const struct retro_game_info *info)
 #endif
 
 	len = strlen(romPath);
-	log_fn(RETRO_LOG_INFO, "Loading actual jar app from %s\n", romPath);
+	log_fn(RETRO_LOG_INFO, "Loading freej2me app from %s\n", romPath);
 
 	unsigned char loadevent[5] = { 0xA, (len>>24)&0xFF, (len>>16)&0xFF, (len>>8)&0xFF, len&0xFF };
 	write_to_pipe(pWrite[1], loadevent, 5);
@@ -1077,7 +1100,6 @@ void retro_run(void)
 
 		
 
-
 		/* read frame header */
 		frameRequested = false;
 		framesDropped = 0;
@@ -1239,7 +1261,6 @@ void retro_run(void)
 			}
 		}
 	}
-	else { retro_deinit(); }
 
 	/* send frame to libretro irrespective of FreeJ2ME running (for error messages) */
 	Video(frame, frameWidth, frameHeight, sizeof(unsigned int) * frameWidth);
@@ -1301,7 +1322,7 @@ void retro_deinit(void)
 
 	/* 
 	* Since java on win32 has the "decency" to open a secondary process with another PID
-	* that is what runs freej2me's jar, the only way i (with my very limited windows
+	* that is what runs freej2me's main app, the only way i (with my very limited windows
 	* knowledge) can think of to reliably close this is going nuclear: Terminate all javaw 
 	* processes related to javaProcess.
 	*/
@@ -1368,7 +1389,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {  }
 
 
 /* Java Process */
-void javaOpen(char *cmd, char **params)
+bool javaOpen(char *cmd, char **params)
 {
 	if(!restarting)
 	{
@@ -1409,7 +1430,6 @@ void javaOpen(char *cmd, char **params)
 		execvp(cmd, params);
 
 		/* execvp failure! */
-		retro_deinit();
 	}
 
 	if(pid>0) /* parent */
@@ -1420,7 +1440,7 @@ void javaOpen(char *cmd, char **params)
 
 	if(pid<0) /* error */
 	{
-		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[COULD_NOT_START_MSG]);
+		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[IMPROPER_CHILDPROC_MSG]);
 	}
 
 	javaProcess = pid;
@@ -1452,9 +1472,10 @@ void javaOpen(char *cmd, char **params)
 			DUPLICATE_SAME_ACCESS))
 		{
 			log_fn(RETRO_LOG_INFO, "Failed to create pWrite pipe... \n");
+			Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[IMPROPER_CHILDPROC_MSG]);
 			CloseHandle(pWrite[0]);
 			CloseHandle(pWrite[1]);
-			retro_deinit();
+			return false;
 		}
 	}
 
@@ -1471,9 +1492,10 @@ void javaOpen(char *cmd, char **params)
 			DUPLICATE_SAME_ACCESS))
 		{
 			log_fn(RETRO_LOG_INFO, "Failed to create pRead pipe... \n");
+			Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[IMPROPER_CHILDPROC_MSG]);
 			CloseHandle(pRead[0]);
 			CloseHandle(pRead[1]);
-			retro_deinit();
+			return false;
 		}
 	}
 
@@ -1513,7 +1535,6 @@ void javaOpen(char *cmd, char **params)
 		&javaProcess ))      /* Pointer to PROCESS_INFORMATION structure */
 	{ /* If it fails, this block is executed */
 		log_fn(RETRO_LOG_ERROR, "Couldn't create process, error: %lu\n", GetLastError() );
-		retro_deinit();
 	}
 
 	log_fn(RETRO_LOG_INFO, "Created process! PID=%d \n", javaProcess.dwProcessId);
@@ -1525,19 +1546,33 @@ void javaOpen(char *cmd, char **params)
 	CloseHandle(javaProcess.hThread); // Close the thread handle, not needed
 #endif
 
-	booted = true;
-	log_fn(RETRO_LOG_INFO, "Core and Java app started! Initializing game data... \n");
+	/* wait for java process to respond */
+	int t = 0;
+	int status = 0;
+
+	while(status<1 && isRunning())
+	{
+		status = read_from_pipe(pRead[0], &t, 1);
+		if(status<0 && errno != EAGAIN) { Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[INVALID_STATUS_MSG]); }
+	}
+
+	if(!isRunning()) { return false; }
+	else 
+	{
+		log_fn(RETRO_LOG_INFO, "Core and Java app started! Initializing game data... \n");
+		return true;
+	}
 }
 
 
 bool isRunning()
 {
+	if(stoppedRunning) { return false; } // If the app is no longer running, only a core restart can solve it
 #ifdef __linux__
 	int status;
 	if(waitpid(javaProcess, &status, WNOHANG) == 0) { return true; }
 
-	log_fn(RETRO_LOG_INFO, "Java app is not running anymore! Last known PID=%d \n", javaProcess);
-	return false;
+	log_fn(RETRO_LOG_INFO, "Java app is not running! Last known PID=%d \n", javaProcess);
 #elif _WIN32
 	/*
 	 * On win32, receiving a WAIT_TIMEOUT signal before timing out means the process is
@@ -1545,7 +1580,9 @@ bool isRunning()
 	 */
 	if(WaitForSingleObject(javaProcess.hProcess, 0) == WAIT_TIMEOUT) { return true; }
 
-	log_fn(RETRO_LOG_INFO, "Java app is not running anymore! Last known PID=%d \n", javaProcess.dwProcessId);
-	return false;
+	log_fn(RETRO_LOG_INFO, "Java app is not running! Last known PID=%d \n", javaProcess.dwProcessId);
 #endif
+	Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[CHILDPROC_CLOSED_MSG]);
+	stoppedRunning = true;
+	return false;
 }
