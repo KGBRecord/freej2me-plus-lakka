@@ -358,26 +358,37 @@ public class Form extends Screen
 
 		if(items.size()>0)
 		{
-			int scrollbarWidth = 4;
+			int scrollbarWidth = 4, thisX, thisY, itemHeight;
 
+			Item item;
+			
 			Rectangle viewport = new Rectangle(0, scrollY, width, height);
 
 			for (int t=0;t<items.size();t++)
 			{
-				Item item = items.get(t);
+				item = items.get(t);
 
 				if(t >= itemBounds.length) { break; }
 
 				if (!viewport.intersects(itemBounds[t])) { continue; }
 
-				int thisX = x + itemBounds[t].x;
-				int thisY = y + itemBounds[t].y - scrollY;
+				thisX = x + itemBounds[t].x;
+				thisY = y + itemBounds[t].y - scrollY;
 
+				
 				if (t == focusedItem && items.size() > 1)
 				{
 					graphics.setColor(Mobile.lcduiTextColor);
-					// drawRect needs size - 1
+					graphics.setStrokeStyle(Graphics.SOLID);
 					graphics.drawRect(thisX - itemPadding, thisY - itemPadding, itemBounds[t].width + itemPadding, itemBounds[t].height + itemPadding - 1);
+				}
+				else 
+				{
+					graphics.setColor(Mobile.lcduiStrokeColor);
+					graphics.setStrokeStyle(Graphics.DOTTED);
+					graphics.drawRect(thisX - itemPadding, thisY - itemPadding, itemBounds[t].width + itemPadding, itemBounds[t].height + itemPadding - 1);
+					graphics.setStrokeStyle(Graphics.SOLID);
+					graphics.setColor(Mobile.lcduiTextColor);
 				}
 
 				if (item.hasLabel()) 
@@ -388,15 +399,13 @@ public class Form extends Screen
 
 				// paint...
 
-				int itemHeight = item.getContentHeight(itemContentWidth);
+				itemHeight = item.getContentHeight(itemContentWidth);
 
 				if(item instanceof ImageItem)
 				{
 					graphics.drawImage(((ImageItem)item).getImage(), (width/2)-((ImageItem)item).getImage().getWidth()/2, thisY, 0); // Draw all ImageItems centered for now
 				}
 				else { item.renderItem(graphics, thisX, thisY, itemContentWidth, itemHeight); }
-				
-				thisY += itemHeight;
 			}
 
 			double fact = (double)height/scrollHeight;

@@ -120,8 +120,6 @@ public abstract class Displayable
 		int restoreX = graphics.getTranslateX(), restoreY = graphics.getTranslateY();
 		graphics.translate(-restoreX, -restoreY);
 
-		graphics.setFont(Font.getDefaultFont());
-
 		// Draw Background:
 		graphics.setColor(Mobile.lcduiBGColor);
 		graphics.fillRect(0,0,width,height);
@@ -209,7 +207,6 @@ public abstract class Displayable
 			currentY += contentHeight;
 
 			graphics.setClip(0, 0, graphics.getCanvas().getWidth(), graphics.getCanvas().getHeight());
-			graphics.setFont(Font.getDefaultFont());
 
 			Command itemCommand = null;
 			if (this instanceof Form) { itemCommand = ((Form)this).getItemCommand(); }

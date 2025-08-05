@@ -118,7 +118,7 @@ public class Mobile
 
 	//LCDUI colors
 	public static int lcduiBGColor = 0xFFFFFF;
-	public static int lcduiStrokeColor = 0x555555;
+	public static int lcduiStrokeColor = 0x777777;
 	public static int lcduiTextColor = 0x000000;
 
 	// Mask for simulating device backlights of early nokias, etc. Used by Display's flashBacklight for example

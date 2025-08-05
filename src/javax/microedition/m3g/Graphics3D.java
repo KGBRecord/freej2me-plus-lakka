@@ -23,11 +23,7 @@ import javax.microedition.lcdui.Graphics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.awt.Color;
-import java.awt.GradientPaint;
 import java.awt.Graphics2D;
-import java.awt.Paint;
-import java.awt.Polygon;
 import java.awt.image.DataBufferInt;
 
 import org.recompile.mobile.Mobile;
@@ -84,17 +80,13 @@ public class Graphics3D
 	// Reusable rendering variables
 	int[] rasterData;
 	int canvasWidth, canvasHeight;
-	
-	// Untextured polygon variables
-	Color colorOrig;
-	GradientPaint gradient;
 
 	final int[] coXr = new int[3];
 	final int[] coYr = new int[3]; 
 
 	byte[][] color_vertex = new byte[3][4]; 
 	
-	Color[] colors = new Color[3];
+	int[] colors = new int[3];
 
 	// Textured polygon variables
 	final float[] coX = new float[3];
@@ -257,8 +249,8 @@ public class Graphics3D
 				Graphics grp = (Graphics) this.target;
 
 				// Fill the background with the background color
-				grp.getGraphics2D().setColor(new Color(color));
-				grp.getGraphics2D().fillRect(x, y, w, h);
+				grp.setColor(color);
+				grp.fillRect(x, y, w, h);
 
 				// Draw the background's image if any (and there's a background)
 				if(background != null && background.getImage() != null) 
@@ -606,9 +598,6 @@ public class Graphics3D
 		else if (this.target instanceof Graphics)
 		{
 			Graphics pgrp = (Graphics) this.target;
-			Graphics2D grp = pgrp.getGraphics2D();
-
-			colorOrig = grp.getColor();
 
 			for (int tri_id = 0; tri_id < renderableTriangles; tri_id++)
 			{
@@ -668,13 +657,11 @@ public class Graphics3D
 					coYr[1] = Math.round(trisScreen[tri_id].yB());
 					coYr[2] = Math.round(trisScreen[tri_id].yC());
 					
-					grp.translate(viewx, viewy);
+					pgrp.translate(viewx, viewy);
 					if(vertices.getColors() == null) // If there's no vertex colors, we have to render with the VertexBuffer's default color.
 					{ 
-						grp.setColor(new Color(vertices.getDefaultColor()));
-
-						if(Mobile.M3GRenderWireframe) { grp.drawPolygon(coXr, coYr, 3); }
-						else { grp.fillPolygon(coXr, coYr, 3); }
+						if(Mobile.M3GRenderWireframe) { pgrp.drawPolygon(coXr, 0, coYr, 0, 3, vertices.getDefaultColor()); }
+						else { pgrp.fillPolygon(coXr, 0, coYr, 0, 3, vertices.getDefaultColor()); }
 					} 
 					else // If we have vertex colors, good. Read them to color up the triangles properly.
 					{
@@ -682,12 +669,11 @@ public class Graphics3D
         				{
 							vertColors.get(trisScreen[tri_id].bufIndex[i], 1, color_vertex[i]);
 
-							colors[i] = new Color(
-								Byte.toUnsignedInt(color_vertex[i][0]), 
-								Byte.toUnsignedInt(color_vertex[i][1]), 
-								Byte.toUnsignedInt(color_vertex[i][2]), 
-								vertColors.getComponentCount() == 4 ? Byte.toUnsignedInt(color_vertex[i][3]) : 255
-							);
+							// Again, M3G supports colors that are either RGB or RGBA, we make them ARGB here
+							colors[i] = vertColors.getComponentCount() == 4 ? (Byte.toUnsignedInt(color_vertex[i][3]) << 24) : (0xFF << 24) |
+								(Byte.toUnsignedInt(color_vertex[i][0]) << 16) |
+								(Byte.toUnsignedInt(color_vertex[i][1]) <<  8) | 
+								 Byte.toUnsignedInt(color_vertex[i][2]);
 						}
 
 						// Blend fog value with the vertex color, if applicable
@@ -713,7 +699,7 @@ public class Graphics3D
 
 							for(int i = 0; i < colors.length; i++) 
 							{
-								colors[i] = new Color(blendFog(colors[i].getRGB(), fog.getColor(), fogFactor[i]));
+								colors[i] = blendFog(colors[i], fog.getColor(), fogFactor[i]);
 							}
 						}
 
@@ -721,33 +707,15 @@ public class Graphics3D
 						 * TODO: Not accurate, as all 3 vertices of a triangle can have different colors that have to be interpolated,
 						 * this method is not doing it the correct way.
 						 */
-						Paint originalPaint = grp.getPaint();
-
-						// Draw first gradient from color1 to color2
-						gradient = new GradientPaint(
-							coXr[0], coYr[0], colors[0],
-							coXr[1], coYr[1], colors[1]
-						);
-						grp.setPaint(gradient);
 						
-						if(Mobile.M3GRenderWireframe) { grp.drawPolygon(coXr, coYr, 3); }
-						else { grp.fillPolygon(coXr, coYr, 3); }
-						
+						if(Mobile.M3GRenderWireframe) { pgrp.drawPolygon(coXr, 0, coYr, 0, 3, vertices.getDefaultColor()); }
+						else { pgrp.fillPolygon(coXr, 0, coYr, 0, 3, vertices.getDefaultColor()); }
 
-						// Draw second gradient from color2 to color3
-						gradient = new GradientPaint(
-							coXr[1], coYr[1], colors[1],
-							coXr[2], coYr[2], colors[2]
-						);
-						grp.setPaint(gradient);
-
-						if(Mobile.M3GRenderWireframe) { grp.drawPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, new int[]{coYr[1], coYr[2], coYr[0]}, 3 ); }
-						else { grp.fillPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, new int[]{coYr[1], coYr[2], coYr[0]}, 3 ); }
-
-						grp.setPaint(originalPaint);
+						if(Mobile.M3GRenderWireframe) { pgrp.drawPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, 0,  new int[]{coYr[1], coYr[2], coYr[0]}, 0, 3, vertices.getDefaultColor()); }
+						else { pgrp.fillPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, 0, new int[]{coYr[1], coYr[2], coYr[0]}, 0, 3, vertices.getDefaultColor()); }
 					}
 
-					grp.translate(-viewx, -viewy);
+					pgrp.translate(-viewx, -viewy);
 					continue;
 				}
 
@@ -871,7 +839,7 @@ public class Graphics3D
 								int texPixel = teximg.getConvertedPixel(Math.round(s), Math.round(t));
 
 								// Extract the alpha channel from the texture pixel
-								int alpha = (texPixel >> 24) & 0xFF; // Assuming ARGB format
+								int alpha = (texPixel >> 24) & 0xFF; // Image2D converts to ARGB format
 
 								if (alpha < (int) (compositingMode.getAlphaThreshold() * 255)) { continue; } // Skip transparent pixels below the alpha threshold
 
@@ -974,7 +942,6 @@ public class Graphics3D
 					}
 				}
 			}
-			grp.setColor(colorOrig);
 		}
 	}
 

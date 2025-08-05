@@ -131,7 +131,7 @@ public class Gauge extends Item
 
 	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
-		graphics.getGraphics2D().translate(x, y);
+		graphics.translate(x, y);
 
 		final int arrowWidth = Font.getDefaultFont().getHeight()/2;
 		final int arrowMargin = Font.getDefaultFont().getHeight()/15;
@@ -159,7 +159,7 @@ public class Gauge extends Item
 		int textWidth = (graphics.getGraphics2D().getFontMetrics().stringWidth(text));
 		graphics.drawString(text, (width-textWidth)/2 + 1, 0, Graphics.LEFT); // Using Graphics' HCENTER doesn't work as expected here, so centering has to be done manually
 			
-		graphics.getGraphics2D().translate(-x, -y);
+		graphics.translate(-x, -y);
 	}
 
 }

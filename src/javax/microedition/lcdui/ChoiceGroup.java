@@ -273,7 +273,7 @@ public class ChoiceGroup extends Item implements Choice
 
 	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
-		graphics.getGraphics2D().translate(x, y);
+		graphics.translate(x, y);
 		
 		if (type == Choice.POPUP) 
 		{
@@ -318,7 +318,7 @@ public class ChoiceGroup extends Item implements Choice
 			}
 		}
 
-		graphics.getGraphics2D().translate(-x, -y);
+		graphics.translate(-x, -y);
 	}
 
 	private void _drawTick(Graphics graphics, int index, int height, boolean filled, boolean isCircle) 

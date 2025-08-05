@@ -162,7 +162,7 @@ public class DateField extends Item
 
 	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
-		graphics.getGraphics2D().translate(x, y);
+		graphics.translate(x, y);
 
 		// Correctly adjust the caret position for the input type
 		if(inputMode == TIME && caretPosition < 12) { caretPosition = 12; }
@@ -226,7 +226,7 @@ public class DateField extends Item
 		graphics.drawString("^", margin + padding + caretWidth + caretCharWidth / 2 - 3, margin - Font.getDefaultFont().getHeight() / 3, 0); // Arrow up
 		graphics.drawString("v", margin + padding + caretWidth + caretCharWidth / 2 - 3, margin + Font.getDefaultFont().getHeight(), 0); // Arrow down
 
-		graphics.getGraphics2D().translate(-x, -y);
+		graphics.translate(-x, -y);
 	}
 
 	protected boolean traverse(int dir, int viewportWidth, int viewportHeight, int[] visRect_inout) 

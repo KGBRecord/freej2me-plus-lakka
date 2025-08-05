@@ -327,7 +327,7 @@ public class TextField extends Item
 
 	protected void renderItem(Graphics graphics, int x, int y, int width, int height) 
 	{
-		graphics.getGraphics2D().translate(x, y);
+		graphics.translate(x, y);
 
 		// Fill the whole textField area with specified BG color. TODO: Make sure everything is inside the textField area, right now up/down arrows and the inputMode hint aren't.
 		graphics.setColor(Mobile.lcduiBGColor);
@@ -392,7 +392,7 @@ public class TextField extends Item
 		graphics.setColor(Mobile.lcduiBGColor);
 		graphics.drawString(hintText, width - margin - hintWidth, margin + Font.getDefaultFont().getHeight(), 0);
 
-		graphics.getGraphics2D().translate(-x, -y);
+		graphics.translate(-x, -y);
 	}
 
 	protected boolean traverse(int dir, int viewportWidth, int viewportHeight, int[] visRect_inout) 

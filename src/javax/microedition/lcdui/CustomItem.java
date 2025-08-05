@@ -145,9 +145,9 @@ public abstract class CustomItem extends Item
 		// TODO: Incomplete. Possibly we'd need to save/restore much more
 
 		int color = graphics.getColor();
-		graphics.getGraphics2D().translate(x, y);
+		graphics.translate(x, y);
 		paint((Graphics) graphics, width, height);
-		graphics.getGraphics2D().translate(-x, -y);
+		graphics.translate(-x, -y);
 		graphics.setColor(color);
 	}
 }

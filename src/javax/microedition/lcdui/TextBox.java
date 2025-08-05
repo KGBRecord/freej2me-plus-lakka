@@ -299,7 +299,7 @@ public class TextBox extends Screen
 
 	protected String renderScreen(int x, int y, int width, int height) 
 	{
-		graphics.getGraphics2D().translate(x, y);
+		graphics.translate(x, y);
 
 		// Fill the whole textField area with specified BG color. TODO: Make sure everything is inside the textField area, right now up/down arrows and the inputMode hint aren't.
 		graphics.setColor(Mobile.lcduiBGColor);
@@ -364,7 +364,7 @@ public class TextBox extends Screen
 		graphics.setColor(Mobile.lcduiBGColor);
 		graphics.drawString(hintText, width - margin - hintWidth, margin + Font.getDefaultFont().getHeight(), 0);
 
-		graphics.getGraphics2D().translate(-x, -y);
+		graphics.translate(-x, -y);
 
 		return null;
 	}
