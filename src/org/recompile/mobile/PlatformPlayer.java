@@ -20,8 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,7 +47,6 @@ import javax.sound.midi.Synthesizer;
 import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Track;
 import javax.sound.midi.Transmitter;
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -137,7 +134,7 @@ public class PlatformPlayer implements Player
 					if(data.length >= 4 && data[0] == 'M' && data[1] == 'T' && data[2] == 'h' && data[3] == 'd') 
 					{
 						Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MIDI!");
-						contentType = "audio/mid";
+						contentType = "audio/midi";
 						player = new midiPlayer(new ByteArrayInputStream(data));
 					}
 					else if (data.length >= 15 && data[8] == 'Q' && data[9] == 'L' && data[10] == 'C' && data[11] == 'M' && data[12] == 'f' && data[13] == 'm' && data[14] == 't') 
@@ -165,7 +162,7 @@ public class PlatformPlayer implements Player
 					)
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is SMAF/MMF! (not fully supported yet)");
-						contentType = "audio/mmf (beta)";
+						contentType = "audio/mmf";
 						SMAFDecoder.decodeSMAF(data);
 						if(SMAFDecoder.SequenceData != null || SMAFDecoder.pcmData != null) 
 						{
@@ -189,7 +186,7 @@ public class PlatformPlayer implements Player
 					else if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MLD/MFi! (not fully supported yet)");
-						contentType = "audio/x-mld (beta)";
+						contentType = "audio/x-mld";
 						MLDDecoder.decodeMLD(data);
 						if(MLDDecoder.SequenceData != null || MLDDecoder.pcmData != null) 
 						{
@@ -212,7 +209,7 @@ public class PlatformPlayer implements Player
 					else if(data.length >= 4 && data[0] == 'B' && data[1] == 'E' && data[2] == 'G' && data[3] == 'I' && data[4] == 'N' && data[5] == ':' && data[6] == 'I' && data[7] == 'M')
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is EMS iMelody! (not fully supported yet)");
-						contentType = "audio/iMelody (beta)";
+						contentType = "audio/x-imy";
 						player = new midiPlayer(EMSiMelodyDecoder.decodeiMelody(data));
 					}
 					else if(data.length >= 6 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '\n') 
@@ -292,7 +289,7 @@ public class PlatformPlayer implements Player
 
 		try
 		{
-			if(getState() >= Player.REALIZED && player.isRunning()) { stop(); }
+			if(isRunning()) { stop(); }
 			player.deallocate();
 			player.close();
 			controls = null;
@@ -300,7 +297,7 @@ public class PlatformPlayer implements Player
 			state = Player.CLOSED;
 			notifyListeners(PlayerListener.CLOSED, null);	
 		}
-		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not close player: " + e.getMessage()); }
+		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not close player: " + e.getMessage()); e.printStackTrace(); }
 	}
 
 	public int getState() { return state; }
@@ -475,7 +472,7 @@ public class PlatformPlayer implements Player
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot deallocate player, it is already CLOSED."); }
 		
-		if(getState() >= Player.REALIZED && player.isRunning()) { stop(); }
+		if(getState() >= Player.REALIZED && isRunning()) { stop(); }
 		player.deallocate();
 
 		/* 
@@ -555,7 +552,7 @@ public class PlatformPlayer implements Player
 		return player.setMediaTime(now);
 	}
 
-	public boolean isRunning() { return getState() >= Player.REALIZED ? player.isRunning() : false; }
+	public boolean isRunning() { return getState() >= Player.PREFETCHED ? player.isRunning() : false; }
 
 	// Controllable interface //
 
@@ -709,8 +706,10 @@ public class PlatformPlayer implements Player
 			}
 		}
 
-		public void realize() 
-		{
+		public void realize() { state = Player.REALIZED; }
+
+		public void prefetch() 
+		{ 
 			try 
 			{
 				midi = MidiSystem.getSequencer(false);
@@ -736,17 +735,14 @@ public class PlatformPlayer implements Player
 						}
 					}
 				});
-				prepareMidiSubsystem();
-				state = Player.REALIZED;
+				state = Player.PREFETCHED;
 			}
 			catch(Exception e) 
 			{
-				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not realize midi stream:" + e.getMessage());
-				state = Player.UNREALIZED; 
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prefetch midi stream:" + e.getMessage());
+				state = Player.REALIZED; 
 			}
 		}
-
-		public void prefetch() { state = Player.PREFETCHED; }
 
 		public void start()
 		{
@@ -888,8 +884,10 @@ public class PlatformPlayer implements Player
 			}
 		}
 
-		public void realize() 
-		{
+		public void realize() { state = Player.REALIZED; }
+
+		public void prefetch() 
+		{ 
 			try 
 			{
 				midi = MidiSystem.getSequencer(false);
@@ -915,7 +913,6 @@ public class PlatformPlayer implements Player
 						}
 					}
 				});
-				prepareMidiSubsystem();
 
 				if(wavStreams != null) 
 				{
@@ -927,18 +924,15 @@ public class PlatformPlayer implements Player
 						wavClips[i].open(wavStreams[i]);
 					} 
 				}
-
-				state = Player.REALIZED;
+				state = Player.PREFETCHED;
 			}
 			catch (Exception e) 
 			{
-				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not realize SMAF stream:" + e.getMessage());
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prefetch SMAF stream:" + e.getMessage());
 				state = Player.UNREALIZED;
 				e.printStackTrace();
 			}
 		}
-
-		public void prefetch() { state = Player.PREFETCHED; }
 
 		public void start()
 		{
@@ -1043,22 +1037,15 @@ public class PlatformPlayer implements Player
 			receiver = null;
 			if(midi != null) { midi.close(); }
 
-			new Thread(new Runnable() 
+			if(wavClips != null) 
 			{
-				@Override
-				public void run() 
-				{
-					if(wavClips != null) 
-					{
-						for(int i = 0; i < wavClips.length; i++) 
-						{ 
-							if(wavClips[i] == null) { continue; }
-							wavClips[i].stop(); 
-							wavClips[i].close(); 
-						}
-					}
+				for(int i = 0; i < wavClips.length; i++) 
+				{ 
+					if(wavClips[i] == null) { continue; }
+					wavClips[i].stop(); 
+					wavClips[i].close(); 
 				}
-			}).start();
+			}
 
 			isPlaying = false;
 		}
@@ -1161,43 +1148,45 @@ public class PlatformPlayer implements Player
 				stream.mark(60);
 				wavHeaderData = WAVTools.readHeader(stream);
 				stream.reset();
+				stream.skip(WAVTools.PCMHEADERSIZE);
 
-				if(wavHeaderData[0] == 1) // standard PCM WAV
-				{
-					wavHeaderData = WAVTools.readHeader(stream);
-					byte[] wavAudioData = new byte[stream.available()];
-					stream.read(wavAudioData, 0, stream.available());
-					tmpStream = WAVTools.upsample(wavAudioData, wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4], wavHeaderData[5]);
-				}
-				else if(wavHeaderData[0] == 7) // Microsoft GSM
-				{
-					Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MS GSM! (unsupported)");
-				}
-				else if(wavHeaderData[0] == 17) // IMA ADPCM
-				{
-					tmpStream = WAVImaADPCMDecoder.decodeImaAdpcm(stream, wavHeaderData);
-
-					if(Mobile.minLogLevel == Mobile.LOG_DEBUG) /* Print the decoded stream's header for analysis */
-					{
-						InputStream headerRead = new ByteArrayInputStream(tmpStream);
-						WAVTools.readHeader(headerRead);
-						headerRead = null;
-					}
-				}
-				else /* Assume it's a normal WAV and try to load it. */
-				{
-					tmpStream = new byte[stream.available()];
-					stream.read(tmpStream, 0, stream.available());
-					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "WAV Format is " + wavHeaderData[0] + " Trying to load as PCM WAV.");
-				}
+				tmpStream = new byte[stream.available()];
+				stream.read(tmpStream, 0, stream.available());
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prepare wav stream:" + e.getMessage()); }
 		}
 
-		public void realize() 
+		public void realize() { state = Player.REALIZED; }
+
+		public void prefetch() 
 		{ 
 			try
 			{
-				wavStream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(tmpStream));
+				if(wavStream == null) // Process the stream if it's not already cached
+				{
+					if(wavHeaderData[0] == 1) // standard PCM WAV, just upsample it
+					{
+						wavStream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(WAVTools.upsample(tmpStream, wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4], wavHeaderData[5])));
+					}
+					else if(wavHeaderData[0] == 7) // Microsoft GSM
+					{
+						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MS GSM! (unsupported)");
+					}
+					else if(wavHeaderData[0] == 17) // IMA ADPCM
+					{
+						wavStream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(WAVImaADPCMDecoder.decodeImaAdpcm(new ByteArrayInputStream(tmpStream), wavHeaderData)));
+						if(Mobile.minLogLevel == Mobile.LOG_DEBUG) /* Print the decoded stream's header for analysis */
+						{
+							InputStream headerRead = new ByteArrayInputStream(tmpStream);
+							WAVTools.readHeader(headerRead);
+							headerRead = null;
+						}
+					}
+					else /* Unknown format. */
+					{
+						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "WAV Format is " + wavHeaderData[0] + " (Unsupported).");
+					}
+				}
+				
 				wavClip = AudioSystem.getClip();
 				wavClip.open(wavStream);
 				/* Like for midi, we need to listen for END_OF_MEDIA events here too. */
@@ -1220,26 +1209,24 @@ public class PlatformPlayer implements Player
 						}
 					}
 				});
-
-				state = Player.REALIZED; 
+				state = Player.PREFETCHED; 
 			}
 			catch (Exception e) 
 			{ 
-				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't realize wav stream: " + e.getMessage());
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't prefetch wav stream: " + e.getMessage());
 				e.printStackTrace();
 			} 
 		}
 
-		public void prefetch() { state = Player.PREFETCHED; }
-
 		public void start()
-		{	
+		{
 			if(getMediaTime() >= getDuration()) { setMediaTime(0); }
 
 			state = Player.STARTED;
 			notifyListeners(PlayerListener.STARTED, getMediaTime());
 
 			wavClip.start();
+			((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
 		}
 
 		public void stop()
@@ -1265,7 +1252,13 @@ public class PlatformPlayer implements Player
 
 		public void close() 
 		{
-			wavStream = null;
+			try 
+			{ 
+				if(wavStream != null) { wavStream.close(); } 
+				wavStream = null;
+			}
+			catch (IOException e) { }
+			tmpStream = null;
 			wavHeaderData = null;
 		}
 
@@ -1318,21 +1311,21 @@ public class PlatformPlayer implements Player
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prepare mpeg stream:" + e.getMessage());}
 		}
 
-		public void realize() 
+		public void realize() { state = Player.REALIZED; }
+
+		public void prefetch() 
 		{ 
 			try
 			{
 				mp3Player = new MPEGPlayer(new ByteArrayInputStream(tmpStream), false);
-				state = Player.REALIZED;
+				state = Player.PREFETCHED;
 			}
 			catch (Exception e) 
 			{ 
-				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't realize mpeg stream: " + e.getMessage());
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't prefetch mpeg stream: " + e.getMessage());
 				mp3Player.close();
 			}
 		}
-
-		public void prefetch() { state = Player.PREFETCHED; }
 
 		public void start()
 		{
@@ -1350,6 +1343,7 @@ public class PlatformPlayer implements Player
 							{
 								if(getMediaTime() >= getDuration()) { setMediaTime(0); }
 								else { setMediaTime(getMediaTime()); } // Resume from when last stopped
+								((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
 								mp3Player.play(); // This is thread-blocking, so the code below only executes after this has finished.
 
 								/* 
@@ -1392,10 +1386,8 @@ public class PlatformPlayer implements Player
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
 
-		public void deallocate() { } // Prefetch does "nothing" in each internal player so deallocate must also do nothing
-
-		public void close() 
-		{
+		public void deallocate() 
+		{ 
 			new Thread(new Runnable() 
 			{
 				@Override
@@ -1403,10 +1395,14 @@ public class PlatformPlayer implements Player
 				{
 					if(mp3Player != null) { mp3Player.close(); }
 					mp3Player = null;
-					tmpStream = null;
-					playerThread = null;
 				}
 			}).start();
+		}
+
+		public void close() 
+		{
+			tmpStream = null;
+			playerThread = null;
 		}
 
 		public void setLoopCount(int count)
@@ -1707,7 +1703,12 @@ public class PlatformPlayer implements Player
 			/* Some Digital Chocolate games actually go all the way to level = 120. E.g. Tornado Mania */
 			if(level > 100) { level = 100; }
 			else if(level < 0) { level = 0; }
-			return doSetLevel(level, false); 
+
+			if(level == getLevel()) { return level; }
+
+			player.setVolume(level); // Save volume level for the given player in the player itself, unaffected by mute setting.
+			notifyListeners(PlayerListener.VOLUME_CHANGED, this); // Notify that the volume state changed
+			return doSetLevel(level, false);
 		}
 
 		public int doSetLevel(final int level, final boolean forceChange) 
@@ -1725,6 +1726,7 @@ public class PlatformPlayer implements Player
 						midiPlayer sequencer = (midiPlayer) player;
 						int midiVolume = isMuted() ? 0 : (int) (level); // Convert to MIDI volume range
 
+						if(sequencer.synthesizer == null) { return; }
 						MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
 
 						if(sequencer.isRunning())
@@ -1752,6 +1754,7 @@ public class PlatformPlayer implements Player
 						int midiVolume = isMuted() ? 0 : (int) (level * 127 / 100);
 						float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
 
+						if(sequencer.synthesizer == null) { return; }
 						MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
 
 						if(sequencer.isRunning())
@@ -1793,11 +1796,7 @@ public class PlatformPlayer implements Player
 				}
 			}).start();
 
-			notifyListeners(PlayerListener.VOLUME_CHANGED, this); 
-
-			player.setVolume(level); // Save volume level for the given player, in the player itself.
-
-			return getLevel(); 
+			return getLevel();
 		}
 
 		public void setMute(boolean mute) 

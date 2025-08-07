@@ -41,7 +41,7 @@ public class SMAFPlayer extends MediaPlayer
         try 
         { 
             this._player = new PlatformPlayer(stream, "");
-            this._player.realize();
+            this._player.prefetch();
             this._player.addMediaPlayerBox(box); // So that listener events know which box they're being fired from
         } 
         catch (Exception e) { e.printStackTrace(); } 

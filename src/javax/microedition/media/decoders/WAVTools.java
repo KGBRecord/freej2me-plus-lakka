@@ -32,7 +32,7 @@ import org.recompile.mobile.Mobile;
 public final class WAVTools 
 {
 
-    private static final byte PCMHEADERSIZE = 44;
+    public static final byte PCMHEADERSIZE = 44;
 
     public static int hostSampleRate = 0;
 
@@ -328,33 +328,31 @@ public final class WAVTools
 	{
 		inputLength = Math.min(input.length, inputLength); // Some wav files might report a sample length bigger than the actual data (Shadow Shoot)
 
-		int newLength = (int) (inputLength * ((double) newSampleRate / originalSampleRate));
-		byte[] upsampled;
-
+		final int newLength = (int) (inputLength * ((double) newSampleRate / originalSampleRate));
+		final byte[] upsampled = new byte[PCMHEADERSIZE + newLength]; // Allocate for header + upsampled audio data
+		final double ratio = (double) originalSampleRate / newSampleRate;
+		double cosineFraction;
+		int originalIndex, sample1, sample2, interpolatedValue;
+		
 		// No upsampling needed, just prepend a header to the data (this method is used as the final output of other PCM decoders)
 		if(originalSampleRate == newSampleRate)
 		{
-			upsampled = new byte[PCMHEADERSIZE + newLength];
 			System.arraycopy(input, 0, upsampled, PCMHEADERSIZE, newLength);
 			buildHeader(upsampled, numChannels, newSampleRate, numBits, newLength);
 
 			return upsampled;
 		}
-
-		upsampled = new byte[PCMHEADERSIZE + newLength]; // Allocate for header + upsampled audio data
-
-		double ratio = (double) originalSampleRate / newSampleRate;
-
+		
 		// Upsample the audio data based on how many bits per sample it has
 		for (int i = 0; i < newLength; i++) 
 		{
-			int originalIndex = (int) (i * ratio);
-			double cosineFraction = (1 - Math.cos(((i * ratio) - originalIndex) * Math.PI)) / 2;
+			originalIndex = (int) (i * ratio);
+			cosineFraction = (1 - Math.cos(((i * ratio) - originalIndex) * Math.PI)) / 2;
 
 			if (numBits == 8) 
 			{
-				int sample1 = (input[originalIndex] & 0xFF);
-				int sample2 = (originalIndex + 1 < inputLength) ? (input[originalIndex + 1] & 0xFF) : sample1;
+				sample1 = (input[originalIndex] & 0xFF);
+				sample2 = (originalIndex + 1 < inputLength) ? (input[originalIndex + 1] & 0xFF) : sample1;
 
 				// Apply cosine interpolation instead of linear interpolation (results similar to cubic interp. at very little extra cost compared to linear)
 				upsampled[PCMHEADERSIZE + i] = (byte) (sample1 + (sample2 - sample1) * cosineFraction);
@@ -363,11 +361,11 @@ public final class WAVTools
 			{
 				if (originalIndex * 2 + 2 >= inputLength) { break; }
 
-				int sample1 = ((input[originalIndex * 2] & 0xFF) | (input[originalIndex * 2 + 1] << 8));
-				int sample2 = ((originalIndex + 1) * 2 < inputLength ? 
+				sample1 = ((input[originalIndex * 2] & 0xFF) | (input[originalIndex * 2 + 1] << 8));
+				sample2 = ((originalIndex + 1) * 2 < inputLength ? 
 					(input[(originalIndex + 1) * 2] & 0xFF) | (input[(originalIndex + 1) * 2 + 1] << 8) : sample1);
 
-				int interpolatedValue = (int) (sample1 + (sample2 - sample1) * cosineFraction);
+				interpolatedValue = (int) (sample1 + (sample2 - sample1) * cosineFraction);
 				upsampled[PCMHEADERSIZE + i * 2] = (byte) (interpolatedValue & 0xFF); // Low byte
 				upsampled[PCMHEADERSIZE + i * 2 + 1] = (byte) ((interpolatedValue >> 8) & 0xFF); // High byte
 			}

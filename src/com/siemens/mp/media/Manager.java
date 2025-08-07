@@ -30,7 +30,7 @@ public class Manager extends javax.microedition.media.Manager
 		try 
 		{
 			com.siemens.mp.media.Player player = (com.siemens.mp.media.Player) javax.microedition.media.Manager.createSiemensPlayer(stream, type);
-			player.realize(); // Doing realize right after creating because Chessmaster is such a broken game it's not even funny
+			player.prefetch(); // Doing prefetch right after creating because Chessmaster needs it
 			return player;
 		} 
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to create player from stream:" + e.getMessage()); }
@@ -43,7 +43,7 @@ public class Manager extends javax.microedition.media.Manager
 		try 
 		{ 
 			com.siemens.mp.media.Player player = (com.siemens.mp.media.Player) javax.microedition.media.Manager.createSiemensPlayer(source);
-			player.realize(); // Doing realize right after creating because Chessmaster is such a broken game it's not even funny
+			player.prefetch();
 			return player;
 		} 
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to create player from source:" + e.getMessage()); }
@@ -56,7 +56,7 @@ public class Manager extends javax.microedition.media.Manager
 		try 
 		{ 
 			com.siemens.mp.media.Player player = (com.siemens.mp.media.Player) javax.microedition.media.Manager.createSiemensPlayer(locator); 
-			player.realize(); // Doing realize right after creating because Chessmaster is such a broken game it's not even funny
+			player.prefetch();
 			return player;
 		} 
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to create player from locator:" + e.getMessage()); }

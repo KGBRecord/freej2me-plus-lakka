@@ -145,14 +145,15 @@ public class Manager
 	public static String[] getSupportedContentTypes(String protocol)
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Get Supported Media Content Types");
-		return new String[]{"audio/midi", "audio/x-wav", 
-		"audio/amr", "audio/mpeg", "audio/x-tone-seq", "audio/mmf" };
+		return new String[]{"audio/midi", "audio/x-wav", "audio/x-mld",
+			"audio/amr", "audio/mpeg", "audio/x-tone-seq", "audio/mmf",
+			"audio/x-imy", "audio/basic" };
 	}
 	
 	public static String[] getSupportedProtocols(String content_type)
 	{
 		Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Get Supported Media Protocols");
-		return new String[]{};
+		return new String[]{ TONE_DEVICE_LOCATOR, MIDI_DEVICE_LOCATOR };
 	}
 	
 	public static void playTone(final int note, int duration, int volume) throws MediaException

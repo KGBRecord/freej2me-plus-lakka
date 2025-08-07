@@ -173,7 +173,7 @@ public abstract class PhraseTrackBase
 		{
 			phrase = p;
 			player = Manager.createPlayer(new ByteArrayInputStream(phrase.getData()), "");
-			player.realize();
+			player.prefetch();
 		}
 		catch (Exception e) 
 		{ 
@@ -191,7 +191,7 @@ public abstract class PhraseTrackBase
 		{
 			audioPhrase = p;
 			player = Manager.createPlayer(new ByteArrayInputStream(audioPhrase.getData()), "");
-			player.realize();
+			player.prefetch();
 		}
 		catch (Exception e) 
 		{ 

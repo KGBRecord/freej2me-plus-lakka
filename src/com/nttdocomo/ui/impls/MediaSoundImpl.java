@@ -60,7 +60,6 @@ public class MediaSoundImpl implements com.nttdocomo.ui.MediaSound
 				player = Manager.createPlayer(new ByteArrayInputStream(meloData), "audio/x-mld");
 			}
 			else { player = Manager.createPlayer(s); }
-			//player.realize();
 		}
         catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, MediaSoundImpl.class.getPackage().getName() + "." + MediaSoundImpl.class.getSimpleName() + ": " + "Failed to create Player from "+ s + " :" + e.getMessage()); }
     }
@@ -89,7 +88,7 @@ public class MediaSoundImpl implements com.nttdocomo.ui.MediaSound
 			// TODO: Do we actually need to overwrite any prior resource's memory area? We aren't under memory constraints
 		}
 		
-		player.realize(); 
+		player.prefetch(); 
 		isSingleUse = useOnce;
 	}
 
