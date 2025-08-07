@@ -36,10 +36,10 @@ public class Libretro
 	int[] lcdData;
 
 	private boolean soundEnabled = true;
-	private static boolean libretroReady = false;
+	private static volatile boolean canPause = false;
 
 	private static final long PAUSE_DELAY_MS = 150;
-	private static long lastCoreUpdateTime = System.currentTimeMillis(); // Tracks last core update for pause checks
+	private static volatile long lastCoreUpdateTime = System.currentTimeMillis(); // Tracks last core update for pause checks
 
 	private byte[] frameBuffer = new byte[800*800*3];
 	private final byte[] frameHeader = new byte[]{(byte)0xFE,
@@ -230,15 +230,6 @@ public class Libretro
 					{
 						bin = System.in.read(); // Blocks until there's data available
 						if(bin==-1) { return; }
-
-						// Reaching here, the code above unblocked. Reset the timer to prevent pausing
-						lastCoreUpdateTime = System.currentTimeMillis();
-						if(Mobile.isPaused) // Resume if it was paused previously
-						{ 
-							MobilePlatform.pauseResumeApp(); 
-						}
-
-						if(!libretroReady) { libretroReady = true; }
 
 						//System.out.print(" "+bin);
 						din[count] = (int)(bin & 0xFF);
@@ -547,13 +538,29 @@ public class Libretro
 								break;
 
 								case 15:
+									lastCoreUpdateTime = System.currentTimeMillis();
+
+									if(din[3] == 1) // Frontend has processed the last sent frame, start counting for pause
+									{
+										canPause = true;
+										break;
+									}
+									else // The frontend is requesting a new frame
+									{ 
+										canPause = false; 
+										if(Mobile.isPaused) // Resume if it was paused previously
+										{ 
+											MobilePlatform.pauseResumeApp(); 
+										}
+									}
+
 									// Check if the frontend is fast-forwarding
 									if(din[4] == 0) { MobilePlatform.pressedKeys[20] = false; }
 									else { MobilePlatform.pressedKeys[20] = true; }
 
 									/* Send Frame to Libretro */
 									try
-									{				
+									{
 										//frameHeader[0] = (byte)0xFE;
 										frameHeader[1] = (byte)((lcdWidth>>8)&0xFF);
 										frameHeader[2] = (byte)((lcdWidth)&0xFF);
@@ -594,6 +601,7 @@ public class Libretro
 										Mobile.log(Mobile.LOG_DEBUG, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "Error sending frame: "+e.getMessage());
 										System.exit(0);
 									}
+									// We are now ready to start monitoring for pauses, the first frame was requested and sent
 								break;
 							}
 							//System.out.flush();
@@ -607,7 +615,7 @@ public class Libretro
 
 	private static void updatePauseTimer() 
 	{
-		if(!libretroReady) { return; } // Only start counting this after libretro is ready to communicate
+		if(!canPause) { return; } // Only start counting this after libretro has finished processing the last sent frame
 		long currentTime = System.currentTimeMillis();
 		
 		// Check if the timer has expired since the last core update, as anything beyond the PAUSE_DELAY_MS delta 

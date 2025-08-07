@@ -149,6 +149,7 @@ unsigned char frameHeader[15]; // This is always frameHeader's length in Libretr
 struct retro_game_info gameinfo;
 
 bool frameRequested = false;
+bool fast_forwarding = false;
 int framesDropped = 0;
 
 /* Libretro exposed config variables START */
@@ -324,7 +325,6 @@ int freej2me_present(const char *path)
 // Fast-forward state tracker
 void check_fast_forwarding(void) 
 {
-    bool fast_forwarding = false;
     if (Environ(RETRO_ENVIRONMENT_GET_FASTFORWARDING, &fast_forwarding)) 
 	{
         javaRequestFrame[4] = fast_forwarding ? 1 : 0;
@@ -848,21 +848,19 @@ void retro_run(void)
 		if(!frameRequested)
 		{
 			check_fast_forwarding();
+			javaRequestFrame[3] = 0; // Indicate a new frame request
 			write_to_pipe(pWrite[1], javaRequestFrame, 5);
 			frameRequested = true;
 		}
 
 		/* handle joypad */
-		for(i=0; i<PHONE_KEYS; i++)
-		{
-			joypre[i] = joypad[i];
-		}
+		for(i=0; i<PHONE_KEYS; i++) { joypre[i] = joypad[i]; }
 
 		InputPoll();
 
 		/* 
-		 *                            0    1    2     3     4  5  6   7       8          9     10 11 12 13 14 15 16 17 18
-		 * Input array in libretro: [Up, Down, Left, Right, 9, 7, 0, Fire, RightSoft, LeftSoft, 1, 3. *. #, 2, 4, 6, 8, 5] 
+		 *                            0    1    2     3     4  5  6   7       8          9     10 11 12 13 14 15 16 17 18,  19
+		 * Input array in libretro: [Up, Down, Left, Right, 9, 7, 0, Fire, RightSoft, LeftSoft, 1, 3. *. #, 2, 4, 6, 8, 5, CLR] 
 		 */
 
 		joypad[0] = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
@@ -1275,6 +1273,9 @@ void retro_run(void)
  	 * frame. This also means that frame advance is kinda supported, although not perfect.
  	 */
 	if(resetRequested) { retro_reset(); }
+	
+	javaRequestFrame[3] = 1; // Indicate that frame was processed
+	write_to_pipe(pWrite[1], javaRequestFrame, 5);
 	
 }
 

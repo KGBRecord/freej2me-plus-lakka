@@ -781,7 +781,6 @@ public class FreeJ2ME
 		{ 
 			setDropTarget();
 			setBackground(Color.WHITE);
-			setIgnoreRepaint(true); // Improves fullscreen and general paint performance
 		}
 
 		public void updateScale(int vw, int vh)
@@ -792,7 +791,6 @@ public class FreeJ2ME
 			ch = vh;
 			scalex = (double)lcdWidth/(double)vw;
 			scaley = (double)lcdHeight/(double)vh;
-			repaint();
 		}
 
 		@Override
