@@ -350,8 +350,6 @@ public class Mobile
 
 	public static final int getMobileKey(int keycode) 
 	{
-		log(Mobile.LOG_DEBUG, Mobile.class.getPackage().getName() + "." + Mobile.class.getSimpleName() + ": " + "KeyPress:" + keyArray[keycode]);
-
 		// These keys are overridden by the modifier variables (comments simulate the Libretro interface with a NS Pro Controller)
 		if(kddi)
 		{

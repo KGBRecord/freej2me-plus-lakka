@@ -380,18 +380,13 @@ public class RecordStore
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> getRecord(" + recordId + ", " + buffer + ", " + offset + ")");
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot get the record of a closed Record Store"); }
 		if(!recordIds.contains(recordId)) { throw new InvalidRecordIDException("getRecord: Invalid Record ID: "+recordId); }
-
-		// TODO: Maybe we should throw IndexOutOfBounds if the offset and the buffer's are invalid, but at this point i don't remember if there was a jar that wanted only part of a record or not
+		if(getRecord(recordIds.indexOf(recordId)).length > buffer.length-offset) { throw new ArrayIndexOutOfBoundsException("Record data won't fit on the provided buffer"); }
 
 		byte[] temp = getRecord(recordIds.indexOf(recordId));
 
-		int len = temp.length;
+		System.arraycopy(temp, 0, buffer, offset, temp.length);
 
-		len = Math.min(len, buffer.length - offset); // Return only the data that doesn't go out of bounds
-
-		for(int i=0; i<len; i++) { buffer[offset+i] = temp[i]; }
-
-		return len;
+		return temp.length;
 	}
 
 	public int getTag(int recordId) throws InvalidRecordIDException, RecordStoreNotOpenException
@@ -462,7 +457,7 @@ public class RecordStore
 				{
 					if (file.isFile() && file.getName().endsWith(".rms")) 
 					{
-						Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + returnRecordStoreName(rmsPath+"/"+file.toString().substring(rmsPath.length() + 1)));
+						Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ":   > '" + returnRecordStoreName(rmsPath+"/"+file.toString().substring(rmsPath.length() + 1)) +"'");
 						outList.add(returnRecordStoreName(rmsPath+"/"+file.toString().substring(rmsPath.length() + 1)));
 					}
 				}
@@ -534,19 +529,15 @@ public class RecordStore
 
 		if(recordId == 0) { recordId++; } // Records should always start at ID 1
 		if(!recordIds.contains(recordId)) { throw new InvalidRecordIDException("setRecord: Invalid Record ID: "+recordId); }
+		if(offset < 0 || numBytes < 0 || offset + numBytes > newData.length) { throw new ArrayIndexOutOfBoundsException("Tried to access invalid record data position"); }
 
 		try
 		{
-			byte[] rec = new byte[]{};
-			// As for addRecord, only try to copy data if there's data to begin with
-			if(newData != null && newData.length != 0)
-			{
-				if(offset < 0 || numBytes < 0 || offset + numBytes > newData.length) { throw new ArrayIndexOutOfBoundsException("Tried to access invalid record data position"); }
-				
-				rec = Arrays.copyOfRange(newData, offset, offset+numBytes);
-			}
+			byte[] temp = getRecord(recordIds.indexOf(recordId));
 
-			records.set(recordIds.indexOf(recordId), rec);
+			System.arraycopy(newData, offset, temp, 0, numBytes);
+
+			records.set(recordIds.indexOf(recordId), temp);
 			recordTags.set(recordIds.indexOf(recordId), tag);
 		}
 		catch (Exception e)
@@ -844,7 +835,7 @@ public class RecordStore
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(filePath);
-			Scanner scanner = new Scanner(fis, Mobile.isDoJa ? "Shift_JIS" : "UTF-8");
+			Scanner scanner = new Scanner(fis);
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
 
 			scanner.close();
@@ -1025,7 +1016,7 @@ public class RecordStore
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(filePath);
-			Scanner scanner = new Scanner(fis, Mobile.isDoJa ? "Shift_JIS" : "UTF-8");
+			Scanner scanner = new Scanner(fis);
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
 
 			scanner.close();
@@ -1046,7 +1037,7 @@ public class RecordStore
                 	String value = entry.substring(colonIndex+2).trim();
 
 					// Found the actual recordName inside the Store, retrieve it
-					if(key.equals("recordName")) { return value.substring(1, value.length() - 1); }
+					if(key.equals("recordName")) { return value.substring(1, value.length() - 1).trim(); }
 				}
 			}
 		}
@@ -1090,12 +1081,8 @@ public class RecordStore
 		} 
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Failed to properly encode the recordStores disk name!"); }
 		
-
         return String.format("%08x%02d%s", ownerHashcode(owner, Mobile.getPlatform().loader.suitename), name.length(), base64Encoded);
     }
 
-	public static int ownerHashcode(String owner, String name) 
-	{ 
-		return name.hashCode() ^ owner.hashCode();
-	}
+	public static int ownerHashcode(String owner, String name) { return name.hashCode() ^ owner.hashCode(); }
 }
