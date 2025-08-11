@@ -835,7 +835,8 @@ public class RecordStore
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(filePath);
-			Scanner scanner = new Scanner(fis);
+			// For ISO_8859_1, use UTF-8 for save names, helps with chinese and special characters
+			Scanner scanner = new Scanner(fis, Mobile.textEncoding.equals("ISO_8859_1") ? "UTF-8" : Mobile.textEncoding);
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
 
 			scanner.close();
@@ -1016,7 +1017,8 @@ public class RecordStore
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(filePath);
-			Scanner scanner = new Scanner(fis);
+			// For ISO_8859_1, use UTF-8 for save names, helps with chinese and special characters
+			Scanner scanner = new Scanner(fis, Mobile.textEncoding.equals("ISO_8859_1") ? "UTF-8" : Mobile.textEncoding);
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
 
 			scanner.close();
