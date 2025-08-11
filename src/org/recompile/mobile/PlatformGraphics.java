@@ -330,8 +330,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		{
 			x = AnchorX(x, image.getWidth(), anchor);
 			y = AnchorY(y, image.getHeight(), anchor);
-
-			drawRGB(((DataBufferInt) image.getCanvas().getRaster().getDataBuffer()).getData(), 0, image.getWidth(), x, y, image.getWidth(), image.getHeight(), true);
+			gc.drawImage(image.getCanvas(), x, y, null);
 		}
 		catch (Exception e)
 		{
@@ -344,7 +343,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		try
 		{
-			drawRGB(((DataBufferInt) image.getCanvas().getRaster().getDataBuffer()).getData(), 0, image.getWidth(), x, y, image.getWidth(), image.getHeight(), true);
+			gc.drawImage(image.getCanvas(), x, y, null);
 		}
 		catch (Exception e)
 		{
@@ -464,14 +463,14 @@ public abstract class PlatformGraphics implements DirectGraphics
 			{
 				x = AnchorX(x, subw, anchor);
 				y = AnchorY(y, subh, anchor);
-				drawRGB(((DataBufferInt) image.getCanvas().getRaster().getDataBuffer()).getData(), suby * image.getWidth() + subx, image.getWidth(), x, y, subw, subh, true);
+				gc.drawImage(image.getCanvas(), x, y, x + subw, y + subh, subx, suby, subx + subw, suby + subh, null);
 			}
 			else
 			{
 				PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
 				x = AnchorX(x, sub.getWidth(), anchor);
 				y = AnchorY(y, sub.getHeight(), anchor);
-				drawRGB(((DataBufferInt) sub.getCanvas().getRaster().getDataBuffer()).getData(), 0, sub.getWidth(), x, y, sub.getWidth(), sub.getHeight(), true);
+				gc.drawImage(sub.getCanvas(), x, y, null);
 			}
 		}
 		catch (Exception e)
@@ -788,7 +787,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 		BufferedImage image = manipulateImage(img.getCanvas(), manipulation);
 		x = AnchorX(x, image.getWidth(), anchor);
 		y = AnchorY(y, image.getHeight(), anchor);
-		drawRGB(((DataBufferInt) image.getRaster().getDataBuffer()).getData(), 0, image.getWidth(), x, y, image.getWidth(), image.getHeight(), true);
+		gc.drawImage(image, x, y, null);
 
 		if(Mobile.compatFantasyZoneFix) 
 		{
@@ -1189,25 +1188,32 @@ public abstract class PlatformGraphics implements DirectGraphics
 		switch(manipulation)
 		{
 			case V180:
+			case FLIP_HORIZONTAL:
             case DirectGraphics.FLIP_HORIZONTAL:
                 return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR);
             case H180:
+			case FLIP_VERTICAL:
             case DirectGraphics.FLIP_VERTICAL:
                 return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT180);
 			case HV270:
+			case FLIP_ROTATE_LEFT:
             case DirectGraphics.ROTATE_90:
                 return PlatformImage.transformImage(image, Sprite.TRANS_ROT270);
 			case HV:
+			case FLIP_ROTATE:
             case DirectGraphics.ROTATE_180:
                 return PlatformImage.transformImage(image, Sprite.TRANS_ROT180);
 			case HV90:
+			case FLIP_ROTATE_RIGHT:
             case DirectGraphics.ROTATE_270:
                 return PlatformImage.transformImage(image, Sprite.TRANS_ROT90);
             case V270:
             case H90:
+			case FLIP_ROTATE_RIGHT_VERTICAL:
                 return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT90);
             case V90:
             case H270:
+			case FLIP_ROTATE_RIGHT_HORIZONTAL:
                 return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT270);
             default:
 				Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "manipulateImage "+manipulation+" not defined");
@@ -1665,8 +1671,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 				sheight = adjustedCoordinates[3];
 			}
 			
-			BufferedImage finalImage = manipulateDoJaImage(image.getCanvas(), dojaflipMode);
-			drawRGB(((DataBufferInt) finalImage.getRaster().getDataBuffer()).getData(), sy * finalImage.getWidth() + sx, finalImage.getWidth(), dx, dy, swidth, sheight, true);
+			gc.drawImage(manipulateImage(image.getCanvas(), dojaflipMode), dx, dy, dx + width, dy + height, sx, sy, sx + swidth, sy + sheight, null);
 		}
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawScaledImage: " + e.getMessage()); }
 	}
@@ -1679,7 +1684,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 		for (com.nttdocomo.ui.Sprite sprite : sprites.getSprites())  // TODO: Support flip modes
 		{
-			drawRGB(((DataBufferInt) sprite.getImage().getCanvas().getRaster().getDataBuffer()).getData(), 0, sprite.getImage().getWidth(), sprite.getX(), sprite.getY(), sprite.getImage().getWidth(), sprite.getImage().getHeight(), true);
+			gc.drawImage(sprite.getImage().getCanvas(), sprite.getX(), sprite.getY(), null);
 		}
 	}
 
@@ -1739,34 +1744,6 @@ public abstract class PlatformGraphics implements DirectGraphics
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		usePictoColor = b; 
-	}
-
-	private static final BufferedImage manipulateDoJaImage(final BufferedImage image, final int manipulation)
-	{
-		// Return early if there's no manipulation to be done
-		if(manipulation == FLIP_NONE) { return image; }
-		
-		switch(manipulation)
-		{
-			case FLIP_HORIZONTAL:
-                return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR);
-			case FLIP_VERTICAL:
-                return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT180);
-			case FLIP_ROTATE_RIGHT:
-                return PlatformImage.transformImage(image, Sprite.TRANS_ROT90);
-			case FLIP_ROTATE:
-                return PlatformImage.transformImage(image, Sprite.TRANS_ROT180);
-			case FLIP_ROTATE_LEFT:
-                return PlatformImage.transformImage(image, Sprite.TRANS_ROT270);
-			case FLIP_ROTATE_RIGHT_VERTICAL:
-                return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT90);
-			case FLIP_ROTATE_RIGHT_HORIZONTAL:
-                return PlatformImage.transformImage(image, Sprite.TRANS_MIRROR_ROT270);
-            default:
-				Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "manipulateDoJaImage "+manipulation+" not defined");
-		}
-
-		return image;
 	}
 
 
