@@ -56,9 +56,11 @@ public class Mobile
 	private static final Queue<Runnable> pendingLogs = new LinkedList<Runnable>();
 
 	public static final String[] supportedEncodings = new String[] {"ISO_8859_1", "Shift_JIS", "EUC_KR"};
-
+	public static final byte ISO_8859_1 = 0;
+	public static final byte SHIFT_JIS  = 1;
+	public static final byte EUC_KR     = 2;
 	// Default MIDP encoding, will be changed by DoJa and any other implementation that use a different encoding
-	public static String textEncoding = supportedEncodings[0];
+	public static String textEncoding = supportedEncodings[ISO_8859_1];
 
 	private static Display display;
 

@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -69,6 +70,7 @@ public class RecordStore
 	private int scratchPadIndex = 0; // DoJa-only, used to differentiate between multiple scratchpads when writing
 
 	private Vector<RecordListener> listeners;
+	private static Vector<String> openedStores = new Vector<String>();
 
 	private long lastModified = 0;
 
@@ -104,8 +106,13 @@ public class RecordStore
 		this.vendorname = vendorname;
 		this.suitename = suitename;
 
-		rmsPath = Mobile.getPlatform().dataPath + "./rms/"+suitename;
-		rmsFile = rmsPath+"/"+basename+".rms";
+		try 
+		{
+			// For ISO-8859-1 encodings, we'll use UTF-8 for save paths, helps with chinese and special characters
+			rmsPath = new String((Mobile.getPlatform().dataPath + "./rms/"+suitename).getBytes(System.getProperty("file.encoding")), System.getProperty("file.encoding").equals(Mobile.supportedEncodings[Mobile.ISO_8859_1]) ? "UTF-8" : Mobile.textEncoding);
+			rmsFile = rmsPath+"/"+basename+".rms";
+		}
+		catch (UnsupportedEncodingException e) { } // Shouldn't really happen
 
 		// Check if the record directory exists, if not, create it.
 		try
@@ -129,7 +136,7 @@ public class RecordStore
 			if(!file.exists()) 
 			{ 
 				Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Legacy recordStore file not found either, will create if necessary...");
-				loadRecordStore(rmsFile, createIfNecessary);
+				loadRecordStore(createIfNecessary);
 			}
 			else 
 			{
@@ -138,10 +145,14 @@ public class RecordStore
 			}
 			
 		}
-		else { loadRecordStore(rmsFile, createIfNecessary); }
+		else { loadRecordStore(createIfNecessary); }
 
 		// If no exceptions were thrown, the record was loaded, set the recordStoreIsOpen flag and increase the counter of opened stores
-		if(!recordStoreIsOpen) { recordStoreIsOpen = true; }
+		if(!recordStoreIsOpen) 
+		{ 
+			recordStoreIsOpen = true; 
+			openedStores.add(this.name);
+		}
 		recordsOpened++;
 
 		thisStore = this;
@@ -234,7 +245,7 @@ public class RecordStore
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Add Record "+nextid+ " to "+name + " with tag " + tag + ", length " + numBytes + " and data " + (data != null? Arrays.toString(data) : "null"));
 
 		if(!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot add record, as Record Store is not open"); }
-		if(Mobile.getPlatform().loader.suitename != this.suitename && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
+		if(!Mobile.getPlatform().loader.suitename.equals(this.suitename) && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
 		if (data == null && numBytes > 0) { throw new NullPointerException("Cannot add record, as it is null"); }
 
 		try
@@ -282,12 +293,13 @@ public class RecordStore
 		recordIds.clear();
 
 		recordStoreIsOpen = false;
+		openedStores.remove(this.name);
 	}
 
 	public void deleteRecord(int recordId) throws RecordStoreException, SecurityException
 	{
 		if(!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot add record, as Record Store is not open"); }
-		if(Mobile.getPlatform().loader.suitename != this.suitename && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
+		if(!Mobile.getPlatform().loader.suitename.equals(this.suitename) && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
 		version++;
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Delete Record " + recordId);
 		records.remove(recordIds.indexOf(recordId));
@@ -303,7 +315,7 @@ public class RecordStore
 	// This should only delete records that are tied to the current MIDlet suite
 	public static void deleteRecordStore(String recordStoreName) throws RecordStoreException
 	{
-		if(recordStoreIsOpen) { throw new RecordStoreException("Cannot delete an open record store"); }
+		if(openedStores.contains(recordStoreName)) { throw new RecordStoreException("Cannot delete an open record store"); }
 		try
 		{
 			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Deleting RecordStore "+recordStoreName);
@@ -435,9 +447,9 @@ public class RecordStore
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "List Record Stores");
 		if(rmsPath==null)
 		{
-			rmsPath = Mobile.getPlatform().dataPath + "./rms/"+Mobile.getPlatform().loader.suitename;
 			try 
 			{ 
+				rmsPath = new String((Mobile.getPlatform().dataPath + "./rms/"+Mobile.getPlatform().loader.suitename).getBytes(System.getProperty("file.encoding")), System.getProperty("file.encoding").equals(Mobile.supportedEncodings[Mobile.ISO_8859_1]) ? "UTF-8" : Mobile.textEncoding);
 				File rmsDir = new File(rmsPath);
 				if (!rmsDir.exists()) { rmsDir.mkdirs(); }
 			}
@@ -511,7 +523,7 @@ public class RecordStore
 	public void setMode(int authmode, boolean writable) throws SecurityException
 	{  
 		if(authmode != AUTHMODE_ANY && authmode != AUTHMODE_PRIVATE) { throw new IllegalArgumentException("Invalid authentication mode"); }
-		if(Mobile.getPlatform().loader.suitename != this.suitename) { throw new SecurityException("Cannot change another suite's recordStore mode"); }
+		if(!Mobile.getPlatform().loader.suitename.equals(this.suitename)) { throw new SecurityException("Cannot change another suite's recordStore mode"); }
 		this.authmode = authmode;
 		this.writable = writable;
 	}
@@ -525,7 +537,7 @@ public class RecordStore
 	{
 		Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Set Record "+recordId+" in "+name + " from " + offset + " to " + (offset+numBytes) +  " with tag " + tag);
 		if (!recordStoreIsOpen) { throw new RecordStoreNotOpenException("Cannot set record on a closed Record Store"); }
-		if(Mobile.getPlatform().loader.suitename != this.suitename && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
+		if(!Mobile.getPlatform().loader.suitename.equals(this.suitename) && !writablebyothers) { throw new SecurityException("This suite does not have write access to this RecordStore"); }
 
 		if(recordId == 0) { recordId++; } // Records should always start at ID 1
 		if(!recordIds.contains(recordId)) { throw new InvalidRecordIDException("setRecord: Invalid Record ID: "+recordId); }
@@ -804,19 +816,19 @@ public class RecordStore
 		}
     }
 
-	public void loadRecordStore(String filePath, boolean createIfNecessary) throws RecordStoreException, RecordStoreNotFoundException, SecurityException
+	public void loadRecordStore(boolean createIfNecessary) throws RecordStoreException, RecordStoreNotFoundException, SecurityException
 	{
-		file = new File(filePath);
+		file = new File(rmsFile);
 		if(!file.exists()) 
 		{
 			if(!createIfNecessary)
 			{
-				throw (new RecordStoreNotFoundException("Record Store Doesn't Exist: " + filePath));
+				throw (new RecordStoreNotFoundException("Record Store Doesn't Exist: " +suitename+"/"+basename+".rms"));
 			}
 
 			try // Check Record Store File
 			{
-				Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Creating New Record Store "+suitename+"/"+basename);
+				Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Creating New Record Store "+suitename+"/"+basename+".rms");
 				file.createNewFile();
 				version = 1;
 				nextid = records.size(); // Since "records" always receives a dummy record on start, this will safely be 1 as it should.
@@ -826,7 +838,7 @@ public class RecordStore
 			catch (Exception e)
 			{
 				Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + e.getMessage());
-				throw(new RecordStoreException("Problem Opening Record Store (createIfNecessary "+createIfNecessary+"): "+filePath));
+				throw(new RecordStoreException("Problem Opening Record Store (createIfNecessary "+createIfNecessary+"): "+rmsFile));
 			}
 		}
 		
@@ -834,9 +846,8 @@ public class RecordStore
 		{
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
-			FileInputStream fis = new FileInputStream(filePath);
-			// For ISO_8859_1, use UTF-8 for save names, helps with chinese and special characters
-			Scanner scanner = new Scanner(fis, Mobile.textEncoding.equals("ISO_8859_1") ? "UTF-8" : Mobile.textEncoding);
+			FileInputStream fis = new FileInputStream(rmsFile);
+			Scanner scanner = new Scanner(fis);
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
 
 			scanner.close();
@@ -896,11 +907,11 @@ public class RecordStore
 			}
 
 			// Throw a security exception if the record is from a different suite and is set to not be accessed by others
-			if(Mobile.getPlatform().loader.suitename != this.suitename && authmode != AUTHMODE_ANY) { throw new SecurityException("This suite does not have authorization to access the requested RecordStore:" + name); }
+			if(!Mobile.getPlatform().loader.suitename.equals(this.suitename) && authmode != AUTHMODE_ANY) { throw new SecurityException("This suite does not have authorization to access the requested RecordStore:" + name); }
 
 			for(int i = 1; i < recordIds.size(); i++) // Read Binary Data
 			{
-				FileInputStream binfis = new FileInputStream(filePath.substring(0, filePath.length()-4) + "." + recordIds.get(i));
+				FileInputStream binfis = new FileInputStream(rmsFile.substring(0, rmsFile.length()-4) + "." + recordIds.get(i));
 				byte[] binData = new byte[binfis.available()];
 				binfis.read(binData);
 				records.add(binData);
@@ -1017,8 +1028,7 @@ public class RecordStore
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(filePath);
-			// For ISO_8859_1, use UTF-8 for save names, helps with chinese and special characters
-			Scanner scanner = new Scanner(fis, Mobile.textEncoding.equals("ISO_8859_1") ? "UTF-8" : Mobile.textEncoding);
+			Scanner scanner = new Scanner(fis);
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
 
 			scanner.close();
@@ -1049,7 +1059,7 @@ public class RecordStore
 		return null;
 	}
 
-	public void deleteOutdatedRecords(String rmsPath, String basename) 
+	public final void deleteOutdatedRecords(String rmsPath, String basename) 
 	{
 		File directory = new File(rmsPath);
 		
@@ -1071,7 +1081,7 @@ public class RecordStore
 
 
 	// These two are used so that FreeJ2ME-Plus matches SquirrelJME's save layout
-	public static String generateBaseName(String owner, String name) 
+	public static final String generateBaseName(String owner, String name) 
 	{
         String base64Encoded = "";
 		
@@ -1086,5 +1096,5 @@ public class RecordStore
         return String.format("%08x%02d%s", ownerHashcode(owner, Mobile.getPlatform().loader.suitename), name.length(), base64Encoded);
     }
 
-	public static int ownerHashcode(String owner, String name) { return name.hashCode() ^ owner.hashCode(); }
+	public static final int ownerHashcode(String owner, String name) { return name.hashCode() ^ owner.hashCode(); }
 }
