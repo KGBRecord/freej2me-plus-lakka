@@ -35,7 +35,8 @@ public class Camera extends Node
 	public Camera()
 	{
 		this.projMode = GENERIC;
-		this.projMatrix = new float[] {
+		this.projMatrix = new float[] 
+		{
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,

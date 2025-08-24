@@ -398,6 +398,7 @@ public class Graphics3D
 		/* Also per JSR-184, throw IllegalStateException if if node is not a Sprite3D, Mesh, or Group Object. */
 		if (!(node instanceof Mesh || node instanceof Sprite3D || node instanceof Group)) { throw new IllegalArgumentException("Node is not an instance of any of the following: Sprite3D, Mesh, Group"); }
 
+		if(transform == null) { transform = new Transform(); } // If transform is null, it indicates an identity matrix is to be used
 		// if any Mesh that is rendered violates the constraints defined in
 		//    Mesh, MorphingMesh, SkinnedMesh, VertexBuffer, or IndexBuffer
 		//    throw new java.lang.IllegalStateException();

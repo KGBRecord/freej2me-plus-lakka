@@ -27,13 +27,14 @@ public abstract class Transformable extends Object3D
 
 	public void getCompositeTransform(Transform transform)
 	{
-		if (transform == null) { throw new java.lang.NullPointerException("Cannot copy composite transform data into a null transform."); }
+		if (transform == null) { throw new NullPointerException("Cannot copy composite transform data into a null transform."); }
 
+		// Composite Transform is given as: C=T*R*S*M
 		transform.setIdentity();
-		transform.preMultiply(this.matrix);
-		transform.preMultiply(this.scale);
-		transform.preMultiply(this.rotate);
-		transform.preMultiply(this.translate);
+		transform.postMultiply(this.translate);
+		transform.postMultiply(this.rotate);
+		transform.postMultiply(this.scale);
+		transform.postMultiply(this.matrix);
 	}
 
 	void duplicate(Transformable copy) 
@@ -51,30 +52,19 @@ public abstract class Transformable extends Object3D
 
 	public void getOrientation(float[] angleAxis)
 	{
-		if (angleAxis == null)
-			throw new java.lang.NullPointerException("Cannot copy orientation data into a null array.");
-		if (angleAxis.length < 4)
-			throw new java.lang.IllegalArgumentException();
+		if (angleAxis == null) { throw new NullPointerException("Cannot copy orientation data into a null array."); }
+		if (angleAxis.length < 4) { throw new IllegalArgumentException("Illegal length of angle axis array"); }
 
-		float[] m = new float[16];
+		final float ax, ay, az;
+		final float[] m = new float[16];
 		this.rotate.get(m);
-		float angle, ax, ay, az, al;
-		ax = m[4*2 + 1] - m[4*1 + 2];
-		ay = m[4*0 + 2] - m[4*2 + 0];
-		az = m[4*1 + 0] - m[4*0 + 1];
-		al = (float) Math.sqrt(
-			Math.pow(ax, 2) + Math.pow(ay, 2) + Math.pow(az, 2)
-		);
-		if (al == 0f)
-		{
-			angleAxis[0] = 0f;
-			angleAxis[1] = 0f;
-			angleAxis[2] = 0f;
-			angleAxis[3] = 0f;
-			return;
-		}
-		ax /= al; ay /= al; az /= al;
-		angle = (float) Math.toDegrees(Math.asin(al / 2));
+		
+		final float angle = (float) Math.acos(((m[0] + m[5] + m[10]) - 1) / 2);
+		
+		ax = angle == 0 ? 0 : (m[9] - m[6]) / (2 * (float) Math.sin(angle));
+		ay = angle == 0 ? 0 : (m[2] - m[8]) / (2 * (float) Math.sin(angle));
+		az = angle == 0 ? 0 : (m[4] - m[1]) / (2 * (float) Math.sin(angle));
+
 		angleAxis[0] = angle;
 		angleAxis[1] = ax;
 		angleAxis[2] = ay;
@@ -83,10 +73,8 @@ public abstract class Transformable extends Object3D
 
 	public void getScale(float[] xyz)
 	{
-		if (xyz == null)
-			throw new java.lang.NullPointerException("Cannot copy scale data into a null array.");
-		if (xyz.length < 3)
-			throw new java.lang.IllegalArgumentException();
+		if (xyz == null) { throw new NullPointerException("Cannot copy scale data into a null array."); }
+		if (xyz.length < 3) { throw new IllegalArgumentException("Illegal size of scale array"); }
 
 		float[] m = new float[16];
 		this.scale.get(m);
@@ -97,25 +85,22 @@ public abstract class Transformable extends Object3D
 
 	public void getTransform(Transform transform)
 	{
-		if (transform == null)
-			throw new java.lang.NullPointerException("Cannot copy transform data into a null transform.");
+		if (transform == null) { throw new NullPointerException("Cannot copy transform data into a null transform."); }
 
 		transform.set(this.matrix);
 	}
 
 	public void getMatrix(float[] matrix)
 	{
-		if (matrix == null) { throw new java.lang.NullPointerException("Cannot copy matrix data into a null matrix."); }
+		if (matrix == null) { throw new NullPointerException("Cannot copy matrix data into a null matrix."); }
 
 		System.arraycopy(this.matrix, 0, matrix, 0, 16);
 	}
 
 	public void getTranslation(float[] xyz)
 	{
-		if (xyz == null)
-			throw new java.lang.NullPointerException("Cannot copy translation data into a null array.");
-		if (xyz.length < 3)
-			throw new java.lang.IllegalArgumentException();
+		if (xyz == null) { throw new NullPointerException("Cannot copy translation data into a null array."); }
+		if (xyz.length < 3) { throw new IllegalArgumentException("Illegal size of translation array"); }
 
 		float[] m = new float[16];
 		this.translate.get(m);
@@ -136,6 +121,11 @@ public abstract class Transformable extends Object3D
 
 	public void scale(float sx, float sy, float sz)
 	{
+		float[] xyz = new float[3];
+		getScale(xyz);
+		sx *= xyz[0];
+		sy *= xyz[1];
+		sz *= xyz[2];
 		this.scale.preScale(sx, sy, sz);
 	}
 
@@ -156,13 +146,16 @@ public abstract class Transformable extends Object3D
 		if (transform == null)
 		{
 			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Received null transform! Creating identity transform...");
-			transform = new Transform();
+			this.matrix.setIdentity();
+			return;
 		}
 
-		if (this instanceof Node)
+		if (this instanceof Node) 
 		{
-			float[] m = new float[16];
+			final float[] m = new float[16];
 			transform.get(m);
+
+			if (m[12] != 0 || m[13] != 0 || m[14] != 0 || m[15] != 1) { throw new IllegalArgumentException("The bottom row of the transform must be (0, 0, 0, 1) for Node objects."); }
 		}
 
 		this.matrix = new Transform(transform);
@@ -176,6 +169,11 @@ public abstract class Transformable extends Object3D
 
 	public void translate(float tx, float ty, float tz)
 	{
+		float[] xyz = new float[3];
+		getTranslation(xyz);
+		tx += xyz[0];
+		ty += xyz[1];
+		tz += xyz[2];
 		this.translate.preTranslate(tx, ty, tz);
 	}
 
@@ -183,7 +181,6 @@ public abstract class Transformable extends Object3D
 	void updateProperty(int property, float[] value) 
 	{
 		Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "AnimTrack updating Transformable property");
-		boolean invalidate = true;
 		switch (property) 
 		{
 			case AnimationTrack.ORIENTATION:
@@ -198,6 +195,7 @@ public abstract class Transformable extends Object3D
 			default:
 				super.updateProperty(property, value);
 		}
+		boolean invalidate = true;
 	}
 
 	void invalidateTransformable() 

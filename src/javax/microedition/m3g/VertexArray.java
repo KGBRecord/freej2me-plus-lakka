@@ -19,8 +19,8 @@ package javax.microedition.m3g;
 public class VertexArray extends Object3D
 {
 
-	private byte[][] inner1;
-	private short[][] inner2;
+	private byte[][] vertArrayByteSize;
+	private short[][] vertArrayShortSize;
 	private int numVertices;
 	private int numComponents;
 	private int componentType;
@@ -36,15 +36,17 @@ public class VertexArray extends Object3D
 		this.numVertices = numVertices;
 		this.numComponents = numComponents;
 		this.componentType = componentSize;
+
+		// Component size is either Byte (1) or Short (2)
 		switch (componentSize)
 		{
 			case 1:
-				this.inner1 = new byte[numVertices][numComponents];
-				this.inner2 = null;
+				this.vertArrayByteSize = new byte[numVertices][numComponents];
+				this.vertArrayShortSize = null;
 				break;
 			case 2:
-				this.inner1 = null;
-				this.inner2 = new short[numVertices][numComponents];
+				this.vertArrayByteSize = null;
+				this.vertArrayShortSize = new short[numVertices][numComponents];
 				break;
 		}
 	}
@@ -55,8 +57,8 @@ public class VertexArray extends Object3D
 		copy.numVertices = numVertices;
 		copy.numComponents = numComponents;
 		copy.componentType = componentType;
-		System.arraycopy(this.inner1, 0, copy.inner1, 0, inner1.length);
-		System.arraycopy(this.inner2, 0, copy.inner2, 0, inner2.length);
+		System.arraycopy(this.vertArrayByteSize, 0, copy.vertArrayByteSize, 0, vertArrayByteSize.length);
+		System.arraycopy(this.vertArrayShortSize, 0, copy.vertArrayShortSize, 0, vertArrayShortSize.length);
 		return copy;
 	}
 
@@ -82,7 +84,7 @@ public class VertexArray extends Object3D
 			{
 				int abs_vid = vid + firstVertex;
 				int flat_id = vid * this.numComponents + cid;
-				values[flat_id] = this.inner1[abs_vid][cid];
+				values[flat_id] = this.vertArrayByteSize[abs_vid][cid];
 			}
 		}
 	}
@@ -108,7 +110,7 @@ public class VertexArray extends Object3D
 			{
 				int abs_vid = vid + firstVertex;
 				int flat_id = vid * this.numComponents + cid;
-				values[flat_id] = this.inner2[abs_vid][cid];
+				values[flat_id] = this.vertArrayShortSize[abs_vid][cid];
 			}
 		}
 	}
@@ -140,7 +142,7 @@ public class VertexArray extends Object3D
 			{
 				int abs_vid = vid + firstVertex;
 				int flat_id = vid * this.numComponents + cid;
-				this.inner1[abs_vid][cid] = values[flat_id];
+				this.vertArrayByteSize[abs_vid][cid] = values[flat_id];
 			}
 		}
 	}
@@ -166,7 +168,7 @@ public class VertexArray extends Object3D
 			{
 				int abs_vid = vid + firstVertex;
 				int flat_id = vid * this.numComponents + cid;
-				this.inner2[abs_vid][cid] = values[flat_id];
+				this.vertArrayShortSize[abs_vid][cid] = values[flat_id];
 			}
 		}
 	}

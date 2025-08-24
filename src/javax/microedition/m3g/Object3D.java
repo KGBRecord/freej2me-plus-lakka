@@ -87,6 +87,8 @@ public abstract class Object3D
 
 	public int doGetReferences(Object3D[] references) 
 	{
+		if(references != null && references.length < animationTracks.size()) { throw new IllegalArgumentException("references array is not large enough to hold all of this object's references"); }
+		
 		if (!animationTracks.isEmpty()) 
 		{
 			if (references != null) 
@@ -98,6 +100,7 @@ public abstract class Object3D
 			}
 			return animationTracks.size();
 		}
+		
 		return 0;
 	}
 

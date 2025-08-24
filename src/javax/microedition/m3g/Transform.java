@@ -165,7 +165,8 @@ public class Transform
 
 	public void setIdentity()
 	{
-		this.matrix = new float[] {
+		this.matrix = new float[] 
+		{
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
@@ -182,18 +183,22 @@ public class Transform
 		if(vectors.length % 4 != 0) { throw new IllegalArgumentException("Cannot transform a vector array that's not multiple of 4."); }
 
 		/* Multiply each 4D vector with this transform's matrix by quadruplets, hence the vector offset of 4. */
-		for (int offset = 0; offset < vectors.length; offset += 4)
+		float x, y, z, w;
+		for (int offset = 0; offset < vectors.length; offset += 4) 
 		{
-			float[] result = new float[4];
-			for (int row = 0; row < 4; row++)
+			x = vectors[offset];
+			y = vectors[offset + 1];
+			z = vectors[offset + 2];
+			w = vectors[offset + 3];
+
+			for (int row = 0; row < 4; row++) 
 			{
-				result[row] =
-					+ this.matrix[4*row + 0] * vectors[offset + 0]
-					+ this.matrix[4*row + 1] * vectors[offset + 1]
-					+ this.matrix[4*row + 2] * vectors[offset + 2]
-					+ this.matrix[4*row + 3] * vectors[offset + 3];
+				vectors[offset + row] =
+					this.matrix[4 * row + 0] * x +
+					this.matrix[4 * row + 1] * y +
+					this.matrix[4 * row + 2] * z +
+					this.matrix[4 * row + 3] * w;
 			}
-			System.arraycopy(result, 0, vectors, offset, 4);
 		}
 	}
 
@@ -204,7 +209,6 @@ public class Transform
 
 		int vertexCount = in.getVertexCount();
 		int vertexDims = in.getComponentCount();
-		float[] components = new float[4]; /* Temp variables that hold the vector quadruplets (x,y,z,w). */
 
 		/* Also per JSR-184, throw IllegalArgumentException if numComponents == 4 or out.length < (4 * vertexCount). */
 		if (vertexDims == 4 || out.length < 4 * vertexCount) { throw new IllegalArgumentException("Tried to transform an invalid vertex array."); }
@@ -220,12 +224,10 @@ public class Transform
 				int  in_offset = vertexIndex * vertexDims;
 				int out_offset = vertexIndex * 4;
 
-				components[0] =                  vertices[in_offset + 0]     ;
-				components[1] = vertexDims > 1 ? vertices[in_offset + 1] : 0.0f;
-				components[2] = vertexDims > 2 ? vertices[in_offset + 2] : 0.0f;
-				components[3] = vertexDims > 3 ? vertices[in_offset + 3] : (W ? 1f : 0f);
-
-				System.arraycopy(components, 0, out, out_offset, 4);
+				out[out_offset] = vertices[in_offset]; // x
+				out[out_offset + 1] = vertexDims > 1 ? vertices[in_offset + 1] : 0.0f; // y
+				out[out_offset + 2] = vertexDims > 2 ? vertices[in_offset + 2] : 0.0f; // z
+				out[out_offset + 3] = vertexDims > 3 ? vertices[in_offset + 3] : (W ? 1f : 0f); // w
 			}
 		}
 		else 
@@ -238,12 +240,10 @@ public class Transform
 				int  in_offset = vertexIndex * vertexDims;
 				int out_offset = vertexIndex * 4;
 
-				components[0] =                  vertices[in_offset + 0]     ;
-				components[1] = vertexDims > 1 ? vertices[in_offset + 1] : 0.0f;
-				components[2] = vertexDims > 2 ? vertices[in_offset + 2] : 0.0f;
-				components[3] = vertexDims > 3 ? vertices[in_offset + 3] : (W ? 1f : 0f);
-
-				System.arraycopy(components, 0, out, out_offset, 4);
+				out[out_offset] = vertices[in_offset]; // x
+				out[out_offset + 1] = vertexDims > 1 ? vertices[in_offset + 1] : 0.0f; // y
+				out[out_offset + 2] = vertexDims > 2 ? vertices[in_offset + 2] : 0.0f; // z
+				out[out_offset + 3] = vertexDims > 3 ? vertices[in_offset + 3] : (W ? 1f : 0f); // w
 			}
 		}
 
@@ -316,24 +316,26 @@ public class Transform
 	// package-private
 	static Transform rotate(float angle, float ax, float ay, float az)
 	{
-		/* Only calculate rotation if the angle is not zero. */
-		if (angle == 0) { return null; }
 		/* As per JSR-184, throw IllegalArgumentException if the rotation axis is zero but the angle is not. */
-			if(ax == 0 && ay == 0 && az == 0) { throw new IllegalArgumentException("The rotation axis is zero."); }
+		if(ax == 0 && ay == 0 && az == 0 && angle != 0) { throw new IllegalArgumentException("The rotation axis is zero while angle is nonZero."); }
 
+		// If angle is 0, return an identity matrix transform
+		if (angle == 0) { return new Transform(); }
+		
 		// Compute sine and cosine of the angle
-		double rad = Math.toRadians(angle);
-		double s = Math.sin(rad);
-		double c = Math.cos(rad);
-		double d = 1 - c;
+		float rad = (float) Math.toRadians(angle);
+		float s = (float) Math.sin(rad);
+		float c = (float) Math.cos(rad);
+		float d = 1f - c;
 
 		// Normalize the axis
-		double l = Math.sqrt(Math.pow(ax,2) + Math.pow(ay,2) + Math.pow(az,2));
-		double x = ax / l;
-		double y = ay / l;
-		double z = az / l;
+		float l = (float) Math.sqrt((ax * ax) + (ay * ay) + (az * az));
+		float x = ax / l;
+		float y = ay / l;
+		float z = az / l;
 
-		double[] rotationMatrix = new double[] {
+		float[] rotationMatrix = new float[] 
+		{
 			x*x*d +  c ,  y*x*d - z*s,  z*x*d + y*s,  0,
 			x*y*d + z*s,  y*y*d +  c ,  z*y*d - x*s,  0,
 			x*z*d - y*s,  y*z*d + x*s,  z*z*d +  c ,  0,
@@ -350,13 +352,14 @@ public class Transform
 		if(qx == 0 && qy == 0 && qz == 0 && qw == 0) { throw new IllegalArgumentException("Cannot rotate when all quaternion components are zero."); }
 
 		// Normalize the quaternion
-		double l = Math.sqrt(Math.pow(qx,2) + Math.pow(qy,2) + Math.pow(qz,2) + Math.pow(qw,2));
-		double x = qx / l;
-		double y = qy / l;
-		double z = qz / l;
-		double w = qw / l;
+		float l = (float) Math.sqrt((qx * qx) + (qy * qy) + (qz * qz) + (qw * qw));
+		float x = qx / l;
+		float y = qy / l;
+		float z = qz / l;
+		float w = qw / l;
 
-		double[] rotationMatrix = new double[] {
+		float[] rotationMatrix = new float[] 
+		{
 			1-2*y*y-2*z*z,    2*x*y-2*z*w,    2*x*z+2*y*w,  0,
 			  2*x*y+2*z*w,  1-2*x*x-2*z*z,    2*y*z-2*x*w,  0,
 			  2*x*z-2*y*w,    2*y*z+2*x*w,  1-2*x*x-2*y*y,  0,
@@ -369,10 +372,8 @@ public class Transform
 	// package-private
 	static Transform scale(float sx, float sy, float sz)
 	{
-		/* Only scale if there's a change in scale on any of the axis. */
-		if (sx == 1 && sy == 1 && sz == 1) { return null; }
-
-		float[] scaleMatrix = new float[] {
+		float[] scaleMatrix = new float[] 
+		{
 			sx,  0,  0, 0,
 			 0, sy,  0, 0,
 			 0,  0, sz, 0,
@@ -385,10 +386,8 @@ public class Transform
 	// package-private
 	static Transform translate(float tx, float ty, float tz)
 	{
-		/* Only translate if there's actual translation in any axis. */
-		if (tx == 0 && ty == 0 && tz == 0) { return null; }
-
-		float[] translationMatrix = new float[] {
+		float[] translationMatrix = new float[] 
+		{
 			1, 0, 0, tx,
 			0, 1, 0, ty,
 			0, 0, 1, tz,
@@ -400,17 +399,7 @@ public class Transform
 
 	/* ------------------------- private methods ------------------------- */
 
-	private Transform(float[] matrix)
-	{
-		this.matrix = matrix;
-	}
-
-	private Transform(double[] matrix)
-	{
-		this.matrix = new float[16];
-		/* System.arraycopy cannot be used here due to type casting. Also there's no java function to implicitly do that like there is for Doubles. */
-		for (int i = 0; i < 16; i++) { this.matrix[i] = (float) matrix[i];}
-	}
+	private Transform(float[] matrix) { this.matrix = matrix; }
 
 	private static float[] multiply(float[] left, float[] right)
 	{
