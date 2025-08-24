@@ -922,6 +922,8 @@ public class Loader
 		}
 		dis.close();
 
+		// TODO: Return only the root level objects, that is, those not referenced by any other objects.
+
 		return new Object3D[]{objs.elementAt(objs.size()-1)};
 	}
 

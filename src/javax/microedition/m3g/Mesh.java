@@ -44,108 +44,75 @@ public class Mesh extends Node
 		return copy;
 	}
 
-	@Override
-	public int applyAnimation(int time) 
-	{
-		int minValidity = super.applyAnimation(time);
-		int validity;
-		if (vertices != null && minValidity > 0) 
-		{
-			validity = vertices.applyAnimation(time);
-			minValidity = Math.min(validity, minValidity);
-		}
-
-		if (appearances != null) 
-		{
-			for (int i = 0; i < submeshes.length && minValidity > 0; i++) 
-			{
-				Appearance app = appearances[i];
-				if (app != null) 
-				{
-					validity = app.applyAnimation(time);
-					minValidity = Math.min(validity, minValidity);
-				}
-			}
-		}
-
-		return minValidity;
-	}
-
-	@Override
-	public Object3D findID(int userID) 
-	{
-		Object3D found = super.findID(userID);
-
-		if (found == null) { found = vertices.findID(userID); }
-		for (int i = 0; (found == null) && (i < submeshes.length); i++) 
-		{
-			if (submeshes[i] != null) { found = submeshes[i].findID(userID);}
-			if ((found == null) && (appearances[i] != null)) { found = appearances[i].findID(userID);}
-		}
-		return found;
-	}
-
 	public Mesh(VertexBuffer vertices, IndexBuffer submesh, Appearance appearance) 
 	{
-		if ((vertices == null) || (submesh == null)) { throw new NullPointerException(); }
+		if ((vertices == null) || (submesh == null)) { throw new NullPointerException("Cannot create mesh due to a null element"); }
 
 		this.vertices = vertices;
 		this.submeshes = new IndexBuffer[]{submesh};
-		this.appearances = new Appearance[]{appearance};
+		if(appearance != null) // Appearance can be null here
+		{ 
+			this.appearances = new Appearance[]{appearance};
+			addReference(this.appearances[0]);
+		} 
+		addReference(this.vertices);
+		addReference(this.submeshes[0]);
 	}
 
 	public Mesh(VertexBuffer vertices, IndexBuffer[] submeshes, Appearance[] appearances) 
 	{
 		if ((vertices == null) || (submeshes == null) || hasArrayNullElement(submeshes)) 
 		{
-			throw new NullPointerException();
+			throw new NullPointerException("Cannot create mesh due to a null element");
 		}
 		if ((submeshes.length == 0) || ((appearances != null) && (appearances.length < submeshes.length))) 
 		{
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("Cannot create mesh, one of the provided arguments is invalid");
 		}
 
 		this.vertices = vertices;
 		this.submeshes = new IndexBuffer[submeshes.length];
 		this.appearances = new Appearance[submeshes.length];
-		System.arraycopy(submeshes, 0, this.submeshes, 0, submeshes.length);
-		if (appearances != null) { System.arraycopy(appearances, 0, this.appearances, 0, appearances.length); }
+
+		for (int i = 0; i < submeshes.length; i++) 
+		{
+			if (submeshes[i] == null) { throw new NullPointerException("Cannot add a null submesh to this mesh object"); }
+
+			this.submeshes[i] = submeshes[i];
+			addReference(this.submeshes[i]);
+
+			if (appearances != null && appearances[i] != null) 
+			{
+				this.appearances[i] = appearances[i];
+				addReference(this.appearances[i]);
+			}
+		}
+
+		addReference(this.vertices);
 	}
 
-	public Appearance getAppearance(int index) { return appearances[index]; }
+	public Appearance getAppearance(int index) 
+	{ 
+		if (index < 0 || index >= submeshes.length) { throw new IndexOutOfBoundsException("Cannot get invalid appearance index"); }
+		return appearances[index]; 
+	}
 
-	public IndexBuffer getIndexBuffer(int index) { return submeshes[index]; }
+	public IndexBuffer getIndexBuffer(int index) 
+	{ 
+		if (index < 0 || index >= submeshes.length) { throw new IndexOutOfBoundsException("Cannot get invalid index buffer index"); }
+		return submeshes[index]; 
+	}
 
 	public int getSubmeshCount() { return submeshes.length; }
 
 	public VertexBuffer getVertexBuffer() { return vertices; }
 
-	public void setAppearance(int index, Appearance appearance) { appearances[index] = appearance; }
-
-	@Override
-	public int doGetReferences(Object3D[] references) 
-	{
-		int parentCount = super.doGetReferences(references);
-
-		if (vertices != null) 
-		{
-			if (references != null) { references[parentCount] = vertices; }
-			++parentCount;
-		}
-
-		for (int i = 0; i < submeshes.length; ++i) 
-		{
-			if (references != null) { references[parentCount] = (Object3D) submeshes[i]; }
-			++parentCount;
-		}
-
-		for (int i = 0; i < appearances.length; ++i) 
-		{
-			if (references != null) { references[parentCount] = (Object3D) appearances[i]; }
-			++parentCount;
-		}
-
-		return parentCount;
+	public void setAppearance(int index, Appearance appearance) 
+	{ 
+		if (index < 0 || index >= submeshes.length) { throw new IndexOutOfBoundsException("Cannot set to invalid appearance index"); }
+		removeReference(appearances[index]);
+		appearances[index] = appearance;
+		addReference(appearances[index]);
 	}
 
 	private boolean hasArrayNullElement(IndexBuffer[] buffer) 

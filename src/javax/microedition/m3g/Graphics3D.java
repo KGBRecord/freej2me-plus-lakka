@@ -867,21 +867,6 @@ public class Graphics3D
 											(Byte.toUnsignedInt(color_vertex[1]) << 8) | Byte.toUnsignedInt(color_vertex[2]);
 									}
 
-									// Clipped triangles tend to have two vertices sharing the exact same x or y coordinate, which is a problem
-									// for area calculations. We could use barycentric coordinates, but they don't seem to work at all in this context
-									// and result in about half of the screen triangles having invalid weights and blending improperly.
-
-									// The best approach so far is making sure that none of the areas below result in zero, which is why these small shifts are present.
-									// Hacky, but it's what works best for now
-									final float epsilon = 0.001f;
-
-									// Ensure distinct x and y values
-									if (Math.abs(xTop - xBot) < epsilon)  { xTop += epsilon; }
-									if (Math.abs(xMidL - xBot) < epsilon) { xMidL += epsilon; }
-									if (Math.abs(yBot - yTop) < epsilon)  { yTop += epsilon; }
-									if (Math.abs(yMid - yTop) < epsilon)  { yMid += epsilon; }
-									if (Math.abs(yMid - yBot) < epsilon)  { yMid += epsilon; }
-
 									// Calculate weights based on pixel position
 									float totalArea = Math.abs((xBot - xTop) * (yMid - yTop) - (xBot - xMidL) * (yBot - yTop));
 									float areaA = Math.abs((xBot - xTop) * (y - yTop) - (x - xTop) * (yBot - yTop));

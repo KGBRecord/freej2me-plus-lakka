@@ -26,6 +26,7 @@ public class SkinnedMesh extends Mesh
 		super(vertices, submeshes, appearances);
 		checkSkeleton(skeleton);
 		this.skeleton = skeleton;
+		addReference(this.skeleton);
 	}
 
 	public SkinnedMesh(VertexBuffer vertices, IndexBuffer submeshes, Appearance appearances, Group skeleton) 
@@ -33,6 +34,7 @@ public class SkinnedMesh extends Mesh
 		super(vertices, submeshes, appearances);
 		checkSkeleton(skeleton);
 		this.skeleton = skeleton;
+		addReference(this.skeleton);
 	}
 
 	private SkinnedMesh() { }
@@ -44,40 +46,6 @@ public class SkinnedMesh extends Mesh
 		super.duplicate((Mesh) copy);
 		copy.skeleton = skeleton;
 		return copy;
-	}
-
-	@Override
-	public int doGetReferences(Object3D[] references) 
-	{
-		int num = super.doGetReferences(references);
-		if (skeleton != null) 
-		{
-			if (references != null) { references[num] = skeleton; }
-			num++;
-		}
-		return num;
-	}
-
-	@Override
-	public Object3D findID(int userID) 
-	{
-		Object3D found = super.findID(userID);
-
-		if ((found == null) && (skeleton != null)) { found = skeleton.findID(userID); }
-		return found;
-	}
-
-	@Override
-	public int applyAnimation(int time) 
-	{
-		int validity = super.applyAnimation(time);
-
-		if (validity > 0) 
-		{
-			int validity2 = skeleton.applyAnimation(time);
-			return Math.min(validity, validity2);
-		}
-		return 0;
 	}
 
 	public void addTransform(Node bone, int weight, int firstVertex, int numVertices) 

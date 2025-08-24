@@ -145,7 +145,9 @@ public class Texture2D extends Transformable
 			!isPowerOfTwo(image.getHeight()))
 			{ throw new java.lang.IllegalArgumentException("Invalid texture size"); }
 
+		removeReference(this.texImage);
 		this.texImage = image;
+		addReference(this.texImage);
 	}
 
 	public void setWrapping(int wrapS, int wrapT)

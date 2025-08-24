@@ -28,45 +28,31 @@ public class MorphingMesh extends Mesh
 	{
 		super(base, submeshes, appearances);
 		checkTargets(targets);
-		this.targets = targets;
+		this.targets = new VertexBuffer[targets.length];
+
+		for (int targetNum = targets.length - 1; targetNum >= 0; targetNum--) 
+		{
+			this.targets[targetNum] = targets[targetNum];
+			addReference(this.targets[targetNum]);
+		}
+		weights = new float[targets.length];
 	}
 
 	public MorphingMesh(VertexBuffer base, VertexBuffer[] targets, IndexBuffer submeshes, Appearance appearances) 
 	{
 		super(base, submeshes, appearances);
 		checkTargets(targets);
-		this.targets = targets;
+		this.targets = new VertexBuffer[targets.length];
+
+		for (int targetNum = targets.length - 1; targetNum >= 0; targetNum--) 
+		{
+			this.targets[targetNum] = targets[targetNum];
+			addReference(this.targets[targetNum]);
+		}
+		weights = new float[targets.length];
 	}
 
 	private MorphingMesh() { }
-
-	@Override
-	public int doGetReferences(Object3D[] references) 
-	{
-		int num = super.doGetReferences(references);
-		for (int i = 0; i < targets.length; i++) 
-		{
-			if (targets[i] != null) 
-			{
-				if (references != null) { references[num] = targets[i]; }
-				num++;
-			}
-		}
-		return num;
-	}
-
-	@Override
-	public Object3D findID(int userID) 
-	{
-		Object3D found = super.findID(userID);
-
-		for (int i = 0; (found == null) && (i < targets.length); i++)
-		{
-			if (targets[i] != null) { found = targets[i].findID(userID); }
-		}
-			
-		return found;
-	}
 
 	public VertexBuffer getMorphTarget(int index) { return targets[index]; }
 
@@ -97,10 +83,7 @@ public class MorphingMesh extends Mesh
 	private void checkTargets(VertexBuffer[] targets) 
 	{
 
-		if (targets == null) 
-		{
-			throw new NullPointerException();
-		}
+		if (targets == null) { throw new NullPointerException("MorphingMesh has no Target array"); }
 		if (targets.length == 0) 
 		{
 			throw new IllegalArgumentException("Skeleton already has a parent");
@@ -109,7 +92,8 @@ public class MorphingMesh extends Mesh
 		boolean hasArrayNullElement = false;
 		for (int i = 0; i < targets.length; i++) 
 		{
-			if (targets[i] == null) { hasArrayNullElement = true; }
+			if(targets[i] == null) { hasArrayNullElement = true; }
+			if(targets[i].getVertexCount() == 0) { throw new IllegalArgumentException("MorphingMesh target has no vertices"); }
 		}
 		if (hasArrayNullElement) 
 		{

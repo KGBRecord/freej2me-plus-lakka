@@ -106,7 +106,9 @@ public class Background extends Object3D
 		{
 			throw new IllegalArgumentException("Image format must be RGB or RGBA");
 		}
+		removeReference(this.image);
 		this.image = img;
+		addReference(this.image);
 
 		texture = new Texture2D(img);
 		texture.setFiltering(Texture2D.FILTER_LINEAR, Texture2D.FILTER_LINEAR);

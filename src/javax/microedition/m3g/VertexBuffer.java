@@ -59,7 +59,8 @@ public class VertexBuffer extends Object3D
 		this.texCoordBias = new float[Graphics3D.NUM_TEXTURE_UNITS][0];
 	}
 
-	Object3D duplicateImpl() {
+	Object3D duplicateImpl() 
+	{
 		VertexBuffer copy = new VertexBuffer();
 		copy.fixed = fixed;
 		copy.length = length;
@@ -68,24 +69,28 @@ public class VertexBuffer extends Object3D
 		copy.colors = colors;
 		copy.positionScale = positionScale;
 
-		if (positionBias != null) {
+		if (positionBias != null) 
+		{
 			copy.positionBias = new float[positionBias.length];
 			System.arraycopy(positionBias, 0, copy.positionBias, 0, positionBias.length);
 		}
 
-		if (texCoords != null) {
-			for (int i = 0; i < texCoords.length; i++) {
-				copy.texCoords[i] = texCoords[i];
+		if (texCoords != null) 
+		{
+			for (int i = 0; i < texCoords.length; i++) { copy.texCoords[i] = texCoords[i]; }
+		}
+
+		if (texCoordBias != null) 
+		{
+			copy.texCoordBias = new float[texCoordBias.length][3];
+			for (int i = 0; i < texCoordBias.length; i++)
+			{
+				System.arraycopy(texCoordBias[i], 0, copy.texCoordBias[i], 0, texCoordBias[i].length);
 			}
 		}
 
-		if (texCoordBias != null) {
-			copy.texCoordBias = new float[texCoordBias.length][3];
-			for (int i = 0; i < texCoordBias.length; i++)
-				System.arraycopy(texCoordBias[i], 0, copy.texCoordBias[i], 0, texCoordBias[i].length);
-		}
-
-		if (texCoordScale != null) {
+		if (texCoordScale != null) 
+		{
 			copy.texCoordScale = new float[texCoordScale.length];
 			System.arraycopy(texCoordScale, 0, copy.texCoordScale, 0, texCoordScale.length);
 		}
@@ -150,8 +155,10 @@ public class VertexBuffer extends Object3D
 			if (colors.getComponentType() != 1 || colors.getComponentCount() < 3 || 4 < colors.getComponentCount() || (this.fixed && colors.getVertexCount() != this.length))
 				{ throw new IllegalArgumentException("Trying to set colors with invalid context."); }
 
+			removeReference(this.colors);
 			this.updateLength(colors.getVertexCount());
 			this.colors = colors;
+			addReference(this.colors);
 		}
 	}
 
@@ -170,8 +177,10 @@ public class VertexBuffer extends Object3D
 			if (normals.getComponentCount() != 3 || (this.fixed && normals.getVertexCount() != this.length))
 				{ throw new IllegalArgumentException("Trying to set colors with invalid context."); }
 
+			removeReference(this.normals);
 			this.updateLength(normals.getVertexCount());
 			this.normals = normals;
+			addReference(this.normals);
 		}
 	}
 
@@ -191,14 +200,17 @@ public class VertexBuffer extends Object3D
 
 			if (bias == null) { bias = new float[3]; }
 
+			removeReference(this.positions);
 			this.updateLength(positions.getVertexCount());
 			this.positions = positions;
+			addReference(this.positions);
 			this.positionScale = scale;
 			this.positionBias = bias;
+			
 		}
 	}
 
-	public void setTexCoords( int index, VertexArray texCoords, float scale, float[] bias) 
+	public void setTexCoords(int index, VertexArray texCoords, float scale, float[] bias) 
 	{
 		/* As per JSR-184, throw IndexOutOfBoundsException if if index != [0,N] where N is the implementation specific maximum texturing unit index. */
 		if (index < 0 || index >= Graphics3D.NUM_TEXTURE_UNITS)
@@ -220,8 +232,10 @@ public class VertexBuffer extends Object3D
 
 			if (bias == null) { bias = new float[componentCount]; }
 
+			removeReference(this.texCoords[index]);
 			this.updateLength(texCoords.getVertexCount());
 			this.texCoords[index] = texCoords;
+			addReference(this.texCoords[index]);
 			this.texCoordScale[index] = scale;
 			this.texCoordBias[index] = bias;
 		}

@@ -53,6 +53,7 @@ public class AnimationTrack extends Object3D
 		if (!isCompatible(sequence.getComponentCount(), property)) { throw new IllegalArgumentException("Sequence is not compatible with property"); }
 		this.sequence = sequence;
 		this.property = property;
+		addReference(this.sequence);
 	}
 
 	Object3D duplicateImpl() 
@@ -60,34 +61,6 @@ public class AnimationTrack extends Object3D
 		AnimationTrack copy = new AnimationTrack((KeyframeSequence) sequence.duplicate(), property);
 		copy.controller = (AnimationController) controller.duplicateImpl();
 		return copy;
-	}
-
-	@Override
-	public int doGetReferences(Object3D[] references) 
-	{
-		int num = super.doGetReferences(references);
-		if (sequence != null) 
-		{
-			if (references != null) { references[num] = (Object3D) sequence; }
-			num++;
-		}
-		if (controller != null) 
-		{
-			if (references != null) { references[num] = (Object3D) controller; }
-			num++;
-		}
-		return num;
-	}
-
-	@Override
-	public Object3D findID(int userID) 
-	{
-		Object3D found = super.findID(userID);
-
-		if (found == null && sequence != null) { found = sequence.findID(userID); }
-		if (found == null && controller != null) { found = controller.findID(userID); }
-
-		return found;
 	}
 
 	public void getContribution(int time, float[] accumSamples, float[] weight, int[] validity) 
@@ -126,7 +99,12 @@ public class AnimationTrack extends Object3D
 
 	public AnimationController getController() { return controller; }
 
-	public void setController(AnimationController controller) { this.controller = controller; }
+	public void setController(AnimationController controller) 
+	{ 
+		removeReference(this.controller);
+		this.controller = controller; 
+		addReference(this.controller);
+	}
 
 	public int getTargetProperty() { return property; }
 

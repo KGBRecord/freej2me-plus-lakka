@@ -71,6 +71,7 @@ public class Group extends Node
 				linkChild.left = child;
 			}
 			child.setParent(this);
+			addReference(child);
 		}
 	}
 
@@ -100,56 +101,6 @@ public class Group extends Node
 			} while (child != firstChild);
 		}
 		return count;
-	}
-
-	@Override
-	public int doGetReferences(Object3D[] references) 
-	{
-		int num = super.doGetReferences(references);
-		Node child = firstChild;
-		if (child != null) 
-		{
-			do 
-			{
-				if (references != null) { references[num] = child; }
-				child = child.right;
-				num++;
-			} while (child != firstChild);
-		}
-		return num;
-	}
-
-	public Object3D findID(int userID) 
-	{
-		Object3D found = super.findID(userID);
-		Node child = firstChild;
-		if (child != null && found == null) 
-		{
-			do 
-			{
-				found = child.findID(userID);
-				child = child.right;
-			} while (found == null && child != firstChild);
-		}
-		return found;
-	}
-
-	@Override
-	public int applyAnimation(int time) 
-	{
-		int minValidity = super.applyAnimation(time);
-		Node child = firstChild;
-		int validity;
-		if (child != null && minValidity > 0) 
-		{
-			do 
-			{
-				validity = child.applyAnimation(time);
-				minValidity = Math.min(validity, minValidity);
-				child = child.right;
-			} while (minValidity > 0 && child != firstChild);
-		}
-		return minValidity;
 	}
 
 	@Override
@@ -198,6 +149,7 @@ public class Group extends Node
 					n.left = null;
 					n.right = null;
 					n.setParent(null);
+					removeReference(child);
 					return;
 				}
 				n = n.right;

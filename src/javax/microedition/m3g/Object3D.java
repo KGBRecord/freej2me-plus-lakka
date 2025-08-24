@@ -25,11 +25,97 @@ public abstract class Object3D
 	protected int userID = 0;
 	protected Object userObject = null;
 	Vector<AnimationTrack> animationTracks = new Vector<AnimationTrack>();
+	Vector<Object3D> curReferences = new Vector<Object3D>();
 
 	void updateProperty(int property, float[] value) { }
 
-	int applyAnimation(int time) 
+	public final Object3D duplicate() 
 	{
+		Object3D copy = duplicateImpl();
+		copy.userID = userID;
+		copy.userObject = userObject;
+		copy.animationTracks = new Vector<AnimationTrack>();
+		for (int i = 0; i < animationTracks.size(); i++) { copy.animationTracks.add((AnimationTrack) animationTracks.elementAt(i).duplicateImpl()); }
+		
+		return copy;
+	}
+
+	abstract Object3D duplicateImpl();
+
+	public Object3D find(int userID) 
+	{
+		if (this.userID == userID) { return this; }
+
+		Object3D found = null;
+
+		for (int obj = 0; obj < this.curReferences.size(); obj++) 
+		{ 
+			found = ((Object3D) this.curReferences.get(obj)).find(userID);
+			if(found != null) { return found; }
+		}
+
+		return null;
+	}
+
+	public int getReferences(Object3D[] references) 
+	{ 
+		if(references != null && references.length < curReferences.size()) { throw new IllegalArgumentException("references array is not large enough to hold all of this object's references"); }
+		
+		if (references != null) 
+		{
+			for (int reference = 0; reference < curReferences.size(); ++reference) 
+			{
+				references[reference] = (Object3D) curReferences.get(reference);
+			}
+		}
+
+		return curReferences.size();
+	}
+
+	public int getUserID() { return userID; }
+
+	public void setUserID(int userID) { this.userID = userID; }
+
+	public Object getUserObject() { return userObject; }
+
+	public void setUserObject(Object userObject) { this.userObject = userObject; }
+
+	public void addAnimationTrack(AnimationTrack animationTrack) 
+	{
+		if (animationTrack == null) { throw new NullPointerException("AnimationTrack cannot be null"); }
+
+		if (animationTracks.contains(animationTrack))
+		{
+			throw new IllegalArgumentException("AnimationTrack already exists");
+		}
+
+		int newTrackTarget = animationTrack.getTargetProperty();
+		int components = animationTrack.getKeyframeSequence().getComponentCount();
+		int i;
+		for (i = 0; i < animationTracks.size(); i++) 
+		{
+			AnimationTrack track = (AnimationTrack) animationTracks.elementAt(i);
+
+			if (track.getTargetProperty() > newTrackTarget) { break; }
+
+			if (track.getTargetProperty() == newTrackTarget && (track.getKeyframeSequence().getComponentCount() != components)) 
+			{
+				throw new IllegalArgumentException();
+			}
+		}
+
+		animationTracks.add(i, animationTrack);
+		addReference(animationTrack);
+	}
+
+	public AnimationTrack getAnimationTrack(int index) { return (AnimationTrack) animationTracks.elementAt(index); }
+
+	public void removeAnimationTrack(AnimationTrack animationTrack) { animationTracks.removeElement(animationTrack); }
+
+	public int getAnimationTrackCount() { return animationTracks.size(); }
+
+	public final int animate(int time) 
+	{ 
 		int validity = 0x7FFFFFFF;
 
 		if (animationTracks.isEmpty()) { return validity; }
@@ -72,106 +158,17 @@ public abstract class Object3D
 		return validity;
 	}
 
-	public final Object3D duplicate() 
-	{
-		Object3D copy = duplicateImpl();
-		copy.userID = userID;
-		copy.userObject = userObject;
-		copy.animationTracks = new Vector<AnimationTrack>();
-		for (int i = 0; i < animationTracks.size(); i++) { copy.animationTracks.add((AnimationTrack) animationTracks.elementAt(i).duplicateImpl()); }
-		
-		return copy;
-	}
-
-	abstract Object3D duplicateImpl();
-
-	public int doGetReferences(Object3D[] references) 
-	{
-		if(references != null && references.length < animationTracks.size()) { throw new IllegalArgumentException("references array is not large enough to hold all of this object's references"); }
-		
-		if (!animationTracks.isEmpty()) 
-		{
-			if (references != null) 
-			{
-				for (int i = 0; i < animationTracks.size(); ++i) 
-				{
-					references[i] = (Object3D) animationTracks.elementAt(i);
-				}
-			}
-			return animationTracks.size();
-		}
-		
-		return 0;
-	}
-
-	public Object3D findID(int userID) 
-	{
-		if (this.userID == userID) { return this; }
-
-		if (animationTracks != null) 
-		{
-			for (int i = 0; i < animationTracks.size(); i++) 
-			{
-				AnimationTrack track = (AnimationTrack) animationTracks.elementAt(i);
-				Object3D found = track.findID(userID);
-				if (found != null) { return found; }
-			}
-		}
-			
-		return null;
-	}
-
-	public Object3D find(int userID) 
-	{
-		if (this.userID == userID) { return this; }
-
-		return findID(userID);
-	}
-
-	public int getReferences(Object3D[] references) { return doGetReferences(references); }
-
-	public int getUserID() { return userID; }
-
-	public void setUserID(int userID) { this.userID = userID; }
-
-	public Object getUserObject() { return this.userObject; }
-
-	public void setUserObject(Object userObject) { this.userObject = userObject; }
-
-	public void addAnimationTrack(AnimationTrack animationTrack) 
-	{
-		if (animationTrack == null) { throw new NullPointerException(); }
-
-		if (animationTracks.contains(animationTrack))
-		{
-			throw new IllegalArgumentException("AnimationTrack already exists");
-		}
-
-		int newTrackTarget = animationTrack.getTargetProperty();
-		int components = animationTrack.getKeyframeSequence().getComponentCount();
-		int i;
-		for (i = 0; i < animationTracks.size(); i++) 
-		{
-			AnimationTrack track = (AnimationTrack) animationTracks.elementAt(i);
-
-			if (track.getTargetProperty() > newTrackTarget) { break; }
-
-			if (track.getTargetProperty() == newTrackTarget && (track.getKeyframeSequence().getComponentCount() != components)) 
-			{
-				throw new IllegalArgumentException();
-			}
-		}
-
-		animationTracks.add(i, animationTrack);
-	}
-
-	public AnimationTrack getAnimationTrack(int index) { return (AnimationTrack) animationTracks.elementAt(index); }
-
-	public void removeAnimationTrack(AnimationTrack animationTrack) { animationTracks.removeElement(animationTrack); }
-
-	public int getAnimationTrackCount() { return animationTracks.size(); }
-
-	public final int animate(int time) { return applyAnimation(time); }
-
 	boolean animTrackCompatible(AnimationTrack animationtrack) { return false; }
+
+	protected void addReference(Object3D obj) 
+	{
+		if(obj == null) { return; } 
+		curReferences.add(obj); 
+	}
+
+	protected void removeReference(Object3D obj) 
+	{
+		if(obj == null) { return; }
+		curReferences.remove(obj);
+	}
 }

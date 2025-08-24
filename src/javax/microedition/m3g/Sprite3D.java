@@ -74,7 +74,12 @@ public class Sprite3D extends Node
 
 	public boolean isScaled() { return scaled; }
 
-	public void setAppearance(Appearance a) { appearance = a; }
+	public void setAppearance(Appearance a) 
+	{ 
+		removeReference(appearance);
+		appearance = a; 
+		addReference(appearance);
+	}
 
 	public void setCrop(int cropX, int cropY, int width, int height)
 	{
@@ -86,7 +91,9 @@ public class Sprite3D extends Node
 
 	public void setImage(Image2D img) 
 	{ 
+		removeReference(this.image);
 		this.image = image;
+		addReference(this.image);
 		texture = (Texture2D) textures.get(image);
 
 		if (texture == null) {
