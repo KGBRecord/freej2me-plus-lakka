@@ -36,4 +36,6 @@ public abstract class IndexBuffer extends Object3D
 		System.arraycopy(this.indices, 0, indices, 0, this.indexCount);
 	}
 
+	// Faster alternative to the above that doesn't copy the index array, used by Graphics3D's render()
+	public int[] getIndexArray() { return indices; }
 }

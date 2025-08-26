@@ -16,54 +16,69 @@
 */
 package javax.microedition.m3g;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-// package-private
 class Triangle
 {
-	static float[][] xp = new float[][] {{ 0, 0, 0, 0 }, {-1, 0, 0, 1 }};
-	static float[][] xn = new float[][] {{ 0, 0, 0, 0 }, { 1, 0, 0, 1 }};
-	static float[][] yp = new float[][] {{ 0, 0, 0, 0 }, { 0,-1, 0, 1 }};
-	static float[][] yn = new float[][] {{ 0, 0, 0, 0 }, { 0, 1, 0, 1 }};
-	static float[][] zp = new float[][] {{ 0, 0, 0, 0 }, { 0, 0,-1, 1 }};
-	static float[][] zn = new float[][] {{ 0, 0, 0, 0 }, { 0, 0, 1, 1 }};
+	// Clipping planes
+	private static final float[]  p = new float[] { 0, 0, 0, 0};
+	private static final float[] xp = new float[] {-1, 0, 0, 1};
+	private static final float[] xn = new float[] { 1, 0, 0, 1};
+	private static final float[] yp = new float[] { 0,-1, 0, 1};
+	private static final float[] yn = new float[] { 0, 1, 0, 1};
+	private static final float[] zp = new float[] { 0, 0,-1, 1};
+	private static final float[] zn = new float[] { 0, 0, 1, 1};
 
 	// Let's reuse this when clipping, quite a bit faster than creating ArrayLists each time
-	static final float[][] vert = new float[3][4];
-	static final float[][] tex = new float[3][4];
+	private static final float[] vert = new float[4];
 
-	float[] v;
+	private final float[] v;
 		// xA, yA, zA, wA,
 		// xB, yB, zB, wB,
 		// xC, yC, zC, wC;
 		// 0   1   2   3
 
-	float[] t;
+	private float[] t;
 		// sA, tA, rA, qA,
 		// sB, tB, rB, qB,
 		// sC, tC, rC, qC;
 		// 0   1   2   3
 
-	int[] bufIndex;
+	private int[] bufIndex;
 
-	int orientation = 1; // will be -1 in cases where triangles in a strip array have inverted winding to save memory by reusing vertices
+	private int triangleIndex = 0;
 
-	Triangle(float[] vertices, float[] texcoords, int[] indices)
-	{
-		this.v = vertices;
-		this.t = texcoords;
-		this.bufIndex = indices;
+	Triangle(float[] vertices, int[] indices, int triIndex) 
+	{ 
+		v = vertices;
+		bufIndex = indices;
+		triangleIndex = triIndex;
 	}
 
-	static Triangle[] fromVertAndTris(float[] vert, float[] texc, int[] tris)
+	public static final Triangle[] fromVertAndTris(float[] vert, float[] texc, int[] tris, int[] renderableTriangles, float near, int cullingMode)
 	{
-		Triangle[] result = new Triangle[tris.length / 3];
+		renderableTriangles[0] = 0;
+		boolean sharesVertices = false;
+		final Triangle[] result = new Triangle[tris.length / 3];
 
 		for (int tri_id = 0; tri_id < tris.length / 3; tri_id++) 
-		{
-			result[tri_id] = new Triangle(new float[] //Vertex positions
+		{			
+			if (tri_id > 0) 
+			{
+				sharesVertices = (tris[3* tri_id + 0] == tris[3* (tri_id-1) + 1] &&
+								tris[3* tri_id + 1] == tris[3* (tri_id-1) + 2]) ||
+								(tris[3* tri_id + 1] == tris[3* (tri_id-1) + 0] &&
+								tris[3* tri_id + 2] == tris[3* (tri_id-1) + 1]);
+			}
+
+			// Swap vertices for triangles if sharing is detected
+			if (sharesVertices) 
+			{
+				// Swap indexA and indexB
+				int temp = tris[3 * tri_id + 0];
+				tris[3 * tri_id + 0] = tris[3 * tri_id + 1];
+				tris[3 * tri_id + 1] = temp;
+			}
+
+			result[renderableTriangles[0]] = new Triangle(new float[] // Vertex positions
 			{
 				vert[4 * tris[3 * tri_id + 0] + 0], // xA
 				vert[4 * tris[3 * tri_id + 0] + 1], // yA
@@ -78,81 +93,101 @@ class Triangle
 				vert[4 * tris[3 * tri_id + 2] + 2], // zC
 				vert[4 * tris[3 * tri_id + 2] + 3]  // wC
 			}, 
-			texc == null ? null : new float[] // Tex Coordinates
-			{
-				texc[4 * tris[3 * tri_id + 0] + 0],
-				texc[4 * tris[3 * tri_id + 0] + 1],
-				texc[4 * tris[3 * tri_id + 0] + 2],
-				texc[4 * tris[3 * tri_id + 0] + 3],
-				texc[4 * tris[3 * tri_id + 1] + 0],
-				texc[4 * tris[3 * tri_id + 1] + 1],
-				texc[4 * tris[3 * tri_id + 1] + 2],
-				texc[4 * tris[3 * tri_id + 1] + 3],
-				texc[4 * tris[3 * tri_id + 2] + 0],
-				texc[4 * tris[3 * tri_id + 2] + 1],
-				texc[4 * tris[3 * tri_id + 2] + 2],
-				texc[4 * tris[3 * tri_id + 2] + 3]
-			},
-			new int[] // IndexBuffer Indices
-			{
-				tris[3* tri_id + 0], //vA
-				tris[3* tri_id + 1], //vB
-				tris[3* tri_id + 2]  //vC
-			});
-		}
+			tris, // Index buffer data. We don't need to make a sub-array copy, just pass what was received in and the triangle index will take care of the rest
+			tri_id); // Triangle Index
 
-		// If a triangle reuses the last triangle's vertices for better memory efficiency, we'll have to handle them accordingly by inverting its orientation for culling.
-		for (int tri_id = 1; tri_id < result.length; tri_id++) 
-		{
-			boolean sharesVertices = (result[tri_id].bufIndex[0] == result[tri_id - 1].bufIndex[1] &&
-									  result[tri_id].bufIndex[1] == result[tri_id - 1].bufIndex[2]) ||
-									 (result[tri_id].bufIndex[1] == result[tri_id - 1].bufIndex[0] &&
-									  result[tri_id].bufIndex[2] == result[tri_id - 1].bufIndex[1]);
-	
-			// Invert orientation based on the previous triangle's
-			if (sharesVertices) { result[tri_id].orientation = -result[tri_id - 1].orientation; }
+			// Check if this triangle should be rendered or clipped/culled.
+			for (int i = 0; i < 3; i++) // Go through vertices A, B and C
+			{ 
+				if (result[renderableTriangles[0]].v[i * 4 + 3] >= near) // W cannot be smaller than the near plane, otherwise we'll erroneously cull triangles close to the camera
+				{ 
+					result[renderableTriangles[0]].v[i * 4 + 0] /= result[renderableTriangles[0]].v[i * 4 + 3]; // x / w
+					result[renderableTriangles[0]].v[i * 4 + 1] /= result[renderableTriangles[0]].v[i * 4 + 3]; // y / w
+					result[renderableTriangles[0]].v[i * 4 + 2] /= result[renderableTriangles[0]].v[i * 4 + 3]; // z / w
+				}
+			}
+
+			boolean cullTriangle = (cullingMode == PolygonMode.CULL_BACK && result[renderableTriangles[0]].isCounterClockwise()) ||
+								(cullingMode == PolygonMode.CULL_FRONT && !result[renderableTriangles[0]].isCounterClockwise());
+
+			if (!cullTriangle)
+			{
+				// Move visible triangles (not clipped nor culled) to the front of the array
+				if(!result[renderableTriangles[0]].clip()) 
+				{ 
+					// We now have to restore the renderable geometry back to its original coordinates, otherwise rendering will be broken
+					for (int i = 0; i < 3; i++) 
+					{
+						result[renderableTriangles[0]].v[i * 4 + 0] *= result[renderableTriangles[0]].v[i * 4 + 3]; // x * w
+						result[renderableTriangles[0]].v[i * 4 + 1] *= result[renderableTriangles[0]].v[i * 4 + 3]; // y * w
+						result[renderableTriangles[0]].v[i * 4 + 2] *= result[renderableTriangles[0]].v[i * 4 + 3]; // z * w
+					}
+
+					// Triangle will be rendered, so we can now bother with allocating texture coordinates
+					result[renderableTriangles[0]].setTexCoords(texc == null ? null : new float[] // Tex Coordinates
+					{
+						texc[4 * tris[3 * tri_id + 0] + 0], // sA
+						texc[4 * tris[3 * tri_id + 0] + 1], // tA
+						texc[4 * tris[3 * tri_id + 0] + 2], // rA
+						texc[4 * tris[3 * tri_id + 0] + 3], // qA
+						texc[4 * tris[3 * tri_id + 1] + 0], // sB
+						texc[4 * tris[3 * tri_id + 1] + 1], // tB
+						texc[4 * tris[3 * tri_id + 1] + 2], // rB
+						texc[4 * tris[3 * tri_id + 1] + 3], // qB
+						texc[4 * tris[3 * tri_id + 2] + 0], // sC
+						texc[4 * tris[3 * tri_id + 2] + 1], // tC
+						texc[4 * tris[3 * tri_id + 2] + 2], // rC
+						texc[4 * tris[3 * tri_id + 2] + 3]  // qC
+					});
+
+					result[renderableTriangles[0]].project(); 
+					renderableTriangles[0]++;
+				}
+			}
 		}
 
 		return result;
 	}
 
-	float xA() { return this.v[4*0 + 0]; }
-	float yA() { return this.v[4*0 + 1]; }
-	float zA() { return this.v[4*0 + 2]; }
-	float wA() { return this.v[4*0 + 3]; }
-	float xB() { return this.v[4*1 + 0]; }
-	float yB() { return this.v[4*1 + 1]; }
-	float zB() { return this.v[4*1 + 2]; }
-	float wB() { return this.v[4*1 + 3]; }
-	float xC() { return this.v[4*2 + 0]; }
-	float yC() { return this.v[4*2 + 1]; }
-	float zC() { return this.v[4*2 + 2]; }
-	float wC() { return this.v[4*2 + 3]; }
+	public final float xA() { return v[4 * 0 + 0]; }
+	public final float yA() { return v[4 * 0 + 1]; }
+	public final float zA() { return v[4 * 0 + 2]; }
+	public final float wA() { return v[4 * 0 + 3]; }
+	public final float xB() { return v[4 * 1 + 0]; }
+	public final float yB() { return v[4 * 1 + 1]; }
+	public final float zB() { return v[4 * 1 + 2]; }
+	public final float wB() { return v[4 * 1 + 3]; }
+	public final float xC() { return v[4 * 2 + 0]; }
+	public final float yC() { return v[4 * 2 + 1]; }
+	public final float zC() { return v[4 * 2 + 2]; }
+	public final float wC() { return v[4 * 2 + 3]; }
 
-	float sA() { return this.t[4*0 + 0]; }
-	float tA() { return this.t[4*0 + 1]; }
-	float rA() { return this.t[4*0 + 2]; }
-	float qA() { return this.t[4*0 + 3]; }
-	float sB() { return this.t[4*1 + 0]; }
-	float tB() { return this.t[4*1 + 1]; }
-	float rB() { return this.t[4*1 + 2]; }
-	float qB() { return this.t[4*1 + 3]; }
-	float sC() { return this.t[4*2 + 0]; }
-	float tC() { return this.t[4*2 + 1]; }
-	float rC() { return this.t[4*2 + 2]; }
-	float qC() { return this.t[4*2 + 3]; }
+	public final float sA() { return t[4 * 0 + 0]; }
+	public final float tA() { return t[4 * 0 + 1]; }
+	public final float rA() { return t[4 * 0 + 2]; }
+	public final float qA() { return t[4 * 0 + 3]; }
+	public final float sB() { return t[4 * 1 + 0]; }
+	public final float tB() { return t[4 * 1 + 1]; }
+	public final float rB() { return t[4 * 1 + 2]; }
+	public final float qB() { return t[4 * 1 + 3]; }
+	public final float sC() { return t[4 * 2 + 0]; }
+	public final float tC() { return t[4 * 2 + 1]; }
+	public final float rC() { return t[4 * 2 + 2]; }
+	public final float qC() { return t[4 * 2 + 3]; }
 
-	public boolean clip() 
+	public final int getIndex(int index) { return bufIndex[3*triangleIndex + index]; }
+
+	public final boolean clip() 
 	{		
 		if (isValid()) 
 		{			
 			// Clip against each plane sequentially
-			if (this.clipPlane(xp[0], xp[1]) != null &&
-				this.clipPlane(xn[0], xn[1]) != null &&
-				this.clipPlane(yp[0], yp[1]) != null &&
-				this.clipPlane(yn[0], yn[1]) != null &&
-				this.clipPlane(zp[0], zp[1]) != null &&
-				this.clipPlane(zn[0], zn[1]) != null) 
+			if (clipPlane(xp) != null &&
+				clipPlane(xn) != null &&
+				clipPlane(yp) != null &&
+				clipPlane(yn) != null &&
+				clipPlane(zp) != null &&
+				clipPlane(zn) != null) 
 			{				
 				return false; // If it passed all planes, it means it's at least partially visible, don't clip
 			}
@@ -161,7 +196,7 @@ class Triangle
 		return true;
 	}
 
-	static void transform(Triangle[] triangles, int visibleTris, Transform trVert, Transform trTex)
+	public static final void transform(Triangle[] triangles, int visibleTris, Transform trVert, Transform trTex)
 	{
 		for (int i = 0; i < visibleTris; i++)
 		{
@@ -170,76 +205,60 @@ class Triangle
 		}
 	}
 
-	private boolean isValid()
+	private final boolean isValid()
 	{
-		return
-			this.wA() >= M3GMath.EPSILON ||
-			this.wB() >= M3GMath.EPSILON ||
-			this.wC() >= M3GMath.EPSILON;
+		return wA() >= M3GMath.EPSILON || wB() >= M3GMath.EPSILON || wC() >= M3GMath.EPSILON;
 	}
 
-	public Triangle project()
+	public final void project()
 	{
+		// Apply perspective division to the triangle, it's going to NDC
 		for (int i = 0; i < 3; i++) 
 		{
-			int vertexIndex = 4 * i;
-			float w = this.v[vertexIndex + 3];
-
 			// Project vertex
-			this.v[vertexIndex + 0] /= w; // x / w
-			this.v[vertexIndex + 1] /= w; // y / w
-			this.v[vertexIndex + 2] /= w; // z / w
-			this.v[vertexIndex + 3] = 1f;  // Set w to 1
+			v[4 * i + 0] /= v[4 * i + 3]; // x / w
+			v[4 * i + 1] /= v[4 * i + 3]; // y / w
+			v[4 * i + 2] /= v[4 * i + 3]; // z / w
+			v[4 * i + 3] = 1f;  // Set w to 1
 
 			// Project texture coordinates
-			w = this.t[vertexIndex + 3];
-			this.t[vertexIndex + 0] /= w; // u / w
-			this.t[vertexIndex + 1] /= w; // v / w
-			this.t[vertexIndex + 2] /= w; // r / w
-			this.t[vertexIndex + 3] = 1f;  // Set w to 1
+			t[4 * i + 0] /= t[4 * i + 3]; // u / w
+			t[4 * i + 1] /= t[4 * i + 3]; // v / w
+			t[4 * i + 2] /= t[4 * i + 3]; // r / w
+			t[4 * i + 3] = 1f;  // Set w to 1
 		}
-
-		return this;
 	}
 
-	private Triangle clipPlane(float[] p, float[] pn)
+	private final Triangle clipPlane(float[] pn)
 	{
 		pn = M3GMath.div(pn, (float) Math.sqrt(M3GMath.dotProduct(pn, pn)));
 
-		vert[0] = Arrays.copyOfRange(this.v, 0, 4);
-		vert[1] = Arrays.copyOfRange(this.v, 4, 8);
-		vert[2] = Arrays.copyOfRange(this.v, 8, 12);
-
-		tex[0] = Arrays.copyOfRange(this.t, 0, 4);
-		tex[1] = Arrays.copyOfRange(this.t, 4, 8);
-		tex[2] = Arrays.copyOfRange(this.t, 8, 12);
-
+		// Test each vertex of the triangle against the clip planes
 		for (int i = 0; i < 3; i++) 
 		{
-			if (M3GMath.dotProduct(pn, vert[i]) - M3GMath.dotProduct(pn, p) >= 0) { return this; } // Partially visible in this plane, move to next
-			else { } // Test next vertex
+			vert[0] = v[4 * i + 0];
+			vert[1] = v[4 * i + 1];
+			vert[2] = v[4 * i + 2];
+			vert[3] = v[4 * i + 3];
+			if (M3GMath.dotProduct(pn, vert) - M3GMath.dotProduct(pn, p) >= 0) { return this; } // Partially visible in this plane, move to next plane
 		}
 			
 		return null; // If no vertex is inside, return a null object since the triangle isn't visible
 	}
 
-	// For perspective-correction
-	void setTexCoords(float[] texCoordA, float[] texCoordB, float[] texCoordC) 
+	// Also used by perspective-correction
+	public final void setTexCoords(float[] texCoords) 
 	{
-        if (texCoordA.length != 4 || texCoordB.length != 4 || texCoordC.length != 4) 
+        if (texCoords != null && texCoords.length != 12) 
 		{
-            throw new IllegalArgumentException("Each texture coordinate must have 4 elements (s, t, r, q).");
+            throw new IllegalArgumentException("Each vertex texture coordinate must have 4 elements (s, t, r, q).");
         }
         
-        // Set the new texture coordinates
-        System.arraycopy(texCoordA, 0, this.t, 0, 4); // sA, tA, rA, qA
-        System.arraycopy(texCoordB, 0, this.t, 4, 4); // sB, tB, rB, qB
-        System.arraycopy(texCoordC, 0, this.t, 8, 4); // sC, tC, rC, qC
+		this.t = texCoords;
     }
 
-	public boolean isCounterClockwise() 
+	public final boolean isCounterClockwise() 
 	{
-		return ((xB() - xA()) * (yC() - yA()) - (xC() - xA()) * (yB() - yA())) * orientation < 0; // Clockwise if normal points towards the viewer (with corrected orientation)
+		return (xB() - xA()) * (yC() - yA()) - (xC() - xA()) * (yB() - yA()) < 0; // Clockwise if normal points towards the viewer
 	}
 }
-

@@ -78,34 +78,36 @@ public class Graphics3D
 	private ArrayList<Transform> currLightTrans;
 
 	// Reusable rendering variables
-	int[] rasterData;
+	int yStart, yEnd, ixL, ixR, r, g, b;
 	int canvasWidth, canvasHeight;
-
-	final int[] coXr = new int[3];
-	final int[] coYr = new int[3]; 
-
-	byte[][] color_vertex = new byte[3][4]; 
+	int[] rasterData;
+	final int[] ord = new int[3];
 	
-	int[] colors = new int[3];
+	float xTop, yTop, zTop, sTop, tTop;
+	float xMidL, yMid, zMidL, sMidL, tMidL;
+	float xBot, yBot, zBot, sBot, tBot;
+	float rHorizon, xMidR, zMidR, sMidR, tMidR;
+	float drawY, drawX, xL, xR, zL, zR, sL, sR, tL, tR;
+	float z, s, t;
+	final float[] scaleBias = new float[4];
+
+	final Transform projectionMatrix = new Transform();
+	final int[] renderableTriangles = {0}; // Counter for visible triangles
+	
+	// Vertex color blending variables
+	final int[] colors = new int[3];
+	final byte[] color_vertex = new byte[4];
+	float totalArea, areaA, areaB, areaC, weightA, weightB, weightC, totalWeight;
+
+	// fog blending factor
+	float fogFactor = 0.0f;
 
 	// Textured polygon variables
 	final float[] coX = new float[3];
 	final float[] coY = new float[3];
 	final float[] coZ = new float[3];
 	final float[] coS = new float[3];
-	final float[] coT = new float[3];
-
-	final float[] xOrdered = new float[3];
-	final float[] yOrdered = new float[3];
-	final float[] zOrdered = new float[3];
-	final float[] sOrdered = new float[3];
-	final float[] tOrdered = new float[3];
-
-	float xTop, yTop, zTop, sTop, tTop;
-	float xMidL, yMid, zMidL, sMidL, tMidL;
-	float xBot, yBot, zBot, sBot, tBot;
-
-	float rHorizon, xMidR, zMidR, sMidR, tMidR;
+	final float[] coT = new float[3];	
 
 
 	public Graphics3D()
@@ -460,48 +462,46 @@ public class Graphics3D
 		/* Receiving a null transform indicates that the identity matrix must be used. */
 		if (transform == null) { transform = new Transform(); }
 
-		CompositingMode compositingMode = appearance.getCompositingMode() != null ? appearance.getCompositingMode() : new CompositingMode();
+		final CompositingMode compositingMode = appearance.getCompositingMode() != null ? appearance.getCompositingMode() : new CompositingMode();
 		
 		// TODO: Shading mode is not implemented
-		int shadingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getShading() : PolygonMode.SHADE_SMOOTH;
+		final int shadingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getShading() : PolygonMode.SHADE_SMOOTH;
 		
-		int cullingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getCulling() : PolygonMode.CULL_BACK;
-		int windingOrder = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getWinding() : PolygonMode.WINDING_CCW;
-		boolean perspectiveCorrectionEnabled = appearance.getPolygonMode() != null ? appearance.getPolygonMode().isPerspectiveCorrectionEnabled() : false;
+		final int cullingMode = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getCulling() : PolygonMode.CULL_BACK;
+		final int windingOrder = appearance.getPolygonMode() != null ? appearance.getPolygonMode().getWinding() : PolygonMode.WINDING_CCW;
+		final boolean perspectiveCorrectionEnabled = appearance.getPolygonMode() != null ? appearance.getPolygonMode().isPerspectiveCorrectionEnabled() : false;
 
-		// Handle winding order
-		Integer[] ord = {0, 1, 2};
-
+		// Handle winding order first and foremost
 		if (windingOrder == PolygonMode.WINDING_CW) 
 		{
 			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Polygon Winding is Clockwise! Untested, might render incorrectly");
-			ord = new Integer[]{0, 2, 1}; // Adjust order for Clockwise Winding 
+			ord[0] = 0;
+			ord[1] = 2;
+			ord[2] = 1;
+		}
+		else 
+		{
+			ord[0] = 0;
+			ord[1] = 1;
+			ord[2] = 2;
 		}
 
 		// Set up fog properties
-		Fog fog = appearance.getFog();
-		float fogFactor[] = { 0.0f, 0.0f, 0.0f };
+		final Fog fog = appearance.getFog();
 
-		float[] scaleBias = new float[4];
+		final Transform tr = new Transform();
+		final Transform textr = new Transform();
+		final Transform texcomptr = new Transform();
 
-		Transform tr = new Transform();
-		Transform textr = new Transform();
-		Transform texcomptr = new Transform();
-
-		VertexArray vertColors = vertices.getColors();
-		VertexArray vertPos = vertices.getPositions(scaleBias);
-		int vertCount = vertPos.getVertexCount();
-
-		int[] triIndices = new int[triangles.getIndexCount()];
-		triangles.getIndices(triIndices);
+		final VertexArray vertPos = vertices.getPositions(scaleBias);
+		final Texture2D tex = appearance.getTexture(0);
+		final Image2D teximg = tex == null ? null : tex.getImage();
 
 		// Scale and translate mesh
 		tr.preScale(scaleBias[0], scaleBias[0], scaleBias[0]);
 		tr.preTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
 
-		Texture2D tex = appearance.getTexture(0);
-		Image2D teximg = tex == null ? null : tex.getImage();
-		VertexArray texCoords = vertices.getTexCoords(0, scaleBias); // get Texture coordinates
+		final VertexArray texCoords = vertices.getTexCoords(0, scaleBias); // get Texture coordinates
 
 		if (tex != null) { tex.getCompositeTransform(texcomptr); }
 
@@ -511,9 +511,7 @@ public class Graphics3D
 		textr.preMultiply(texcomptr);
 		
 		// -> Local space
-
-		Transform projection = new Transform();
-		this.currCam.getProjection(projection);
+		this.currCam.getProjection(projectionMatrix);
 
 		// Transform mesh from local coords to world coords
 		tr.preMultiplyTry(transform);
@@ -524,53 +522,19 @@ public class Graphics3D
 		// -> View space
 
 		// Apply projection matrix
-		tr.preMultiply(projection);
+		tr.preMultiply(projectionMatrix);
 		// -> Clip space
 
 		// Do the transformation
-		float[] vertClip = new float[4 * vertCount];
+		final float[] vertClip = new float[4 * vertPos.getVertexCount()];
 		tr.transform(vertPos, vertClip, true);
 
-		float[] texVert = new float[4 * vertCount];
+		final float[] texVert = new float[4 * vertPos.getVertexCount()];
 		if (texCoords != null) { textr.transform(texCoords, texVert, true); }
 
-		// Create Triangle objects for clipping
-		Triangle[] trisScreen = Triangle.fromVertAndTris(vertClip, texVert, triIndices);
-		int renderableTriangles = 0; // Counter for visible triangles
+		// Create Triangle objects (fromVertsAndTris already does culling and clipping)
+		final Triangle[] trisScreen = Triangle.fromVertAndTris(vertClip, texVert, triangles.getIndexArray(), renderableTriangles, near, cullingMode);
 
-		for (Triangle tri : trisScreen) 
-		{
-			for (int i = 0; i < 3; i++) // Go through vertices A, B and C
-			{ 
-				int index = i * 4;
-				float w = tri.v[index + 3];
-				if (w >= near) // W cannot be smaller than the near plane, otherwise we'll erroneously cull triangles close to the camera
-				{ 
-					tri.v[index + 0] /= w; // x / w
-					tri.v[index + 1] /= w; // y / w
-					tri.v[index + 2] /= w; // z / w
-				}
-			}
-
-			boolean cullTriangle = (cullingMode == PolygonMode.CULL_BACK && tri.isCounterClockwise()) ||
-								(cullingMode == PolygonMode.CULL_FRONT && !tri.isCounterClockwise());
-
-			if (!cullTriangle)
-			{
-				// We now have to restore the renderable geometry back to its original coordinates, otherwise clipping won't work properly, and rendering will also be broken
-				for (int i = 0; i < 3; i++) 
-				{
-					int index = i * 4;
-					float w = tri.v[index + 3];
-					tri.v[index + 0] *= w; // x * w
-					tri.v[index + 1] *= w; // y * w
-					tri.v[index + 2] *= w; // z * w
-				}
-
-				if(!tri.clip()) { trisScreen[renderableTriangles++] = tri.project(); } // Move visible triangles (not clipped nor culled) to the front of the array
-			}
-		}
-	
 		// At this point the triangles in `trisScreen` are actually
 		// projected to Normalized Device Coordinates, but they will be tranformed
 		// to Screen space in-place, hence the name.
@@ -588,7 +552,7 @@ public class Graphics3D
 		// -> Screen space
 
 		// Perform viewport transform only on renderable triangles (saves an Arrays.copyOf call)
-		Triangle.transform(trisScreen, renderableTriangles, tr, textr);
+		Triangle.transform(trisScreen, renderableTriangles[0], tr, textr);
 
 		if (this.target instanceof Image2D)
 		{
@@ -598,43 +562,31 @@ public class Graphics3D
 		}
 		else if (this.target instanceof Graphics)
 		{
-			Graphics pgrp = (Graphics) this.target;
+			final Graphics pgrp = (Graphics) this.target;
 
-			for (int tri_id = 0; tri_id < renderableTriangles; tri_id++)
+			for (int tri_id = 0; tri_id < renderableTriangles[0]; tri_id++)
 			{
-
 				// If perspective correction is enabled, do it for texture coordinates
 				if (perspectiveCorrectionEnabled) 
-				{
-					// Get the w components for each triangle vertex
-					float wA = trisScreen[tri_id].wA();
-					float wB = trisScreen[tri_id].wB();
-					float wC = trisScreen[tri_id].wC();
-				
-					// W again cannot be smaller than the near plane, otherwise it'll result in incorrect calculations
-					if (wA > near && wB > near && wC > near) 
+				{			
+					// W cannot be smaller than the near plane, otherwise it'll result in incorrect calculations
+					if (trisScreen[tri_id].wA() > near &&  trisScreen[tri_id].wB() > near && trisScreen[tri_id].wC() > near) 
 					{
 						// Calculate perspective correction through Inverse-Z.
-						float invW_A = 1.0f / wA;
-						float invW_B = 1.0f / wB;
-						float invW_C = 1.0f / wC;
+						float invW_A = 1.0f / trisScreen[tri_id].wA();
+						float invW_B = 1.0f / trisScreen[tri_id].wB();
+						float invW_C = 1.0f / trisScreen[tri_id].wC();
 				
-						float[] texCoordA = 
+						final float[] correctedCoords = 
 						{
 							trisScreen[tri_id].sA() * invW_A,
 							trisScreen[tri_id].tA() * invW_A,
 							0, // rA
-							1  // qA
-						};
-						float[] texCoordB = 
-						{
+							1, // qA
 							trisScreen[tri_id].sB() * invW_B,
 							trisScreen[tri_id].tB() * invW_B,
 							0, // rB
-							1  // qB
-						};
-						float[] texCoordC = 
-						{
+							1,  // qB
 							trisScreen[tri_id].sC() * invW_C,
 							trisScreen[tri_id].tC() * invW_C,
 							0, // rC
@@ -642,82 +594,8 @@ public class Graphics3D
 						};
 				
 						// Set the corrected texture coordinates back into the triangle
-						trisScreen[tri_id].setTexCoords(texCoordA, texCoordB, texCoordC);
+						trisScreen[tri_id].setTexCoords(correctedCoords);
 					}
-				}
-				
-
-				// If there's no texture coords or a texture image, we should try rendering with vertex colors. (also used for debug render modes)
-				if (tex == null || texCoords == null || Mobile.M3GRenderUntexturedPolygons || Mobile.M3GRenderWireframe) 
-				{
-					coXr[0] = Math.round(trisScreen[tri_id].xA());
-					coXr[1] = Math.round(trisScreen[tri_id].xB());
-					coXr[2] = Math.round(trisScreen[tri_id].xC());
-
-					coYr[0] = Math.round(trisScreen[tri_id].yA());
-					coYr[1] = Math.round(trisScreen[tri_id].yB());
-					coYr[2] = Math.round(trisScreen[tri_id].yC());
-					
-					pgrp.translate(viewx, viewy);
-					if(vertices.getColors() == null) // If there's no vertex colors, we have to render with the VertexBuffer's default color.
-					{ 
-						if(Mobile.M3GRenderWireframe) { pgrp.drawPolygon(coXr, 0, coYr, 0, 3, vertices.getDefaultColor()); }
-						else { pgrp.fillPolygon(coXr, 0, coYr, 0, 3, vertices.getDefaultColor()); }
-					} 
-					else // If we have vertex colors, good. Read them to color up the triangles properly.
-					{
-						for (int i = 0; i < 3; i++) 
-        				{
-							vertColors.get(trisScreen[tri_id].bufIndex[i], 1, color_vertex[i]);
-
-							// Again, M3G supports colors that are either RGB or RGBA, we make them ARGB here
-							colors[i] = vertColors.getComponentCount() == 4 ? (Byte.toUnsignedInt(color_vertex[i][3]) << 24) : (0xFF << 24) |
-								(Byte.toUnsignedInt(color_vertex[i][0]) << 16) |
-								(Byte.toUnsignedInt(color_vertex[i][1]) <<  8) | 
-								 Byte.toUnsignedInt(color_vertex[i][2]);
-						}
-
-						// Blend fog value with the vertex color, if applicable
-						if(fog != null) 
-						{
-							if (fog.getMode() == Fog.LINEAR) 
-							{
-								float nearDistance = fog.getNearDistance();
-								float farDistance = fog.getFarDistance();
-								fogFactor[0] = Math.max(0, Math.min(1, (farDistance - trisScreen[tri_id].zA()) / (farDistance - nearDistance)));
-								fogFactor[1] = Math.max(0, Math.min(1, (farDistance - trisScreen[tri_id].zB()) / (farDistance - nearDistance)));
-								fogFactor[2] = Math.max(0, Math.min(1, (farDistance - trisScreen[tri_id].zC()) / (farDistance - nearDistance)));
-							} 
-							else 
-							{
-								fogFactor[0] = (float) Math.exp(-fog.getDensity() * trisScreen[tri_id].zA());
-								fogFactor[0] = Math.max(0, Math.min(1, fogFactor[0])); // Clamp to the [0, 1] interval
-								fogFactor[1] = (float) Math.exp(-fog.getDensity() * trisScreen[tri_id].zB());
-								fogFactor[1] = Math.max(0, Math.min(1, fogFactor[1]));
-								fogFactor[2] = (float) Math.exp(-fog.getDensity() * trisScreen[tri_id].zC());
-								fogFactor[2] = Math.max(0, Math.min(1, fogFactor[2]));
-							}
-
-							for(int i = 0; i < colors.length; i++) 
-							{
-								colors[i] = blendFog(colors[i], fog.getColor(), fogFactor[i]);
-							}
-						}
-
-						/* 
-						 * TODO: Not accurate, as all 3 vertices of a triangle can have different colors that have to be interpolated,
-						 * this method is not doing it the correct way.
-						 */
-						
-						if(Mobile.M3GRenderWireframe) { pgrp.drawPolygon(coXr, 0, coYr, 0, 3, vertices.getDefaultColor()); }
-						else { pgrp.fillPolygon(coXr, 0, coYr, 0, 3, vertices.getDefaultColor()); }
-
-						if(Mobile.M3GRenderWireframe) { pgrp.drawPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, 0,  new int[]{coYr[1], coYr[2], coYr[0]}, 0, 3, vertices.getDefaultColor()); }
-						else { pgrp.fillPolygon( new int[]{coXr[1], coXr[2], coXr[0]}, 0, new int[]{coYr[1], coYr[2], coYr[0]}, 0, 3, vertices.getDefaultColor()); }
-					}
-
-					pgrp.translate(-viewx, -viewy);
-					continue;
 				}
 
 				// Collect vertex attributes
@@ -728,33 +606,31 @@ public class Graphics3D
 				coT[0] = trisScreen[tri_id].tA(); coT[1] = trisScreen[tri_id].tB(); coT[2] = trisScreen[tri_id].tC();
 
 				// Instead of using the previous Arrays.sort() call. Let's handle position and winding sorting by hand, i think it's more readable.
-				int topIdx = ord[0], midIdx = ord[1], botIdx = ord[2];
-
-				if (coY[midIdx] < coY[topIdx]) 
+				if (coY[ord[1]] < coY[ord[0]]) 
 				{
-					int temp = topIdx;
-					topIdx = midIdx;
-					midIdx = temp;
+					int temp = ord[0];
+					ord[0] = ord[1];
+					ord[1] = temp;
 				}
-				if (coY[botIdx] < coY[topIdx]) 
+				if (coY[ord[2]] < coY[ord[0]]) 
 				{
-					int temp = topIdx;
-					topIdx = botIdx;
-					botIdx = temp;
+					int temp = ord[0];
+					ord[0] = ord[2];
+					ord[2] = temp;
 				}
-				if (coY[botIdx] < coY[midIdx]) 
+				if (coY[ord[2]] < coY[ord[1]]) 
 				{
-					int temp = midIdx;
-					midIdx = botIdx;
-					botIdx = temp;
+					int temp = ord[1];
+					ord[1] = ord[2];
+					ord[2] = temp;
 				}
 
 				// Assign ordered vertex attributes based on their determined order
-				xTop = coX[topIdx]; xMidL = coX[midIdx]; xBot = coX[botIdx];
-				yTop = coY[topIdx]; yMid = coY[midIdx]; yBot = coY[botIdx];
-				zTop = coZ[topIdx]; zMidL = coZ[midIdx]; zBot = coZ[botIdx];
-				sTop = coS[topIdx]; sMidL = coS[midIdx]; sBot = coS[botIdx];
-				tTop = coT[topIdx]; tMidL = coT[midIdx]; tBot = coT[botIdx];
+				xTop = coX[ord[0]]; xMidL = coX[ord[1]]; xBot = coX[ord[2]];
+				yTop = coY[ord[0]]; yMid = coY[ord[1]]; yBot = coY[ord[2]];
+				zTop = coZ[ord[0]]; zMidL = coZ[ord[1]]; zBot = coZ[ord[2]];
+				sTop = coS[ord[0]]; sMidL = coS[ord[1]]; sBot = coS[ord[2]];
+				tTop = coT[ord[0]]; tMidL = coT[ord[1]]; tBot = coT[ord[2]];
 
 				// Calculate the right horizon
 				rHorizon = (yMid - yTop) / (yBot - yTop);
@@ -779,54 +655,58 @@ public class Graphics3D
 				for (int half = 0; half < 2; half++) 
 				{
 					// Determine the range for the y-coordinate
-					int yStart = half == 0 ? Math.max(Math.round(yTop), 0) : Math.max(Math.round(yMid), 0);
-					int yEnd = half == 0 ? Math.min(Math.round(yMid), viewh) : Math.min(Math.round(yBot), viewh);
+					yStart = half == 0 ? Math.max(Math.round(yTop), 0) : Math.max(Math.round(yMid), 0);
+					yEnd = half == 0 ? Math.min(Math.round(yMid), viewh) : Math.min(Math.round(yBot), viewh);
 					
 					// Adjust drawY calculation based on half
 					for (int y = yStart; y < yEnd; y++) 
 					{
-						float drawY = half == 0
+						drawY = half == 0
 							? (y - yTop) / (yMid - yTop)  // Upper half
 							: 1f - (y - yMid) / (yBot - yMid); // Lower half
 						drawY = Math.max(0f, Math.min(drawY, 1f));
 
 						// Calculate interpolated values
-						float xL = half == 0
+						
+						xL = half == 0
 							? xTop + drawY * (xMidL - xTop)
 							: xBot + drawY * (xMidL - xBot);
-						float xR = half == 0
+						xR = half == 0
 							? xTop + drawY * (xMidR - xTop)
 							: xBot + drawY * (xMidR - xBot);
-						float zL = half == 0
+						zL = half == 0
 							? zTop + drawY * (zMidL - zTop)
 							: zBot + drawY * (zMidL - zBot);
-						float zR = half == 0
+						zR = half == 0
 							? zTop + drawY * (zMidR - zTop)
 							: zBot + drawY * (zMidR - zBot);
-						float sL = half == 0
+						sL = half == 0
 							? sTop + drawY * (sMidL - sTop)
 							: sBot + drawY * (sMidL - sBot);
-						float sR = half == 0
+						sR = half == 0
 							? sTop + drawY * (sMidR - sTop)
 							: sBot + drawY * (sMidR - sBot);
-						float tL = half == 0
+						tL = half == 0
 							? tTop + drawY * (tMidL - tTop)
 							: tBot + drawY * (tMidL - tBot);
-						float tR = half == 0
+						tR = half == 0
 							? tTop + drawY * (tMidR - tTop)
 							: tBot + drawY * (tMidR - tBot);
 
-
-						final int ixL = Math.max(Math.round(xL), 0), ixR = Math.min(Math.round(xR), vieww);
+						ixL = Math.max(Math.round(xL), 0);
+						ixR = Math.min(Math.round(xR), vieww);
 
 						// Draw the pixels for the current y-coordinate
 						for (int x = ixL; x < ixR; x++) 
 						{
+							// This check is really only used for wireframe debugging, and it's not a perfect wireframe rendering
+							if(Mobile.M3GRenderWireframe && x > ixL && x < ixR) { continue; }
+
 							try 
 							{
-								float drawX = (x - xL) / (xR - xL);
+								drawX = (x - xL) / (xR - xL);
 								drawX = Math.max(0f, Math.min(drawX, 1f));
-								float z = zL + drawX * (zR - zL);
+								z = (zL + drawX * (zR - zL));
 								
 								// Only depth test if the compositingMode has the feature enabled. If compositingMode is not set, check if this target has depthBuffer enabled
 								if(compositingMode.isDepthTestEnabled() && isDepthBufferEnabled())
@@ -835,95 +715,82 @@ public class Graphics3D
 									if (this.depthBuffer[this.vieww * y + x] < z) { continue; } // Skip if this pixel is not visible
 								}
 								
-								float s = sL + drawX * (sR - sL);
-								float t = tL + drawX * (tR - tL);
-								int texPixel = teximg.getConvertedPixel(Math.round(s), Math.round(t));
+								s = sL + drawX * (sR - sL);
+								t = tL + drawX * (tR - tL);
 
-								// Extract the alpha channel from the texture pixel
-								int alpha = (texPixel >> 24) & 0xFF; // Image2D converts to ARGB format
-
+								// If there's no texture coords or a texture image, we default to rendering with vertex colors. (also used for debug render modes)
+								int paintPixel = 0xFF000000 | vertices.getDefaultColor(); // It's forced to opaque, maybe that shouldn't be done for untextured polygons, but helps some games like Brick Breaker Revolution
+								if(tex != null && texCoords != null && !Mobile.M3GRenderUntexturedPolygons && !Mobile.M3GRenderWireframe) { paintPixel = teximg.getConvertedPixel(Math.round(s), Math.round(t)); }
+								
+								int alpha = (paintPixel >> 24) & 0xFF; // Image2D converts to ARGB format
 								if (alpha < (int) (compositingMode.getAlphaThreshold() * 255)) { continue; } // Skip transparent pixels below the alpha threshold
 
-								// Blend the pixel with the background
-								int backgroundPixel = rasterData[(y+viewy) * canvasWidth + (x+viewx)];
-								int blendedPixel = texPixel;
-
-								if (vertColors != null) // We have to do texture blending, as we have vertex colors and the texture goes on top of them
+								if (vertices.getColors() != null) // We have to do texture blending, as we have vertex colors and any available texture goes on top of them
 								{
-									// Get vertex indices
-									int[] indices = { trisScreen[tri_id].bufIndex[0], trisScreen[tri_id].bufIndex[1], trisScreen[tri_id].bufIndex[2] };
-									int[] colors = new int[3];
-									byte[] color_vertex = new byte[4];
-
+									// Get vertex index color TODO: This doesn't yet result in proper blending
 									for (int i = 0; i < 3; i++) 
 									{
-										color_vertex = new byte[4];
-										vertColors.get(indices[i], 1, color_vertex);
-										colors[i] = (vertColors.getComponentCount() == 3)
-											? (255 << 24) | (Byte.toUnsignedInt(color_vertex[0]) << 16) |
+										vertices.getColors().get(trisScreen[tri_id].getIndex(ord[i]), 1, color_vertex);
+										colors[i] = (vertices.getColors().getComponentCount() == 3)
+											? (0xFF << 24) | (Byte.toUnsignedInt(color_vertex[0]) << 16) |
 											(Byte.toUnsignedInt(color_vertex[1]) << 8) | Byte.toUnsignedInt(color_vertex[2])
 											: (Byte.toUnsignedInt(color_vertex[3]) << 24) |
 											(Byte.toUnsignedInt(color_vertex[0]) << 16) |
 											(Byte.toUnsignedInt(color_vertex[1]) << 8) | Byte.toUnsignedInt(color_vertex[2]);
 									}
 
-									// Calculate weights based on pixel position
-									float totalArea = Math.abs((xBot - xTop) * (yMid - yTop) - (xBot - xMidL) * (yBot - yTop));
-									float areaA = Math.abs((xBot - xTop) * (y - yTop) - (x - xTop) * (yBot - yTop));
-									float areaB = Math.abs((xMidL - xTop) * (y - yTop) - (x - xTop) * (yMid - yTop));
-									float areaC = Math.abs((x - xBot) * (yMid - yTop) - (xBot - xMidL) * (y - yTop));
+									// Calculate weights based on pixel position in relation to the triangle's area
+									totalArea = Math.abs((xBot - xTop) * (yMid - yTop) - (xBot - xMidL) * (yBot - yTop));
+									areaA = Math.abs((xBot - xTop) * (y - yTop) - (x - xTop) * (yBot - yTop));
+									areaB = Math.abs((xMidL - xTop) * (y - yTop) - (x - xTop) * (yMid - yTop));
+									areaC = Math.abs((x - xBot) * (yMid - yTop) - (xBot - xMidL) * (y - yTop));
 
-									float weightA = areaA / totalArea;
-									float weightB = areaB / totalArea;
-									float weightC = areaC / totalArea;
+									weightA = areaA / totalArea;
+									weightB = areaB / totalArea;
+									weightC = areaC / totalArea;
 
 									// Normalize weights
-									float totalWeight = weightA + weightB + weightC;
+									totalWeight = weightA + weightB + weightC;
 									weightA /= totalWeight;
 									weightB /= totalWeight;
 									weightC /= totalWeight;
 
 									// Interpolate color based on weights
-									int r = (int) ((weightA * ((colors[0] >> 16) & 0xFF)) + (weightB * ((colors[1] >> 16) & 0xFF)) + (weightC * ((colors[2] >> 16) & 0xFF)));
-									int g = (int) ((weightA * ((colors[0] >> 8) & 0xFF)) + (weightB * ((colors[1] >> 8) & 0xFF)) + (weightC * ((colors[2] >> 8) & 0xFF)));
-									int b = (int) ((weightA * (colors[0] & 0xFF)) + (weightB * (colors[1] & 0xFF)) + (weightC * (colors[2] & 0xFF)));
+									alpha = (int) ((weightA * ((colors[0] >> 24) & 0xFF)) + (weightB * ((colors[1] >> 24) & 0xFF)) + (weightC * ((colors[2] >> 24) & 0xFF)));
+									r = (int) ((weightA * ((colors[0] >> 16) & 0xFF)) + (weightB * ((colors[1] >> 16) & 0xFF)) + (weightC * ((colors[2] >> 16) & 0xFF)));
+									g = (int) ((weightA * ((colors[0] >> 8) & 0xFF)) + (weightB * ((colors[1] >> 8) & 0xFF)) + (weightC * ((colors[2] >> 8) & 0xFF)));
+									b = (int) ((weightA * (colors[0] & 0xFF)) + (weightB * (colors[1] & 0xFF)) + (weightC * (colors[2] & 0xFF)));
 
-									int interpolatedColor = (alpha << 24) | (r << 16) | (g << 8) | b; // ARGB
-
-									// Blend with texture pixel
-									blendedPixel = blendTexPixels(interpolatedColor, texPixel, alpha, tex.getBlending());
+									// Blend with texture pixel if there's one, otherwise, just use the interpolated vertex color directly
+									if(tex == null && texCoords == null) { paintPixel = (alpha << 24) | (r << 16) | (g << 8) | b; }
+									else { paintPixel = blendPixels((alpha << 24) | (r << 16) | (g << 8) | b, paintPixel, alpha, tex.getBlending()); }
 								}
 
 								// To blend the fog value here, we have to take the current pixel's z value into consideration
 								if(fog != null) 
 								{
+									// TODO: This multiplication by 250 is not correct, it's just a workaround that helps games with actual fog usage to show geometry
+									// There's probably some kind of issue with how triangles' final z-coordinate is calculated
 									if (fog.getMode() == Fog.LINEAR) 
 									{
-										float nearDistance = fog.getNearDistance();
-										float farDistance = fog.getFarDistance();
-										fogFactor[0] = Math.max(0, Math.min(1, (farDistance - z) / (farDistance - nearDistance)));
+										fogFactor = Math.max(0, Math.min(1, (fog.getFarDistance() - z) / (fog.getFarDistance() - fog.getNearDistance()) * 250));
 									} 
 									else 
 									{
-										fogFactor[0] = (float) Math.abs(Math.exp(-fog.getDensity() * z));
-										fogFactor[0] = Math.max(0, Math.min(1, fogFactor[0]));
+										fogFactor = (float) Math.abs(Math.exp(-fog.getDensity() * z));
+										fogFactor = Math.max(0, Math.min(1, fogFactor));
 									}
 
-									blendedPixel = blendFog(blendedPixel, fog.getColor(), fogFactor[0]);
+									paintPixel = blendFog(paintPixel, fog.getColor());
 								}
 
-								// Handle compositing mode AFTER the fog calculation, otherwise alpha values won't be correct
-								blendedPixel = blendPixels(backgroundPixel, blendedPixel, alpha, compositingMode.getBlending());
-
-								rasterData[(y+viewy) * canvasWidth + (x+viewx)] = blendedPixel;
+								// Handle compositing mode with background pixel [rasterData] AFTER the fog calculation, otherwise alpha values won't be correct
+								rasterData[(y+viewy) * canvasWidth + (x+viewx)] = blendPixels(rasterData[(y+viewy) * canvasWidth + (x+viewx)], paintPixel, alpha, compositingMode.getBlending());
 
 								// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
-								if(compositingMode.isDepthWriteEnabled() && isDepthBufferEnabled()) 
-								{ 
-									this.depthBuffer[this.vieww * y + x] = z;
-								}
-
-							} catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); e.printStackTrace(); }
+								if(compositingMode.isDepthWriteEnabled() && isDepthBufferEnabled()) { this.depthBuffer[this.vieww * y + x] = z; }
+							} 
+							catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); e.printStackTrace(); }
 						}
 					}
 				}
@@ -1016,25 +883,26 @@ public class Graphics3D
 
 	/* Helper Methods */
 
-	// This one is used for pixel blending when rendering to the screen
+	// This one is used for texture/background blending, and also pixel blending when rendering to the screen
 	private int blendPixels(int background, int foreground, int alpha, int blendMode) 
 	{
-		int bgA = (background >> 24) & 0xFF;
-		int bgR = (background >> 16) & 0xFF;
-		int bgG = (background >> 8) & 0xFF;
-		int bgB = background & 0xFF;
+		final int bgA = (background >> 24) & 0xFF;
+		final int bgR = (background >> 16) & 0xFF;
+		final int bgG = (background >> 8) & 0xFF;
+		final int bgB = background & 0xFF;
 
-		int fgA = (foreground >> 24) & 0xFF;
-		int fgR = (foreground >> 16) & 0xFF;
-		int fgG = (foreground >> 8) & 0xFF;
-		int fgB = foreground & 0xFF;
+		final int fgA = (foreground >> 24) & 0xFF;
+		final int fgR = (foreground >> 16) & 0xFF;
+		final int fgG = (foreground >> 8) & 0xFF;
+		final int fgB = foreground & 0xFF;
 
-		int outR, outG, outB, outA;
+		final int outR, outG, outB, outA;
 
-		float alphaNorm = alpha / 255f;
+		final float alphaNorm = alpha / 255f;
 
 		switch (blendMode)
 		{
+			case Texture2D.FUNC_REPLACE:
 			case CompositingMode.REPLACE:
 				outA = (int) (fgA + (bgA * (1 - (fgA / 255f))));
 				outR = (int) (fgR * (fgA / 255f) + bgR * (1 - (fgA / 255f)));
@@ -1052,6 +920,7 @@ public class Graphics3D
 				outA = (int) Math.min(255, bgA + (int)(alpha * (1 - (bgA / 255f))));
 				return (outA << 24) | (outR << 16) | (outG << 8) | outB;
 
+			case Texture2D.FUNC_BLEND:
 			case CompositingMode.ALPHA:
 				outR = (int) ((fgR * alphaNorm) + (bgR * (1 - alphaNorm)));
 				outG = (int) ((fgG * alphaNorm) + (bgG * (1 - alphaNorm)));
@@ -1062,6 +931,7 @@ public class Graphics3D
 					(Math.max(0, Math.min(outG, 255)) << 8) | 
 					Math.max(0, Math.min(outB, 255));
 
+			case Texture2D.FUNC_MODULATE:
 			case CompositingMode.MODULATE:
 				outR = (int) ((fgR * bgR) / 255);
 				outG = (int) ((fgG * bgG) / 255);
@@ -1082,66 +952,11 @@ public class Graphics3D
 					(Math.max(0, Math.min(outG, 255)) << 8) | 
 					Math.max(0, Math.min(outB, 255));
 
-			default:
-				return background; // Fallback
-		}
-	}
-
-	// Similar to blendPixels, however, this blends texture colors (foreground) with the geometry's vertex color (background)
-	private int blendTexPixels(int background, int foreground, int alpha, int blendMode) 
-	{
-		int bgA = (background >> 24) & 0xFF;
-		int bgR = (background >> 16) & 0xFF;
-		int bgG = (background >> 8) & 0xFF;
-		int bgB = background & 0xFF;
-
-		int fgA = (foreground >> 24) & 0xFF; // Extract alpha from the foreground
-		int fgR = (foreground >> 16) & 0xFF;
-		int fgG = (foreground >> 8) & 0xFF;
-		int fgB = foreground & 0xFF;
-
-		int outR, outG, outB, outA;
-
-		float alphaNorm = alpha / 255f; // Normalize alpha for blending
-
-		switch (blendMode)
-		{
-			case Texture2D.FUNC_REPLACE:
-				// Blend foreground and background based on the foreground alpha
-				outA = (int) (fgA + (bgA * (1 - fgA / 255f)));
-				outR = (int) ((fgR * fgA / 255) + (bgR * (1 - fgA / 255)));
-				outG = (int) ((fgG * fgA / 255) + (bgG * (1 - fgA / 255)));
-				outB = (int) ((fgB * fgA / 255) + (bgB * (1 - fgA / 255)));
-				return (Math.min(Math.max(outA, 0), 255) << 24) | 
-					(Math.min(Math.max(outR, 0), 255) << 16) | 
-					(Math.min(Math.max(outG, 0), 255) << 8) | 
-					Math.min(Math.max(outB, 0), 255);
-
-			case Texture2D.FUNC_MODULATE:
-				outR = (fgR * bgR) / 255;
-				outG = (fgG * bgG) / 255;
-				outB = (fgB * bgB) / 255;
-				outA = Math.max(bgA, fgA); // Take maximum alpha
-				return (Math.min(Math.max(outA, 0), 255) << 24) | 
-					(Math.min(Math.max(outR, 0), 255) << 16) | 
-					(Math.min(Math.max(outG, 0), 255) << 8) | 
-					Math.min(Math.max(outB, 0), 255);
-
 			case Texture2D.FUNC_DECAL:
 				outR = (fgR * fgA / 255) + (bgR * (255 - fgA) / 255);
 				outG = (fgG * fgA / 255) + (bgG * (255 - fgA) / 255);
 				outB = (fgB * fgA / 255) + (bgB * (255 - fgA) / 255);
 				outA = fgA; // Use foreground's alpha
-				return (Math.min(Math.max(outA, 0), 255) << 24) | 
-					(Math.min(Math.max(outR, 0), 255) << 16) | 
-					(Math.min(Math.max(outG, 0), 255) << 8) | 
-					Math.min(Math.max(outB, 0), 255);
-
-			case Texture2D.FUNC_BLEND:
-				outR = (int) ((fgR * alphaNorm) + (bgR * (1 - alphaNorm)));
-				outG = (int) ((fgG * alphaNorm) + (bgG * (1 - alphaNorm)));
-				outB = (int) ((fgB * alphaNorm) + (bgB * (1 - alphaNorm)));
-				outA = (int) (alpha * alphaNorm + bgA * (1 - alphaNorm));
 				return (Math.min(Math.max(outA, 0), 255) << 24) | 
 					(Math.min(Math.max(outR, 0), 255) << 16) | 
 					(Math.min(Math.max(outG, 0), 255) << 8) | 
@@ -1162,52 +977,19 @@ public class Graphics3D
 		}
 	}
 
-	private int interpolateTexColors(int color0, int color1, int color2, float alpha, float beta, float gamma) 
+	private int blendFog(int pixelColor, int fogColor) 
 	{
-		int a0 = (color0 >> 24) & 0xFF;
-		int r0 = (color0 >> 16) & 0xFF;
-		int g0 = (color0 >> 8) & 0xFF;
-		int b0 = color0 & 0xFF;
-	
-		int a1 = (color1 >> 24) & 0xFF;
-		int r1 = (color1 >> 16) & 0xFF;
-		int g1 = (color1 >> 8) & 0xFF;
-		int b1 = color1 & 0xFF;
-	
-		int a2 = (color2 >> 24) & 0xFF;
-		int r2 = (color2 >> 16) & 0xFF;
-		int g2 = (color2 >> 8) & 0xFF;
-		int b2 = color2 & 0xFF;
-	
-		int r = Math.round(r0 * alpha + r1 * beta + r2 * gamma);
-		int g = Math.round(g0 * alpha + g1 * beta + g2 * gamma);
-		int b = Math.round(b0 * alpha + b1 * beta + b2 * gamma);
-		int a = Math.round(a0 * alpha + a1 * beta + a2 * gamma);
-	
-		return (a << 24) | (r << 16) | (g << 8) | b;
-	}
-
-	private int blendFog(int pixelColor, int fogColor, float fogFactor) 
-	{
-		int r = ((pixelColor >> 16) & 0xFF);
-		int g = ((pixelColor >> 8) & 0xFF);
-		int b = (pixelColor & 0xFF);
-	
-		int fogR = ((fogColor >> 16) & 0xFF);
-		int fogG = ((fogColor >> 8) & 0xFF);
-		int fogB = (fogColor & 0xFF);
-	
 		/*
 		 * M3G specifies that, the smaller the fogFactor value, the more we
 		 * should blend the fog color into the received color... which means
 		 * that the fog's contribution to the resulting color should be
 		 * 1 - fogFactor;
 		 */
-		int blendedR = (int) (r * (1 - fogFactor) + fogR * fogFactor);
-		int blendedG = (int) (g * (1 - fogFactor) + fogG * fogFactor);
-		int blendedB = (int) (b * (1 - fogFactor) + fogB * fogFactor);
+		final int r = (int) (((pixelColor >> 16) & 0xFF) * fogFactor + ((fogColor >> 16) & 0xFF) * (1 - fogFactor));
+		final int g = (int) (((pixelColor >> 8) & 0xFF) * fogFactor + ((fogColor >> 8) & 0xFF) * (1 - fogFactor));
+		final int b = (int) ((pixelColor & 0xFF) * fogFactor + (fogColor & 0xFF) * (1 - fogFactor));
 	
 		// Fog only has RGB channels, so it's always fully opaque
-		return (255 << 24) | (blendedR << 16) | (blendedG << 8) | blendedB;
+		return (255 << 24) | (r << 16) | (g << 8) | b;
 	}
 }
