@@ -150,7 +150,7 @@ public abstract class Object3D implements Cloneable
 					return 0;
 
 				sumWeights += weight[0];
-				validity = Math.min(validity, Validity[0]);
+				validity = M3GMath.min(validity, Validity[0]);
 
 				if (++trackIndex == numTracks) { break; }
 				track = (AnimationTrack) animationTracks.elementAt(trackIndex);

@@ -20,6 +20,90 @@ public class M3GMath
 {
 	static final float EPSILON = Float.MIN_VALUE * 16f;
 
+	// Faster alternatives to Java's Math library, we don't need the more robust checks.
+	private static final float DEGREES_TO_RADIANS = (float) Math.PI / 180.0f;
+    private static final float RADIANS_TO_DEGREES = 180.0f / (float) Math.PI;
+
+	private static final float[] preCalcSin = new float[65536];
+
+	static 
+	{
+        for (int i = 0; i < 65536; ++i) 
+		{
+            preCalcSin[i] = (float) Math.sin((float) i * Math.PI * 2.0f / 65536.0f);
+        }
+    }
+
+    public static float sin(float f) 
+	{
+        return preCalcSin[(int) (f * 10430.378F) & '\uffff'];
+    }
+
+    public static float cos(float f) 
+	{
+        return preCalcSin[(int) (f * 10430.378F + 16384.0F) & '\uffff'];
+    }
+
+	public static float tan(float a) 
+	{
+		final float sine = sin(a);
+		final float cosine = cos(a);
+		return cosine != 0 ? sine / cosine : Float.POSITIVE_INFINITY;
+	}
+	
+	// Acos is a TODO for now, it's just casting standard Math to float
+	public static float acos(float a) 
+	{
+		return (float) Math.acos(a);
+	}
+
+	// Those 'to*' methods are just backported from Java 9
+	public static float toRadians(float angdeg) { return angdeg * DEGREES_TO_RADIANS; }
+
+	public static float toDegrees(float angrad) { return angrad * RADIANS_TO_DEGREES; }
+
+	public static float sqrt(float x) 
+	{
+		return Float.intBitsToFloat(532483686 + (Float.floatToRawIntBits(x) >> 1));
+	}
+
+	public static float abs(float value) { return (value < 0) ? -value : value; }
+
+	public static int abs(int value) { return (value < 0) ? -value : value; }
+
+	public static float max(float a, float b) { return (a > b) ? a : b; }
+
+	public static int max(int a, int b) { return (a > b) ? a : b; }
+
+	public static float min(float a, float b) { return (a < b) ? a : b; }
+
+	public static int min(int a, int b) { return (a < b) ? a : b; }
+
+	public static double exp(double val) 
+	{
+		final long tmp = (long) (1512775 * val + (1072693248 - 60801));
+		return Double.longBitsToDouble(tmp << 32);
+	}
+
+	public static float exp(float val) 
+	{
+		final int tmp = (int) (1512775 * val + (1072693248 - 60801));
+		return Float.intBitsToFloat(tmp << 32);
+	}
+
+	public static int round(float value) 
+	{
+		if (value > 0) { return (int) (value + 0.5f); } 
+		else { return (int) (value - 0.5f); }
+	}
+
+	// Those are slightly faster than using round() since we know the value will always be positive or negative
+	public static int roundPositive(float value) { return (int) (value + 0.5f); }
+
+	public static int roundNegative(float value) { return (int) (value - 0.5f); }
+
+	// Now we get to stuff specific to M3G
+
 	public static float[] calculateNormal(float[] vector) 
 	{
 		float[] v1 = {vector[4 * 1 + 0] - vector[4 * 0 + 0], vector[4 * 1 + 1] - vector[4 * 0 + 1], vector[4 * 1 + 2] - vector[4 * 0 + 2]};
@@ -50,9 +134,9 @@ public class M3GMath
 		transformedNormal[2] = normalMatrix[6] * normal[0] + normalMatrix[7] * normal[1] + normalMatrix[8] * normal[2];
 		transformedNormal[3] = 0; // Homogeneous coordinate for normal is always 0
 
-		float length = (float) Math.sqrt(transformedNormal[0] * transformedNormal[0] +
-                                      transformedNormal[1] * transformedNormal[1] +
-                                      transformedNormal[2] * transformedNormal[2]);
+		float length = sqrt(transformedNormal[0] * transformedNormal[0] +
+                                transformedNormal[1] * transformedNormal[1] +
+                                transformedNormal[2] * transformedNormal[2]);
 
 		if (length > 0) 
 		{
@@ -76,7 +160,7 @@ public class M3GMath
 	// Normalize a vector
 	public static float[] normalize(float[] vector) 
 	{
-		float length = (float) Math.sqrt(dotProduct(vector, vector));
+		float length = sqrt(dotProduct(vector, vector));
 		if (length < EPSILON) { return new float[] {0, 0, 0}; } // Handle zero-length case
 		return div(vector, length);
 	}
@@ -88,7 +172,8 @@ public class M3GMath
 		float[] b,
 		float[] ta,
 		float[] tb
-	) {
+	) 
+	{
 		float pd, ad, bd, ratio;
 		pd = dotProduct(p, pn);
 		ad = dotProduct(a, pn);
@@ -109,10 +194,7 @@ public class M3GMath
 		return out;
 	}
 
-	public static float[] sub(float[] a, float[] b)
-	{
-		return add(a, neg(b));
-	}
+	public static float[] sub(float[] a, float[] b) { return add(a, neg(b)); }
 
 	public static float[] mul(float[] a, float b)
 	{
@@ -121,10 +203,7 @@ public class M3GMath
 		return out;
 	}
 
-	public static float[] div(float[] a, float b)
-	{
-		return mul(a, 1f / b);
-	}
+	public static float[] div(float[] a, float b) { return mul(a, 1f / b); }
 
 	public static float[] neg(float[] a)
 	{
@@ -200,7 +279,7 @@ public class M3GMath
 	
 	public static float[] logQuat(float[] quat) 
 	{
-		float sinTheta = (float) Math.sqrt(norm3(quat));
+		float sinTheta = sqrt(norm3(quat));
 		float s, x, y, z;
 
 		if (sinTheta > EPSILON) 
@@ -226,7 +305,7 @@ public class M3GMath
 
 		if (norm > EPSILON) 
 		{ 
-			norm = (float) (1.0d / Math.sqrt(norm));
+			norm = (1.0f / sqrt(norm));
 			scaleVec(vec4, norm);
 		} 
 		else { return identityQuat(); }
@@ -236,15 +315,15 @@ public class M3GMath
 
 	public static void expQuat(float[] vec4, float[] vec3Exp) 
 	{
-		float theta = (float) (Math.sqrt(vec3Exp[0] * vec3Exp[0] + vec3Exp[1] * vec3Exp[1] + vec3Exp[2] * vec3Exp[2]));
+		float theta = sqrt(vec3Exp[0] * vec3Exp[0] + vec3Exp[1] * vec3Exp[1] + vec3Exp[2] * vec3Exp[2]);
 
 		if (theta > EPSILON) 
 		{
-			float s = (float) (Math.sin(theta) * (1.0d / (double) theta));
+			float s = sin(theta) * (1.0f / theta);
 			vec4[0] = vec3Exp[0] * s;
 			vec4[1] = vec3Exp[1] * s;
 			vec4[2] = vec3Exp[2] * s;
-			vec4[3] = (float) Math.cos(theta);
+			vec4[3] = cos(theta);
 		} 
 		else 
 		{
@@ -253,7 +332,8 @@ public class M3GMath
 		}
 	}
 
-	public static void slerpQuat(float[] orig, float s, float[] q0, float[] q1) {
+	public static void slerpQuat(float[] orig, float s, float[] q0, float[] q1) 
+	{
 		float s0, s1;
 		float cosTheta = dotProduct(q0, q1);
 		float oneMinusS = 1.0f - s;
@@ -262,10 +342,10 @@ public class M3GMath
 		{
 			if (cosTheta < (1.0f - EPSILON)) 
 			{
-				float theta = (float) Math.acos((double) cosTheta);
-				float sinTheta = (float) Math.sin(theta);
-				s0 = (float) (Math.sin(oneMinusS * theta) / sinTheta);
-				s1 = (float) (Math.sin(s * theta) / sinTheta);
+				float theta = acos(cosTheta);
+				float sinTheta = sin(theta);
+				s0 = sin(oneMinusS * theta) / sinTheta;
+				s1 = sin(s * theta) / sinTheta;
 			} 
 			else 
 			{
@@ -284,8 +364,8 @@ public class M3GMath
 			orig[2] = -q0[3];
 			orig[3] = q0[2];
 
-			s0 = (float) Math.sin(oneMinusS * (Math.PI / 2));
-			s1 = (float) Math.sin(s * (Math.PI / 2));
+			s0 = sin(oneMinusS * ((float) Math.PI / 2));
+			s1 = sin(s * ((float) Math.PI / 2));
 
 			orig[0] = s0 * q0[0] + s1 * orig[0];
 			orig[1] = s0 * q0[1] + s1 * orig[1];
@@ -305,13 +385,13 @@ public class M3GMath
 		cross[1] = srcAxis[2] * targetAxis[0] - srcAxis[0] * targetAxis[2];
 		cross[2] = srcAxis[0] * targetAxis[1] - srcAxis[1] * targetAxis[0];
 	
-		float angle = (float) Math.acos(dot);
-		float sinHalfAngle = (float) Math.sin(angle / 2);
+		float angle = acos(dot);
+		float sinHalfAngle = sin(angle / 2);
 	
 		rot[0] = cross[0] * sinHalfAngle; // x
 		rot[1] = cross[1] * sinHalfAngle; // y
 		rot[2] = cross[2] * sinHalfAngle; // z
-		rot[3] = (float) Math.cos(angle / 2); // w
+		rot[3] = cos(angle / 2); // w
 	
 		return rot;
 	}

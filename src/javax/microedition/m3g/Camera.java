@@ -138,7 +138,7 @@ public class Camera extends Node
 			{
 				h = fovy;
 				w = aspectRatio * h;
-				d = Math.abs(far - near);
+				d = M3GMath.abs(far - near);
 				b = near + far;
 
 				this.projMatrix = new float[] 
@@ -151,9 +151,9 @@ public class Camera extends Node
 			} 
 			else if (this.projMode == PERSPECTIVE) /* If it's perspective, calculate the matrix based on setPerspective. */
 			{
-				h = (float) Math.tan(Math.toRadians(fovy)/2f);
+				h = M3GMath.tan(M3GMath.toRadians(fovy)/2f);
 				w = aspectRatio * h;
-				d = Math.abs(far - near);
+				d = M3GMath.abs(far - near);
 				b = near + far;
 
 				this.projMatrix = new float[] 
@@ -173,13 +173,13 @@ public class Camera extends Node
 		switch (property) 
 		{
 			case AnimationTrack.FAR_DISTANCE:
-				params[3] = (projMode == PERSPECTIVE) ? Math.max(0.f, value[0]) : value[0];
+				params[3] = (projMode == PERSPECTIVE) ? M3GMath.max(0.f, value[0]) : value[0];
 				break;
 			case AnimationTrack.FIELD_OF_VIEW:
-				params[0] = (projMode == PERSPECTIVE) ? Math.max(0.f, Math.min(180.f, value[0])) : Math.max(0, value[0]);
+				params[0] = (projMode == PERSPECTIVE) ? M3GMath.max(0.f, M3GMath.min(180.f, value[0])) : M3GMath.max(0, value[0]);
 				break;
 			case AnimationTrack.NEAR_DISTANCE:
-				params[2] = (projMode == PERSPECTIVE) ? Math.max(0.f, value[0]) : value[0];
+				params[2] = (projMode == PERSPECTIVE) ? M3GMath.max(0.f, value[0]) : value[0];
 				break;
 			default:
 				super.updateProperty(property, value);

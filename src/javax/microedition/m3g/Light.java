@@ -84,10 +84,10 @@ public class Light extends Node
 				intensity = value[0];
 				break;
 			case AnimationTrack.SPOT_ANGLE:
-				angle = Math.max(0.f, Math.min(90.f, value[0]));
+				angle = M3GMath.max(0.f, M3GMath.min(90.f, value[0]));
 				break;
 			case AnimationTrack.SPOT_EXPONENT:
-				exponent = Math.max(0.f, Math.min(128.f, value[0]));
+				exponent = M3GMath.max(0.f, M3GMath.min(128.f, value[0]));
 				break;
 			default:
 				super.updateProperty(property, value);

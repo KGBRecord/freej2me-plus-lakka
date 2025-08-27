@@ -120,7 +120,7 @@ public abstract class Node extends Transformable
 		getOrientation(orientation);
 		getMatrix(transformMatrix);
 
-		transform.preTranslate(transformMatrix[12], transformMatrix[13], transformMatrix[14]);
+		transform.postTranslate(transformMatrix[12], transformMatrix[13], transformMatrix[14]);
 
 		if (constraint != NONE) 
 		{
@@ -141,7 +141,7 @@ public abstract class Node extends Transformable
 	
 			if (norm < 1.0e-5f) { return true; }
 	
-			norm = (float) (1.0 / Math.sqrt(norm));
+			norm = (1.0f / M3GMath.sqrt(norm));
 			targetAxis[0] *= norm;
 			targetAxis[1] *= norm;
 			targetAxis[2] = 0.0f;
@@ -152,7 +152,7 @@ public abstract class Node extends Transformable
 			float norm = targetAxis[0] * targetAxis[0] + targetAxis[1] * targetAxis[1] + targetAxis[2] * targetAxis[2];
 			if (norm > 1.0e-5f) 
 			{
-				norm = (float) (1.0 / Math.sqrt(norm));
+				norm = (1.0f / M3GMath.sqrt(norm));
 				targetAxis[0] *= norm;
 				targetAxis[1] *= norm;
 				targetAxis[2] *= norm;
@@ -417,7 +417,7 @@ public abstract class Node extends Transformable
 		switch (property) 
 		{
 			case AnimationTrack.ALPHA:
-				alphaFactor = (int) (Math.max(0.f, Math.min(1.f, value[0]) * 0xFFFF));
+				alphaFactor = M3GMath.max(0.f, M3GMath.min(1.f, value[0]) * 0xFFFF);
 				break;
 			case AnimationTrack.PICKABILITY:
 				picking = (value[0] >= 0.5f);

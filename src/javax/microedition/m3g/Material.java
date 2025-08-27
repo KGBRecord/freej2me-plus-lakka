@@ -113,7 +113,7 @@ public class Material extends Object3D
 				emissiveColor = ((int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2] & 0x00FFFFFF);
 				break;
 			case AnimationTrack.SHININESS:
-				shininess = Math.max(0.f, Math.min(128.f, value[0]));
+				shininess = M3GMath.max(0.f, M3GMath.min(128.f, value[0]));
 				break;
 			case AnimationTrack.SPECULAR_COLOR:
 				specularColor = (int) value[0] >> 16 & (int) value[1] >> 8 & (int) value[2];

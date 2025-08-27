@@ -94,8 +94,8 @@ public class Sprite3D extends Node
 			case AnimationTrack.CROP:
 				if (value.length > 2) 
 				{
-					setCrop((int)value[0], (int)value[1], (int)Math.max(-Graphics3D.MAX_TEXTURE_DIMENSION, Math.min(Graphics3D.MAX_TEXTURE_DIMENSION, value[2])),
-							(int)Math.max(-Graphics3D.MAX_TEXTURE_DIMENSION, Math.min(Graphics3D.MAX_TEXTURE_DIMENSION, value[3])));
+					setCrop((int)value[0], (int)value[1], (int) M3GMath.max(-Graphics3D.MAX_TEXTURE_DIMENSION, M3GMath.min(Graphics3D.MAX_TEXTURE_DIMENSION, value[2])),
+							(int) M3GMath.max(-Graphics3D.MAX_TEXTURE_DIMENSION, M3GMath.min(Graphics3D.MAX_TEXTURE_DIMENSION, value[3])));
 				} 
 				else 
 				{

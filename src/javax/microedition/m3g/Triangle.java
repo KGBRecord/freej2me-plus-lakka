@@ -231,7 +231,7 @@ class Triangle
 
 	private final Triangle clipPlane(float[] pn)
 	{
-		pn = M3GMath.div(pn, (float) Math.sqrt(M3GMath.dotProduct(pn, pn)));
+		pn = M3GMath.div(pn, (float) M3GMath.sqrt(M3GMath.dotProduct(pn, pn)));
 
 		// Test each vertex of the triangle against the clip planes
 		for (int i = 0; i < 3; i++) 

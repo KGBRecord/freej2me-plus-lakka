@@ -498,27 +498,28 @@ public class Graphics3D
 		final Image2D teximg = tex == null ? null : tex.getImage();
 
 		// Scale and translate mesh
-		tr.preScale(scaleBias[0], scaleBias[0], scaleBias[0]);
-		tr.preTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
+		tr.postTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
+		tr.postScale(scaleBias[0], scaleBias[0], scaleBias[0]);
 
 		final VertexArray texCoords = vertices.getTexCoords(0, scaleBias); // get Texture coordinates
 
 		if (tex != null) { tex.getCompositeTransform(texcomptr); }
 
 		// Scale and translate texture coordinates (same scaleBias)
-		textr.preScale(scaleBias[0], scaleBias[0], scaleBias[0]);
-		textr.preTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
-		textr.preMultiply(texcomptr);
+		textr.postTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
+		textr.postScale(scaleBias[0], scaleBias[0], scaleBias[0]);
 		
+		textr.preMultiply(texcomptr);
+
 		// -> Local space
 		this.currCam.getProjection(projectionMatrix);
 
 		// Transform mesh from local coords to world coords
-		tr.preMultiplyTry(transform);
+		tr.preMultiply(transform);
 		// -> World space
 
 		// Apply the inverse of the camera's transform to the mesh
-		tr.preMultiplyTry(this.currCamTransInv);
+		tr.preMultiply(this.currCamTransInv);
 		// -> View space
 
 		// Apply projection matrix
@@ -544,10 +545,10 @@ public class Graphics3D
 		textr.setIdentity();
 
 		// Fit to viewport
-		tr.preScale(1, -1, 1);
-		tr.preTranslate(1, 1, 0);
-		tr.preScale((float) vieww / 2f, (float) viewh / 2f, 1f);
-		if (teximg != null) { textr.preScale(teximg.getWidth(), teximg.getHeight(), 1); }
+		if (teximg != null) { textr.postScale(teximg.getWidth(), teximg.getHeight(), 1); }
+		tr.postScale((float) vieww / 2f, (float) viewh / 2f, 1f);
+		tr.postTranslate(1, 1, 0);
+		tr.postScale(1, -1, 1);
 
 		// -> Screen space
 
@@ -655,8 +656,8 @@ public class Graphics3D
 				for (int half = 0; half < 2; half++) 
 				{
 					// Determine the range for the y-coordinate
-					yStart = half == 0 ? Math.max(Math.round(yTop), 0) : Math.max(Math.round(yMid), 0);
-					yEnd = half == 0 ? Math.min(Math.round(yMid), viewh) : Math.min(Math.round(yBot), viewh);
+					yStart = half == 0 ? M3GMath.max(M3GMath.roundPositive(yTop), 0) : M3GMath.max(M3GMath.roundPositive(yMid), 0);
+					yEnd = half == 0 ? M3GMath.min(M3GMath.roundPositive(yMid), viewh) : M3GMath.min(M3GMath.roundPositive(yBot), viewh);
 					
 					// Adjust drawY calculation based on half
 					for (int y = yStart; y < yEnd; y++) 
@@ -664,7 +665,7 @@ public class Graphics3D
 						drawY = half == 0
 							? (y - yTop) / (yMid - yTop)  // Upper half
 							: 1f - (y - yMid) / (yBot - yMid); // Lower half
-						drawY = Math.max(0f, Math.min(drawY, 1f));
+						drawY = M3GMath.max(0f, M3GMath.min(drawY, 1f));
 
 						// Calculate interpolated values
 						
@@ -693,8 +694,8 @@ public class Graphics3D
 							? tTop + drawY * (tMidR - tTop)
 							: tBot + drawY * (tMidR - tBot);
 
-						ixL = Math.max(Math.round(xL), 0);
-						ixR = Math.min(Math.round(xR), vieww);
+						ixL = M3GMath.max(M3GMath.roundPositive(xL), 0);
+						ixR = M3GMath.min(M3GMath.roundPositive(xR), vieww);
 
 						// Draw the pixels for the current y-coordinate
 						for (int x = ixL; x < ixR; x++) 
@@ -705,7 +706,7 @@ public class Graphics3D
 							try 
 							{
 								drawX = (x - xL) / (xR - xL);
-								drawX = Math.max(0f, Math.min(drawX, 1f));
+								drawX = M3GMath.max(0f, M3GMath.min(drawX, 1f));
 								z = (zL + drawX * (zR - zL));
 								
 								// Only depth test if the compositingMode has the feature enabled. If compositingMode is not set, check if this target has depthBuffer enabled
@@ -720,7 +721,7 @@ public class Graphics3D
 
 								// If there's no texture coords or a texture image, we default to rendering with vertex colors. (also used for debug render modes)
 								int paintPixel = 0xFF000000 | vertices.getDefaultColor(); // It's forced to opaque, maybe that shouldn't be done for untextured polygons, but helps some games like Brick Breaker Revolution
-								if(tex != null && texCoords != null && !Mobile.M3GRenderUntexturedPolygons && !Mobile.M3GRenderWireframe) { paintPixel = teximg.getConvertedPixel(Math.round(s), Math.round(t)); }
+								if(tex != null && texCoords != null && !Mobile.M3GRenderUntexturedPolygons && !Mobile.M3GRenderWireframe) { paintPixel = teximg.getConvertedPixel(M3GMath.roundPositive(s), M3GMath.roundPositive(t)); }
 								
 								int alpha = (paintPixel >> 24) & 0xFF; // Image2D converts to ARGB format
 								if (alpha < (int) (compositingMode.getAlphaThreshold() * 255)) { continue; } // Skip transparent pixels below the alpha threshold
@@ -740,10 +741,10 @@ public class Graphics3D
 									}
 
 									// Calculate weights based on pixel position in relation to the triangle's area
-									totalArea = Math.abs((xBot - xTop) * (yMid - yTop) - (xBot - xMidL) * (yBot - yTop));
-									areaA = Math.abs((xBot - xTop) * (y - yTop) - (x - xTop) * (yBot - yTop));
-									areaB = Math.abs((xMidL - xTop) * (y - yTop) - (x - xTop) * (yMid - yTop));
-									areaC = Math.abs((x - xBot) * (yMid - yTop) - (xBot - xMidL) * (y - yTop));
+									totalArea = M3GMath.abs((xBot - xTop) * (yMid - yTop) - (xBot - xMidL) * (yBot - yTop));
+									areaA = M3GMath.abs((xBot - xTop) * (y - yTop) - (x - xTop) * (yBot - yTop));
+									areaB = M3GMath.abs((xMidL - xTop) * (y - yTop) - (x - xTop) * (yMid - yTop));
+									areaC = M3GMath.abs((x - xBot) * (yMid - yTop) - (xBot - xMidL) * (y - yTop));
 
 									weightA = areaA / totalArea;
 									weightB = areaB / totalArea;
@@ -773,12 +774,12 @@ public class Graphics3D
 									// There's probably some kind of issue with how triangles' final z-coordinate is calculated
 									if (fog.getMode() == Fog.LINEAR) 
 									{
-										fogFactor = Math.max(0, Math.min(1, (fog.getFarDistance() - z) / (fog.getFarDistance() - fog.getNearDistance()) * 250));
+										fogFactor = M3GMath.max(0, M3GMath.min(1, (fog.getFarDistance() - z) / (fog.getFarDistance() - fog.getNearDistance()) * 250));
 									} 
 									else 
 									{
-										fogFactor = (float) Math.abs(Math.exp(-fog.getDensity() * z));
-										fogFactor = Math.max(0, Math.min(1, fogFactor));
+										fogFactor = M3GMath.abs(M3GMath.exp(-fog.getDensity() * z));
+										fogFactor = M3GMath.max(0, M3GMath.min(1, fogFactor));
 									}
 
 									paintPixel = blendFog(paintPixel, fog.getColor());
@@ -908,16 +909,16 @@ public class Graphics3D
 				outR = (int) (fgR * (fgA / 255f) + bgR * (1 - (fgA / 255f)));
 				outG = (int) (fgG * (fgA / 255f) + bgG * (1 - (fgA / 255f)));
 				outB = (int) (fgB * (fgA / 255f) + bgB * (1 - (fgA / 255f)));
-				return (Math.max(0, Math.min(outA, 255)) << 24) | 
-					(Math.max(0, Math.min(outR, 255)) << 16) | 
-					(Math.max(0, Math.min(outG, 255)) << 8) | 
-					Math.max(0, Math.min(outB, 255));
+				return (M3GMath.max(0, M3GMath.min(outA, 255)) << 24) | 
+					(M3GMath.max(0, M3GMath.min(outR, 255)) << 16) | 
+					(M3GMath.max(0, M3GMath.min(outG, 255)) << 8) | 
+					M3GMath.max(0, M3GMath.min(outB, 255));
 
 			case CompositingMode.ALPHA_ADD:
-				outR = (int) Math.min(255, (fgR * alphaNorm) + bgR);
-				outG = (int) Math.min(255, (fgG * alphaNorm) + bgG);
-				outB = (int) Math.min(255, (fgB * alphaNorm) + bgB);
-				outA = (int) Math.min(255, bgA + (int)(alpha * (1 - (bgA / 255f))));
+				outR = (int) M3GMath.min(255, (fgR * alphaNorm) + bgR);
+				outG = (int) M3GMath.min(255, (fgG * alphaNorm) + bgG);
+				outB = (int) M3GMath.min(255, (fgB * alphaNorm) + bgB);
+				outA = (int) M3GMath.min(255, bgA + (int)(alpha * (1 - (bgA / 255f))));
 				return (outA << 24) | (outR << 16) | (outG << 8) | outB;
 
 			case Texture2D.FUNC_BLEND:
@@ -926,48 +927,48 @@ public class Graphics3D
 				outG = (int) ((fgG * alphaNorm) + (bgG * (1 - alphaNorm)));
 				outB = (int) ((fgB * alphaNorm) + (bgB * (1 - alphaNorm)));
 				outA = (int) (bgA * (1 - alphaNorm) + fgA * alphaNorm);
-				return (Math.max(0, Math.min(outA, 255)) << 24) | 
-					(Math.max(0, Math.min(outR, 255)) << 16) | 
-					(Math.max(0, Math.min(outG, 255)) << 8) | 
-					Math.max(0, Math.min(outB, 255));
+				return (M3GMath.max(0, M3GMath.min(outA, 255)) << 24) | 
+					(M3GMath.max(0, M3GMath.min(outR, 255)) << 16) | 
+					(M3GMath.max(0, M3GMath.min(outG, 255)) << 8) | 
+					M3GMath.max(0, M3GMath.min(outB, 255));
 
 			case Texture2D.FUNC_MODULATE:
 			case CompositingMode.MODULATE:
 				outR = (int) ((fgR * bgR) / 255);
 				outG = (int) ((fgG * bgG) / 255);
 				outB = (int) ((fgB * bgB) / 255);
-				outA = Math.max(bgA, fgA);
-				return (Math.max(0, Math.min(outA, 255)) << 24) | 
-					(Math.max(0, Math.min(outR, 255)) << 16) | 
-					(Math.max(0, Math.min(outG, 255)) << 8) | 
-					Math.max(0, Math.min(outB, 255));
+				outA = M3GMath.max(bgA, fgA);
+				return (M3GMath.max(0, M3GMath.min(outA, 255)) << 24) | 
+					(M3GMath.max(0, M3GMath.min(outR, 255)) << 16) | 
+					(M3GMath.max(0, M3GMath.min(outG, 255)) << 8) | 
+					M3GMath.max(0, M3GMath.min(outB, 255));
 
 			case CompositingMode.MODULATE_X2:
 				outR = (int) (((2 * fgR) * bgR) / 255);
 				outG = (int) (((2 * fgG) * bgG) / 255);
 				outB = (int) (((2 * fgB) * bgB) / 255);
-				outA = Math.max(bgA, fgA);
-				return (Math.max(0, Math.min(outA, 255)) << 24) | 
-					(Math.max(0, Math.min(outR, 255)) << 16) | 
-					(Math.max(0, Math.min(outG, 255)) << 8) | 
-					Math.max(0, Math.min(outB, 255));
+				outA = M3GMath.max(bgA, fgA);
+				return (M3GMath.max(0, M3GMath.min(outA, 255)) << 24) | 
+					(M3GMath.max(0, M3GMath.min(outR, 255)) << 16) | 
+					(M3GMath.max(0, M3GMath.min(outG, 255)) << 8) | 
+					M3GMath.max(0, M3GMath.min(outB, 255));
 
 			case Texture2D.FUNC_DECAL:
 				outR = (fgR * fgA / 255) + (bgR * (255 - fgA) / 255);
 				outG = (fgG * fgA / 255) + (bgG * (255 - fgA) / 255);
 				outB = (fgB * fgA / 255) + (bgB * (255 - fgA) / 255);
 				outA = fgA; // Use foreground's alpha
-				return (Math.min(Math.max(outA, 0), 255) << 24) | 
-					(Math.min(Math.max(outR, 0), 255) << 16) | 
-					(Math.min(Math.max(outG, 0), 255) << 8) | 
-					Math.min(Math.max(outB, 0), 255);
+				return (M3GMath.min(M3GMath.max(outA, 0), 255) << 24) | 
+					(M3GMath.min(M3GMath.max(outR, 0), 255) << 16) | 
+					(M3GMath.min(M3GMath.max(outG, 0), 255) << 8) | 
+					M3GMath.min(M3GMath.max(outB, 0), 255);
 
 			case Texture2D.FUNC_ADD:
-				outR = Math.min(bgR + fgR, 255);
-				outG = Math.min(bgG + fgG, 255);
-				outB = Math.min(bgB + fgB, 255);
-				outA = Math.max(bgA, fgA); // Use maximum alpha
-				return (Math.min(Math.max(outA, 0), 255) << 24) | 
+				outR = M3GMath.min(bgR + fgR, 255);
+				outG = M3GMath.min(bgG + fgG, 255);
+				outB = M3GMath.min(bgB + fgB, 255);
+				outA = M3GMath.max(bgA, fgA); // Use maximum alpha
+				return (M3GMath.min(M3GMath.max(outA, 0), 255) << 24) | 
 					(outR << 16) | 
 					(outG << 8) | 
 					outB;

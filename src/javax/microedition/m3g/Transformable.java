@@ -57,11 +57,11 @@ public abstract class Transformable extends Object3D
 		final float[] m = new float[16];
 		this.rotate.get(m);
 		
-		final float angle = (float) Math.acos(((m[0] + m[5] + m[10]) - 1) / 2);
+		final float angle = M3GMath.acos(((m[0] + m[5] + m[10]) - 1) / 2);
 		
-		ax = angle == 0 ? 0 : (m[9] - m[6]) / (2 * (float) Math.sin(angle));
-		ay = angle == 0 ? 0 : (m[2] - m[8]) / (2 * (float) Math.sin(angle));
-		az = angle == 0 ? 0 : (m[4] - m[1]) / (2 * (float) Math.sin(angle));
+		ax = angle == 0 ? 0 : (m[9] - m[6]) / (2 * M3GMath.sin(angle));
+		ay = angle == 0 ? 0 : (m[2] - m[8]) / (2 * M3GMath.sin(angle));
+		az = angle == 0 ? 0 : (m[4] - m[1]) / (2 * M3GMath.sin(angle));
 
 		angleAxis[0] = angle;
 		angleAxis[1] = ax;
@@ -124,7 +124,7 @@ public abstract class Transformable extends Object3D
 		sx *= xyz[0];
 		sy *= xyz[1];
 		sz *= xyz[2];
-		this.scale.preScale(sx, sy, sz);
+		this.scale.postScale(sx, sy, sz);
 	}
 
 	public void setOrientation(float angle, float ax, float ay, float az)
@@ -136,7 +136,7 @@ public abstract class Transformable extends Object3D
 	public void setScale(float sx, float sy, float sz)
 	{
 		this.scale.setIdentity();
-		this.scale.preScale(sx, sy, sz);
+		this.scale.postScale(sx, sy, sz);
 	}
 
 	public void setTransform(Transform transform)
@@ -162,7 +162,7 @@ public abstract class Transformable extends Object3D
 	public void setTranslation(float tx, float ty, float tz)
 	{
 		this.translate.setIdentity();
-		this.translate.preTranslate(tx, ty, tz);
+		this.translate.postTranslate(tx, ty, tz);
 	}
 
 	public void translate(float tx, float ty, float tz)
@@ -172,7 +172,7 @@ public abstract class Transformable extends Object3D
 		tx += xyz[0];
 		ty += xyz[1];
 		tz += xyz[2];
-		this.translate.preTranslate(tx, ty, tz);
+		this.translate.postTranslate(tx, ty, tz);
 	}
 
 	@Override

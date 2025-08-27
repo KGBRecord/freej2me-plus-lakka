@@ -27,13 +27,25 @@ public class Transform
 	//   [  4,  5,  6,  7 ]   Addressing in 2D vs in 1D:
 	//   [  8,  9, 10, 11 ]     mat_2D[row][col] == mat_1D[4*row + col]
 	//   [ 12, 13, 14, 15 ]
-	private float[] matrix;
+	private float[] matrix = new float[] 
+	{
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	};
+
+	// Matrix for operations such as scale, translation, etc
+	private static final float[] manipulationMatrix = new float[] 
+	{
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	};
 
 	/* ------------------------- public methods ------------------------- */
-	public Transform()
-	{
-		this.setIdentity();
-	}
+	public Transform() { }
 
 	public Transform(Transform transform)
 	{
@@ -117,30 +129,37 @@ public class Transform
 		/* As per JSR-184, throw NullPointerException if the given transform is null. */
 		if(transform == null) { throw new NullPointerException("Cannot multiply by receiving a null transform."); }
 	
-		this.matrix = Transform.multiply(
-			this.matrix,
-			transform.matrix
-		);
+		multiply(this.matrix.clone(), transform.matrix);
 	}
 
 	public void postRotate(float angle, float ax, float ay, float az)
 	{
-		this.postMultiplyTry(Transform.rotate(angle, ax, ay, az));
+		Transform.rotate(angle, ax, ay, az);
+		multiply(this.matrix.clone(), Transform.manipulationMatrix);
 	}
 
 	public void postRotateQuat(float qx, float qy, float qz, float qw)
 	{
-		this.postMultiplyTry(Transform.rotateQuat(qx, qy, qz, qw));
+		Transform.rotateQuat(qx, qy, qz, qw);
+		multiply(this.matrix.clone(), Transform.manipulationMatrix);
 	}
 
 	public void postScale(float sx, float sy, float sz)
 	{
-		this.postMultiplyTry(Transform.scale(sx, sy, sz));
+		resetManipulationMatrix();
+		manipulationMatrix[0]  = sx;
+		manipulationMatrix[5]  = sy;
+		manipulationMatrix[10] = sz;
+		multiply(this.matrix.clone(), Transform.manipulationMatrix);
 	}
 
 	public void postTranslate(float tx, float ty, float tz)
 	{
-		this.postMultiplyTry(Transform.translate(tx, ty, tz));
+		resetManipulationMatrix();
+		manipulationMatrix[3]  = tx;
+		manipulationMatrix[7]  = ty;
+		manipulationMatrix[11] = tz;
+		multiply(this.matrix.clone(), Transform.manipulationMatrix);
 	}
 
 	public void set(float[] matrix)
@@ -164,13 +183,48 @@ public class Transform
 
 	public void setIdentity()
 	{
-		this.matrix = new float[] 
-		{
-			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-			0, 0, 0, 1
-		};
+		this.matrix[0] = 1;
+		this.matrix[1] = 0;
+		this.matrix[2] = 0;
+		this.matrix[3] = 0;
+
+		this.matrix[4] = 0;
+		this.matrix[5] = 1;
+		this.matrix[6] = 0;
+		this.matrix[7] = 0;
+
+		this.matrix[8]  = 0;
+		this.matrix[9]  = 0;
+		this.matrix[10] = 1;
+		this.matrix[11] = 0;
+
+		this.matrix[12] = 0;
+		this.matrix[13] = 0;
+		this.matrix[14] = 0;
+		this.matrix[15] = 1;
+	}
+
+	public static void resetManipulationMatrix() 
+	{
+		manipulationMatrix[0] = 1;
+		manipulationMatrix[1] = 0;
+		manipulationMatrix[2] = 0;
+		manipulationMatrix[3] = 0;
+
+		manipulationMatrix[4] = 0;
+		manipulationMatrix[5] = 1;
+		manipulationMatrix[6] = 0;
+		manipulationMatrix[7] = 0;
+
+		manipulationMatrix[8]  = 0;
+		manipulationMatrix[9]  = 0;
+		manipulationMatrix[10] = 1;
+		manipulationMatrix[11] = 0;
+
+		manipulationMatrix[12] = 0;
+		manipulationMatrix[13] = 0;
+		manipulationMatrix[14] = 0;
+		manipulationMatrix[15] = 1;
 	}
 
 	public void transform(float[] vectors)
@@ -267,155 +321,120 @@ public class Transform
 	void preMultiply(Transform transform)
 	{
 		if (transform == null) { throw new java.lang.NullPointerException("preMultiply() called with null transform."); }
-		this.matrix = Transform.multiply(
-			transform.matrix,
-			this.matrix
-		);
-	}
-
-	// The two *MultiplyTry methods will silently ignore a null transform.
-	// This is used to concisely ignore nulls, mostly in rendering.
-
-	// package-private
-	void preMultiplyTry(Transform transform)
-	{
-		if (transform != null) this.preMultiply(transform);
-	}
-
-	// package-private
-	void postMultiplyTry(Transform transform)
-	{
-		if (transform != null) this.postMultiply(transform);
+		multiply(transform.matrix, this.matrix.clone());
 	}
 
 	// package-private
 	void preRotate(float angle, float ax, float ay, float az)
 	{
-		this.preMultiplyTry(Transform.rotate(angle, ax, ay, az));
+		Transform.rotate(angle, ax, ay, az);
+		multiply(Transform.manipulationMatrix, this.matrix.clone());
 	}
 
 	// package-private
 	void preRotateQuat(float qx, float qy, float qz, float qw)
 	{
-		this.preMultiplyTry(Transform.rotateQuat(qx, qy, qz, qw));
+		Transform.rotateQuat(qx, qy, qz, qw);
+		multiply(Transform.manipulationMatrix, this.matrix.clone());
 	}
 
 	// package-private
-	void preScale(float sx, float sy, float sz)
-	{
-		this.preMultiplyTry(Transform.scale(sx, sy, sz));
-	}
-
-	// package-private
-	void preTranslate(float tx, float ty, float tz)
-	{
-		this.preMultiplyTry(Transform.translate(tx, ty, tz));
-	}
-
-	// package-private
-	static Transform rotate(float angle, float ax, float ay, float az)
+	static void rotate(float angle, float ax, float ay, float az)
 	{
 		/* As per JSR-184, throw IllegalArgumentException if the rotation axis is zero but the angle is not. */
 		if(ax == 0 && ay == 0 && az == 0 && angle != 0) { throw new IllegalArgumentException("The rotation axis is zero while angle is nonZero."); }
 
-		// If angle is 0, return an identity matrix transform
-		if (angle == 0) { return new Transform(); }
+		resetManipulationMatrix();
+
+		// If angle is 0, return right away;
+		if (angle == 0) { return; }
 		
 		// Compute sine and cosine of the angle
-		float rad = (float) Math.toRadians(angle);
-		float s = (float) Math.sin(rad);
-		float c = (float) Math.cos(rad);
+		float rad = M3GMath.toRadians(angle);
+		float s = M3GMath.sin(rad);
+		float c = M3GMath.cos(rad);
 		float d = 1f - c;
 
 		// Normalize the axis
-		float l = (float) Math.sqrt((ax * ax) + (ay * ay) + (az * az));
+		float l = M3GMath.sqrt((ax * ax) + (ay * ay) + (az * az));
 		float x = ax / l;
 		float y = ay / l;
 		float z = az / l;
 
-		float[] rotationMatrix = new float[] 
-		{
-			x*x*d +  c ,  y*x*d - z*s,  z*x*d + y*s,  0,
-			x*y*d + z*s,  y*y*d +  c ,  z*y*d - x*s,  0,
-			x*z*d - y*s,  y*z*d + x*s,  z*z*d +  c ,  0,
-			     0     ,       0     ,       0     ,  1
-		};
+		manipulationMatrix[0] = x*x*d +  c;
+		manipulationMatrix[1] = y*x*d - z*s;
+		manipulationMatrix[2] = z*x*d + y*s;
+		manipulationMatrix[3] = 0;
 
-		return new Transform(rotationMatrix);
+		manipulationMatrix[4] = x*y*d + z*s;
+		manipulationMatrix[5] = y*y*d +  c;
+		manipulationMatrix[6] = z*y*d - x*s;
+		manipulationMatrix[7] = 0;
+
+		manipulationMatrix[8]  = x*z*d - y*s;
+		manipulationMatrix[9]  = y*z*d + x*s;
+		manipulationMatrix[10] = z*z*d +  c;
+		manipulationMatrix[11] = 0;
+
+		manipulationMatrix[12] = 0;
+		manipulationMatrix[13] = 0;
+		manipulationMatrix[14] = 0;
+		manipulationMatrix[15] = 1;
 	}
 
 	// package-private
-	static Transform rotateQuat(float qx, float qy, float qz, float qw)
+	static void rotateQuat(float qx, float qy, float qz, float qw)
 	{
 		/* As per JSR-184, throw IllegalArgumentException if all quaternion components are zero. */
 		if(qx == 0 && qy == 0 && qz == 0 && qw == 0) { throw new IllegalArgumentException("Cannot rotate when all quaternion components are zero."); }
 
 		// Normalize the quaternion
-		float l = (float) Math.sqrt((qx * qx) + (qy * qy) + (qz * qz) + (qw * qw));
+		float l = M3GMath.sqrt((qx * qx) + (qy * qy) + (qz * qz) + (qw * qw));
 		float x = qx / l;
 		float y = qy / l;
 		float z = qz / l;
 		float w = qw / l;
 
-		float[] rotationMatrix = new float[] 
-		{
-			1-2*y*y-2*z*z,    2*x*y-2*z*w,    2*x*z+2*y*w,  0,
-			  2*x*y+2*z*w,  1-2*x*x-2*z*z,    2*y*z-2*x*w,  0,
-			  2*x*z-2*y*w,    2*y*z+2*x*w,  1-2*x*x-2*y*y,  0,
-			      0      ,        0      ,        0      ,  1
-		};
+		resetManipulationMatrix();
+		manipulationMatrix[0] = 1-2*y*y-2*z*z;
+		manipulationMatrix[1] = 2*x*y-2*z*w;
+		manipulationMatrix[2] = 2*x*z+2*y*w;
+		manipulationMatrix[3] = 0;
 
-		return new Transform(rotationMatrix);
-	}
+		manipulationMatrix[4] = 2*x*y+2*z*w;
+		manipulationMatrix[5] = 1-2*x*x-2*z*z;
+		manipulationMatrix[6] = 2*y*z-2*x*w;
+		manipulationMatrix[7] = 0;
 
-	// package-private
-	static Transform scale(float sx, float sy, float sz)
-	{
-		float[] scaleMatrix = new float[] 
-		{
-			sx,  0,  0, 0,
-			 0, sy,  0, 0,
-			 0,  0, sz, 0,
-			 0,  0,  0, 1
-		};
+		manipulationMatrix[8]  = 2*x*z-2*y*w;
+		manipulationMatrix[9]  = 2*y*z+2*x*w;
+		manipulationMatrix[10] = 1-2*x*x-2*y*y;
+		manipulationMatrix[11] = 0;
 
-		return new Transform(scaleMatrix);
-	}
-
-	// package-private
-	static Transform translate(float tx, float ty, float tz)
-	{
-		float[] translationMatrix = new float[] 
-		{
-			1, 0, 0, tx,
-			0, 1, 0, ty,
-			0, 0, 1, tz,
-			0, 0, 0,  1
-		};
-
-		return new Transform(translationMatrix);
+		manipulationMatrix[12] = 0;
+		manipulationMatrix[13] = 0;
+		manipulationMatrix[14] = 0;
+		manipulationMatrix[15] = 1;
 	}
 
 	/* ------------------------- private methods ------------------------- */
 
-	private Transform(float[] matrix) { this.matrix = matrix; }
-
-	private static float[] multiply(float[] left, float[] right)
+	private void multiply(float[] left, float[] right)
 	{
-		float[] result = new float[16];
-
 		for (int row = 0; row < 4; row++)
 		{
-			for (int col = 0; col < 4; col++)
-			{
-				result[4*row + col] =
-					left[4*row + 0] * right[4*0 + col] +
-					left[4*row + 1] * right[4*1 + col] +
-					left[4*row + 2] * right[4*2 + col] +
-					left[4*row + 3] * right[4*3 + col];
-			}
+			this.matrix[4 * row] = left[4 * row] * right[0] + left[4 * row + 1] * right[4] + 
+				left[4 * row + 2] * right[8] + left[4 * row + 3] * right[12];
+
+			this.matrix[4 * row + 1] = left[4 * row] * right[1] + left[4 * row + 1] * right[5] + 
+				left[4 * row + 2] * right[9] + left[4 * row + 3] * right[13];
+
+			this.matrix[4 * row + 2] = left[4 * row] * right[2] + left[4 * row + 1] * right[6] + 
+				left[4 * row + 2] * right[10] + left[4 * row + 3] * right[14];
+
+			this.matrix[4 * row + 3] = left[4 * row] * right[3] + left[4 * row + 1] * right[7] + 
+				left[4 * row + 2] * right[11] + left[4 * row + 3] * right[15];
 		}
-		return result;
 	}
 
 }
