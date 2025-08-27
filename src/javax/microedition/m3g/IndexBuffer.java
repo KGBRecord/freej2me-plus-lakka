@@ -22,6 +22,13 @@ public abstract class IndexBuffer extends Object3D
 	protected int indexCount;
 	protected int[] indices;
 
+	protected Object3D duplicateImpl() 
+	{
+		IndexBuffer copy = (IndexBuffer) super.duplicateImpl();
+		copy.indices = (int[]) indices.clone();
+		return copy;
+	}
+
 	public int getIndexCount() { return this.indexCount; }
 
 	public void getIndices(int[] indices)

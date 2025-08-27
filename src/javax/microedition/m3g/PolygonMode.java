@@ -27,14 +27,12 @@ public class PolygonMode extends Object3D
 	public static final int WINDING_CCW = 168;
 	public static final int WINDING_CW = 169;
 
-
 	private int culling;
 	private int shading;
 	private int winding;
 	private boolean twoSidedLighting;
 	private boolean localCameraLighting;
 	private boolean perspectiveCorrection;
-
 
 	public PolygonMode()
 	{
@@ -45,19 +43,6 @@ public class PolygonMode extends Object3D
 		this.localCameraLighting = false;
 		this.perspectiveCorrection = false;
 	}
-
-	Object3D duplicateImpl() 
-	{
-		PolygonMode copy = new PolygonMode();
-		copy.culling = culling;
-		copy.shading = shading;
-		copy.winding = winding;
-		copy.twoSidedLighting = twoSidedLighting;
-		copy.localCameraLighting = localCameraLighting;
-		copy.perspectiveCorrection = perspectiveCorrection;
-		return copy;
-	}
-
 
 	public int getCulling()
 	{

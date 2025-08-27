@@ -37,17 +37,15 @@ public abstract class Transformable extends Object3D
 		transform.postMultiply(this.matrix);
 	}
 
-	void duplicate(Transformable copy) 
+	protected Object3D duplicateImpl() 
 	{
-		copy.matrix = new Transform();
-		copy.scale = new Transform();
-		copy.rotate = new Transform();
-		copy.translate = new Transform();
+		Transformable copy = (Transformable) super.duplicateImpl();
+		copy.matrix = new Transform(matrix);
+		copy.scale = new Transform(scale);
+		copy.rotate = new Transform(rotate);
+		copy.translate = new Transform(translate);
 
-		copy.matrix.set(matrix);
-		copy.scale.set(scale);
-		copy.rotate.set(rotate);
-		copy.translate.set(translate);
+		return copy;
 	}
 
 	public void getOrientation(float[] angleAxis)

@@ -24,26 +24,14 @@ public class Fog extends Object3D
 	public static final int	EXPONENTIAL = 80;
 	public static final int LINEAR = 81;
 
-
 	private float near = 0.0f;
 	private float far = 1.0f;
 	private int mode = LINEAR;
 	private int color = 0x00000000;
 	private float density = 1.0f;
 
-
 	public Fog() {  }
 
-	Object3D duplicateImpl() 
-	{
-		Fog copy = new Fog();
-		copy.color = color;
-		copy.mode = mode;
-		copy.density = density;
-		copy.near = near;
-		copy.far = far;
-		return copy;
-	}
 
 	public int getColor() { return color; }
 

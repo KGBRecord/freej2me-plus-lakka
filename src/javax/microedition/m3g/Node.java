@@ -43,25 +43,12 @@ public abstract class Node extends Transformable
 	boolean hasBones = false;
 	boolean[] dirtyBits = new boolean[2]; // {renderablesBit, BonesBit}, used mostly to track for animation changes
 
-	protected void duplicate(Node copy) 
+	protected Object3D duplicateImpl() 
 	{
-		super.duplicate((Transformable) copy);
-		
+		Node copy = (Node) super.duplicateImpl();
 		copy.parent = null;
-		copy.left = left;
-		copy.right = right;
-		copy.scope = scope;
-		copy.zRef = zRef;
-		copy.yRef = yRef;
-		copy.alphaFactor = alphaFactor;
-		copy.zTarget = zTarget;
-		copy.yTarget = yTarget;
-		copy.picking = picking;
-		copy.rendering = rendering;
-		copy.scope = scope;
-		System.arraycopy(dirtyBits, 0, copy.dirtyBits, 0, dirtyBits.length);
-		copy.hasRenderables = hasRenderables;
-		copy.hasBones = hasBones;
+		copy.dirtyBits = dirtyBits.clone();
+		return copy;
 	}
 
 	boolean doAlign(Node ref) 
@@ -301,8 +288,8 @@ public abstract class Node extends Transformable
 		 * (zRef == yRef) && (zTarget == yTarget != NONE)
 		 * zRef or yRef is this Node.
 		 */
-		if ( ((zTarget != this.NONE) && (zTarget != this.X_AXIS) && (zTarget != this.Y_AXIS) && (zTarget != this.Z_AXIS) && (zTarget != this.ORIGIN)) 
-			|| ((yTarget != this.NONE) && (yTarget != this.X_AXIS) && (yTarget != this.Y_AXIS) && (yTarget != this.Z_AXIS) && (yTarget != this.ORIGIN)) )
+		if ( ((zTarget != NONE) && (zTarget != X_AXIS) && (zTarget != Y_AXIS) && (zTarget != Z_AXIS) && (zTarget != ORIGIN)) 
+			|| ((yTarget != NONE) && (yTarget != X_AXIS) && (yTarget != Y_AXIS) && (yTarget != Z_AXIS) && (yTarget != ORIGIN)) )
 			{ throw new IllegalArgumentException("Node target axis is invalid."); }
 		if ((zRef == yRef) && (zTarget != NONE || yTarget != NONE))
 			{ throw new IllegalArgumentException("Tried to align with two references having the same axis."); }

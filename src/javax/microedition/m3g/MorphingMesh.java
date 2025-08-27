@@ -54,6 +54,14 @@ public class MorphingMesh extends Mesh
 
 	private MorphingMesh() { }
 
+	protected Object3D duplicateImpl() 
+	{
+		MorphingMesh copy = (MorphingMesh) super.duplicateImpl();
+		copy.weights = (float[]) weights.clone();
+		copy.targets = (VertexBuffer[]) targets.clone();
+		return copy;
+	}
+
 	public VertexBuffer getMorphTarget(int index) { return targets[index]; }
 
 	public int getMorphTargetCount() { return targets.length; }

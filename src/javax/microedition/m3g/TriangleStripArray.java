@@ -64,11 +64,9 @@ public class TriangleStripArray extends IndexBuffer
 		this.updateFields(false, new int[] { firstIndex }, stripLengths);
 	}
 
-	Object3D duplicateImpl() 
+	protected Object3D duplicateImpl() 
 	{
-		TriangleStripArray copy = new TriangleStripArray();
-		copy.indexCount = indexCount;
-		copy.indices = indices;
+		TriangleStripArray copy = (TriangleStripArray) super.duplicateImpl();
 		return copy;
 	}
 

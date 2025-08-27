@@ -27,20 +27,11 @@ public class Mesh extends Node
 
 	protected Mesh() { }
 
-	void duplicate(Mesh copy) 
+	protected Object3D duplicateImpl() 
 	{
-		super.duplicate((Node) copy);
-		copy.vertices = vertices;
-		copy.submeshes = new IndexBuffer[submeshes.length];
-		copy.appearances = new Appearance[appearances.length];
-		System.arraycopy(submeshes, 0, copy.submeshes, 0, submeshes.length);
-		System.arraycopy(appearances, 0, copy.appearances, 0, appearances.length);
-	}
-
-	Object3D duplicateImpl() 
-	{
-		Mesh copy = new Mesh();
-		duplicate((Mesh) copy);
+		Mesh copy = (Mesh) super.duplicateImpl();
+		copy.submeshes = (IndexBuffer[]) submeshes.clone();
+		copy.appearances = (Appearance[]) appearances.clone();
 		return copy;
 	}
 
@@ -50,10 +41,10 @@ public class Mesh extends Node
 
 		this.vertices = vertices;
 		this.submeshes = new IndexBuffer[]{submesh};
-		if(appearance != null) // Appearance can be null here
+		appearances = new Appearance[]{appearance};
+		if(appearance != null) // Appearance can be null here, so only add the reference if it isn't
 		{ 
-			this.appearances = new Appearance[]{appearance};
-			addReference(this.appearances[0]);
+			addReference(appearances[0]);
 		} 
 		addReference(this.vertices);
 		addReference(this.submeshes[0]);

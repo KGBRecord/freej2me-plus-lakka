@@ -17,9 +17,8 @@
 package javax.microedition.m3g;
 
 import java.util.Vector;
-import java.lang.Object;
 
-public abstract class Object3D
+public abstract class Object3D implements Cloneable
 {
 
 	protected int userID = 0;
@@ -29,18 +28,23 @@ public abstract class Object3D
 
 	void updateProperty(int property, float[] value) { }
 
-	public final Object3D duplicate() 
-	{
-		Object3D copy = duplicateImpl();
-		copy.userID = userID;
-		copy.userObject = userObject;
-		copy.animationTracks = new Vector<AnimationTrack>();
-		for (int i = 0; i < animationTracks.size(); i++) { copy.animationTracks.add((AnimationTrack) animationTracks.elementAt(i).duplicateImpl()); }
-		
-		return copy;
-	}
+	public final Object3D duplicate() { return this.duplicateImpl(); }
 
-	abstract Object3D duplicateImpl();
+	@SuppressWarnings("unchecked") // Those two vectors will always house AnimationTracks and Object3Ds
+	protected Object3D duplicateImpl() 
+	{
+		try 
+		{
+			Object3D copy = (Object3D) this.clone();
+			copy.animationTracks = (Vector<AnimationTrack>) animationTracks.clone();
+			copy.curReferences = (Vector<Object3D>) curReferences.clone();
+
+			return copy;
+		} 
+		catch (CloneNotSupportedException e) { } // Shouldn't ever happen
+		
+		return null;
+	}
 
 	public Object3D find(int userID) 
 	{

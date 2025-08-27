@@ -24,28 +24,17 @@ public class Group extends Node
 	public Node firstChild;
 	public int numNonCullables = 0, numRenderables = 0;
 
-	Object3D duplicateImpl() 
+	protected Object3D duplicateImpl() 
 	{
-		Group copy = new Group();
-		duplicate((Group) copy);
-		return copy;
-	}
+		Group copy = (Group) super.duplicateImpl();
+		copy.firstChild = (Node) firstChild.duplicateImpl();
+		
+		copy.removeReference(firstChild);
+		copy.addReference(copy.firstChild);
 
-	void duplicate(Group copy) 
-	{
-		super.duplicate((Node) copy);
-		Node child = (Node) firstChild.duplicate();
-		copy.numNonCullables = numNonCullables;
-		copy.numRenderables = numRenderables;
-		if (child != null) 
-		{
-			do 
-			{
-				Node temp = (Node) child.duplicate();
-				copy.addChild(temp);
-				child = child.right;
-			} while (child != firstChild);
-		}
+		copy.firstChild.parent = copy;
+
+		return copy;
 	}
 
 	public void addChild(Node child) 

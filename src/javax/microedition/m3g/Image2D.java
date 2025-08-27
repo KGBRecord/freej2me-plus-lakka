@@ -150,10 +150,10 @@ public class Image2D extends Object3D
 		}
 	}
 
-	Object3D duplicateImpl() 
+	protected Object3D duplicateImpl() 
 	{
-		Image2D copy = new Image2D(format, width, height);
-		copy.mutable = mutable;
+		Image2D copy =(Image2D) super.duplicateImpl();
+		copy.image = (byte[]) image.clone();
 		return copy;
 	}
 

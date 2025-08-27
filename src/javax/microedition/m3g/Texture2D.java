@@ -34,7 +34,6 @@ public class Texture2D extends Transformable
 	public static final int WRAP_CLAMP = 240;
 	public static final int WRAP_REPEAT = 241;
 
-
 	private int blending;
 	private int blendcolor;
 	private int imageFilter;
@@ -54,21 +53,6 @@ public class Texture2D extends Transformable
 		this.blendcolor = 0x00000000;
 		this.setImage(image);
 	}
-
-	Object3D duplicateImpl() 
-	{
-		Texture2D copy = new Texture2D(texImage);
-		super.duplicate((Transformable) copy);
-		copy.blending = blending;
-		copy.blendcolor = blendcolor;
-		copy.blending = blending;
-		copy.wraps = wraps;
-		copy.wrapt = wrapt;
-		copy.levelFilter = levelFilter;
-		copy.imageFilter = imageFilter;
-		return copy;
-	}
-
 
 	public int getBlendColor()
 	{

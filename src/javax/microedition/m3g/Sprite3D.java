@@ -27,8 +27,6 @@ public class Sprite3D extends Node
 	private static final int FLIPY = 2;
 	private int flip;
 
-	private static Hashtable<Image2D, Texture2D> textures = new Hashtable<Image2D, Texture2D>();
-
 	private Image2D image;
 	private Appearance appearance;
 	private boolean scaled;
@@ -39,26 +37,12 @@ public class Sprite3D extends Node
 	private int cropx;
 	private int cropy;
 
-
 	public Sprite3D(boolean isScaled, Image2D img, Appearance a)
 	{
 		scaled = isScaled;
 		image = img;
 		appearance = a;
 	}
-
-	Object3D duplicateImpl() 
-	{
-		Sprite3D copy = new Sprite3D(scaled, image, appearance);
-		super.duplicate((Node) copy);
-		copy.cropx = cropx;
-		copy.cropy = cropy;
-		copy.cropw = cropw;
-		copy.croph = croph;
-		copy.flip = flip;
-		return copy;
-	}
-
 
 	public Appearance getAppearance() { return appearance; }
 
@@ -91,20 +75,14 @@ public class Sprite3D extends Node
 
 	public void setImage(Image2D img) 
 	{ 
+		if(img == null) { throw new NullPointerException("Cannot set null image on a Sprite3D"); }
 		removeReference(this.image);
-		this.image = image;
+		this.image = img;
 		addReference(this.image);
-		texture = (Texture2D) textures.get(image);
-
-		if (texture == null) {
-			texture = new Texture2D(image);
-			texture.setFiltering(Texture2D.FILTER_LINEAR, Texture2D.FILTER_LINEAR);
-			texture.setWrapping(Texture2D.WRAP_CLAMP, Texture2D.WRAP_CLAMP);
-			texture.setBlending(Texture2D.FUNC_REPLACE);
-
-			// cache texture
-			textures.put(image, texture);
-		}
+		cropx = 0;
+		cropy = 0;
+		cropw = img.getWidth();
+		croph = img.getHeight();
 	}
 
 	@Override

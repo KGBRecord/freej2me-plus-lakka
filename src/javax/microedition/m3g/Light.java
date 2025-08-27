@@ -26,7 +26,6 @@ public class Light extends Node
 	public static final int OMNI = 130;
 	public static final int SPOT = 131;
 
-
 	private int mode;
 	private int color;
 	private float intensity;
@@ -36,23 +35,7 @@ public class Light extends Node
 	private float angle;
 	private float exponent;
 
-
 	public Light() {  }
-
-	Object3D duplicateImpl() 
-	{
-		Light copy = new Light();
-		super.duplicate((Node) copy);
-		copy.constant = constant;
-		copy.linear = linear;
-		copy.quadratic = quadratic;
-		copy.color = color;
-		copy.mode = mode;
-		copy.intensity = intensity;
-		copy.angle = angle;
-		copy.exponent = exponent;
-		return copy;
-	}
 
 
 	public int getColor() { return color; }

@@ -43,27 +43,6 @@ public class Background extends Object3D
 
     public Background() { }
 
-    Object3D duplicateImpl() 
-	{
-        Background copy = new Background();
-        copy.color = color;
-        copy.image = image;
-        copy.modex = modex;
-        copy.modey = modey;
-        copy.cropx = cropx;
-        copy.cropy = cropy;
-        copy.cropw = cropw;
-        copy.croph = croph;
-        copy.depthclear = depthclear;
-        copy.colorclear = colorclear;
-        copy.texture = texture;
-
-        System.arraycopy(this.vertexArray, 0, copy.vertexArray, 0, vertexArray.length);
-        System.arraycopy(this.textureArray, 0, copy.textureArray, 0, textureArray.length);
-
-        return copy;
-    }
-
 
 	public int getColor() { return color; }
 

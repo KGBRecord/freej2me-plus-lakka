@@ -16,7 +16,6 @@
 */
 package javax.microedition.m3g;
 
-import java.lang.Math;
 import java.util.Arrays;
 
 public class Transform

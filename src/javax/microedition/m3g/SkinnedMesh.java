@@ -37,14 +37,15 @@ public class SkinnedMesh extends Mesh
 		addReference(this.skeleton);
 	}
 
-	private SkinnedMesh() { }
+	protected SkinnedMesh() { }
 
-	Object3D duplicateImpl() 
+	protected Object3D duplicateImpl() 
 	{
-		Group skeleton = (Group) this.skeleton.duplicate();
-		SkinnedMesh copy = new SkinnedMesh();
-		super.duplicate((Mesh) copy);
-		copy.skeleton = skeleton;
+		SkinnedMesh copy = (SkinnedMesh) super.duplicateImpl();
+		Group copySkeleton = (Group) copy.getSkeleton().duplicateImpl();
+		copy.removeReference(getSkeleton());
+		copy.addReference(copySkeleton);
+		copySkeleton.parent = copy;
 		return copy;
 	}
 

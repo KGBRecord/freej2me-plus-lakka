@@ -38,7 +38,7 @@ public class VertexArray extends Object3D
 		this.componentType = componentSize;
 
 		// Component size is either Byte (1) or Short (2)
-		switch (componentSize)
+		switch (componentType)
 		{
 			case 1:
 				this.vertArrayByteSize = new byte[numVertices][numComponents];
@@ -51,14 +51,19 @@ public class VertexArray extends Object3D
 		}
 	}
 
-	Object3D duplicateImpl()
+	protected Object3D duplicateImpl()
 	 {
-		VertexArray copy = new VertexArray();
-		copy.numVertices = numVertices;
-		copy.numComponents = numComponents;
-		copy.componentType = componentType;
-		System.arraycopy(this.vertArrayByteSize, 0, copy.vertArrayByteSize, 0, vertArrayByteSize.length);
-		System.arraycopy(this.vertArrayShortSize, 0, copy.vertArrayShortSize, 0, vertArrayShortSize.length);
+		VertexArray copy = (VertexArray) super.duplicateImpl();
+		if(componentType == 1) 
+		{ 
+			copy.vertArrayByteSize = new byte[vertArrayByteSize.length][];
+			for(int i = 0; i < vertArrayByteSize.length; i++) { copy.vertArrayByteSize[i] = (byte[]) vertArrayByteSize[i].clone(); }
+		}
+		else 
+		{
+			copy.vertArrayShortSize = new short[vertArrayShortSize.length][];
+			for(int i = 0; i < vertArrayShortSize.length; i++) { copy.vertArrayShortSize[i] = (short[]) vertArrayShortSize[i].clone(); }
+		}
 		return copy;
 	}
 

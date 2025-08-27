@@ -49,21 +49,6 @@ public class CompositingMode extends Object3D
 			this.alphaWrite = true;
 	}
 
-	Object3D duplicateImpl() 
-	{
-		CompositingMode copy = new CompositingMode();
-		copy.depthTest = depthTest;
-		copy.depthWrite = depthWrite;
-		copy.colorWrite = colorWrite;
-		copy.alphaWrite = alphaWrite;
-		copy.blending = blending;
-		copy.alphaThreshold = alphaThreshold;
-		copy.depthOffsetFactor = depthOffsetFactor;
-		copy.depthOffsetUnits = depthOffsetUnits;
-		return copy;
-	}
-
-
 	public float getAlphaThreshold()
 	{
 		return this.alphaThreshold;

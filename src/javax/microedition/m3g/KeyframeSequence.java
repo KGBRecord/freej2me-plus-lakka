@@ -91,42 +91,30 @@ public class KeyframeSequence extends Object3D
 		dirty = true;
 	}
 
-	Object3D duplicateImpl() 
+	protected Object3D duplicateImpl() 
 	{
-		KeyframeSequence copy = new KeyframeSequence(keyframes, componentCount, intType);
-		copy.repeat = repeat;
-		copy.duration = duration;
-		copy.rangeFirst = rangeFirst;
-		copy.rangeLast = rangeLast;
-		//copy.interpolationType = interpolationType;
-		//copy.keyframeCount = keyframeCount;
-		//copy.componentCount = componentCount;
-		//copy.probablyNext = probablyNext;
+		KeyframeSequence copy = (KeyframeSequence) super.duplicateImpl();
 
-		copy.keyFrames = new float[keyFrames.length][keyFrames[0].length];
-		for (int i = 0; i < keyFrames.length; i++) { System.arraycopy(keyFrames[i], 0, copy.keyFrames[i], 0, keyFrames[i].length); }
+		for (int i = 0; i < keyFrames.length; i++) { copy.keyFrames[i] = (float[]) keyFrames[i].clone(); }
 
-		copy.keyFrameTimes = new int[keyFrameTimes.length];
-		System.arraycopy(keyFrameTimes, 0, copy.keyFrameTimes, 0, keyFrameTimes.length);
+		copy.keyFrameTimes = (int[]) keyFrameTimes.clone();
 
 		if (!dirty) 
 		{
-			copy.dirty = false;
 			if (inTangents != null) 
 			{
-				copy.inTangents = new float[inTangents.length][inTangents[0].length];
-				for (int i = 0; i < inTangents.length; i++) { System.arraycopy(inTangents[i], 0, copy.inTangents[i], 0, inTangents[i].length); }
-				copy.outTangents = new float[outTangents.length][outTangents[0].length];
-				for (int i = 0; i < outTangents.length; i++) { System.arraycopy(outTangents[i], 0, copy.outTangents[i], 0, inTangents[i].length); }
+				for (int i = 0; i < inTangents.length; i++) { copy.inTangents[i] = (float[]) inTangents[i].clone(); }
+				for (int i = 0; i < outTangents.length; i++) { copy.outTangents[i] = (float[]) outTangents[i].clone(); }
 			}
 			if (a != null) 
 			{
 				copy.a = new float[a.length][4];
-				for (int i = 0; i < a.length; i++) { copy.a[i] = a[i]; }
 				copy.b = new float[b.length][4];
-				for (int i = 0; i < b.length; i++) { copy.b[i] = b[i]; }
+				for (int i = 0; i < a.length; i++) { copy.a[i] = (float[]) a[i].clone(); }
+				for (int i = 0; i < b.length; i++) { copy.b[i] = (float[]) b[i].clone(); }
 			}
-		} else { copy.dirty = true; }
+		}
+
 		return copy;
 	}
 

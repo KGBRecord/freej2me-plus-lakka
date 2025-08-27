@@ -56,13 +56,6 @@ public class AnimationTrack extends Object3D
 		addReference(this.sequence);
 	}
 
-	Object3D duplicateImpl() 
-	{
-		AnimationTrack copy = new AnimationTrack((KeyframeSequence) sequence.duplicate(), property);
-		copy.controller = (AnimationController) controller.duplicateImpl();
-		return copy;
-	}
-
 	public void getContribution(int time, float[] accumSamples, float[] weight, int[] validity) 
 	{
 		if (this.controller == null || !controller.isActive(time)) 

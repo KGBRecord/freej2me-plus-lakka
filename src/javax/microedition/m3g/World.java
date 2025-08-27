@@ -24,15 +24,6 @@ public class World extends Group
 
 	public World() { }
 
-	Object3D duplicateImpl() 
-	{
-		World copy = new World();
-		super.duplicate((Group) copy);
-		copy.camera = (Camera) camera.duplicate();
-		copy.background = (Background) background.duplicate();
-		return copy;
-	}
-
 	public Camera getActiveCamera() { return camera; }
 
 	public void setActiveCamera(Camera camera) 
