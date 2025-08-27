@@ -514,8 +514,22 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_spdhacknoalpha",
         "Speed Hacks > No Alpha on Blank Images (Restart Required)",
         "No Alpha on Blank Images (Restart Required)",
-        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a Moderate to Large performance boost depending on the app with little to no side effects",
-        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a Moderate to Large performance boost depending on the app with little to no side effects",
+        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a measurable performance boost depending on the app with little to no side effects",
+        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a measurable performance boost depending on the app with little to no side effects",
+        "speed_hacks",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_spdhackm3ghalfres",
+        "Speed Hacks > Render M3G at Half Resolution",
+        "Render M3G at Half Resolution",
+        "FreeJ2ME-Plus uses a software renderer for M3G (Mobile 3D Graphics), which can be intensive in more complex applications and higher phone resolutions. Use this if your cpu cannot keep up with full resolution rendering.",
+        "FreeJ2ME-Plus uses a software renderer for M3G (Mobile 3D Graphics), which can be intensive in more complex applications and higher phone resolutions. Use this if your cpu cannot keep up with full resolution rendering.",
         "speed_hacks",
         {
             { "on",  "Enabled"            },
@@ -961,7 +975,18 @@ struct retro_core_option_definition core_options_v1 [] =
     {
         "freej2me_spdhacknoalpha",
         "No Alpha on Blank Images (Restart Required)",
-        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a Moderate to Large performance boost depending on the app with little to no side effects",
+        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a measurable performance boost depending on the app with little to no side effects",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_spdhackm3ghalfres",
+        "Render M3G at Half Resolution",
+        "FreeJ2ME-Plus uses a software renderer for M3G (Mobile 3D Graphics), which can be intensive in more complex applications and higher phone resolutions. Use this if your cpu cannot keep up with full resolution rendering.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -1151,7 +1176,11 @@ static const struct retro_variable vars[] =
     { /* No Alpha on Blank Images speed hack */
         "freej2me_spdhacknoalpha",
         "No Alpha on Blank Images(SpeedHack); off|on"
-    }, 
+    },
+    { /* Render M3G at Half Resolution speed hack */
+        "freej2me_spdhackm3ghalfres",
+        "Render M3G at Half Resolution(SpeedHack); off|on",
+    },
     { /* Framerate Unlock Hack */
         "freej2me_spdhackfpsunlock",
         "Framerate Unlock Hack; 0|1|2|3"

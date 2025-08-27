@@ -284,6 +284,7 @@ public final class AWTGUI
 
 	// Speedhacks
 	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("No alpha on blank images");
+	final CheckboxMenuItem M3GHalfRes = new CheckboxMenuItem("Render M3G at Half Resolution");
 	
 	// Compatibility settings
 	final CheckboxMenuItem fantasyZoneFix = new CheckboxMenuItem("Fix for Fantasy Zone 176x208 weird mirroring");
@@ -664,6 +665,15 @@ public final class AWTGUI
 			}
 		});
 
+		M3GHalfRes.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(M3GHalfRes.getState()){ config.updateM3GResSpeedHack("on"); hasPendingChange = true; }
+				else{ config.updateM3GResSpeedHack("off"); hasPendingChange = true; }
+			}
+		});
+
 		// Compatibility settings
 		fantasyZoneFix.addItemListener(new ItemListener()
 		{
@@ -1012,6 +1022,7 @@ public final class AWTGUI
 		for(int i = 0; i < fontOffsets.length; i++) { fontOffset.add(fontOffsets[i]); }
 
 		speedHackMenu.add(noAlphaOnBlankImages);
+		speedHackMenu.add(M3GHalfRes);
 
 		compatSettingsMenu.add(fantasyZoneFix);
 		compatSettingsMenu.add(transToOriginOnReset);
@@ -1051,6 +1062,8 @@ public final class AWTGUI
 			}
 
 			noAlphaOnBlankImages.setState(config.settings.get("spdhacknoalpha").equals("on"));
+
+			M3GHalfRes.setState(config.settings.get("spdhackm3ghalfres").equals("on"));
 
 			fantasyZoneFix.setState(config.settings.get("compatfantasyzonefix").equals("on"));
 

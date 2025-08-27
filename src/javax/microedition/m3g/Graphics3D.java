@@ -660,7 +660,7 @@ public class Graphics3D
 					yEnd = half == 0 ? M3GMath.min(M3GMath.roundPositive(yMid), viewh) : M3GMath.min(M3GMath.roundPositive(yBot), viewh);
 					
 					// Adjust drawY calculation based on half
-					for (int y = yStart; y < yEnd; y++) 
+					for (int y = yStart; y < yEnd; y += Mobile.halfResM3GRaster ? 2 : 1) 
 					{
 						drawY = half == 0
 							? (y - yTop) / (yMid - yTop)  // Upper half
@@ -698,7 +698,7 @@ public class Graphics3D
 						ixR = M3GMath.min(M3GMath.roundPositive(xR), vieww);
 
 						// Draw the pixels for the current y-coordinate
-						for (int x = ixL; x < ixR; x++) 
+						for (int x = ixL; x < ixR; x += Mobile.halfResM3GRaster ? 2 : 1) 
 						{
 							// This check is really only used for wireframe debugging, and it's not a perfect wireframe rendering
 							if(Mobile.M3GRenderWireframe && x > ixL && x < ixR) { continue; }
@@ -785,11 +785,28 @@ public class Graphics3D
 									paintPixel = blendFog(paintPixel, fog.getColor());
 								}
 
-								// Handle compositing mode with background pixel [rasterData] AFTER the fog calculation, otherwise alpha values won't be correct
-								rasterData[(y+viewy) * canvasWidth + (x+viewx)] = blendPixels(rasterData[(y+viewy) * canvasWidth + (x+viewx)], paintPixel, alpha, compositingMode.getBlending());
+								if(!Mobile.halfResM3GRaster) // If we're rendering at native res, just blend each pixel and update the depth buffer normally
+								{
+									rasterData[(y+viewy) * canvasWidth + (x+viewx)] = blendPixels(rasterData[(y+viewy) * canvasWidth + (x+viewx)], paintPixel, alpha, compositingMode.getBlending());
 
-								// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
-								if(compositingMode.isDepthWriteEnabled() && isDepthBufferEnabled()) { this.depthBuffer[this.vieww * y + x] = z; }
+									// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
+									if(compositingMode.isDepthWriteEnabled() && isDepthBufferEnabled()) { this.depthBuffer[this.vieww * y + x] = z; }
+								} 
+								else // Else, we have to copy the same pixel over in a 2x2 basis, and update the depth buffer in the same manner
+								{
+									// Handle compositing mode with background pixel [rasterData] AFTER the fog calculation, otherwise alpha values won't be correct
+									final int finalPixel = blendPixels(rasterData[(y+viewy) * canvasWidth + (x+viewx)], paintPixel, alpha, compositingMode.getBlending());
+									for(int fx = x; fx < x + 2; fx++) 
+									{
+										for(int fy = y; fy < y + 2; fy++) 
+										{
+											if((fy+viewy) * canvasWidth + (fx+viewx) >= rasterData.length || this.vieww * fy + fx >= this.depthBuffer.length) { break; }
+											rasterData[(fy+viewy) * canvasWidth + (fx+viewx)] = finalPixel;
+											// Update depth buffer, same as depth test, check this target's DepthBuffer if compositingMode is absent
+											if(compositingMode.isDepthWriteEnabled() && isDepthBufferEnabled()) { this.depthBuffer[this.vieww * fy + fx] = z; }
+										}
+									}
+								}
 							} 
 							catch (Exception e) { Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Error drawing triangle:" + e.getMessage()); e.printStackTrace(); }
 						}

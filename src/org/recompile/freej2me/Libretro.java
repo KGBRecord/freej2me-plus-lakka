@@ -179,6 +179,10 @@ public class Libretro
 		if(Integer.parseInt(args[22]) == 0) { Mobile.compatSiemensFriendlyDrawing = false; }
 		else { Mobile.compatSiemensFriendlyDrawing = true; }
 
+		/* No Alpha on Blank Images SpeedHack is a per-game config */
+		if(Integer.parseInt(args[23]) == 0) { Mobile.halfResM3GRaster = false; }
+		else { Mobile.halfResM3GRaster = true; }
+
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
@@ -367,6 +371,9 @@ public class Libretro
 										if(!Mobile.noAlphaOnBlankImages) { Mobile.config.settings.put("spdhacknoalpha", "off"); }
 										else                             { Mobile.config.settings.put("spdhacknoalpha", "on"); }
 
+										if(!Mobile.halfResM3GRaster) { Mobile.config.settings.put("spdhackm3ghalfres", "off"); }
+										else                             { Mobile.config.settings.put("spdhackm3ghalfres", "on"); }
+
 										if(Mobile.maskIndex == 0)      { Mobile.config.settings.put("backlightcolor", "Disabled"); }
 										else if(Mobile.maskIndex == 1) { Mobile.config.settings.put("backlightcolor", "Green"); }
 										else if(Mobile.maskIndex == 2) { Mobile.config.settings.put("backlightcolor", "Cyan"); }
@@ -531,6 +538,9 @@ public class Libretro
 
 									if(Integer.parseInt(cfgtokens[23])==0) { Mobile.config.settings.put("compatsiemensfriendlydrawing", "off");  }
 									else { Mobile.config.settings.put("compatsiemensfriendlydrawing", "on"); }
+
+									if(Integer.parseInt(cfgtokens[24])==0) { Mobile.config.settings.put("spdhackm3ghalfres", "off");  }
+									else { Mobile.config.settings.put("spdhackm3ghalfres", "on"); }
 
 
 									Mobile.config.saveConfig();

@@ -77,6 +77,7 @@ public class Mobile
 
 	// Mobile should contain flags to any and all "speedhacks" present in FreeJ2ME
 	public static boolean noAlphaOnBlankImages = true;
+	public static boolean halfResM3GRaster = true;
 
 	// Config file handle
 	public static Config config;
@@ -1025,6 +1026,10 @@ public class Mobile
 		String speedHackNoAlpha = config.settings.get("spdhacknoalpha");
 		if(speedHackNoAlpha.equals("on"))        { noAlphaOnBlankImages = true; }
 		else if (speedHackNoAlpha.equals("off")) { noAlphaOnBlankImages = false; };
+
+		String speedHackM3GHalfRes= config.settings.get("spdhackm3ghalfres");
+		if(speedHackM3GHalfRes.equals("on"))        { halfResM3GRaster = true; }
+		else if (speedHackM3GHalfRes.equals("off")) { halfResM3GRaster = false; };
 
 		// Compatibility settings (this will probably expand in the future)
 		String fantasyZoneFix = config.settings.get("compatfantasyzonefix");

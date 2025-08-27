@@ -140,6 +140,7 @@ public class Config
 				settings.put("compatoverrideplatchecks", "on");
 				settings.put("compatsiemensfriendlydrawing", "off");
 				settings.put("fpshack", "Disabled");
+				settings.put("spdhackm3ghalfres", "off");
 				saveConfig();
 			}
 
@@ -211,6 +212,7 @@ public class Config
 			if(!settings.containsKey("compatoverrideplatchecks")) { settings.put("compatoverrideplatchecks", "on"); }
 			if(!settings.containsKey("compatsiemensfriendlydrawing")) { settings.put("compatsiemensfriendlydrawing", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
+			if(!settings.containsKey("spdhackm3ghalfres")) { settings.put("spdhackm3ghalfres", "off"); }
 
 			// System settings
 			reader = new BufferedReader(new FileReader(sFile));
@@ -403,6 +405,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: spdhacknoalpha "+value);
 		settings.put("spdhacknoalpha", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateM3GResSpeedHack(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: spdhackm3ghalfres "+value);
+		settings.put("spdhackm3ghalfres", value);
 		saveConfig();
 		onChange.run();
 	}
