@@ -189,8 +189,8 @@ public class Config
 			if(settings.containsKey("compatdonottranslatedrawrgb")) { settings.remove("compatdonottranslatedrawrgb"); } // No longer needed
 			if(settings.containsKey("rotate")) // Compatibility with older, more limited rotation toggle
 			{ 
-				if(settings.get("rotate").equals("on")) { settings.replace("rotate", "270"); }
-				else if(settings.get("rotate").equals("off")) { settings.replace("rotate", "0"); }
+				if(settings.get("rotate").equals("on")) { settings.put("rotate", "270"); }
+				else if(settings.get("rotate").equals("off")) { settings.put("rotate", "0"); }
 			}
 
 			// Add any missing settings
