@@ -40,19 +40,19 @@ import com.nttdocomo.ui.UIException;
 public abstract class PlatformGraphics implements DirectGraphics
 {
 
-	protected static final int ALPHA_BLEND_DENOMINATOR = 255;
-
 	// Gaussian blur kernel (7x7) for Motorola's FunLights
-	protected static final float[] gaussianKernel = 
+	protected static final byte[] gaussianKernel = 
 	{
-		1f / 159,  2f / 159,  3f / 159,  2f / 159,  1f / 159, 0, 0,
-		2f / 159,  5f / 159,  8f / 159,  5f / 159,  2f / 159, 0, 0,
-		3f / 159,  8f / 159, 12f / 159,  8f / 159,  3f / 159, 0, 0,
-		2f / 159,  5f / 159,  8f / 159,  5f / 159,  2f / 159, 0, 0,
-		1f / 159,  2f / 159,  3f / 159,  2f / 159,  1f / 159, 0, 0,
-		0,         0,         0,         0,         0,        0, 0,
-		0,         0,         0,         0,         0,        0, 0
+		1,  2,  3,  2,  1, 0, 0,
+		2,  5,  8,  5,  2, 0, 0,
+		3,  8, 12,  8,  3, 0, 0,
+		2,  5,  8,  5,  2, 0, 0,
+		1,  2,  3,  2,  1, 0, 0,
+		0,  0,  0,  0,  0, 0, 0,
+		0,  0,  0,  0,  0, 0, 0
 	};
+	
+	protected static final int ALPHA_BLEND_DENOMINATOR = 255;
 
 	public static final int BASELINE = 64;
 	public static final int BOTTOM   = 32;
@@ -117,6 +117,9 @@ public abstract class PlatformGraphics implements DirectGraphics
 	private static int frameCount = 0;
 	private static long lastFpsTime = System.nanoTime();
 	private static int fps = 0;
+
+	// Scale factor
+	private static final int GAUSSIAN_SCALE_FACTOR = 159;
 
 	// Graphics context variables
 	protected BufferedImage canvas;
@@ -1303,7 +1306,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 					if (pixelX >= 0 && pixelX < width) 
 					{
 						int pixelColor = pixels[y * width + pixelX];
-						float kernelWeight = gaussianKernel[kx + kernelRadius];
+						float kernelWeight = (float) gaussianKernel[kx + kernelRadius] / GAUSSIAN_SCALE_FACTOR;
 
 						r += ((pixelColor >> 16) & 0xff) * kernelWeight;
 						g += ((pixelColor >> 8) & 0xff) * kernelWeight;
@@ -1339,7 +1342,7 @@ public abstract class PlatformGraphics implements DirectGraphics
 					if (pixelY >= 0 && pixelY < height) 
 					{
 						int pixelColor = result[pixelY * width + x];
-						float kernelWeight = gaussianKernel[ky + kernelRadius];
+						float kernelWeight = (float) gaussianKernel[ky + kernelRadius] / GAUSSIAN_SCALE_FACTOR;
 
 						r += ((pixelColor >> 16) & 0xff) * kernelWeight;
 						g += ((pixelColor >> 8) & 0xff) * kernelWeight;

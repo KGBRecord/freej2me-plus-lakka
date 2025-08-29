@@ -34,12 +34,7 @@ import org.recompile.mobile.Mobile;
 
 public class PlatformFont
 {
-	private FontMetrics metrics;
-	private static Graphics gc; // Used only to get the FontMetrics object for any created font
-	public java.awt.Font awtFont;
-	public static File textfontDir = new File("freej2me_system" + File.separatorChar + "customFont" + File.separatorChar);
-
-	protected static final int[] fontSizes = 
+	protected static final byte[] fontSizes = 
 	{
 		 7,  8, 10, 12, // < 128 minimum px dimension
 		 9, 11, 13, 14, // < 176 minimum px dimension
@@ -48,7 +43,7 @@ public class PlatformFont
 	};
 
 	// Helps LCDUI to better adjust for different screen sizes.
-	public static final int[] fontPadding =
+	public static final byte[] fontPadding =
 	{
 		1, // < 128 minimum px dimension
 		2, // < 176 minimum px dimension
@@ -56,14 +51,20 @@ public class PlatformFont
 		3  // >= 220 minimum px dimension
 	};
 
-	public static int screenType = -4;
-	protected int face;
-	protected int style;
-	protected int size;
+	protected boolean isLCDUI;
+	
+	public static byte screenType = -4;
+	protected int face, style, size;
+	protected int ascent, descent, height;
 
 	protected static com.nttdocomo.ui.Font defaultDoJaFont = null;
 	protected static Font defaultFont = null;
-	protected boolean isLCDUI;
+
+	private FontMetrics metrics;
+	private static Graphics gc; // Used only to get the FontMetrics object for any created font
+	public java.awt.Font awtFont;
+	private static final File textfontDir = new File("freej2me_system" + File.separatorChar + "customFont" + File.separatorChar);
+	
 
 	public PlatformFont(int face, int style, int size, boolean isLCDUI)
 	{
@@ -83,10 +84,11 @@ public class PlatformFont
 		}
 
 		// Set over-arching font attributes (awtFont is internal and so are its face, size, etc properties)
+		this.isLCDUI = isLCDUI;
 		this.face = face;
 		this.style = style;
 		this.size = size;
-		this.isLCDUI = isLCDUI;
+		
 
 		// Check the custom font path and use the custom font if enabled
 		if(!textfontDir.isDirectory()) 
@@ -152,6 +154,9 @@ public class PlatformFont
 		if(gc == null) { gc = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).getGraphics(); }
 		gc.setFont(awtFont);
 		metrics = gc.getFontMetrics();
+		height = gc.getFontMetrics().getHeight();
+		ascent = gc.getFontMetrics().getAscent();
+		descent = gc.getFontMetrics().getDescent();
 	}
 
 	// Common lcdui.Font and nntdocomo.ui.Font methods
@@ -173,11 +178,11 @@ public class PlatformFont
 
 	public int getFace() { return face; }
 
-	public int getHeight() { return metrics.getHeight(); }
+	public int getHeight() { return height; }
 
-	public int getAscent() { return metrics.getAscent(); }
+	public int getAscent() { return ascent; }
 
-	public int getDescent() { return metrics.getDescent(); }
+	public int getDescent() { return descent; }
 
 	public int getSize() { return size; }
 

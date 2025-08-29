@@ -123,11 +123,12 @@ public class FreeJ2ME
 		// Begin checking if this is the web frontend, which always has the file present at boot
 		File extFile = new File("/str/"+extInputFilePath);
 
-		// If File doesn't exist on that dir, we're running standalone. Create it if needed (TODO: Using a pipe for this would be better on standalone)
+		// If File doesn't exist on that dir, we're running standalone. (TODO: Using a pipe for this would be better on standalone)
 		if(!extFile.exists()) 
 		{ 
-			extFile = new File("freej2me_system/"+extInputFilePath); 
-			extFile.createNewFile(); 
+			return;
+			//extFile = new File("freej2me_system/"+extInputFilePath); 
+			//extFile.createNewFile(); 
 		}
 
 		final String filePath = extFile.getPath();

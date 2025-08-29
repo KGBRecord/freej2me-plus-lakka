@@ -41,6 +41,8 @@ public class Font extends PlatformFont
 	public static final int TYPE_DEFAULT = 0x00000000;
 	public static final int TYPE_HEADING = 0x00000001;
 
+	private static final int[] supportedSizes = { 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
+
 	public Font(int face, int style, int size)
 	{
 		super(face, style, size, false);
@@ -78,7 +80,7 @@ public class Font extends PlatformFont
 		return off + len;
 	}
 
-	public int[] getSupportedFontSizes() { return fontSizes; }
+	public int[] getSupportedFontSizes() { return supportedSizes; }
 
 	public int stringWidth(XString xStr) { return stringWidth(xStr.getString()); }
 	
