@@ -189,27 +189,24 @@ public class M3GMath
 	public static float[] add(float[] a, float[] b)
 	{
 		if (a.length != b.length) { throw new java.lang.IllegalArgumentException(); }
-		float[] out = new float[a.length];
-		for (int i = 0; i < a.length; i++) { out[i] = a[i] + b[i]; }
-		return out;
+		for (int i = 0; i < a.length; i++) { a[i] += b[i]; }
+		return a;
 	}
 
 	public static float[] sub(float[] a, float[] b) { return add(a, neg(b)); }
 
 	public static float[] mul(float[] a, float b)
 	{
-		float[] out = new float[a.length];
-		for (int i = 0; i < a.length; i++) { out[i] = a[i] * b; }
-		return out;
+		for (int i = 0; i < a.length; i++) { a[i] *= b; }
+		return a;
 	}
 
 	public static float[] div(float[] a, float b) { return mul(a, 1f / b); }
 
 	public static float[] neg(float[] a)
 	{
-		float[] out = new float[a.length];
-		for (int i = 0; i < a.length; i++) { out[i] = -1f * a[i]; }
-		return out;
+		for (int i = 0; i < a.length; i++) { a[i] *= -1f; }
+		return a;
 	}
 
 	public static float dotProduct(float[] a, float[] b)

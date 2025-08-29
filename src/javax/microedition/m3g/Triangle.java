@@ -42,14 +42,13 @@ class Triangle
 		// sC, tC, rC, qC;
 		// 0   1   2   3
 
-	private int[] bufIndex;
+	private static int[] bufIndex;
 
 	private int triangleIndex = 0;
 
-	Triangle(float[] vertices, int[] indices, int triIndex) 
+	Triangle(float[] vertices, int triIndex) 
 	{ 
 		v = vertices;
-		bufIndex = indices;
 		triangleIndex = triIndex;
 	}
 
@@ -59,6 +58,10 @@ class Triangle
 		boolean sharesVertices = false;
 		final Triangle[] result = new Triangle[tris.length / 3];
 
+		// Index buffer data. We don't need to make a sub-array copy for each triangle.
+		// We can then just track it statically and each triangle's index will take care of the rest
+		bufIndex = tris;
+
 		for (int tri_id = 0; tri_id < tris.length / 3; tri_id++) 
 		{			
 			if (tri_id > 0) 
@@ -67,15 +70,15 @@ class Triangle
 								tris[3* tri_id + 1] == tris[3* (tri_id-1) + 2]) ||
 								(tris[3* tri_id + 1] == tris[3* (tri_id-1) + 0] &&
 								tris[3* tri_id + 2] == tris[3* (tri_id-1) + 1]);
-			}
 
-			// Swap vertices for triangles if sharing is detected
-			if (sharesVertices) 
-			{
-				// Swap indexA and indexB
-				int temp = tris[3 * tri_id + 0];
-				tris[3 * tri_id + 0] = tris[3 * tri_id + 1];
-				tris[3 * tri_id + 1] = temp;
+				// Swap vertices for triangles if sharing is detected
+				if (sharesVertices) 
+				{
+					// Swap indexA and indexB
+					int temp = tris[3 * tri_id + 0];
+					tris[3 * tri_id + 0] = tris[3 * tri_id + 1];
+					tris[3 * tri_id + 1] = temp;
+				}
 			}
 
 			result[renderableTriangles[0]] = new Triangle(new float[] // Vertex positions
@@ -93,7 +96,6 @@ class Triangle
 				vert[4 * tris[3 * tri_id + 2] + 2], // zC
 				vert[4 * tris[3 * tri_id + 2] + 3]  // wC
 			}, 
-			tris, // Index buffer data. We don't need to make a sub-array copy, just pass what was received in and the triangle index will take care of the rest
 			tri_id); // Triangle Index
 
 			// Check if this triangle should be rendered or clipped/culled.
@@ -222,10 +224,11 @@ class Triangle
 			v[4 * i + 3] = 1f;  // Set w to 1
 
 			// Project texture coordinates
-			t[4 * i + 0] /= t[4 * i + 3]; // u / w
-			t[4 * i + 1] /= t[4 * i + 3]; // v / w
-			t[4 * i + 2] /= t[4 * i + 3]; // r / w
-			t[4 * i + 3] = 1f;  // Set w to 1
+			t[4 * i + 0] /= v[4 * i + 3]; // u / w
+			t[4 * i + 1] /= v[4 * i + 3]; // v / w
+			// Those don't seem necessary
+			//t[4 * i + 2] /= v[4 * i + 3]; // r / w
+			//t[4 * i + 3] = 1f;  // Set q to 1
 		}
 	}
 

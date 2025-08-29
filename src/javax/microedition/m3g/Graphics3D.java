@@ -407,6 +407,7 @@ public class Graphics3D
 
 		if (node instanceof Mesh) 
 		{
+			if(!node.isRenderingEnabled()) { return; }
 			Mesh mesh = (Mesh) node;
 			int subMeshes = mesh.getSubmeshCount();
 			VertexBuffer vertices = mesh.getVertexBuffer();
@@ -418,6 +419,7 @@ public class Graphics3D
 		else if (node instanceof Sprite3D) 
 		{
 			Mobile.log(Mobile.LOG_WARNING, Graphics3D.class.getPackage().getName() + "." + Graphics3D.class.getSimpleName() + ": " + "Graphics3D.render Node: Sprite3D Not Implemented!");
+			if(!node.isRenderingEnabled()) { return; }
 		}
 		else if (node instanceof Group) 
 		{
@@ -567,38 +569,6 @@ public class Graphics3D
 
 			for (int tri_id = 0; tri_id < renderableTriangles[0]; tri_id++)
 			{
-				// If perspective correction is enabled, do it for texture coordinates
-				if (perspectiveCorrectionEnabled) 
-				{			
-					// W cannot be smaller than the near plane, otherwise it'll result in incorrect calculations
-					if (trisScreen[tri_id].wA() > near &&  trisScreen[tri_id].wB() > near && trisScreen[tri_id].wC() > near) 
-					{
-						// Calculate perspective correction through Inverse-Z.
-						float invW_A = 1.0f / trisScreen[tri_id].wA();
-						float invW_B = 1.0f / trisScreen[tri_id].wB();
-						float invW_C = 1.0f / trisScreen[tri_id].wC();
-				
-						final float[] correctedCoords = 
-						{
-							trisScreen[tri_id].sA() * invW_A,
-							trisScreen[tri_id].tA() * invW_A,
-							0, // rA
-							1, // qA
-							trisScreen[tri_id].sB() * invW_B,
-							trisScreen[tri_id].tB() * invW_B,
-							0, // rB
-							1,  // qB
-							trisScreen[tri_id].sC() * invW_C,
-							trisScreen[tri_id].tC() * invW_C,
-							0, // rC
-							1  // qC
-						};
-				
-						// Set the corrected texture coordinates back into the triangle
-						trisScreen[tri_id].setTexCoords(correctedCoords);
-					}
-				}
-
 				// Collect vertex attributes
 				coX[0] = trisScreen[tri_id].xA(); coX[1] = trisScreen[tri_id].xB(); coX[2] = trisScreen[tri_id].xC();
 				coY[0] = trisScreen[tri_id].yA(); coY[1] = trisScreen[tri_id].yB(); coY[2] = trisScreen[tri_id].yC();
@@ -606,7 +576,7 @@ public class Graphics3D
 				coS[0] = trisScreen[tri_id].sA(); coS[1] = trisScreen[tri_id].sB(); coS[2] = trisScreen[tri_id].sC();
 				coT[0] = trisScreen[tri_id].tA(); coT[1] = trisScreen[tri_id].tB(); coT[2] = trisScreen[tri_id].tC();
 
-				// Instead of using the previous Arrays.sort() call. Let's handle position and winding sorting by hand, i think it's more readable.
+				// x and y coordinates are special cases where the resulting top, mid and bot values should be in decreasing order (top > mid > bot)
 				if (coY[ord[1]] < coY[ord[0]]) 
 				{
 					int temp = ord[0];
@@ -681,6 +651,7 @@ public class Graphics3D
 						zR = half == 0
 							? zTop + drawY * (zMidR - zTop)
 							: zBot + drawY * (zMidR - zBot);
+							
 						sL = half == 0
 							? sTop + drawY * (sMidL - sTop)
 							: sBot + drawY * (sMidL - sBot);
@@ -693,6 +664,12 @@ public class Graphics3D
 						tR = half == 0
 							? tTop + drawY * (tMidR - tTop)
 							: tBot + drawY * (tMidR - tBot);
+
+						// TODO: Proper texture perspective correction
+						if (perspectiveCorrectionEnabled) 
+						{			
+							
+						}
 
 						ixL = M3GMath.max(M3GMath.roundPositive(xL), 0);
 						ixR = M3GMath.min(M3GMath.roundPositive(xR), vieww);
@@ -715,7 +692,6 @@ public class Graphics3D
 									// Depth testing and depth buffer updates don't need to match against the pixel's translated viewport coordinates, if they are translated
 									if (this.depthBuffer[this.vieww * y + x] < z) { continue; } // Skip if this pixel is not visible
 								}
-								
 								s = sL + drawX * (sR - sL);
 								t = tL + drawX * (tR - tL);
 
