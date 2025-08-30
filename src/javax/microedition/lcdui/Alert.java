@@ -88,7 +88,32 @@ public class Alert extends Screen
 
 	public int getTimeout() { return timeout; }
 
-	public void setTimeout(int time) { timeout = time; }
+	public void setTimeout(final int time) 
+	{ 
+		// Alerts with more than one command are forced as modal
+		if(getCommands().size() < 2) 
+		{
+			timeout = time; 
+
+			if(time != FOREVER) 
+			{
+				new Thread(new Runnable() 
+				{
+					public void run() 
+					{
+						try 
+						{ 
+							Thread.sleep(time);
+							// Dismiss alert after timeout if it hasn't been dismissed yet
+							if(isShown()) { doLeftCommand(); }
+						}
+						catch(Exception e) { }
+					}
+				}).start();
+			}
+		}
+		
+	}
 
 	public AlertType getType() { return type; }
 
@@ -124,9 +149,11 @@ public class Alert extends Screen
 
 	public void removeCommand(Command cmd)
 	{
-		if (getCommands().size() > 1)
+		super.removeCommand(cmd);
+
+		if(getCommands().isEmpty()) 
 		{
-			super.removeCommand(cmd);
+			addCommand(Alert.DISMISS_COMMAND);
 		}
 	}
 
@@ -218,10 +245,6 @@ public class Alert extends Screen
 		else if ((key == Canvas.DOWN || key == Canvas.KEY_NUM8) && scrollY < maxScroll) 
 		{
 			scrollY = Math.min(maxScroll, scrollY + scrollAmount);
-		}
-		else if((key == Canvas.FIRE || key == Canvas.KEY_NUM5 || key == Canvas.KEY_SOFT_LEFT))
-		{
-			defaultListener.commandAction(DISMISS_COMMAND, nextScreen);
 		}
 
 		if (handled) { _invalidate(); }

@@ -341,7 +341,7 @@ public class Display
 				{
 					alert.setNextScreen(next);
 
-					current = next;
+					current = alert;
 					current.notifySetCurrent();
 
 					Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current Alert "+current.width+", "+current.height);	
