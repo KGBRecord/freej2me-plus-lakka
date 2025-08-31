@@ -421,7 +421,15 @@ public class MIDletLoader extends URLClassLoader
 						{
 							if (currentKey.contains("MIDlet-")) { hasMIDlet = true; }
 							// Only add a new key-value pair if the key doesn't already exist (set by the JAD file)
-							if (!keyValueMap.containsKey(currentKey)) { keyValueMap.put(currentKey, currentValue.toString().trim()); } 
+							if (!keyValueMap.containsKey(currentKey)) 
+							{ 
+								if(currentKey.contains("Nokia-Platform") && Mobile.compatOverridePlatformChecks) // This override check doesn't work yet and resolves to true, as we haven't loaded the configs yet
+								{
+									System.setProperty("microedition.platform", currentValue.toString().trim());
+									keyValueMap.put("microedition.platform", currentValue.toString().trim()); 
+								}
+								else { keyValueMap.put(currentKey, currentValue.toString().trim()); }
+							} 
 							else 
 							{
 								Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "properties already contain " + currentKey + "! Maintaining current value: " + keyValueMap.get(currentKey));
@@ -440,7 +448,15 @@ public class MIDletLoader extends URLClassLoader
 				}
 				if (currentKey != null) 
 				{
-					if (!keyValueMap.containsKey(currentKey)) { keyValueMap.put(currentKey, currentValue.toString().trim()); } 
+					if (!keyValueMap.containsKey(currentKey)) 
+					{ 
+						if(currentKey.contains("Nokia-Platform") && Mobile.compatOverridePlatformChecks) 
+						{
+							System.setProperty("microedition.platform", currentValue.toString().trim());
+							keyValueMap.put("microedition.platform", currentValue.toString().trim()); 
+						}
+						else { keyValueMap.put(currentKey, currentValue.toString().trim()); }
+					} 
 					else 
 					{
 						Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "properties already contain " + currentKey + "! Maintaining current value: " + keyValueMap.get(currentKey));
