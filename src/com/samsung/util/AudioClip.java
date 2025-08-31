@@ -44,7 +44,10 @@ public class AudioClip
 	public AudioClip(int clipType, byte[] audioData, int audioOffset, int audioLength)
 	{
 		if(audioData == null) { throw new NullPointerException("AudioClip: Cannot open player with null Audio data"); }
-		if(clipType < 1 || clipType > 3) { throw new IllegalArgumentException("AudioClip: Clip type not recognized");}
+		// TODO: Check is ignored but is part of the AudioClip spec. Some versions of Snowball Fight send whatever for clipType here, this check breaks them completely.
+		//if(clipType < 1 || clipType > 3) { throw new IllegalArgumentException("AudioClip: Clip type not recognized");}
+		if(clipType < 1 || clipType > 3) { clipType = TYPE_MMF; } // Whenever something is going wildly off-spec here, it's MMF.
+		
 		if (audioOffset < 0 || audioLength < 0 || audioOffset + audioLength > audioData.length) 
 		{
 			throw new ArrayIndexOutOfBoundsException("AudioClip: Cannot create player, tried to access audioData at an invalid position");
@@ -66,8 +69,12 @@ public class AudioClip
 
 	public AudioClip(int clipType, String filename)
 	{
+		Mobile.log(Mobile.LOG_ERROR, AudioClip.class.getPackage().getName() + "." + AudioClip.class.getSimpleName() + ": " + "AudioClip: Failed to create player:" + "new audioclip:" + clipType + " " + filename);
 		if(filename == null) { throw new NullPointerException("AudioClip: Cannot open a player with a null file path"); }
-		if(clipType < 1 || clipType > 3) { throw new IllegalArgumentException("AudioClip: Clip type not recognized");}
+		
+		// TODO: Check is ignored but is part of the AudioClip spec. Some versions of Snowball Fight send whatever for clipType here, this check breaks them completely.
+		//if(clipType < 1 || clipType > 3) { throw new IllegalArgumentException("AudioClip: Clip type not recognized");}
+		if(clipType < 1 || clipType > 3) { clipType = TYPE_MMF; } // Whenever something is going wildly off-spec here, it's MMF.
 
 		try 
 		{
@@ -93,7 +100,7 @@ public class AudioClip
 		{
 			if (player.getState() == Player.STARTED) { player.stop(); }
 			player.setMediaTime(0); // play() should always play media from the beginning, like Nokia Sound
-			player.setLoopCount((playerFormat == TYPE_MMF) ? (loop == 0 ? -1 : loop) : (loop == 255 ? -1 : loop+1)); // For non-MMF, treat 255 loops as infinite looping
+			player.setLoopCount((playerFormat == TYPE_MMF) ? (loop == 0 ? -1 : loop) : (loop == 255 ? -1 : loop == 0 ? 1 : loop)); // For non-MMF, treat 255 loops as infinite looping
 			((VolumeControl) player.getControl("VolumeControl")).setLevel((playerFormat == TYPE_MMF) ? (volume <= 5 ? volume * 20 : volume) : volume * 20); // Received volume varies from 1 to 5, so adapt
 			player.start();
 		}
