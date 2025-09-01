@@ -132,9 +132,9 @@ public class MobilePlatform
 		lcdFrontbuffer = new PlatformImage(width, height);
 		lcd = new PlatformImage(width, height);
 
-		// This works for DoJa as well, their graphics objects are direct extensions of PlatformGraphics
+		
         gcFrontbuffer = lcdFrontbuffer.getMIDPGraphics();
-		gc = lcd.getMIDPGraphics();
+		
 		
 		/* 
 		 * Try to have the jar scale as well. If this doesn't work,
@@ -143,6 +143,7 @@ public class MobilePlatform
 
 		if (!Mobile.isDoJa) 
 		{
+			gc = lcd.getMIDPGraphics();
 			com.xce.lcdui.XDisplay.width = width;
 			com.xce.lcdui.XDisplay.height2 = height;
 			com.xce.lcdui.XDisplay.platformImage = lcd;
@@ -158,7 +159,7 @@ public class MobilePlatform
 		else if(Mobile.isDoJa && com.nttdocomo.ui.Display.getCurrent() != null) // Doja's current Frames (Displayables) are static
 		{
 			com.nttdocomo.ui.Display.getCurrent().platformImage = lcd; 
-			com.nttdocomo.ui.Display.getCurrent().graphics = (com.nttdocomo.ui.Graphics) gc; 
+			com.nttdocomo.ui.Display.getCurrent().graphics = lcd.getDoJaGraphics(); 
 		}
 		
 	}
