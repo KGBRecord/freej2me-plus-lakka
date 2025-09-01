@@ -545,7 +545,7 @@ public class RecordStore
 
 		try
 		{
-			byte[] temp = getRecord(recordIds.indexOf(recordId));
+			byte[] temp = new byte[numBytes];
 
 			System.arraycopy(newData, offset, temp, 0, numBytes);
 
