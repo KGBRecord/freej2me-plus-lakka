@@ -918,69 +918,6 @@ public class MIDletLoader extends URLClassLoader
 		}
 	}
 
-	public byte[] getIAppliScratchPadAsByteArray(String resource)
-	{
-		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Get ScratchPad As Byte Array: "+ resource);
-
-		// Remove the "resource:" token that some jars pass into this method. FreeJ2ME doesn't need it.
-		if(resource.contains("scratchpad:")) { resource = resource.replaceAll("scratchpad:", ""); }
-
-		// If the resource has more than one slash in sequence, remove all of them (the check below will correct it back to one slash)
-		while (resource.startsWith("//")) { resource = resource.substring(1); }
-
-		// Replace unsupported slashes
-		resource = resource.replace("\\", "/");
-
-		if(!resource.startsWith("/") && getResource(resource) == null) // Relative path, try to parse where the main class is in the jar, as the resource will be alongside it.
-		{
-			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Initial path returned no scratchpad data. Treating as relative path...");
-			// Change "." occurrences to "/" to give us the path to the class, and by consequence, the resource's position relative to it
-			String resourcePath = className[selectedMidlet].replace(".", "/");
-    
-			// If we really are in a subdir
-			if(resourcePath.contains("/")) 
-			{
-				// Remove the class name from the resolved path
-				resourcePath = resourcePath.substring(0, resourcePath.lastIndexOf('/')) + "/"; 
-			
-				// And there we have it, just append the resource at the end of it, IF the resource doesn't already have it.
-				if(!resource.startsWith(resourcePath)) { resource = resourcePath + resource; }
-				else { resource = "/" + resource; }
-			}
-			else { resource = "/" + resource; } // If not, just append the directory slash
-		}
-
-		// We basically ignore everything done above at the moment. TODO: Loading multiple scratchpads, like sp0, sp1, etc.
-		resource = baseUrl.toString();
-		resource = resource.substring(0, resource.length() - 4) + ".sp";
-		
-		// TODO: Improve ScratchPad parsing
-
-		// Read all bytes, return ByteArrayInputStream //
-		try
-		{
-			InputStream stream = new FileInputStream(new File(new URI(resource)));
-			
-			// zb3: why not return a stream? or a bufferedinputstream for marks?
-			
-			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			int count=0;
-			byte[] data = new byte[4096];
-			while (count!=-1)
-			{
-				count = stream.read(data);
-				if(count!=-1) { buffer.write(data, 0, count); }
-			}
-			return buffer.toByteArray();
-		}
-		catch (Exception e)
-		{
-			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + resource + " Not Found");
-			return new byte[0];
-		}
-	}
-
-
 	public Class loadClass(String name) throws ClassNotFoundException
 	{
 		InputStream stream;

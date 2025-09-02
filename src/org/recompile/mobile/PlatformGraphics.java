@@ -37,7 +37,7 @@ import java.awt.image.Kernel;
 
 import com.nttdocomo.ui.UIException;
 
-public abstract class PlatformGraphics implements DirectGraphics
+public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.opt.ui.j3d.Graphics3D
 {
 
 	// Gaussian blur kernel (7x7) for Motorola's FunLights
@@ -1789,6 +1789,84 @@ public abstract class PlatformGraphics implements DirectGraphics
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		usePictoColor = b; 
+	}
+
+	// TODO: Different MascotCapsuleV3's Graphics3D implementations
+
+	// DoJa's com.nttdocomo.opt.ui.j3d
+	public void setViewTrans(com.nttdocomo.opt.ui.j3d.AffineTrans paramAffineTrans) 
+	{
+
+	}
+	
+	public void setScreenScale(int paramInt1, int paramInt2) 
+	{
+
+	}
+	
+	public void setScreenCenter(int paramInt1, int paramInt2) 
+	{
+
+	}
+	
+	public void drawFigure(com.nttdocomo.opt.ui.j3d.Figure paramFigure) 
+	{
+
+	}
+	
+	public void setSphereTexture(com.nttdocomo.opt.ui.j3d.Texture paramTexture) 
+	{
+
+	}
+	
+	public void enableLight(boolean paramBoolean) 
+	{
+
+	}
+	
+	public void enableSphereMap(boolean paramBoolean) 
+	{
+
+	}
+	
+	public void setAmbientLight(int paramInt) 
+	{ 
+
+	}
+	
+	public void setDirectionLight(com.nttdocomo.opt.ui.j3d.Vector3D paramVector3D, int paramInt) 
+	{
+
+	}
+	
+	public void enableSemiTransparent(boolean paramBoolean) 
+	{
+
+	}
+	
+	public void setClipRect3D(int paramInt1, int paramInt2, int paramInt3, int paramInt4) 
+	{
+
+	}
+
+	public void setPerspective(int n1, int n2, int n3) 
+	{
+
+	}
+
+	public void executeCommandList(int[] a) 
+	{
+
+	}
+
+	public void renderPrimitives(com.nttdocomo.opt.ui.j3d.PrimitiveArray arr, int num) 
+	{
+
+	}
+
+	public void flush() 
+	{
+		
 	}
 
 	// FPS COUNTER

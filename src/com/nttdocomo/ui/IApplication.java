@@ -70,7 +70,7 @@ public abstract class IApplication
 		Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "Create DoJa IApplication");
         Mobile.iAppli = this;
         if(properties.containsKey("SPsize")) { scratchPadSizes = properties.get("SPsize").split(","); }
-        if(properties.containsKey("AppParam")) { appParam = properties.get("AppParam").split(" "); }
+        if(properties.containsKey("AppParam")) { appParam = properties.get("AppParam").split("\\s+"); }
 
         Mobile.log(Mobile.LOG_INFO, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "arguments:" + Arrays.toString(appParam));
 	}

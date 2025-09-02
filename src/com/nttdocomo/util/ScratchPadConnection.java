@@ -134,7 +134,6 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 			{ 
 				byte[] spData = loadScratchPadBinary();
 				openedScratchPads[spIndex].addRecord(spData, 0, spData.length);
-				
 			}
 			catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to add scratchpad data to record: " + e.getMessage()); }
 		}
@@ -160,7 +159,7 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 		
 			return new ByteArrayInputStream(returnData);
 		}
-		catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to open ScratchPad Input stream: " + e.getMessage()); }
+		catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to open ScratchPad Input stream: " + e.getMessage()); e.printStackTrace(); }
 		return null;
 	}
 
@@ -202,19 +201,33 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 	{
 		// Replace .jar with .sp in a case insensitive way.
 		String scratchPadPath = Mobile.getPlatform().loader.baseUrl.toString();
-		scratchPadPath = scratchPadPath.substring(0, scratchPadPath.length() - 4) + ".sp";
+		scratchPadPath = scratchPadPath.substring(0, scratchPadPath.length() - 4);
+		
+		String[] lettercases = { ".sp", ".SP", ".Sp", ".sP" };
+		File spFile = null;
+
+		// Check each extension, not numbered (more common, which might exit early) and numbered sp files
+		for(int i = 0; i < 2; i++) 
+		{
+			for (String lettercase : lettercases) 
+			{
+				try 
+				{
+					File tempFile = new File(new URI(scratchPadPath + lettercase + (i == 0 ? "" : spIndex)));
+					if (tempFile.exists()) 
+					{
+						spFile = tempFile;
+						break;
+					}
+				}
+				catch(Exception e) { }
+			}
+		}
 
 		try
 		{
-			File spFile = new File(new URI(scratchPadPath));
-
 			// TODO: Test the non iDKDoJa format with separate .sp, as single region scratchpads and multi-region ones (within a single .sp file) seem to work as they should.
 
-			// If the file doesn't exist with the expected scratchpad index, it might be a single scratchpad with one or more regions
-			if(!spFile.exists()) 
-			{
-				spFile = new File(new URI(scratchPadPath.replace(".sp" + spIndex, ".sp")));
-			}
 			InputStream stream = new FileInputStream(spFile);
 						
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
