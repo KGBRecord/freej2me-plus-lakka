@@ -478,7 +478,6 @@ public class MIDletLoader extends URLClassLoader
         }
     }
 
-	// TODO: Convert to Jam descriptor parsing
 	public static void parseJamDescriptorInto(InputStream is, Map<String, String> keyValueMap) 
 	{
 		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Parsing .JAM...");
@@ -1030,7 +1029,7 @@ public class MIDletLoader extends URLClassLoader
 			resource = name.replace(".", "/") + ".class";
 			stream = super.getResourceAsStream(resource);
 			code = instrument(stream);
-			return defineClass(name, code, 0, code.length);
+			return defineClass(name.replace("/", "."), code, 0, code.length);
 		}
 		catch (Exception e)
 		{

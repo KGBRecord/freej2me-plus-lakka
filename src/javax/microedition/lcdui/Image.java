@@ -16,6 +16,8 @@
 */
 package javax.microedition.lcdui;
 
+import java.awt.image.DataBufferInt;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -126,4 +128,32 @@ public class Image extends PlatformImage
 	}
 
 	public Graphics getGraphics() { return getMIDPGraphics(); }
+
+	// Some early siemens jars like Mine in Line, for whatever reason, expect some siemens.mp.ui Image methods to be here.
+
+	public static Image createImageFromBitmap(byte[] imageData, int imageWidth, int imageHeight) 
+	{
+		if (imageWidth <= 0 || imageHeight <= 0) { throw new IllegalArgumentException("Width and height must be greater than zero.");}
+
+		Image image = Image.createImage(imageWidth, imageHeight);
+		DataBufferInt dataBuffer = (DataBufferInt) image.getCanvas().getRaster().getDataBuffer();
+		int[] rgbData = dataBuffer.getData();
+
+		for (int j = 0; j < imageHeight; j++) 
+		{
+			for (int i = 0; i < imageWidth; i++) 
+			{
+				int byteIndex = (j * imageWidth + i) / 8;
+				int bitIndex = (j * imageWidth + i) % 8;
+
+				int pixelValue = (imageData[byteIndex] >> (7 - bitIndex)) & 0x01;
+
+				// Set the color based on the pixel value, 1 for black and 0 for white
+				rgbData[j * imageWidth + i] = (pixelValue == 1) ? 0xFF000000 : 0xFFFFFFFF; // Black or White
+			}
+		}
+
+		image.set2Bpp(false);
+		return image;
+	}
 }

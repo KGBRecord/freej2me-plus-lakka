@@ -135,32 +135,6 @@ public class Image extends javax.microedition.lcdui.Image
         }
         return javax.microedition.lcdui.Image.createRGBImage(imgData, imageWidth, imageHeight, hasAlpha);
     }
-
-    public static javax.microedition.lcdui.Image createImageFromBitmap(byte[] imageData, int imageWidth, int imageHeight) 
-    {
-        if (imageWidth <= 0 || imageHeight <= 0) { throw new IllegalArgumentException("Width and height must be greater than zero.");}
-    
-        javax.microedition.lcdui.Image image = javax.microedition.lcdui.Image.createImage(imageWidth, imageHeight);
-        DataBufferInt dataBuffer = (DataBufferInt) image.getCanvas().getRaster().getDataBuffer();
-        int[] rgbData = dataBuffer.getData();
-    
-        for (int j = 0; j < imageHeight; j++) 
-        {
-            for (int i = 0; i < imageWidth; i++) 
-            {
-                int byteIndex = (j * imageWidth + i) / 8;
-                int bitIndex = (j * imageWidth + i) % 8;
-    
-                int pixelValue = (imageData[byteIndex] >> (7 - bitIndex)) & 0x01;
-    
-                // Set the color based on the pixel value, 1 for black and 0 for white
-                rgbData[j * imageWidth + i] = (pixelValue == 1) ? 0xFF000000 : 0xFFFFFFFF; // Black or White
-            }
-        }
-    
-        image.set2Bpp(false);
-        return image;
-    }
     
     public static javax.microedition.lcdui.Image createTransparentImageFromBitmap(byte[] bytes, int width, int height) 
     {

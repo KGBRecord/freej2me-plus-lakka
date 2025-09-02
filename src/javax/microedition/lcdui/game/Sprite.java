@@ -253,119 +253,228 @@ public class Sprite extends Layer
 		currentTransform = transform;
 	}
 
-	public final boolean collidesWith(Sprite s, boolean pixelLevel) // This one works on Siemens with M-Racer, must be okay on MIDP too
+	public final boolean collidesWith(Sprite s, boolean pixelLevel) 
 	{
 		if (!(s.visible && this.visible)) { return false; }
-	
-		Rect thisRect = getCollisionRect(this);
-		Rect otherRect = getCollisionRect(s);
-	
-		if (intersectRect(thisRect, otherRect)) 
-			{ return pixelLevel ? pixelCollision(thisRect, otherRect, s.sourceImage, s.currentTransform) : true; }
-		
-		return false;
-	}
-	
-	public final boolean collidesWith(TiledLayer t, boolean pixelLevel) 
-	{
-		Mobile.log(Mobile.LOG_WARNING, Sprite.class.getPackage().getName() + "." + Sprite.class.getSimpleName() + ": " + "CollidesWith B");
-		if (!(t.visible && this.visible)) { return false; }
-	
-		Rect thisRect = getCollisionRect(this);
-		Rect layerRect = new Rect(t.x, t.y, t.x + t.width, t.y + t.height);
-	
-		if (!intersectRect(thisRect, layerRect)) { return false; }
-	
-		int tW = t.getCellWidth();
-		int tH = t.getCellHeight();
-	
-		int startCol = Math.max(0, (thisRect.left - t.x) / tW);
-		int endCol = Math.min(t.getColumns() - 1, (thisRect.right - 1 - t.x) / tW);
-		int startRow = Math.max(0, (thisRect.top - t.y) / tH);
-		int endRow = Math.min(t.getRows() - 1, (thisRect.bottom - 1 - t.y) / tH);
-	
-		for (int row = startRow; row <= endRow; row++) 
+
+		int otherLeft = s.x + s.collisionRectX;
+		int otherTop = s.y + s.collisionRectY;
+		int otherRight = otherLeft + s.collisionRectWidth;
+		int otherBottom = otherTop + s.collisionRectHeight;
+
+		int left = this.x + this.collisionRectX;
+		int top = this.y + this.collisionRectY;
+		int right = left + this.collisionRectWidth;
+		int bottom = top + this.collisionRectHeight;
+
+		if (intersectRect(otherLeft, otherTop, otherRight, otherBottom, left, top, right, bottom)) 
 		{
-			for (int col = startCol; col <= endCol; col++) 
+			if (pixelLevel) 
 			{
-				if (t.getCell(col, row) != 0) 
-				{ 
-					if (!pixelLevel || checkTileCollision(thisRect, t, col, row, tW, tH)) { return true; } 
-				}
-			}
+				if (this.collisionRectX < 0) { left = this.x; }
+				if (this.collisionRectY < 0) { top = this.y; }
+				if ((this.collisionRectX + this.collisionRectWidth) > this.width) { right = this.x + this.width; }
+				if ((this.collisionRectY + this.collisionRectHeight) > this.height) { bottom = this.y + this.height; }
+
+				if (s.collisionRectX < 0) { otherLeft = s.x; }
+				if (s.collisionRectY < 0) { otherTop = s.y; }
+				if ((s.collisionRectX + s.collisionRectWidth) > s.width) { otherRight = s.x + s.width; }
+				if ((s.collisionRectY + s.collisionRectHeight) > s.height) { otherBottom = s.y + s.height; }
+
+				if (!intersectRect(otherLeft, otherTop, otherRight, otherBottom, left, top, right, bottom)) { return false; }
+
+				int intersectLeft = (left < otherLeft) ? otherLeft : left;
+				int intersectTop = (top < otherTop) ? otherTop : top;
+				int intersectRight = (right < otherRight) ? right : otherRight;
+				int intersectBottom = (bottom < otherBottom) ? bottom : otherBottom;
+				int intersectWidth = Math.abs(intersectRight - intersectLeft);
+				int intersectHeight = Math.abs(intersectBottom - intersectTop);
+
+				int thisImageXOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, true);
+				int thisImageYOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, false);
+				int otherImageXOffset = s.getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, true);
+				int otherImageYOffset = s.getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, false);
+
+				return doPixelCollision(thisImageXOffset, thisImageYOffset,
+						otherImageXOffset, otherImageYOffset,
+						this.sourceImage,
+						this.currentTransform,
+						s.sourceImage,
+						s.currentTransform,
+						intersectWidth, intersectHeight);
+			} 
+			else { return true; }
 		}
 		return false;
 	}
-	
+
+	public final boolean collidesWith(TiledLayer t, boolean pixelLevel) 
+	{
+		if (!(t.visible && this.visible)) { return false; }
+		int tLx1 = t.x;
+		int tLy1 = t.y;
+		int tLx2 = tLx1 + t.width;
+		int tLy2 = tLy1 + t.height;
+
+		int sx1 = this.x + this.collisionRectX;
+		int sy1 = this.y + this.collisionRectY;
+		int sx2 = sx1 + this.collisionRectWidth;
+		int sy2 = sy1 + this.collisionRectHeight;
+
+		if (!intersectRect(tLx1, tLy1, tLx2, tLy2, sx1, sy1, sx2, sy2)) { return false; }
+
+		int tW = t.getCellWidth();
+		int tH = t.getCellHeight();
+
+		int tNumCols = t.getColumns();
+		int tNumRows = t.getRows();
+
+		int startCol = (sx1 <= tLx1) ? 0 : (sx1 - tLx1) / tW;
+		int startRow = (sy1 <= tLy1) ? 0 : (sy1 - tLy1) / tH;
+		int endCol = (sx2 < tLx2) ? ((sx2 - 1 - tLx1) / tW) : tNumCols - 1;
+		int endRow = (sy2 < tLy2) ? ((sy2 - 1 - tLy1) / tH) : tNumRows - 1;
+
+		if (!pixelLevel) 
+		{
+			for (int row = startRow; row <= endRow; row++) 
+			{
+				for (int col = startCol; col <= endCol; col++) 
+				{
+					if (t.getCell(col, row) != 0) { return true; }
+				}
+			}
+			return false;
+		} 
+		else 
+		{
+			if (this.collisionRectX < 0) { sx1 = this.x; }
+			if (this.collisionRectY < 0) { sy1 = this.y; }
+			if ((this.collisionRectX + this.collisionRectWidth) > this.width) { sx2 = this.x + this.width; }
+			if ((this.collisionRectY + this.collisionRectHeight) > this.height) { sy2 = this.y + this.height; }
+
+			if (!intersectRect(tLx1, tLy1, tLx2, tLy2, sx1, sy1, sx2, sy2)) { return false; }
+
+			startCol = (sx1 <= tLx1) ? 0 : (sx1 - tLx1) / tW;
+			startRow = (sy1 <= tLy1) ? 0 : (sy1 - tLy1) / tH;
+			endCol = (sx2 < tLx2) ? ((sx2 - 1 - tLx1) / tW) : tNumCols - 1;
+			endRow = (sy2 < tLy2) ? ((sy2 - 1 - tLy1) / tH) : tNumRows - 1;
+
+			int cellTop = startRow * tH + tLy1;
+			int cellBottom = cellTop + tH;
+
+			int tileIndex;
+
+			for (int row = startRow; row <= endRow; row++, cellTop += tH, cellBottom += tH) 
+			{
+				int cellLeft = startCol * tW + tLx1;
+				int cellRight = cellLeft + tW;
+
+				for (int col = startCol; col <= endCol; col++, cellLeft += tW, cellRight += tW) 
+				{
+					tileIndex = t.getCell(col, row);
+
+					if (tileIndex != 0) 
+					{
+						int intersectLeft = (sx1 < cellLeft) ? cellLeft : sx1;
+						int intersectTop = (sy1 < cellTop) ? cellTop : sy1;
+						int intersectRight = (sx2 < cellRight) ? sx2 : cellRight;
+						int intersectBottom = (sy2 < cellBottom) ? sy2 : cellBottom;
+
+						if (intersectLeft > intersectRight) 
+						{
+							int temp = intersectRight;
+							intersectRight = intersectLeft;
+							intersectLeft = temp;
+						}
+
+						if (intersectTop > intersectBottom) 
+						{
+							int temp = intersectBottom;
+							intersectBottom = intersectTop;
+							intersectTop = temp;
+						}
+
+						int intersectWidth = intersectRight - intersectLeft;
+						int intersectHeight = intersectBottom - intersectTop;
+
+						int image1XOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, true);
+						int image1YOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, false);
+						int image2XOffset = t.tileSetX[tileIndex] + (intersectLeft - cellLeft);
+						int image2YOffset = t.tileSetY[tileIndex] + (intersectTop - cellTop);
+
+						if (doPixelCollision(image1XOffset,
+								image1YOffset,
+								image2XOffset,
+								image2YOffset,
+								this.sourceImage,
+								this.currentTransform,
+								t.image,
+								TRANS_NONE,
+								intersectWidth, intersectHeight)) { return true; }
+					}
+				}
+			}
+			return false;
+		}
+	}
+
 	public final boolean collidesWith(Image image, int x, int y, boolean pixelLevel) 
 	{
-		Mobile.log(Mobile.LOG_WARNING, Sprite.class.getPackage().getName() + "." + Sprite.class.getSimpleName() + ": " + "CollidesWith C");
-		if (!visible) { return false; }
-	
-		Rect thisRect = getCollisionRect(this);
-		Rect imageRect = new Rect(x, y, x + image.getWidth(), y + image.getHeight());
-	
-		if (intersectRect(thisRect, imageRect)) 
-			{ return pixelLevel ? pixelCollision(thisRect, imageRect, image, Sprite.TRANS_NONE) : true;}
-		return false;
-	}
-	
-	private Rect getCollisionRect(Sprite s) 
-	{
-		int left = s.x + s.transformedCollisionRectX;
-		int top = s.y + s.transformedCollisionRectY;
-		int right = left + s.transformedCollisionRectWidth;
-		int bottom = top + s.transformedCollisionRectHeight;
-		return new Rect(left, top, right, bottom);
-	}
-	
-	private boolean intersectRect(Rect r1, Rect r2)
-		{ return !(r2.left >= r1.right || r2.right <= r1.left || r2.top >= r1.bottom || r2.bottom <= r1.top); }
-	
-	private boolean pixelCollision(Rect r1, Rect r2, Image otherImage, int otherTransformation) 
-	{
-		int intersectLeft = Math.max(r1.left, r2.left);
-		int intersectTop = Math.max(r1.top, r2.top);
-		int intersectRight = Math.min(r1.right, r2.right);
-		int intersectBottom = Math.min(r1.bottom, r2.bottom);
-		int intersectWidth = Math.abs(intersectRight - intersectLeft);
-		int intersectHeight = Math.abs(intersectBottom - intersectTop);
-	
-		int thisImageXOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, true);
-		int thisImageYOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, false);
-		int otherImageXOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, true);
-		int otherImageYOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, false);
-	
-		return doPixelCollision(thisImageXOffset, thisImageYOffset, otherImageXOffset, otherImageYOffset,
-				this.sourceImage, this.currentTransform, otherImage, otherTransformation,
-				intersectWidth, intersectHeight);
-	}
-	
-	private boolean checkTileCollision(Rect spriteRect, TiledLayer t, int col, int row, int tW, int tH) 
-	{
-		int cellLeft = col * tW + t.x;
-		int cellTop = row * tH + t.y;
-		int cellRight = cellLeft + tW;
-		int cellBottom = cellTop + tH;
-	
-		int intersectLeft = Math.max(spriteRect.left, cellLeft);
-		int intersectTop = Math.max(spriteRect.top, cellTop);
-		int intersectRight = Math.min(spriteRect.right, cellRight);
-		int intersectBottom = Math.min(spriteRect.bottom, cellBottom);
-	
-		if (intersectLeft < intersectRight && intersectTop < intersectBottom) 
+		if (!(visible)) { return false; }
+
+		int otherLeft = x;
+		int otherTop = y;
+		int otherRight = x + image.getWidth();
+		int otherBottom = y + image.getHeight();
+
+		int left = x + collisionRectX;
+		int top = y + collisionRectY;
+		int right = left + collisionRectWidth;
+		int bottom = top + collisionRectHeight;
+
+		if (intersectRect(otherLeft, otherTop, otherRight, otherBottom, left, top, right, bottom)) 
 		{
-			int intersectWidth = intersectRight - intersectLeft;
-			int intersectHeight = intersectBottom - intersectTop;
-			int thisImageXOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, true);
-			int thisImageYOffset = getImageTopLeft(intersectLeft, intersectTop, intersectRight, intersectBottom, false);
-			int tileIndex = t.getCell(col, row);
-			int image2XOffset = t.tileSetX[tileIndex] + (intersectLeft - cellLeft);
-			int image2YOffset = t.tileSetY[tileIndex] + (intersectTop - cellTop);
-	
-			return doPixelCollision(thisImageXOffset, thisImageYOffset, image2XOffset, image2YOffset,
-					this.sourceImage, this.currentTransform, t.image, TRANS_NONE,
-					intersectWidth, intersectHeight);
+			if (pixelLevel) 
+			{
+				if (this.collisionRectX < 0) { left = this.x; }
+				if (this.collisionRectY < 0) { top = this.y; }
+				if ((this.collisionRectX + this.collisionRectWidth) > this.width) { right = this.x + this.width; }
+				if ((this.collisionRectY + this.collisionRectHeight) > this.height) { bottom = this.y + this.height; }
+
+				if (!intersectRect(otherLeft, otherTop, otherRight, otherBottom, left, top, right, bottom)) { return false; }
+
+				int intersectLeft = (left < otherLeft) ? otherLeft : left;
+				int intersectTop = (top < otherTop) ? otherTop : top;
+
+				int intersectRight = (right < otherRight) ? right : otherRight;
+				int intersectBottom = (bottom < otherBottom) ? bottom : otherBottom;
+
+				int intersectWidth = Math.abs(intersectRight - intersectLeft);
+				int intersectHeight = Math.abs(intersectBottom - intersectTop);
+
+				int thisImageXOffset = getImageTopLeft(intersectLeft,
+						intersectTop,
+						intersectRight,
+						intersectBottom, true);
+
+				int thisImageYOffset = getImageTopLeft(intersectLeft,
+						intersectTop,
+						intersectRight,
+						intersectBottom, false);
+
+				int otherImageXOffset = intersectLeft - x;
+				int otherImageYOffset = intersectTop - y;
+
+				return doPixelCollision(thisImageXOffset, thisImageYOffset,
+						otherImageXOffset, otherImageYOffset,
+						this.sourceImage,
+						this.currentTransform,
+						image,
+						Sprite.TRANS_NONE,
+						intersectWidth, intersectHeight);
+
+			}
+			else { return true; }
 		}
 		return false;
 	}
@@ -397,7 +506,6 @@ public class Sprite extends Layer
 		{
 			for (int xx = 0; xx < imageW; xx += fWidth)
 			{
-
 				frameCoordsX[currentFrame] = xx;
 				frameCoordsY[currentFrame] = yy;
 
@@ -424,8 +532,6 @@ public class Sprite extends Layer
 	private static boolean doPixelCollision(int image1XOffset, int image1YOffset, int image2XOffset, int image2YOffset,
 		Image image1, int transform1, Image image2, int transform2, int width, int height) 
 	{
-		Mobile.log(Mobile.LOG_WARNING, Sprite.class.getPackage().getName() + "." + Sprite.class.getSimpleName() + ": " + "TiledLayer: Per-Pixel Collision Check!");
-
 		final int[] argbData1 = getARGBData(image1, image1XOffset, image1YOffset, transform1, width, height);
 		final int[] argbData2 = getARGBData(image2, image2XOffset, image2YOffset, transform2, width, height);
 
@@ -526,7 +632,6 @@ public class Sprite extends Layer
 
 	private void computeTransformedBounds(int transform) 
 	{
-		Mobile.log(Mobile.LOG_DEBUG, Sprite.class.getPackage().getName() + "." + Sprite.class.getSimpleName() + ": " + "TiledLayer: ComputeTransBounds!");
 		switch (transform) 
 		{
 			case TRANS_NONE:
