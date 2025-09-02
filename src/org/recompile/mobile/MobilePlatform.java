@@ -29,6 +29,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -693,27 +694,50 @@ public class MobilePlatform
 		else // If it's not KJX, it's JAD/MSD or JAR
 		{
 			/*
-			 * If loading a jar directly, check if an accompanying jad with the same name 
+			 * If loading a jar directly, check if an accompanying jad/msd with the same name 
 			 * is present in the directory, to load any platform properties from there.
 			 */
-			if(fileName.toLowerCase().contains(".jar")) 
+			if (fileName.toLowerCase().contains(".jar")) 
 			{
-				// This might be better off being separated into a "checkAccompanyingDescriptor" method if there's other descriptors that aren't jar or msd.
 				try 
 				{
-					File checkDescriptor = new File(new URI(fileName.replace(".jar", ".jad")));
-					if(checkDescriptor.exists() && !checkDescriptor.isDirectory()) 
+					// Create a File object for the directory containing the JAR file
+					final File jarFile = new File(new URI(fileName));
+					final File jarDirectory = jarFile.getParentFile();
+
+					// Check for accompanying JAD or MSD files
+					if (jarDirectory != null && jarDirectory.isDirectory()) 
 					{
-						Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Accompanying JAD found! Parsing additional MIDlet properties.");
-						fileName = fileName.replace(".jar", ".jad"); 
-					}
-					else 
-					{
-						checkDescriptor = new File(new URI(fileName.replace(".jar", ".msd")));
-						if(checkDescriptor.exists() && !checkDescriptor.isDirectory()) 
+						FilenameFilter filter = new FilenameFilter() 
 						{
-							Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Accompanying MSD found! Parsing additional MIDlet properties.");
-							fileName = fileName.replace(".jar", ".msd"); 
+							public boolean accept(File dir, String name) 
+							{
+								return name.equalsIgnoreCase(jarFile.getName().replace(".jar", ".jad")) ||
+									name.equalsIgnoreCase(jarFile.getName().replace(".jar", ".msd"));
+							}
+						};
+
+						File[] files = jarDirectory.listFiles(filter);
+
+						if (files != null) 
+						{
+							for (File file : files) 
+							{
+								if (file.exists() && !file.isDirectory()) 
+								{
+									if (file.getName().toLowerCase().endsWith(".jad")) 
+									{
+										Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Accompanying JAD found! Parsing additional MIDlet properties.");
+										fileName = file.toURI().toString();
+									} 
+									else if (file.getName().toLowerCase().endsWith(".msd")) // We assume there will never be a jad and a msd for the same app in the directory
+									{
+										Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Accompanying MSD found! Parsing additional MIDlet properties.");
+										fileName = file.toURI().toString();
+									}
+									break;
+								}
+							}
 						}
 					}
 				} 

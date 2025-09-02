@@ -17,6 +17,7 @@
 package org.recompile.mobile;
 
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -206,7 +207,8 @@ public class MIDletLoader extends URLClassLoader
 		try { loadManifest(); }
 		catch (Exception e)
 		{
-			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Manifest!");
+			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Manifest! " + e.getMessage());
+			e.printStackTrace();
 		}
 
 		properties.put("audio.samplerates", "8000 11025 12000 16000 22050 24000 32000 44100 48000");
@@ -485,7 +487,7 @@ public class MIDletLoader extends URLClassLoader
 	
 		try
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			BufferedReader br = new BufferedReader(new InputStreamReader(is, "Shift_JIS"));
 			String line;
 			while ((line = br.readLine()) != null) 
 			{
@@ -546,24 +548,46 @@ public class MIDletLoader extends URLClassLoader
 		}
 		else { Mobile.isDoJa = properties.containsKey("MIDlet-1") ? false : true; } // Else we assume it as DoJa if a JAD file wasn't found, or if it was found but it, like the manifest, doesn't have the MIDlet token
 
-		if(Mobile.isDoJa) // No manifest found in the jar, or the manifest doesn't have a midlet specified. Maybe it's a DoJa file that has an accompanying .jam?
-		{
+		if (Mobile.isDoJa) // No manifest found in the jar, or the manifest doesn't have a midlet specified. Maybe it's a DoJa file that has an accompanying .jam?
+		{ 
 			Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAR Manifest file not found or lacks MIDlet entry! Checking if it's a DoJa File");
 			
-			String jamURLString = baseUrl.toString().replace(".jar", ".jam");
-			Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Path:" + jamURLString);
-
-			try
+			try 
 			{
-				URI jamURI = new URI(jamURLString);
-				File jamFile = new File(jamURI);
-				if(jamFile.exists()) 
+				String jarFileName = baseUrl.toString();
+				final File jarFile = new File(new URI(jarFileName));
+				final File jarDirectory = jarFile.getParentFile();
+
+				if (jarDirectory != null && jarDirectory.isDirectory()) 
 				{
-					Mobile.log(Mobile.LOG_INFO, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found!");
-					URL jamURL = jamURI.toURL();
-					parseJamDescriptorInto(jamURL.openStream(), properties);
+					// Create a FilenameFilter to check for JAM files
+					FilenameFilter jamFilter = new FilenameFilter() 
+					{
+						@Override
+						public boolean accept(File dir, String name) 
+						{
+							return name.equalsIgnoreCase(jarFile.getName().toLowerCase().replace(".jar", ".jam"));
+						}
+					};
+
+					File[] jamFiles = jarDirectory.listFiles(jamFilter);
+
+					if (jamFiles != null && jamFiles.length > 0) 
+					{
+						File jamFileFound = jamFiles[0];
+						if (jamFileFound.exists() && !jamFileFound.isDirectory()) 
+						{
+							Mobile.log(Mobile.LOG_INFO, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found!" + jamFileFound);
+							URL jamURL = jamFileFound.toURI().toURL();
+							parseJamDescriptorInto(jamURL.openStream(), properties);
+						}
+					}
 				}
-			} 
+				else 
+				{
+					Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Could not access the directory containing the JAR file.");
+				}
+			}
 			catch (Exception e) 
 			{
 				Mobile.log(Mobile.LOG_WARNING, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Could not parse .jam file:" + e.getMessage());
@@ -927,8 +951,9 @@ public class MIDletLoader extends URLClassLoader
 			else { resource = "/" + resource; } // If not, just append the directory slash
 		}
 
-		// We basically ignore everything done above at the moment
-		resource = baseUrl.toString().replace(".jar", ".sp");
+		// We basically ignore everything done above at the moment. TODO: Loading multiple scratchpads, like sp0, sp1, etc.
+		resource = baseUrl.toString();
+		resource = resource.substring(0, resource.length() - 4) + ".sp";
 		
 		// TODO: Improve ScratchPad parsing
 

@@ -200,13 +200,15 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 
 	public byte[] loadScratchPadBinary() 
 	{
-		String scratchPadPath = Mobile.getPlatform().loader.baseUrl.toString().replace(".jar", (".sp" + spIndex));
+		// Replace .jar with .sp in a case insensitive way.
+		String scratchPadPath = Mobile.getPlatform().loader.baseUrl.toString();
+		scratchPadPath = scratchPadPath.substring(0, scratchPadPath.length() - 4) + ".sp";
 
 		try
 		{
 			File spFile = new File(new URI(scratchPadPath));
 
-			// TODO: Test the non iDKDoJa format, as single region scratchpads and multi-region ones (within a single .sp file) seem to work as they should.
+			// TODO: Test the non iDKDoJa format with separate .sp, as single region scratchpads and multi-region ones (within a single .sp file) seem to work as they should.
 
 			// If the file doesn't exist with the expected scratchpad index, it might be a single scratchpad with one or more regions
 			if(!spFile.exists()) 
