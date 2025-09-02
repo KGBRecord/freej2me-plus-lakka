@@ -104,7 +104,7 @@ public final class MediaManager
     
     public static MediaSound getSound(java.io.InputStream in) throws java.io.IOException
     {
-        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getSound bytes: " + in.available());
+        Mobile.log(Mobile.LOG_DEBUG, MediaManager.class.getPackage().getName() + "." + MediaManager.class.getSimpleName() + ": " + " getSound inputStream: " + in.available());
         return new MediaSoundImpl(in);
     }
     

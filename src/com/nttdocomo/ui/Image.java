@@ -81,7 +81,7 @@ public abstract class Image extends PlatformImage
 		return new ImageImpl(data, offset, length);
 	}
 
-	public Graphics getGraphics() { return super.getDoJaGraphics(); }
+	public Graphics getGraphics() { return getDoJaGraphics(); }
 
 	public void dispose() // TODO: Implement this properly
 	{

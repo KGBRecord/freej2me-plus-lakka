@@ -1724,16 +1724,25 @@ public abstract class PlatformGraphics implements DirectGraphics
 	}
 
 	// These are used in some DoJa versions of Gradius, like Gradius II
-	public int getPixel(int x, int y) { return this.getRGBPixel(x, y); }
+	public int getPixel(int x, int y) { return getRGBPixel(x, y); }
 
-	public int getRGBPixel(int x, int y) { return canvasData[y*canvasWidth+x]; }
+	public int getRGBPixel(int x, int y) 
+	{ 
+		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		return canvasData[y*canvasWidth+x]; 
+	}
 
 	// These aren't documented, but some DoJa jars use them (space Manbow uses setRGBPixel right at the menu for example)
 	// They don't seem all too different from lcdui Image's set/getPixel(s) as far as logic goes
-	public void setPixel(int x, int y) { canvasData[y*canvasWidth+x] = getColor(); }
+	public void setPixel(int x, int y) 
+	{ 
+		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		canvasData[y*canvasWidth+x] = getColor(); 
+	}
 
 	public void setPixel(int x, int y, int color) 
 	{
+		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		int restorecolor = getColor();
 		setColor(color);
 		setPixel(x, y);
@@ -1742,13 +1751,45 @@ public abstract class PlatformGraphics implements DirectGraphics
 
 	public void setRGBPixel(int x, int y, int color) { setPixel(x, y, color); }
 
+	// Used by Galaga for Mobage, doesn't seem correct yet
+	public int[] getPixels(int x, int y, int width, int height, int[] array, int offset) 
+	{
+		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(array == null) { throw new NullPointerException("Null data array received"); }
+		if(width < 0 || height < 0) { throw new IllegalArgumentException("Invalid value for width or height"); }
+		if(offset < 0 || (offset + width*height) > array.length || (offset + width*height) < 0) { throw new ArrayIndexOutOfBoundsException("Requested range is out of bounds"); }
+		
+		getPixels(array, offset, width, x, y, width, height, DirectGraphics.TYPE_INT_8888_ARGB);
+		return array;
+	}
+
+	public void setPixels(int x, int y, int width, int height, int[] array, int offset) 
+	{
+		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(array == null) { throw new NullPointerException("Null data array received"); }
+		if(width < 0 || height < 0) { throw new IllegalArgumentException("Invalid value for width or height"); }
+		if(offset < 0 || (offset + width*height) > array.length || (offset + width*height) < 0) { throw new ArrayIndexOutOfBoundsException("Requested range is out of bounds"); }
+		// This is yet another case where newer DoJa probably differs from older due to transparency.
+		drawRGB(array, offset, width, x, y, width, height, false);
+	}
+
+	// Not really found in use yet, but if there's get/setRGBPixel, there should be a get/setRGBPixels too.
+	public void setRGBPixels(int x, int y, int width, int height, int[] array, int offset) 
+	{
+		setPixels(x, y, width, height, array, offset);
+	}
+
+	public int[] getRGBPixels(int x, int y, int width, int height, int[] array, int offset) 
+	{
+		return getPixels(x, y, width, height, array, offset);
+	}
+
 	public void setPictoColorEnabled(boolean b) 
 	{ 
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		usePictoColor = b; 
 	}
-
 
 	// FPS COUNTER
 

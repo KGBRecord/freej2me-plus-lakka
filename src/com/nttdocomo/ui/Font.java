@@ -60,6 +60,8 @@ public class Font extends PlatformFont
 
 	public static Font getFont(int type) { return getDefaultFont(); }
 
+	public static Font getFont(int type, int fontSize) { return getDefaultFont(); }
+
 	public static Font getDefaultFont() { return defaultDoJaFont; }
 
 	public static void setDefaultFont(Font font) 

@@ -125,5 +125,5 @@ public class Image extends PlatformImage
 		return new Image(rgb, width, height, processAlpha);
 	}
 
-	public Graphics getGraphics() { return super.getMIDPGraphics(); }
+	public Graphics getGraphics() { return getMIDPGraphics(); }
 }

@@ -29,7 +29,7 @@ import java.util.Map;
 
 import org.recompile.mobile.Mobile;
 
-class HttpConnectionImpl implements HttpConnection 
+class HttpConnectionImpl implements HttpConnection, com.nttdocomo.io.HttpConnection
 {
 
 	Map<String, String> requestProperty = new HashMap<String, String>();
@@ -66,7 +66,7 @@ class HttpConnectionImpl implements HttpConnection
 
 	public void setRequestProperty(String key, String value) { requestProperty.put(key, value); }
 
-	private void connect() { Mobile.log(Mobile.LOG_WARNING, HttpConnectionImpl.class.getPackage().getName() + "." + HttpConnectionImpl.class.getSimpleName() + ": " + "Http Connection requested: "+ this.url); }
+	public void connect() throws java.io.IOException { Mobile.log(Mobile.LOG_WARNING, HttpConnectionImpl.class.getPackage().getName() + "." + HttpConnectionImpl.class.getSimpleName() + ": " + "Http Connection requested: "+ this.url); }
 
 	public int getResponseCode() { return 200; }
 

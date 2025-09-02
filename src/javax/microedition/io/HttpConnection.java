@@ -99,10 +99,19 @@ public interface HttpConnection extends ContentConnection
 
 	public String getResponseMessage();
 
-	public String getURL();
+	// DoJa methods
+    public String getURL();
 
-	public void setRequestMethod(String method);
+    public void setRequestMethod(String method);
 
-	public void setRequestProperty(String key, String value);
+    public void setRequestProperty(String key, String value);
+
+    public void connect() throws java.io.IOException;
+
+    public void close();
+    
+    public java.io.InputStream openInputStream() throws java.io.UnsupportedEncodingException;
+
+    public java.io.OutputStream openOutputStream();
 
 }

@@ -111,7 +111,6 @@ public class AudioPresenter implements MediaPresenter
         if((mediaSound == null && mediaData == null) ||
             (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
             /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
-            
         )
         { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
         if(time < 0) { throw new IllegalArgumentException("Invalid value received for time");}
@@ -131,7 +130,6 @@ public class AudioPresenter implements MediaPresenter
         if((mediaSound == null && mediaData == null) ||
             (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
             /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
-            
         )
         { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
 
@@ -145,7 +143,6 @@ public class AudioPresenter implements MediaPresenter
         if((mediaSound == null && mediaData == null) ||
             (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
             /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
-            
         )
         { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
 
@@ -162,7 +159,6 @@ public class AudioPresenter implements MediaPresenter
         if((mediaSound == null && mediaData == null) ||
             (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
             /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
-            
         )
         { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
 
@@ -176,7 +172,6 @@ public class AudioPresenter implements MediaPresenter
     public void setData(MediaData data) 
     { 
         Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setData called (not implemented)");
-        System.out.println("setDat");
         this.mediaData = data; 
     }
 
