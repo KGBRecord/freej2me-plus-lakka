@@ -234,16 +234,42 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 			byte[] data = new byte[stream.available()];
 
 			stream.read(data);
+			stream.close();
 
 			int spDataStart = (spIndex > 0 ? Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex-1])+64 : 0);
 			int spDataEnd = (spIndex > 0 ? Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex])+Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex-1])+64 : Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex])+64);
 			buffer.write(data, spDataStart, spDataEnd-spDataStart);
-			stream.close();
 			return buffer.toByteArray();
+		}
+		catch(IndexOutOfBoundsException ie) 
+		{
+			Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Scratchpad data out of bounds:" + ie.getMessage());
+			Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + "Copying without the 64 byte header offset.");
+			try 
+			{
+				InputStream stream = new FileInputStream(spFile);
+						
+				ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+				byte[] data = new byte[stream.available()];
+
+				stream.read(data);
+				stream.close();
+
+				int spDataStart = (spIndex > 0 ? Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex-1]) : 0);
+				int spDataEnd = (spIndex > 0 ? Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex])+Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex-1]) : Integer.parseInt(Mobile.iAppli.scratchPadSizes[spIndex]));
+				buffer.write(data, spDataStart, spDataEnd-spDataStart);
+				Mobile.log(Mobile.LOG_WARNING, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + "Copying without the 64 byte header offset succeeded!");
+				return buffer.toByteArray();
+			}
+			catch(Exception e) 
+			{ 
+				Mobile.log(Mobile.LOG_ERROR, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to copy scratchpad data without header offset" + e.getMessage());
+				return new byte[0];
+			}
 		}
 		catch (Exception e) 
 		{ 
-			Mobile.log(Mobile.LOG_ERROR, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to copy scratchpad data:" + e.getMessage());
+			Mobile.log(Mobile.LOG_ERROR, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to copy scratchpad data:" + e.getMessage() + e.toString());
 			return new byte[0]; 
 		}
 	}

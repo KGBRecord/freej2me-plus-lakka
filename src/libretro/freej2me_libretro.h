@@ -188,6 +188,28 @@ struct retro_core_option_v2_definition core_options[] =
         "240x320"
     },
     {
+        "freej2me_dojaversion",
+        "System > DoJa API Version",
+        "DoJa API Version",
+        "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
+        "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
+        "system_settings",
+        {
+            { "10"   "DoJa-1.0" },
+            { "20",  "DoJa-2.0" },
+            { "30",  "DoJa-3.0" },
+            { "35",  "DoJa-3.5" },
+            { "40",  "DoJa-4.0" },
+            { "41",  "DoJa-4.1" },
+            { "50",  "DoJa-5.0" },
+            { "51",  "DoJa-5.1" },
+            { "100", "Star-1.0" },
+            { "200", "Star-2.0" },
+            { NULL, NULL },
+        },
+        "200"
+    },
+    {
         "freej2me_rotate",
         "System > Rotate Screen",
         "Rotate Screen",
@@ -708,6 +730,25 @@ struct retro_core_option_definition core_options_v1 [] =
         "240x320"
     },
     {
+        "freej2me_dojaversion",
+        "DoJa API Version",
+        "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
+        {
+            { "10"   "DoJa-1.0" },
+            { "20",  "DoJa-2.0" },
+            { "30",  "DoJa-3.0" },
+            { "35",  "DoJa-3.5" },
+            { "40",  "DoJa-4.0" },
+            { "41",  "DoJa-4.1" },
+            { "50",  "DoJa-5.0" },
+            { "51",  "DoJa-5.1" },
+            { "100", "Star-1.0" },
+            { "200", "Star-2.0" },
+            { NULL, NULL },
+        },
+        "200"
+    },
+    {
         "freej2me_rotate",
         "Rotate Screen",
         "For applications that expect the screen to be rotated, this option allows you to set the rotation in 90-degree steps. 270 degrees is the most commonly used",
@@ -1098,6 +1139,10 @@ static const struct retro_variable vars[] =
     { /* Screen Resolution */
         "freej2me_resolution",
         "Phone Resolution (Core Restart may be required); 240x320|96x65|101x64|101x80|128x128|130x130|120x160|128x160|132x176|176x208|176x220|220x176|208x208|180x320|320x180|240x240|208x320|320x240|240x400|400x240|240x432|240x480|360x360|352x416|360x640|640x360|640x480|480x800|800x480" 
+    },
+    { /* DoJa API Version */
+        "freej2me_dojaversion",
+        "DoJa API Version; 200|10|20|30|35|40|41|50|51|100",
     },
     { /* Screen Rotation */
         "freej2me_rotate",

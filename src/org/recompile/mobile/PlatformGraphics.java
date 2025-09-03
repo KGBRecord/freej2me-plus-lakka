@@ -196,7 +196,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void clearRect(int x, int y, int width, int height)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		gc.clearRect(x, y, width, height);
 	}
@@ -343,7 +343,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawImage(Image image, int x, int y)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		try
 		{
 			gc.drawImage(image.getCanvas(), x, y, null);
@@ -558,7 +558,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawLine(int x1, int y1, int x2, int y2) 
 	{ 
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
 		gc.setStroke(strokes[strokeStyle]);
 		gc.drawLine(x1, y1, x2, y2); 
@@ -568,7 +568,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
 	{
 		if(width < 0 || height < 0) { return; }
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		gc.setStroke(strokes[strokeStyle]);
 		gc.drawArc(x, y, width, height, startAngle, arcAngle);
@@ -578,7 +578,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	public void drawRect(int x, int y, int width, int height)
 	{
 		if(width < 0 || height < 0) { return; }
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
 		gc.setStroke(strokes[strokeStyle]);
 		gc.drawRect(x, y, width, height);
@@ -588,7 +588,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight)
 	{
 		if(width < 0 || height < 0 || arcWidth < 0 || arcHeight < 0) { return; }
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		gc.setStroke(strokes[strokeStyle]);
 		gc.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
@@ -636,7 +636,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle)
 	{
 		if(width < 0 || height < 0) { return; }
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		gc.fillArc(x, y, width, height, startAngle, arcAngle);
 	}
@@ -644,7 +644,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	public void fillRect(int x, int y, int width, int height)
 	{
 		if(width < 0 || height < 0) { return; }
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		gc.fillRect(x, y, width, height);
 	}
@@ -652,21 +652,28 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight)
 	{
 		if(width < 0 || height < 0 || arcWidth < 0 || arcHeight < 0) { return; }
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		gc.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
 	}
 
 	public void setColor(int rgb)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
-		setColor((rgb>>16) & 0xFF, (rgb>>8) & 0xFF, rgb & 0xFF);
+		if(!Mobile.isDoJa || (Mobile.isDoJa && Mobile.DoJaVersion < 40)) 
+		{
+			setColor((rgb>>16) & 0xFF, (rgb>>8) & 0xFF, rgb & 0xFF);
+		}
+		else // DoJa 4.0 and above support alpha here
+		{
+			setAlphaRGB(rgb);
+		}
 	}
 
 	public void setColor(int r, int g, int b)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
 		color = (0xFF << 24) | (r<<16) | (g<<8) | b; // Alpha is ignored below, we set it just so the color variable is accurate
 		gc.setColor(new Color(color));
@@ -708,7 +715,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void setClip(int x, int y, int width, int height)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
 		if(!Mobile.isDoJa) { gc.setClip(x, y, width, height); }
 		else { gc.setClip(x-getTranslateX(), y-getTranslateY(), width, height); }
@@ -716,7 +723,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void clipRect(int x, int y, int width, int height)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
 		gc.clipRect(x, y, width, height);
 	}
@@ -922,7 +929,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawPolygon(int[] xPoints, int xOffset, int[] yPoints, int yOffset, int nPoints, int argbColor)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		int temp = color;
 		int[] x = new int[nPoints];
@@ -951,7 +958,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void fillPolygon(int[] xPoints, int xOffset, int[] yPoints, int yOffset, int nPoints, int argbColor)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		int temp = color;
 		int[] x = new int[nPoints];
@@ -1383,7 +1390,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	// This has to create a copy of the current graphics context, translation, clip, etc included
 	public com.nttdocomo.ui.Graphics copy() 
 	{ 
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		com.nttdocomo.ui.Graphics newGc = new com.nttdocomo.ui.Graphics(this.baseImage);
 
@@ -1397,7 +1404,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void copyArea(int x, int y, int width, int height, int dx, int dy) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		copyArea(x, y, width, height, dx, dy, 0);
 	}
@@ -1405,7 +1412,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	// Text appears to be rendered with BOTTOM LEFT anchoring, at least, it's what most DoJa jars seem to like better
 	public void drawChars(char[] data, int x, int y, int offset, int length)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		if(data == null) { throw new NullPointerException("Null char array received"); }
 		if(offset < 0 || length < 0 || offset+length >= data.length) { throw new StringIndexOutOfBoundsException("invalid length and/or position received"); }
@@ -1414,7 +1421,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawString(String str, int x, int y)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		if(str == null) { throw new NullPointerException("Null string received"); }
 		
 		if(str.length() > 0) { drawString(str, x, y, BOTTOM | LEFT); }
@@ -1422,7 +1429,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawImage(com.nttdocomo.ui.Image image, int[] matrix) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		try 
 		{
 			float[] fmatrix = new float[matrix.length];
@@ -1440,7 +1447,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawImage(com.nttdocomo.ui.Image image, int[] matrix, int sx, int sy, int width, int height) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		try 
 		{
 			float[] fmatrix = new float[matrix.length];
@@ -1524,21 +1531,21 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void setOrigin(int x, int y) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
 		translate(x-translateX, y-translateY); // Reset from previous translation
 	}
 
 	public void clearClip() 
 	{ 
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		
 		setClip(0, 0, canvasWidth, canvasHeight); 
 	}
 
 	public void setFont(com.nttdocomo.ui.Font dojaFont) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		if(dojaFont == null) { dojaFont = com.nttdocomo.ui.Font.getDefaultFont(); }
 		this.dojaFont = dojaFont;
@@ -1547,14 +1554,14 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void lock() 
 	{ 
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		dojaLockCount++; 
 	}
 
     public void unlock(boolean forced)
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		dojaLockCount = forced ? 0 : dojaLockCount-1;
 		
@@ -1566,13 +1573,10 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public static int getColorOfRGB(int r, int g, int b) 
 	{
-		if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) { throw new IllegalArgumentException("RGB values must be between 0 and 255"); }
-
-		// TODO: DoJa 4.0 allows negative values, so we should use 0xFF for alpha
-		return (0 << 24) | (r << 16) | (g << 8) | b;
+		return getColorOfRGB(r, g, b, 0);
 	}
 
-	public static int getColorOfRGB(int a, int r, int g, int b) 
+	public static int getColorOfRGB(int r, int g, int b, int a) 
 	{
 		if (a < 0 || a > 255 || r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) { throw new IllegalArgumentException("RGB values must be between 0 and 255"); }
 
@@ -1581,8 +1585,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public static int getColorOfName(int name) 
 	{
-		// TODO: DoJa 4.0 has transparency, so we should make this mask 0xFF000000 in such cases
-		int alpha = 0x0000000;
+		int alpha = Mobile.DoJaVersion < 40 ? 0x0000000 : 0xFF000000;
 		switch (name) 
 		{
 			case BLACK:     return 0x00000000 | alpha; // (0x00, 0x00, 0x00)
@@ -1607,7 +1610,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		gc.setStroke(strokes[strokeStyle]);
 		for (int i = 0; i < nPoints - 1; i++) 
@@ -1619,7 +1622,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawPolyline(int[] xPoints, int[] yPoints, int offset, int count) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		gc.setStroke(strokes[strokeStyle]);
 		for (int i = offset; i < offset + count - 1; i++) 
@@ -1632,14 +1635,14 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	// Those Polygon methods are used by Gang Bullets 2 and Dragon Ball RPG
 	public void fillPolygon(final int[] xPoints, final int[] yPoints, final int numPoints) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		fillPolygon(xPoints, 0, yPoints, 0, numPoints, (0xFF << 24) | getColor());
 	}
 
 	public void fillPolygon(final int[] xPoints, final int[] yPoints, final int offset, final int numPoints) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		fillPolygon(xPoints, offset, yPoints, offset, numPoints, (0xFF << 24) | getColor());
 	}
@@ -1647,21 +1650,21 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	// Haven't found those in use, but if there's fillPolygon for DoJa, there must be drawPolygon too
 	public void drawPolygon(final int[] xPoints, final int[] yPoints, final int numPoints) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		drawPolygon(xPoints, 0, yPoints, 0, numPoints, (0xFF << 24) | getColor());
 	}
 
 	public void drawPolygon(final int[] xPoints, final int[] yPoints, final int offset, final int numPoints) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		drawPolygon(xPoints, offset, yPoints, offset, numPoints, (0xFF << 24) | getColor());
 	}
 
 	public void drawScaledImage(com.nttdocomo.ui.Image image, int dx, int dy, int width, int height, int sx, int sy, int swidth, int sheight) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		try 
 		{
@@ -1681,7 +1684,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawSpriteSet(com.nttdocomo.ui.SpriteSet sprites) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawSpriteSet is untested ");
 
@@ -1693,7 +1696,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void drawImageMap(com.nttdocomo.ui.ImageMap map, int x, int y) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		Mobile.log(Mobile.LOG_WARNING, PlatformGraphics.class.getPackage().getName() + "." + PlatformGraphics.class.getSimpleName() + ": " + "drawImageMap is untested ");
 
@@ -1704,7 +1707,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void setFlipMode(int mode) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		switch(mode) 
 		{
@@ -1728,7 +1731,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public int getRGBPixel(int x, int y) 
 	{ 
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		return canvasData[y*canvasWidth+x]; 
 	}
 
@@ -1736,13 +1739,13 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	// They don't seem all too different from lcdui Image's set/getPixel(s) as far as logic goes
 	public void setPixel(int x, int y) 
 	{ 
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		canvasData[y*canvasWidth+x] = getColor(); 
 	}
 
 	public void setPixel(int x, int y, int color) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		int restorecolor = getColor();
 		setColor(color);
 		setPixel(x, y);
@@ -1754,7 +1757,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	// Used by Galaga for Mobage, doesn't seem correct yet
 	public int[] getPixels(int x, int y, int width, int height, int[] array, int offset) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		if(array == null) { throw new NullPointerException("Null data array received"); }
 		if(width < 0 || height < 0) { throw new IllegalArgumentException("Invalid value for width or height"); }
 		if(offset < 0 || (offset + width*height) > array.length || (offset + width*height) < 0) { throw new ArrayIndexOutOfBoundsException("Requested range is out of bounds"); }
@@ -1765,12 +1768,11 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void setPixels(int x, int y, int width, int height, int[] array, int offset) 
 	{
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		if(array == null) { throw new NullPointerException("Null data array received"); }
 		if(width < 0 || height < 0) { throw new IllegalArgumentException("Invalid value for width or height"); }
 		if(offset < 0 || (offset + width*height) > array.length || (offset + width*height) < 0) { throw new ArrayIndexOutOfBoundsException("Requested range is out of bounds"); }
-		// This is yet another case where newer DoJa probably differs from older due to transparency.
-		drawRGB(array, offset, width, x, y, width, height, false);
+		drawRGB(array, offset, width, x, y, width, height, Mobile.DoJaVersion >= 40);
 	}
 
 	// Not really found in use yet, but if there's get/setRGBPixel, there should be a get/setRGBPixels too.
@@ -1786,7 +1788,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public void setPictoColorEnabled(boolean b) 
 	{ 
-		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
+		if(Mobile.DoJaVersion >= 20 && contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
 		usePictoColor = b; 
 	}
@@ -1897,7 +1899,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 		fillRoundRect(0, 0, scaledWidth, scaledHeight, 4, 4); // Cut a bit off from the height so that the counter is slimmer. We're not using chars that go below baseline like 'f' or 'q'
 	
 		// Set the font color and draw it
-		setColor(0xFFAF00); // Text color is orange
+		setColor(0xFFFFAF00); // Text color is orange
 		drawString(fpsText, 0, 0, TOP | LEFT);
 		setOrigin(0, 0);
 		setColor(0, 0, 0);

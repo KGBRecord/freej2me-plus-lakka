@@ -88,6 +88,7 @@ public final class AWTGUI
 	final Menu unlockFPSHack = new Menu("Unlock FPS Hack");
 	final Menu showFPS = new Menu("Show FPS Counter");
 	final Menu phoneType = new Menu("Phone Key Layout");
+	final Menu DoJaVersion = new Menu("DoJa API Version");
 	final Menu screenRotation = new Menu("Screen Rotation (Ctrl+Alt+R)");
 	final Menu backlightColor = new Menu("Backlight Color");
 	final Menu fontOffset = new Menu("Font Size Offset");
@@ -185,6 +186,21 @@ public final class AWTGUI
 	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("Enable Audio", false);
 	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("Use custom midi soundfont", false);
 	final CheckboxMenuItem useCustomFont = new CheckboxMenuItem("Use custom text font", false);
+
+	final CheckboxMenuItem[] dojaVersions = 
+	{
+		new CheckboxMenuItem("DoJa-1.0", false),
+		new CheckboxMenuItem("DoJa-2.0", false),
+		new CheckboxMenuItem("DoJa-3.0", false),
+		new CheckboxMenuItem("DoJa-3.5", false),
+		new CheckboxMenuItem("DoJa-4.0", false),
+		new CheckboxMenuItem("DoJa-4.1", false),
+		new CheckboxMenuItem("DoJa-5.0", false),
+		new CheckboxMenuItem("DoJa-5.1", false),
+		new CheckboxMenuItem("Star-1.0", false),
+		new CheckboxMenuItem("Star-2.0", true)
+	};
+	final String[] dojaVersionValues = {"10", "20", "30", "35", "40", "41", "50", "51", "100", "200"};
 
 	final CheckboxMenuItem[] rotations = 
 	{
@@ -653,6 +669,30 @@ public final class AWTGUI
 			}
 		});
 
+		// DoJa Version
+		for(byte i = 0; i < dojaVersions.length; i++) 
+		{
+			final byte index = i;
+			dojaVersions[i].addItemListener(new ItemListener() 
+			{
+				public void itemStateChanged(ItemEvent e) 
+				{
+					if(!dojaVersions[index].getState()){ dojaVersions[index].setState(true); }
+					if(dojaVersions[index].getState())
+					{ 
+						config.updateDoJaVersion(dojaVersionValues[index]);
+						for(int j = 0; j < dojaVersions.length; j++) 
+						{
+							if(j != index) { dojaVersions[j].setState(false); }
+						}
+						hasPendingChange = true;
+
+						showRestartDialog();
+					}
+				}
+			});
+		}
+
 		// Speedhacks
 		noAlphaOnBlankImages.addItemListener(new ItemListener() 
 		{
@@ -982,6 +1022,7 @@ public final class AWTGUI
 		optionMenu.add(resChangeMenuItem);
 		optionMenu.add(mapInputs);
 		optionMenu.add(phoneType);
+		optionMenu.add(DoJaVersion);
 		optionMenu.add(screenRotation);
 		optionMenu.add(backlightColor);
 		optionMenu.add(fpsCap);
@@ -1013,6 +1054,7 @@ public final class AWTGUI
 		M3GDebug.add(M3GWireframe);
 
 		for(int i = 0; i < config.supportedResolutions.length; i++) { resChoice.add(config.supportedResolutions[i]); }
+		for(int i = 0; i < dojaVersions.length; i++) { DoJaVersion.add(dojaVersions[i]); }
 		for(int i = 0; i < rotations.length; i++) { screenRotation.add(rotations[i]); }
 		for(int i = 0; i < layoutOptions.length; i++) { phoneType.add(layoutOptions[i]); }
 		for(int i = 0; i < backlightOptions.length; i++) { backlightColor.add(backlightOptions[i]); }
@@ -1042,6 +1084,8 @@ public final class AWTGUI
 			enableAudio.setState(config.settings.get("sound").equals("on"));
 			useCustomMidi.setState(config.settings.get("soundfont").equals("Custom"));
 			useCustomFont.setState(config.settings.get("textfont").equals("Custom"));
+
+			for(int i = 0; i < dojaVersions.length; i++) { dojaVersions[i].setState(config.settings.get("dojaversion").equals(dojaVersionValues[i])); }
 
 			for(int i = 0; i < rotations.length; i++) { rotations[i].setState(config.settings.get("rotate").equals(rotationValues[i])); }
 

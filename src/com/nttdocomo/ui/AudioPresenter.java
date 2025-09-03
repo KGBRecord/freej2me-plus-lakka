@@ -65,25 +65,33 @@ public class AudioPresenter implements MediaPresenter
 
     private int priority, loopCount = 1, volume = 100;
 
+    private static int curPort = 0;
+
     private static Map<Integer, AudioPresenter> usedPorts =  new HashMap<Integer, AudioPresenter>();
 
     protected AudioPresenter() { }
 
-    public static AudioPresenter getAudioPresenter() { return getAudioPresenter(0); }
+    public static AudioPresenter getAudioPresenter() 
+    { 
+        if(Mobile.DoJaVersion < 30) { return getAudioPresenter(0); } // DoJa < 3.0 only plays a single source here
+        else if(Mobile.DoJaVersion < 35) { return getAudioPresenter(-1); } // DoJa < 3.5, sources without a port are mutually exclusive, but don't override other used ports.
+        else // DoJa >= 3.5 can assign sounds to a new port, and only recycle a port if they're all in use
+        {
+            if((Mobile.DoJaVersion == 35 && curPort == 2) || (Mobile.DoJaVersion >= 40 && curPort == 4)) { curPort = 0; }
+            return getAudioPresenter(curPort++);
+        }
+    }
 
     public static AudioPresenter getAudioPresenter(int port) 
     {
-        AudioPresenter presenter = new AudioPresenter();
+        /* DoJa < 4.0 only supports up to 2 simultaneous sources, while DoJa 4.0 specifies
+         * that up to 4 simultaneous sources can play at any given time. I'm not sure if 5.0,
+         * 5.1 or Star allow for more than that, so 4 ports will be the max for now. */
+        if((Mobile.DoJaVersion <= 35 && port >= 2) || (Mobile.DoJaVersion >= 40 && port >= 4)) 
+        { throw new UIException(UIException.NO_RESOURCES, "This port is not available"); }
 
-        // See if the port is already in use and override its currently placed AudioPresenter.
-        if(!usedPorts.containsKey(port)) 
-        {
-            usedPorts.put(port, new AudioPresenter());
-        }
-        else 
-        {
-            usedPorts.replace(port, new AudioPresenter());
-        }
+        // If the port is already in use, we override its currently placed AudioPresenter.
+        usedPorts.put(port, new AudioPresenter());
         
         return usedPorts.get(port);
     }
@@ -185,6 +193,7 @@ public class AudioPresenter implements MediaPresenter
         switch (attribute) 
         {
             case PRIORITY:
+                if(Mobile.DoJaVersion < 20) { throw new IllegalArgumentException("PRIORITY attribute doesn't exist on DoJa < 2.0"); }
                 if(value < MIN_PRIORITY || value > MAX_PRIORITY) { throw new IllegalArgumentException("Invalid priority value: " + value); }
                 Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setPriority (unused):" + value);
                 this.priority = value;
@@ -202,6 +211,7 @@ public class AudioPresenter implements MediaPresenter
                 //setChangeTempo(value); // TODO
                 break;
             case SET_VOLUME:
+                if(Mobile.DoJaVersion < 30) { throw new IllegalArgumentException("SET_VOLUME attribute doesn't exist on DoJa < 3.0"); }
                 Mobile.log(Mobile.LOG_DEBUG, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setVolume:" + value);
                 volume = value;
                 break;

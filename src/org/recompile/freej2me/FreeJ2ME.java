@@ -520,6 +520,11 @@ public class FreeJ2ME
 				Mobile.config.settings.put("fps", ""+Integer.parseInt(args[6])+"");
 			}
 
+			if(args.length>=8)
+			{
+				Mobile.config.settings.put("dojaversion", ""+Integer.parseInt(args[7])+"");
+			}
+
 			settingsChanged();
 
 			Mobile.getPlatform().runJar();

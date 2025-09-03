@@ -183,6 +183,9 @@ public class Libretro
 		if(Integer.parseInt(args[23]) == 0) { Mobile.halfResM3GRaster = false; }
 		else { Mobile.halfResM3GRaster = true; }
 
+		/* DoJa API Version */
+		Mobile.DoJaVersion = Integer.parseInt(args[24]);
+
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
@@ -406,6 +409,8 @@ public class Libretro
 										else if(Mobile.unlockFramerateHack == 2) { Mobile.config.settings.put("fpshack", "Extended");  }
 										else if(Mobile.unlockFramerateHack == 3) { Mobile.config.settings.put("fpshack", "Aggressive");  }
 
+										Mobile.config.settings.put("dojaversion", "" + Mobile.DoJaVersion);
+
 										// Update system settings
 
 										Mobile.config.sysSettings.put("fpsCounterPosition", "Off"); // Libretro has its own frame counter
@@ -426,6 +431,7 @@ public class Libretro
 
 										if(!Mobile.dumpGraphicsObjects)  { Mobile.config.sysSettings.put("dumpGraphicsObjects", "off"); }
 										else                             { Mobile.config.sysSettings.put("dumpGraphicsObjects", "on");  }
+
 
 										Mobile.config.saveConfig();
 										settingsChanged();
@@ -541,6 +547,8 @@ public class Libretro
 
 									if(Integer.parseInt(cfgtokens[24])==0) { Mobile.config.settings.put("spdhackm3ghalfres", "off");  }
 									else { Mobile.config.settings.put("spdhackm3ghalfres", "on"); }
+
+									Mobile.config.settings.put("dojaversion", "" + Integer.parseInt(cfgtokens[25]));
 
 
 									Mobile.config.saveConfig();

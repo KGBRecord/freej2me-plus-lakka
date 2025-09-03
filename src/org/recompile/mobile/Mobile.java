@@ -73,6 +73,7 @@ public class Mobile
 	public static boolean isSKT = false;
 
 	// These flags are used for general compatibility adjustments within FreeJ2ME
+	public static int DoJaVersion = 200; // Default DoJa to "Star 2.0" (values are 10, 20, 30, 35, 40, etc for doja x.x, and multiples of 100 are Star)
 	public static boolean usingMessagingAPI = false;
 
 	// Mobile should contain flags to any and all "speedhacks" present in FreeJ2ME
@@ -1017,6 +1018,9 @@ public class Mobile
 		else if(lcdBacklightColor.equals("Violet")) { maskIndex = 4; }
 		else if(lcdBacklightColor.equals("Red"))    { maskIndex = 5; }
 
+		String dojaString = config.settings.get("dojaversion");
+		DoJaVersion = Integer.parseInt(dojaString);
+
 		// Speedhacks
 		String speedHackNoAlpha = config.settings.get("spdhacknoalpha");
 		if(speedHackNoAlpha.equals("on"))        { noAlphaOnBlankImages = true; }
@@ -1047,6 +1051,7 @@ public class Mobile
 		if(siemensFriendlyDrawing.equals("on"))        { compatSiemensFriendlyDrawing = true; }
 		else if (siemensFriendlyDrawing.equals("off")) { compatSiemensFriendlyDrawing = false; };
 
+		// Other settings
 		String textFont = config.settings.get("textfont");
 		if(textFont.equals("Custom"))       { useCustomTextFont = true; }
 		else if(textFont.equals("Default")) { useCustomTextFont = false; }

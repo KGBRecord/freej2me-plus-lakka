@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.recompile.mobile.Mobile;
+
 // TODO: This class is not yet complete
 public abstract class PalettedImage extends Image 
 {
@@ -92,7 +94,11 @@ public abstract class PalettedImage extends Image
 
         // Check for GIF signature. If it's not GIF, it should be a Microsoft BMP signature, and if not, we don't support it
         if (imageData[0] == 'G' && imageData[1] == 'I' && imageData[2] == 'F') { return extractPaletteFromGIF(imageData); }
-        else if (imageData[0] == 'B' && imageData[1] == 'M') { return extractPaletteFromBMP(imageData); } 
+        else if (imageData[0] == 'B' && imageData[1] == 'M') 
+        { 
+            if(Mobile.DoJaVersion < 50) { throw new UIException(UIException.UNSUPPORTED_FORMAT, "Current DoJa version does not support BMP."); } 
+            return extractPaletteFromBMP(imageData); 
+        }
         else { throw new UnsupportedOperationException("Unsupported image format."); }
     }
 

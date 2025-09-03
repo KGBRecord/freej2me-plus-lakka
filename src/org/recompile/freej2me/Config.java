@@ -141,6 +141,7 @@ public class Config
 				settings.put("compatsiemensfriendlydrawing", "off");
 				settings.put("fpshack", "Disabled");
 				settings.put("spdhackm3ghalfres", "off");
+				settings.put("dojaversion", "200");
 				saveConfig();
 			}
 
@@ -213,6 +214,7 @@ public class Config
 			if(!settings.containsKey("compatsiemensfriendlydrawing")) { settings.put("compatsiemensfriendlydrawing", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
 			if(!settings.containsKey("spdhackm3ghalfres")) { settings.put("spdhackm3ghalfres", "off"); }
+			if(!settings.containsKey("dojaversion")) { settings.put("dojaversion", "200"); }
 
 			// System settings
 			reader = new BufferedReader(new FileReader(sFile));
@@ -413,6 +415,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: spdhackm3ghalfres "+value);
 		settings.put("spdhackm3ghalfres", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateDoJaVersion(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: dojaversion "+value);
+		settings.put("dojaversion", value);
 		saveConfig();
 		onChange.run();
 	}
