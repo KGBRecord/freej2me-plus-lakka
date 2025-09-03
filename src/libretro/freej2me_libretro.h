@@ -196,8 +196,8 @@ struct retro_core_option_v2_definition core_options[] =
         "system_settings",
         {
             { "10"   "DoJa-1.0" },
-            { "20",  "DoJa-2.0" },
-            { "30",  "DoJa-3.0" },
+            { "20",  "DoJa-2.0 & 1.5 OE" },
+            { "30",  "DoJa-3.0 & 2.5 OE" },
             { "35",  "DoJa-3.5" },
             { "40",  "DoJa-4.0" },
             { "41",  "DoJa-4.1" },
@@ -735,8 +735,8 @@ struct retro_core_option_definition core_options_v1 [] =
         "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
         {
             { "10"   "DoJa-1.0" },
-            { "20",  "DoJa-2.0" },
-            { "30",  "DoJa-3.0" },
+            { "20",  "DoJa-2.0 & 1.5 OE" },
+            { "30",  "DoJa-3.0 & 2.5 OE" },
             { "35",  "DoJa-3.5" },
             { "40",  "DoJa-4.0" },
             { "41",  "DoJa-4.1" },

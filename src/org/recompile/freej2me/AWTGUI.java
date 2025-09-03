@@ -190,8 +190,8 @@ public final class AWTGUI
 	final CheckboxMenuItem[] dojaVersions = 
 	{
 		new CheckboxMenuItem("DoJa-1.0", false),
-		new CheckboxMenuItem("DoJa-2.0", false),
-		new CheckboxMenuItem("DoJa-3.0", false),
+		new CheckboxMenuItem("DoJa-2.0 & 1.5 OE", false),
+		new CheckboxMenuItem("DoJa-3.0 & 2.5 OE", false),
 		new CheckboxMenuItem("DoJa-3.5", false),
 		new CheckboxMenuItem("DoJa-4.0", false),
 		new CheckboxMenuItem("DoJa-4.1", false),

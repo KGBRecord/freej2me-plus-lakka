@@ -16,10 +16,14 @@
 */
 package com.nttdocomo.ui;
 
+import java.util.Vector;
+
+import org.recompile.mobile.Mobile;
+
 public class Palette 
 {
     private int[] entries;
-    private PalettedImage img;
+    private Vector<PalettedImage> boundImages = new Vector<PalettedImage>();
 
     public Palette(int n) 
     {
@@ -52,12 +56,25 @@ public class Palette
     public void setEntry(int index, int color) 
     {
         if (index < 0 || index >= entries.length) { throw new ArrayIndexOutOfBoundsException("Index out of bounds"); }
-        if(color < 0x000000 || color > 0xFFFFFF) { throw new IllegalArgumentException("Invalid color value"); }
+        if((Mobile.DoJaVersion < 40 && (color < 0x000000 || color > 0xFFFFFF)) ||
+            (Mobile.DoJaVersion >= 40 && (color < Integer.MIN_VALUE || color > Integer.MAX_VALUE))) { throw new IllegalArgumentException("Invalid color value: " + String.format("%02X", color)); }
      
-        img.updateImagePalette(new int[] {(0xFF << 24) | entries[index]}, new int[] {(0xFF << 24) | color});
+        for(int i = 0; i < boundImages.size(); i++) 
+        {
+            boundImages.get(i).updateImagePalette(new int[] {(0xFF << 24) | entries[index]}, new int[] {(0xFF << 24) | color});
+        }
+        
         entries[index] = color;
     }
 
-    public void setImage(PalettedImage image) { img = image; }
+    public void addImage(PalettedImage image) 
+    { 
+        if(!boundImages.contains(image)) { boundImages.add(image); }
+    }
+
+    public void removeImage(PalettedImage image) 
+    { 
+        if(boundImages.contains(image)) { boundImages.remove(image); }
+    }
 
 }

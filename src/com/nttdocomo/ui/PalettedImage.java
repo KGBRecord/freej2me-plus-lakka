@@ -42,7 +42,8 @@ public abstract class PalettedImage extends Image
         super(data, 0, data.length);
         this.palette = extractPalette(data);
         this.colorTableSize = palette.getEntryCount();
-        this.palette.setImage(this);
+        this.transparentIndex = extractTransparentIndex(data);
+        this.palette.addImage(this);
     }
 
     public static PalettedImage createPalettedImage(byte[] data) 
@@ -71,7 +72,8 @@ public abstract class PalettedImage extends Image
         setCanvas(createImage(data, 0, data.length).getCanvas());
         this.palette = extractPalette(data);
         this.colorTableSize = palette.getEntryCount();
-        this.palette.setImage(this);
+        this.transparentIndex = extractTransparentIndex(data);
+        this.palette.addImage(this);
     }
 
     public void changeData(InputStream in) 
@@ -83,7 +85,8 @@ public abstract class PalettedImage extends Image
             setCanvas(createImage(tmpData, 0, tmpData.length).getCanvas());
             this.palette = extractPalette(tmpData);
             this.colorTableSize = palette.getEntryCount();
-            this.palette.setImage(this);
+            this.transparentIndex = extractTransparentIndex(tmpData);
+            this.palette.addImage(this);
         }
         catch (Exception e) { }
     }
@@ -121,10 +124,35 @@ public abstract class PalettedImage extends Image
                 int b = gifData[headerOffset + (i * 3) + 2];
                 colors[i] = (0xFF << 24) | (r << 16) | (g << 8) | b;
             }
-
+            
             return new Palette(colors);
         } 
         else { throw new UnsupportedOperationException("No global color table present in GIF."); }
+    }
+
+    private static int extractTransparentIndex(byte[] gifData) 
+    {
+        int index = 0; // If there's no transparency, set the index as 0, GIF defaults to -1 but DoJa spec says it must be set to 0?
+        int pos = 0;
+
+        while (pos < gifData.length) 
+        {
+            if(pos + 4 >= gifData.length) { break; }
+            // See if we reached the Graphics Control Extension (GCF) block, as it contains the transparency index
+            if (gifData[pos] == 0x21 && gifData[pos + 1] == 0xF9) 
+            {
+                int blockSize = gifData[pos + 2];
+
+                if (blockSize == 4) 
+                {
+                    int transparencyFlag = gifData[pos + 3] & 0x01;
+                    if (transparencyFlag != 0) { index = gifData[pos + 4] & 0xFF; }
+                }
+                break;
+            }
+            pos++;
+        }
+        return index;
     }
 
     private static Palette extractPaletteFromBMP(byte[] bmpData) 
@@ -177,36 +205,16 @@ public abstract class PalettedImage extends Image
 
     public Palette getPalette() { return palette; }
 
+    // This method is only used to set a palette to this image
     public void setPalette(Palette palette) 
     { 
         if(palette.getEntryCount() < colorTableSize) { throw new IllegalArgumentException("New palette has less entries than the current one"); }
-        
-        /*  TODO: Doesn't seem needed here
-        List<Integer> originalColors = new ArrayList<Integer>();
-        List<Integer> newColors = new ArrayList<Integer>();
-        // Update the image's data based on the new palette first
-        for(int i = 0; i < palette.getEntryCount(); i++) 
-        {
-            if(this.palette.getEntry(i) != palette.getEntry(i)) 
-            { 
-                originalColors.add(this.palette.getEntry(i));
-                newColors.add(palette.getEntry(i));
-            }
-        }
 
-        int[] originalPalette = new int[originalColors.size()];
-        int[] newPalette = new int[newColors.size()];
-        for (int i = 0; i < originalColors.size(); i++) 
-        {
-            originalPalette[i] = originalColors.get(i);
-            newPalette[i] = newColors.get(i); 
-        }
-        
-        updateImagePalette(originalPalette, newPalette);
-        */
-
-        palette.setImage(this);
-        this.palette = palette; 
+        // Remove this image from the current palette before swapping to new one.
+        this.palette.removeImage(this);
+        // Since multiple images may share the same palette, we add this image to the palette's bound image array.
+        palette.addImage(this);
+        this.palette = palette;  // We also keep a reference to the current palette this image is bound to, for getPalette.
     }
 
     public int getTransparentColor() { throw new UnsupportedOperationException("getTransparentColor() cannot be called on PalettedImage."); }
