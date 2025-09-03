@@ -665,8 +665,10 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 		{
 			setColor((rgb>>16) & 0xFF, (rgb>>8) & 0xFF, rgb & 0xFF);
 		}
-		else // DoJa 4.0 and above support alpha here
+		else // DoJa 4.0 and above support semi-transparency here
 		{
+			// Full transparency becomes opaque (helps Rockman X dialogue frames, Sonic 1, and a few others)
+			if(((rgb >> 24) & 0xFF) == 0) { rgb |= (0xFF << 24); }
 			setAlphaRGB(rgb);
 		}
 	}
@@ -1573,6 +1575,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public static int getColorOfRGB(int r, int g, int b) 
 	{
+		// TODO: Normally the alpha here should be either 0 or 255 depending on the DoJa version, but Rockman X seems to expect 0 here, and it's a DoJa 4.0+ Appli
 		return getColorOfRGB(r, g, b, 0);
 	}
 
@@ -1585,7 +1588,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 	public static int getColorOfName(int name) 
 	{
-		int alpha = Mobile.DoJaVersion < 40 ? 0x0000000 : 0xFF000000;
+		int alpha = Mobile.DoJaVersion < 40 ? 0x00000000 : 0xFF000000;
 		switch (name) 
 		{
 			case BLACK:     return 0x00000000 | alpha; // (0x00, 0x00, 0x00)
