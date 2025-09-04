@@ -48,7 +48,9 @@ public abstract class Frame
 
     public void setBackground(int color) 
     {
-        if (color < 0) { throw new IllegalArgumentException("Invalid color value."); }
+        if((Mobile.DoJaVersion < 40 && (color < 0x000000 || color > 0xFFFFFF)) ||
+        (Mobile.DoJaVersion >= 40 && (color < Integer.MIN_VALUE || color > Integer.MAX_VALUE)))
+        { throw new IllegalArgumentException("Invalid color value."); }
 
         graphics.setColor(color);
     }
