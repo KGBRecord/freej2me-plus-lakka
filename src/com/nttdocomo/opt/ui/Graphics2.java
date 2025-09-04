@@ -21,7 +21,7 @@ import com.nttdocomo.ui.impls.ImageImpl;
 import org.recompile.mobile.Mobile;
 
 // This class is used by some DoJa jars, but there's zero documentation on it
-public abstract class Graphics2 extends org.recompile.mobile.PlatformGraphics
+public class Graphics2 extends com.nttdocomo.ui.Graphics
 { 
 	public Graphics2(org.recompile.mobile.PlatformImage image) { super(image); }
 

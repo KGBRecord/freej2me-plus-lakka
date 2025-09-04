@@ -31,7 +31,10 @@ public abstract class Canvas extends Frame
         Mobile.log(Mobile.LOG_INFO, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Create I-Appli Canvas:" + width+", "+height);
     }
 
-    public Graphics getGraphics() { return graphics; }
+    public Graphics getGraphics() 
+	{ 
+		return platformImage.getDoJaGraphics(); 
+	}
 
     public int getKeypadState() { return getKeypadState(0); }
 

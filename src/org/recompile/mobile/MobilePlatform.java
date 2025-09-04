@@ -297,6 +297,12 @@ public class MobilePlatform
 				public void run() { displayable.pointerPressed(x, y); }
 			});
 		}
+		else if(Mobile.isDoJa) 
+		{
+			com.nttdocomo.opt.ui.PointingDevice.setX(x);
+			com.nttdocomo.opt.ui.PointingDevice.setY(y);
+		}
+
 		// TODO: DoJa
 	}
 
@@ -309,6 +315,11 @@ public class MobilePlatform
 				@Override
 				public void run() { displayable.pointerReleased(x, y); }
 			});
+		}
+		else if(Mobile.isDoJa) 
+		{
+			com.nttdocomo.opt.ui.PointingDevice.setX(-1);
+			com.nttdocomo.opt.ui.PointingDevice.setY(-1);
 		}
 		// TODO: DoJa
 	}

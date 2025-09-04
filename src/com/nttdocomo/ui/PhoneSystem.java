@@ -94,6 +94,9 @@ public class PhoneSystem
     public static final int DEV_AREAINFO = 11;
 
     public static final int DEV_UNKNOWN = 7; // Taiko no Tatsujin 4 requests this
+    public static final int DEV_UNKNOWN2 = 9; // Professor Layton and the Mansion of the Deadly Mirror requests this
+    public static final int DEV_UNKNOWN3 = 135; // Wai Wai World requests this
+    public static final int DEV_UNKNOWN4 = 142; // Super Bomberman G WIDE requests this
    
 
     private static int[] attributes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -104,14 +107,16 @@ public class PhoneSystem
     {
         if (!isValidAttribute(attr, value)) { throw new IllegalArgumentException("Invalid attribute or value."); }
 
-        Mobile.log(Mobile.LOG_DEBUG, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "I-Appli set attr " + attr + " value to:" + value);
+        Mobile.log(Mobile.LOG_DEBUG, PhoneSystem.class.getPackage().getName() + "." + PhoneSystem.class.getSimpleName() + ": " + "I-Appli set attr " + attr + " value to:" + value);
 
-        attributes[attr] = value;
+        if(attr != DEV_UNKNOWN && attr != DEV_UNKNOWN2 && attr != DEV_UNKNOWN3 && attr != DEV_UNKNOWN4) { attributes[attr] = value; }
     }
 
     public static int getAttribute(int attr) 
     {
         if (!isValidAttribute(attr, 0)) { throw new IllegalArgumentException("Invalid attribute to get:" + attr); }
+
+        if(attr == DEV_UNKNOWN || attr == DEV_UNKNOWN2 || attr == DEV_UNKNOWN3 || attr == DEV_UNKNOWN4) { return 0; }
         return attributes[attr];
     }
 
@@ -150,8 +155,11 @@ public class PhoneSystem
                     value == ATTR_AREAINFO_ROAMINGOUT || value == ATTR_AREAINFO_SELFMODE ||
                     value == ATTR_AREAINFO_UNKNOWN;
             case DEV_KEYPAD:
-                return true; // TODo
+                return true; // TODO
             case DEV_UNKNOWN:
+            case DEV_UNKNOWN2:
+            case DEV_UNKNOWN3:
+            case DEV_UNKNOWN4:
                 return true;
         }
         return false;
@@ -233,6 +241,6 @@ class DoJaSoundPlayer implements Runnable
                     break;
             }
         }
-        catch (Exception e) { Mobile.log(Mobile.LOG_DEBUG, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + "Failed to play sound " + e.getMessage()); }
+        catch (Exception e) { Mobile.log(Mobile.LOG_DEBUG, PhoneSystem.class.getPackage().getName() + "." + PhoneSystem.class.getSimpleName() + ": " + "Failed to play sound " + e.getMessage()); }
     }
 }

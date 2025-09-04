@@ -14,11 +14,33 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.ui;
+package com.nttdocomo.opt.ui;
 
-import java.awt.Color;
+import org.recompile.mobile.Mobile;
 
-public class Graphics extends org.recompile.mobile.PlatformGraphics
-{ 
-	public Graphics(org.recompile.mobile.PlatformImage image) { super(image); }
+public class PointingDevice 
+{
+
+    private static int x = -1, y = -1;
+    private static boolean enabled = false;
+
+    public static boolean isEnabled() { return enabled; }
+
+    public static void setEnabled(boolean enabled) 
+    { 
+        if(!enabled) 
+        {
+            x = -1;
+            y = -1;
+        }
+        PointingDevice.enabled = enabled; 
+    }
+
+    public static int getX() { return x; }
+
+    public static int getY() { return y; }
+
+    public static void setX(int x) { PointingDevice.x = x; }
+
+    public static void setY(int y) { PointingDevice.y = y; }
 }

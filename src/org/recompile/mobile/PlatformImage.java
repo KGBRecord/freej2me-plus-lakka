@@ -57,7 +57,7 @@ public class PlatformImage
 	 * to the object potentially not being in its init state.
 	 *  
 	 * Returning a new Graphics object for each call might use a bit more memory for
-	 * jars that request many of them without clearing, but should be very marginal, and
+	 * jars that request many of them without clearing, but should be very marginal.
 	 */
 	public Graphics getMIDPGraphics() 
 	{ 
@@ -65,10 +65,15 @@ public class PlatformImage
 		return new Graphics(this);
 	}
 
+	/* 
+	 * This actually returns an nttdocomo.opt.ui.Graphics2 instance internally, it's an extension of nttdocomo.ui.Graphics
+	 * containing all of its funcionality, and some I-Appli such as DoDonPachi try to cast this object into a Graphics2
+	 * forcefully, which WILL fail if the object returned here isn't actually a Graphics2.
+	 */
 	public com.nttdocomo.ui.Graphics getDoJaGraphics() 
 	{ 
 		if(!isMutable()) { throw new IllegalStateException("Image is immutable, cannot access Graphics object"); }
-		return new com.nttdocomo.ui.Graphics(this); 
+		return new com.nttdocomo.opt.ui.Graphics2(this); 
 	}
 
 	public PlatformImage() { }

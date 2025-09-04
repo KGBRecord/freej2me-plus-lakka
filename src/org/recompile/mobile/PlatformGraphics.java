@@ -615,7 +615,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 				height = font.getHeight();
 			}
 
-			y += ascent - 1;
+			y += ascent;
 			
 			if((anchor & Graphics.VCENTER)>0) { y = y+height/2; }
 			if((anchor & Graphics.BOTTOM)>0) { y = y-height; }
@@ -1416,7 +1416,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 
 		if(data == null) { throw new NullPointerException("Null char array received"); }
 		if(offset < 0 || length < 0 || offset+length >= data.length) { throw new StringIndexOutOfBoundsException("invalid length and/or position received"); }
-		drawChars(data, offset, length, x, y, BOTTOM | LEFT);
+		drawChars(data, offset, length, x, y, BASELINE);
 	}
 
 	public void drawString(String str, int x, int y)
@@ -1424,7 +1424,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 		if(str == null) { throw new NullPointerException("Null string received"); }
 		
-		if(str.length() > 0) { drawString(str, x, y, BOTTOM | LEFT); }
+		if(str.length() > 0) { drawString(str, x, y, BASELINE); }
 	}
 
 	public void drawImage(com.nttdocomo.ui.Image image, int[] matrix) 
