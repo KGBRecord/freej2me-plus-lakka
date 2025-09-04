@@ -174,7 +174,7 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 
 		if(spIndex == 0) { pos+=64; } // First scratchpad has a header of 64 bytes
 
-		if(openedScratchPads[spIndex].getNumRecords() < spIndex+1) // If there's no data copy of this scratchpad in the rms file, create it
+		if(openedScratchPads[spIndex].getNumRecords() == 0) // If there's no data copy of this scratchpad in the rms file, create it
 		{
 			try 
 			{ 
@@ -276,7 +276,7 @@ public class ScratchPadConnection implements javax.microedition.io.Connection
 
 	public static void writeScratchPad(int index, byte[] data) 
 	{ 
-		try { openedScratchPads[index].setRecord(index+1, data, 0, data.length);  }
+		try { openedScratchPads[index].setRecord(1, data, 0, data.length);  }
 		catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to write and close scratchpad output:" + e.getMessage()); }
 	}
 
