@@ -63,7 +63,7 @@ public class AudioPresenter implements MediaPresenter
     private MediaSoundImpl mediaSound = null;
     private MediaListener listener = null;
 
-    private int priority, loopCount = 1, volume = 100;
+    private int priority, loopCount = 1, volume = 100, tempo = 100; // Tempo is in % of normal rate
 
     private static int curPort = 0;
 
@@ -129,6 +129,7 @@ public class AudioPresenter implements MediaPresenter
         if(mediaSound.getPlayer().getState() >= Player.REALIZED) 
         { 
             ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(volume);
+            ((PlatformPlayer.tempoControl)mediaSound.getPlayer().getControl("TempoControl")).setRate(tempo*1000); // javax' tempoControl operates in the thousands for rate
         }
         mediaSound.getPlayer().start();
     }
@@ -158,6 +159,7 @@ public class AudioPresenter implements MediaPresenter
         if(mediaSound.getPlayer().getState() >= Player.REALIZED) 
         { 
             ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(volume);
+            ((PlatformPlayer.tempoControl)mediaSound.getPlayer().getControl("TempoControl")).setRate(tempo*1000); // javax' tempoControl operates in the thousands for rate
         }
         mediaSound.getPlayer().start();
     }
@@ -207,8 +209,8 @@ public class AudioPresenter implements MediaPresenter
                 //setTransposeKey(value); // TODO
                 break;
             case CHANGE_TEMPO:
-                Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "changeTempo (not implemented):" + value);
-                //setChangeTempo(value); // TODO
+                Mobile.log(Mobile.LOG_DEBUG, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "changeTempo:" + value);
+                tempo = value;
                 break;
             case SET_VOLUME:
                 if(Mobile.DoJaVersion < 30) { throw new IllegalArgumentException("SET_VOLUME attribute doesn't exist on DoJa < 3.0"); }

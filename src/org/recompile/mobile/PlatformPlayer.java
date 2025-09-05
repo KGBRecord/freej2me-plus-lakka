@@ -242,18 +242,17 @@ public class PlatformPlayer implements Player
 		}
 
 		// Set up control interfaces based on player type.
-		controls[0] = new volumeControl(this.player); // Midi Player with Tones might not use this
+		controls[0] = new volumeControl(this.player);
 
 		/* MIDI Player has a few additional controls */
-		if(player instanceof midiPlayer)
+		if(player instanceof midiPlayer || player instanceof SMAFPlayer)
 		{
 			/* If we're using midiPlayer to play tones, only set it up with ToneControl. */
 			if(contentType.equalsIgnoreCase("audio/x-tone-seq")) { controls[3] = new toneControl((midiPlayer) this.player); }
-			else
-			{
-				controls[1] = new tempoControl((midiPlayer) this.player);
-				controls[2] = new midiControl((midiPlayer) this.player);
-			}
+			else if(player instanceof midiPlayer) { controls[2] = new midiControl((midiPlayer) this.player); }
+
+			// Tempo control is available for both midi and smaf players
+			controls[1] = new tempoControl(this.player);
 		}
 
 		Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "media type: " + contentType);
@@ -746,7 +745,7 @@ public class PlatformPlayer implements Player
 			try 
 			{
 				// If the currently bound synth is already in use before starting, jump to another one
-				if(Manager.synthIdxInUse[synthIdx] == true) { System.out.println("getnew"); prepareMidiSubsystem(); }
+				if(Manager.synthIdxInUse[synthIdx] == true) { prepareMidiSubsystem(); }
 				Manager.synthIdxInUse[synthIdx] = true;
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
@@ -1696,6 +1695,7 @@ public class PlatformPlayer implements Player
 			volume, // Volume value
 			(byte) 0xF7  // End of Sysex
 		};
+		SysexMessage sysexMessage = new SysexMessage();
 
 		public volumeControl(audioplayer player) { this.player = player; }
 
@@ -1718,36 +1718,11 @@ public class PlatformPlayer implements Player
 			{
 				if (player instanceof midiPlayer) 
 				{
-					midiPlayer sequencer = (midiPlayer) player;
-
-					if(sequencer.synthesizer == null) { return getLevel(); } // Only make changes if the midi subsystem for this player is available
+					if(((midiPlayer)player).synthesizer == null) { return getLevel(); } // Only make changes if the midi subsystem for this player is available
 
 					volumeSysEx[6] = isMuted() ? 0 : (byte) (level * 127 / 100); // Convert to MIDI volume range
-					SysexMessage sysexMessage = new SysexMessage(volumeSysEx, volumeSysEx.length);
-					sequencer.receiver.send(sysexMessage, -1); // Send the volume change message
-				}
-				else if(player instanceof SMAFPlayer) // SMAF is a mix of midi and wavPlayer, so it pretty much borrows from both here
-				{
-					FloatControl volumeControl;
-					SMAFPlayer sequencer = (SMAFPlayer) player;
-
-					float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
-
-					if(sequencer.synthesizer == null) { return getLevel(); } // Only make changes if the midi subsystem for this player is available
-
-					volumeSysEx[6] = isMuted() ? 0 : (byte) (level * 127 / 100);
-					SysexMessage sysexMessage = new SysexMessage(volumeSysEx, volumeSysEx.length);
-					sequencer.receiver.send(sysexMessage, -1); // Send the volume change message
-
-					if(((SMAFPlayer) player).wavClips != null) 
-					{
-						for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++) 
-						{
-							if(((SMAFPlayer) player).wavClips[i] == null) { continue; }
-							volumeControl = (FloatControl) ((SMAFPlayer) player).wavClips[i].getControl(FloatControl.Type.MASTER_GAIN);
-							volumeControl.setValue(dB);
-						}
-					}
+					sysexMessage.setMessage(volumeSysEx, volumeSysEx.length);
+					((midiPlayer)player).receiver.send(sysexMessage, -1); // Send the volume change message
 				}
 				else if(player instanceof wavPlayer)
 				{
@@ -1758,6 +1733,27 @@ public class PlatformPlayer implements Player
 
 					FloatControl volumeControl = (FloatControl) wav.wavClip.getControl(FloatControl.Type.MASTER_GAIN);
 					volumeControl.setValue(dB);
+				}
+				else if(player instanceof SMAFPlayer) // SMAF is a mix of midi and wavPlayer, so it pretty much borrows from both here
+				{
+					FloatControl volumeControl;
+					float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
+
+					if(((SMAFPlayer)player).synthesizer == null) { return getLevel(); } // Only make changes if the midi subsystem for this player is available
+
+					volumeSysEx[6] = isMuted() ? 0 : (byte) (level * 127 / 100);
+					sysexMessage.setMessage(volumeSysEx, volumeSysEx.length);
+					((SMAFPlayer)player).receiver.send(sysexMessage, -1); // Send the volume change message
+
+					if(((SMAFPlayer) player).wavClips != null) 
+					{
+						for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++) 
+						{
+							if(((SMAFPlayer) player).wavClips[i] == null) { continue; }
+							volumeControl = (FloatControl) ((SMAFPlayer) player).wavClips[i].getControl(FloatControl.Type.MASTER_GAIN);
+							volumeControl.setValue(dB);
+						}
+					}
 				}
 				else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
 			}
@@ -1820,9 +1816,9 @@ public class PlatformPlayer implements Player
 		private int tempo = 120000; // Default tempo of 120 BPM in millitempo
 		private int rate = 100000; // Default Rate in RateControl
 
-		private midiPlayer player;
+		private audioplayer player;
 
-		public tempoControl(midiPlayer player) { this.player = player; }
+		public tempoControl(audioplayer player) { this.player = player; }
 
 		/* 
 		 * According to the docs, getTempo():
@@ -1847,11 +1843,12 @@ public class PlatformPlayer implements Player
 			
 			/* 
 			 * Here the docs say that the midi should START at this tempo, which
-			 * indicates that we probably should add a midiEvent message to its
+			 * indicates that we probably should add a midiEvent message to itsf
 			 * tracks in order to change their tempo at tick 0, but first we need
 			 * to find a jar that uses this, otherwise it's a shot in the dark.
 			 */
-			player.midi.setTempoInBPM(getEffectiveBPM());
+			if(player instanceof midiPlayer) { ((midiPlayer)player).midi.setTempoInBPM(getEffectiveBPM()); }
+			else if(player instanceof SMAFPlayer) { ((SMAFPlayer)player).midi.setTempoInBPM(getEffectiveBPM()); }
 
 			return tempo; 
 		}
@@ -1878,7 +1875,8 @@ public class PlatformPlayer implements Player
 			 */
 			float factor = rate / 100000.0f;
 
-			player.midi.setTempoFactor(factor);
+			if(player instanceof midiPlayer) { ((midiPlayer)player).midi.setTempoFactor(factor); }
+			else if(player instanceof SMAFPlayer) { ((SMAFPlayer)player).midi.setTempoFactor(factor); }
 
 			return rate; 
 		}

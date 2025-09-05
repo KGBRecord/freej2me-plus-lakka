@@ -27,7 +27,7 @@ public class SMAFPlayer extends MediaPlayer
 {
     private PlatformPlayer _player;
 
-    protected int id;
+    protected int id, pitch = 0, tempo = 100, volume = 100;
     protected MediaPlayerListener listener;
     protected Object resource;
 
@@ -73,7 +73,9 @@ public class SMAFPlayer extends MediaPlayer
     public void play(int count) 
     {
         this._player.setMediaTime(0);
-        this._player.setLoopCount(count);        
+        this._player.setLoopCount(count);      
+        ((PlatformPlayer.volumeControl)this._player.getControl("VolumeControl")).setLevel(volume);
+        ((PlatformPlayer.tempoControl)this._player.getControl("TempoControl")).setRate(tempo*1000); // javax' tempoControl operates in the thousands for rate
         this._player.start();
     }
 
@@ -87,7 +89,7 @@ public class SMAFPlayer extends MediaPlayer
 
     public int getPitch() { return 0;  }
 
-    public int getTempo() { return 100; }
+    public int getTempo() { return ((PlatformPlayer.tempoControl)this._player.getControl("TempoControl")).getRate() / 1000; }
 
     public int getVolume() 
     { 
@@ -97,17 +99,17 @@ public class SMAFPlayer extends MediaPlayer
     // TODO: Pitch and Tempo changes, not sure if they're even used in KDDI, their Java run was rather short-lived
     public void setPitch(int pitch) 
     { 
-        pitch = Math.max(-6, Math.min(pitch, 6)); 
+        this.pitch = Math.max(-6, Math.min(pitch, 6)); 
     }
 
     public void setTempo(int tempo) 
     { 
-        tempo = Math.max(85, Math.min(tempo, 115)); 
+        this.tempo = Math.max(85, Math.min(tempo, 115)); 
     }
 
     public void setVolume(int volume) 
     {  
-        ((PlatformPlayer.volumeControl)this._player.getControl("VolumeControl")).setLevel(volume);
+        this.volume = volume;
     }
 
     public void addMediaEventListener(MediaEventListener l) { this._player.addPlayerListener(l); }
