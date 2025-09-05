@@ -635,8 +635,6 @@ public class PlatformPlayer implements Player
 
 	private class audioplayer
 	{
-		int volume = 100;
-
 		public void start() {  }
 		public void stop() {  }
 		public void setLoopCount(int count) {  }
@@ -648,9 +646,6 @@ public class PlatformPlayer implements Player
 		public void realize() { }
 		public void prefetch() { }
 		public long getDuration() { return Player.TIME_UNKNOWN; }
-
-		public int getVolume() { return volume; }
-		public void setVolume(int level) { volume = level; }
 
 		// For sequence players
 		public Sequence getSequence() { return null; }
@@ -729,12 +724,14 @@ public class PlatformPlayer implements Player
 								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
+								Manager.synthIdxInUse[synthIdx] = false; // It just stopped, so set synth usage to false or the start call will get a new one
 								start();
 							}
 							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); Manager.synthIdxInUse[synthIdx] = false; }
 						}
 					}
 				});
+				prepareMidiSubsystem();
 				state = Player.PREFETCHED;
 			}
 			catch(Exception e) 
@@ -748,8 +745,8 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				// Prepare the midi subsystem for every start call
-				prepareMidiSubsystem();
+				// If the currently bound synth is already in use before starting, jump to another one
+				if(Manager.synthIdxInUse[synthIdx] == true) { System.out.println("getnew"); prepareMidiSubsystem(); }
 				Manager.synthIdxInUse[synthIdx] = true;
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
@@ -759,7 +756,6 @@ public class PlatformPlayer implements Player
 				notifyListeners(PlayerListener.STARTED, getMediaTime());
 
 				midi.start();
-				((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to clean MIDI sequencer and start playback:" + e.getMessage()); }
 		}
@@ -831,11 +827,14 @@ public class PlatformPlayer implements Player
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
-			this.synthIdx = Manager.retrieveAvailableSynthIndex();
-			this.synthesizer = Manager.exclusiveSynths[synthIdx];
-			this.receiver = this.synthesizer.getReceiver();
-			transmitter.setReceiver(receiver);
-			midi.setSequence(midiSequence);
+			if(midi.getSequence() == null || Manager.synthIdxInUse[synthIdx] == true) 
+			{
+				this.synthIdx = Manager.retrieveAvailableSynthIndex();
+				this.synthesizer = Manager.exclusiveSynths[synthIdx];
+				this.receiver = this.synthesizer.getReceiver();
+				transmitter.setReceiver(receiver);
+				midi.setSequence(midiSequence);
+			}
 		}
 	}
 
@@ -850,7 +849,6 @@ public class PlatformPlayer implements Player
 		private Transmitter transmitter;
 		private int numLoops = 0;
 		private long curTime = 0;
-		private int panValue = 64; // Center panning
 
 		// Meanwhile, sampled data will be treated like "additional" instruments
 		private boolean isPlaying = false;
@@ -907,12 +905,14 @@ public class PlatformPlayer implements Player
 								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
+								Manager.synthIdxInUse[synthIdx] = false; // It just stopped, so set synth usage to false or the start call will get a new one
 								start();
 							}
 							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); Manager.synthIdxInUse[synthIdx] = false; isPlaying = false; }
 						}
 					}
 				});
+				prepareMidiSubsystem();
 
 				if(wavStreams != null) 
 				{
@@ -938,8 +938,8 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				// Prepare the midi subsystem for every start call
-				prepareMidiSubsystem();
+				// If the currently bound synth is already in use before starting, jump to another one
+				if(Manager.synthIdxInUse[synthIdx] == true) { prepareMidiSubsystem(); }
 				Manager.synthIdxInUse[synthIdx] = true;
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
@@ -964,8 +964,6 @@ public class PlatformPlayer implements Player
 			Set<Integer> playedPositions = new HashSet<Integer>();
 
 			midi.start();
-			((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
-			((volumeControl)getControl("VolumeControl")).setPanpot(getPanning());
 			while (isPlaying && wavClips != null) 
 			{
 				int mediaTime = (int) (getMediaTime() / 1000);
@@ -1112,17 +1110,16 @@ public class PlatformPlayer implements Player
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set MIDI sequence:" + e.getMessage());  }
 		}
 
-		public void setPanning(int panning) { this.panValue = panning; }
-
-		public int getPanning() { return panValue; }
-
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
-			this.synthIdx = Manager.retrieveAvailableSynthIndex();
-			this.synthesizer = Manager.exclusiveSynths[synthIdx];
-			this.receiver = this.synthesizer.getReceiver();
-			transmitter.setReceiver(receiver);
-			midi.setSequence(midiSequence);
+			if(midi.getSequence() == null || Manager.synthIdxInUse[synthIdx] == true) 
+			{
+				this.synthIdx = Manager.retrieveAvailableSynthIndex();
+				this.synthesizer = Manager.exclusiveSynths[synthIdx];
+				this.receiver = this.synthesizer.getReceiver();
+				transmitter.setReceiver(receiver);
+				midi.setSequence(midiSequence);
+			}
 		}
 	}
 
@@ -1226,7 +1223,6 @@ public class PlatformPlayer implements Player
 			notifyListeners(PlayerListener.STARTED, getMediaTime());
 
 			wavClip.start();
-			((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
 		}
 
 		public void stop()
@@ -1343,7 +1339,6 @@ public class PlatformPlayer implements Player
 							{
 								if(getMediaTime() >= getDuration()) { setMediaTime(0); }
 								else { setMediaTime(getMediaTime()); } // Resume from when last stopped
-								((volumeControl)getControl("VolumeControl")).doSetLevel(getVolume(), true);
 								mp3Player.play(); // This is thread-blocking, so the code below only executes after this has finished.
 
 								/* 
@@ -1688,6 +1683,19 @@ public class PlatformPlayer implements Player
 	{
 		private boolean muted = false;
 		private audioplayer player; // Reference to the player this is linked to, or else we won't be able to apply changes
+		private byte volume = 100;
+		private int panValue = 64; // Center panning
+
+		// MIDI Volume Sysex message
+		private byte[] volumeSysEx = new byte[] 
+		{
+			(byte) 0xF0, // SysEx indicator
+			(byte) 0x7F, (byte) 0x7F,
+			(byte) 0x04, (byte) 0x01, // GM-Compatible device and manufacturer ID
+			0, // Lower 7 volume bits, ignored for java's volume which goes from 0 to 127
+			volume, // Volume value
+			(byte) 0xF7  // End of Sysex
+		};
 
 		public volumeControl(audioplayer player) { this.player = player; }
 
@@ -1695,106 +1703,72 @@ public class PlatformPlayer implements Player
 		{
 			if(getState() == Player.REALIZED) { return -1; }
 
-			return player.getVolume(); 
+			return volume; 
 		}
 
 		public int setLevel(int level) 
-		{ 
+		{
 			/* Some Digital Chocolate games actually go all the way to level = 120. E.g. Tornado Mania */
 			if(level > 100) { level = 100; }
 			else if(level < 0) { level = 0; }
 
 			if(level == getLevel()) { return level; }
 
-			player.setVolume(level); // Save volume level for the given player in the player itself, unaffected by mute setting.
-			notifyListeners(PlayerListener.VOLUME_CHANGED, this); // Notify that the volume state changed
-			return doSetLevel(level, false);
-		}
-
-		public int doSetLevel(final int level, final boolean forceChange) 
-		{
-			if(level == getLevel() && !forceChange) { return getLevel(); }
-
-			// Run heavier parts of setLevel in a separate thread so that this doesn't block.
-			new Thread(new Runnable() 
+			try 
 			{
-				@Override
-				public void run() 
+				if (player instanceof midiPlayer) 
 				{
-					if (player instanceof midiPlayer) 
-					{
-						midiPlayer sequencer = (midiPlayer) player;
-						int midiVolume = isMuted() ? 0 : (int) (level); // Convert to MIDI volume range
+					midiPlayer sequencer = (midiPlayer) player;
 
-						if(sequencer.synthesizer == null) { return; }
-						MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
+					if(sequencer.synthesizer == null) { return getLevel(); } // Only make changes if the midi subsystem for this player is available
 
-						if(sequencer.isRunning())
-						{
-							// Set volume of all channels to 0, to help Java Sound API not trip over itself when making the actual volume change after
-							for (int channel = 0; channel < midiChannels.length; channel++) 
-							{
-								midiChannels[channel].controlChange(7, 0);
-								LockSupport.parkNanos(12500);
-							}
-
-							// Set volume for all channels through Control Change command 7 (volume)
-							for (int channel = 0; channel < midiChannels.length; channel++) 
-							{
-								midiChannels[channel].controlChange(7, midiVolume);
-								LockSupport.parkNanos(12500);
-							}
-						}
-					}
-					else if(player instanceof SMAFPlayer) // SMAF is a mix of midi and wavPlayer, so it pretty much borrows from both here
-					{
-						FloatControl volumeControl;
-						SMAFPlayer sequencer = (SMAFPlayer) player;
-
-						int midiVolume = isMuted() ? 0 : (int) (level * 127 / 100);
-						float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
-
-						if(sequencer.synthesizer == null) { return; }
-						MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
-
-						if(sequencer.isRunning())
-						{
-							for (int channel = 0; channel < midiChannels.length; channel++) 
-							{
-								midiChannels[channel].controlChange(7, 0);
-								LockSupport.parkNanos(12500);
-							}
-
-							for (int channel = 0; channel < midiChannels.length; channel++) 
-							{
-								midiChannels[channel].controlChange(7, midiVolume);
-								LockSupport.parkNanos(12500);
-							}
-						}
-
-						if(((SMAFPlayer) player).wavClips != null) 
-						{
-							for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++) 
-							{
-								if(((SMAFPlayer) player).wavClips[i] == null) { continue; }
-								volumeControl = (FloatControl) ((SMAFPlayer) player).wavClips[i].getControl(FloatControl.Type.MASTER_GAIN);
-								volumeControl.setValue(dB);
-							}
-						}
-					}
-					else if(player instanceof wavPlayer)
-					{
-						wavPlayer wav = (wavPlayer) player;
-
-						/* We have to map 0 <= value <= 100 to a clip's range of -30dB to 0dB  */
-						float dB = isMuted() ? -80.0f : -30.0f + ((level / 100.0f) * (30.0f));
-
-						FloatControl volumeControl = (FloatControl) wav.wavClip.getControl(FloatControl.Type.MASTER_GAIN);
-						volumeControl.setValue(dB);
-					}
-					else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
+					volumeSysEx[6] = isMuted() ? 0 : (byte) (level * 127 / 100); // Convert to MIDI volume range
+					SysexMessage sysexMessage = new SysexMessage(volumeSysEx, volumeSysEx.length);
+					sequencer.receiver.send(sysexMessage, -1); // Send the volume change message
 				}
-			}).start();
+				else if(player instanceof SMAFPlayer) // SMAF is a mix of midi and wavPlayer, so it pretty much borrows from both here
+				{
+					FloatControl volumeControl;
+					SMAFPlayer sequencer = (SMAFPlayer) player;
+
+					float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
+
+					if(sequencer.synthesizer == null) { return getLevel(); } // Only make changes if the midi subsystem for this player is available
+
+					volumeSysEx[6] = isMuted() ? 0 : (byte) (level * 127 / 100);
+					SysexMessage sysexMessage = new SysexMessage(volumeSysEx, volumeSysEx.length);
+					sequencer.receiver.send(sysexMessage, -1); // Send the volume change message
+
+					if(((SMAFPlayer) player).wavClips != null) 
+					{
+						for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++) 
+						{
+							if(((SMAFPlayer) player).wavClips[i] == null) { continue; }
+							volumeControl = (FloatControl) ((SMAFPlayer) player).wavClips[i].getControl(FloatControl.Type.MASTER_GAIN);
+							volumeControl.setValue(dB);
+						}
+					}
+				}
+				else if(player instanceof wavPlayer)
+				{
+					wavPlayer wav = (wavPlayer) player;
+
+					/* We have to map 0 <= value <= 100 to a clip's range of -30dB to 0dB  */
+					float dB = isMuted() ? -80.0f : -30.0f + ((level / 100.0f) * (30.0f));
+
+					FloatControl volumeControl = (FloatControl) wav.wavClip.getControl(FloatControl.Type.MASTER_GAIN);
+					volumeControl.setValue(dB);
+				}
+				else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
+			}
+			catch(Exception e) 
+			{ 
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "failed to set volume: " + e.getMessage()); 
+				e.printStackTrace(); 
+			}
+
+			volume = (byte) level;
+			notifyListeners(PlayerListener.VOLUME_CHANGED, this); // Notify that the volume state changed
 
 			return getLevel();
 		}
@@ -1805,7 +1779,7 @@ public class PlatformPlayer implements Player
 			{
 				muted = mute;
 
-				setLevel(player.getVolume());
+				setLevel(volume);
 				notifyListeners(PlayerListener.VOLUME_CHANGED, this);
 			}
 		}
@@ -1829,14 +1803,11 @@ public class PlatformPlayer implements Player
 						LockSupport.parkNanos(10000);
 					}
 				}
-
-				sequencer.setPanning(panning);
+				panValue = panning;
 			}
-
-			
 		}
 
-		public int getPanpot() { return player instanceof SMAFPlayer ? ((SMAFPlayer)player).getPanning() : 64; }
+		public int getPanpot() { return player instanceof SMAFPlayer ? panValue : 64; }
 	}
 
 	/* This one hasn't been tested yet, no jar was found at the time it was implemented */
