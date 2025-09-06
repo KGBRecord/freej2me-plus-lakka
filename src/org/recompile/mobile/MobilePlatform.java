@@ -875,6 +875,27 @@ public class MobilePlatform
 		}
 	}
 
+	public final void drawAppTerminated() 
+	{
+		if(!isLibretro) 
+		{
+			gcFrontbuffer.setColor(0, 0, 64);
+			gcFrontbuffer.fillRect(0, 0, lcdWidth, lcdHeight);
+			gcFrontbuffer.setColor(0xFFFFAF00);
+			gcFrontbuffer.drawString("APP TERMINATED!", lcdWidth/2, lcdHeight/10, org.recompile.mobile.PlatformGraphics.HCENTER);
+			gcFrontbuffer.drawString("Open a new one", lcdWidth/2, lcdHeight/10 + javax.microedition.lcdui.Font.getDefaultFont().getHeight()+2, org.recompile.mobile.PlatformGraphics.HCENTER);
+			gcFrontbuffer.drawString("through Drag-Drop", lcdWidth/2, lcdHeight/10 + 2*javax.microedition.lcdui.Font.getDefaultFont().getHeight()+2, org.recompile.mobile.PlatformGraphics.HCENTER);
+			gcFrontbuffer.drawString("or 'File->Open'.", lcdWidth/2, lcdHeight/10 + 3*javax.microedition.lcdui.Font.getDefaultFont().getHeight()+2, org.recompile.mobile.PlatformGraphics.HCENTER);
+		}
+		else 
+		{
+			gcFrontbuffer.setColor(0,0,0);
+			gcFrontbuffer.fillRect(0, 0, lcdWidth, lcdHeight);
+		}
+	
+		painter.run();
+	}
+
 	public void limitFps() 
 	{
 		if(Mobile.limitFPS == 0 || pressedKeys[20]) { lastRenderTime = System.nanoTime(); return; }

@@ -113,7 +113,7 @@ public abstract class IApplication
         {
             Mobile.log(Mobile.LOG_DEBUG, IApplication.class.getPackage().getName() + "." + IApplication.class.getSimpleName() + ": " + element);
         }
-		System.exit(0);
+		Mobile.getPlatform().drawAppTerminated();
     }
 
     public final void launch(int target, String[] arguments) 

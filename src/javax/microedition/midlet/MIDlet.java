@@ -61,7 +61,7 @@ public abstract class MIDlet
         {
             Mobile.log(Mobile.LOG_DEBUG, MIDlet.class.getPackage().getName() + "." + MIDlet.class.getSimpleName() + ": " + element);
         }
-		System.exit(0);
+		Mobile.getPlatform().drawAppTerminated();
 	}
 
 	public final void notifyPaused() { }

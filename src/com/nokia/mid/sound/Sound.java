@@ -121,7 +121,16 @@ public class Sound
 				String format;
 				if(data[0] == 'M' && data[1] == 'T' && data[2] == 'h' && data[3] == 'd') { format = "audio/mid"; }
 				else if(data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F') { format = "audio/wav"; }
-				else { Mobile.log(Mobile.LOG_WARNING, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + " couldn't find what format this is. Passing as FORMAT_WAV."); format = "audio/wav";}
+				else // One of the versions of PAC-MAN for Nokia S40v1 actually does this, seems like it's always OTT in those cases
+				{ 
+					Mobile.log(Mobile.LOG_WARNING, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + " couldn't find what format this is. Passing as FORMAT_TONE."); 
+					try 
+					{
+						data = NokiaOTTDecoder.convertToMidi(data);
+					}
+					catch(MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + " Failed to convert unknown data to MIDI. Maybe isn't OTT:" + e.getMessage()); }
+					format = "audio/x-tone-seq";
+				}
 
 				player = Manager.createPlayer(new ByteArrayInputStream(data), format);
 				player.prefetch();
