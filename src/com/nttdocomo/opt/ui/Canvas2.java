@@ -20,15 +20,26 @@ import com.nttdocomo.ui.Image;
 import com.nttdocomo.ui.impls.ImageImpl;
 import org.recompile.mobile.Mobile;
 
-// This class is used by some DoJa jars (Lumines), but there's zero documentation on it
 public abstract class Canvas2 extends com.nttdocomo.ui.Canvas
 { 
-	
-    // This constructor has an argument that, as of now, is unknown
-    public Canvas2(int arg1) 
+	public static final int CANVAS_STYLE_VERTICAL = 0;
+	public static final int CANVAS_STYLE_HORIZONTAL_RIGHT = 1; // coordinates rotated 90 degrees to the right
+	public static final int CANVAS_STYLE_HORIZONTAL_LEFT = 2; // coordinates rotated 90 degrees to the left
+
+	public Canvas2() 
+	{
+		this(CANVAS_STYLE_VERTICAL);
+	}
+
+	// This supposedly rotates the canvas coordinate system and draw area... maybe we can just rotate the screen here?
+    public Canvas2(int canvasStyle) 
     { 
         super(); 
 
+		if(canvasStyle < CANVAS_STYLE_VERTICAL || canvasStyle > CANVAS_STYLE_HORIZONTAL_LEFT) { throw new IllegalArgumentException("Invalid canvas Style:" + canvasStyle); }
+
+		// TODO: rotate the screen
+		
         Mobile.log(Mobile.LOG_INFO, Canvas2.class.getPackage().getName() + "." + Canvas2.class.getSimpleName() + ": " + "Create I-Appli Canvas2:" + width+", "+height);
     }
 }

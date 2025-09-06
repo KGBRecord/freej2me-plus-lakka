@@ -113,6 +113,10 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 	public static final int FLIP_ROTATE_RIGHT_HORIZONTAL = 6;
 	public static final int FLIP_ROTATE_RIGHT_VERTICAL = 7;
 
+	// com.nttdocomo.opt.ui.Graphics2 variables
+	protected int renderMode = com.nttdocomo.opt.ui.Graphics2.OP_REPL;
+	protected int srcRatio = 255, dstRatio = 255;
+
 	// FPS Counter variables
 	private static int frameCount = 0;
 	private static long lastFpsTime = System.nanoTime();
@@ -229,11 +233,8 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 		int srcIndex, destIndex;
 		for (int j = 0; j < height; j++) 
 		{
-			for (int i = 0; i < width; i++) 
-			{
-				srcIndex = (y_src + j) * canvasWidth + x_src;
-				System.arraycopy(canvasData, srcIndex, subPixels, j * width, width);
-			}
+			srcIndex = (y_src + j) * canvasWidth + x_src;
+			System.arraycopy(canvasData, srcIndex, subPixels, j * width, width);
 		}
 
 		int destStartY = (y_dest < 0) ? 0 : y_dest;
@@ -276,11 +277,8 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 		int srcIndex, destIndex;
 		for (int j = 0; j < height; j++) 
 		{
-			for (int i = 0; i < width; i++) 
-			{
-				srcIndex = (y_src + j) * canvasWidth + x_src;
-				System.arraycopy(canvasData, srcIndex, subPixels, j * width, width);
-			}
+			srcIndex = (y_src + j) * canvasWidth + x_src;
+			System.arraycopy(canvasData, srcIndex, subPixels, j * width, width);
 		}
 
 		int destStartY = (y_dest < 0) ? 0 : y_dest;
@@ -289,10 +287,10 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 		
 		for (int j = destStartY; j < destEndY; j++) 
 		{
-			destIndex = j * canvasWidth + x_dest;
+			destIndex = j * frameBuffer.getWidth() + x_dest;
 			srcIndex = (srcStartY + (j - destStartY)) * width;
 
-			if (x_dest >= 0 && x_dest + width <= canvasWidth) 
+			if (x_dest >= 0 && x_dest + width <= frameBuffer.getWidth()) 
 			{
 				System.arraycopy(subPixels, srcIndex, fbPixels, destIndex, width);
 			}
@@ -646,7 +644,37 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 		if(width < 0 || height < 0) { return; }
 		if(contextDisposed) { throw new UIException(UIException.ILLEGAL_STATE, "This graphics context has been disposed"); }
 
-		gc.fillRect(x, y, width, height);
+		if(!Mobile.isDoJa || (Mobile.isDoJa && renderMode == com.nttdocomo.opt.ui.Graphics2.OP_REPL)) 
+		{
+			gc.fillRect(x, y, width, height);
+		} 
+		else 
+		{
+			int newR = 0, newG = 0, newB = 0;
+			for (int j = 0; j < height; j++) 
+			{
+				for (int i = 0; i < width; i++) 
+				{
+					if ((x + i) < 0 || (y + j) < 0 || (x + i) >= canvasWidth || (y + j) >= canvasData.length / canvasWidth)  { continue; }
+
+					switch (renderMode) 
+					{
+						case com.nttdocomo.opt.ui.Graphics2.OP_ADD:
+							newR = clamp(((canvasData[((y + j) * canvasWidth) + (x + i)] >> 16) & 0xFF) * dstRatio / 255 + getRedComponent() * srcRatio / 255);
+							newG = clamp(((canvasData[((y + j) * canvasWidth) + (x + i)] >> 8) & 0xFF) * dstRatio / 255 + getGreenComponent() * srcRatio / 255);
+							newB = clamp((canvasData[((y + j) * canvasWidth) + (x + i)] & 0xFF) * dstRatio / 255 + getBlueComponent() * srcRatio / 255);
+							break;
+						case com.nttdocomo.opt.ui.Graphics2.OP_SUB:
+							newR = clamp(((canvasData[((y + j) * canvasWidth) + (x + i)] >> 16) & 0xFF) * dstRatio / 255 - getRedComponent() * srcRatio / 255);
+							newG = clamp(((canvasData[((y + j) * canvasWidth) + (x + i)] >> 8) & 0xFF) * dstRatio / 255 - getGreenComponent() * srcRatio / 255);
+							newB = clamp((canvasData[((y + j) * canvasWidth) + (x + i)] & 0xFF) * dstRatio / 255 - getBlueComponent() * srcRatio / 255);
+							break;
+					}
+
+					canvasData[((y + j) * canvasWidth) + (x + i)] = (Mobile.DoJaVersion < 40 ? 0xFF << 24 : getColor() << 24) | (newR << 16) | (newG << 8) | newB;
+				}
+			}
+		}
 	}
 
 	public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight)
@@ -1904,4 +1932,7 @@ public abstract class PlatformGraphics implements DirectGraphics, com.nttdocomo.
 		setOrigin(0, 0);
 		setColor(0, 0, 0);
 	}
+
+	// Helper methods
+	protected static final int clamp(int value) { return Math.max(0, Math.min(255, value)); }
 }

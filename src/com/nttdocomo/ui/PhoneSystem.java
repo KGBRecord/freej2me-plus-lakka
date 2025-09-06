@@ -101,7 +101,7 @@ public class PhoneSystem
 
     private static int[] attributes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    private PhoneSystem() {}
+    protected PhoneSystem() { }
 
     public static void setAttribute(int attr, int value) 
     {
