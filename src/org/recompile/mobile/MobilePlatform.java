@@ -105,7 +105,7 @@ public class MobilePlatform
 
 		if(!isUsingValidEncoding) 
 		{
-			Mobile.textEncoding = "ISO_8859_1";
+			Mobile.textEncoding = Mobile.supportedEncodings[Mobile.ISO_8859_1];
 			checkFileEncoding();
 		}
 
@@ -797,7 +797,7 @@ public class MobilePlatform
 				} 
 				catch (IOException e) 
 				{
-					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load Jad data: " + e.getMessage());
+					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load descriptor data: " + e.getMessage());
 					return false;
 				}
 

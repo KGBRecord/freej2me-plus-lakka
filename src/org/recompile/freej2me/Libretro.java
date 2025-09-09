@@ -38,7 +38,7 @@ public class Libretro
 	private boolean soundEnabled = true;
 	private static volatile boolean canPause = false;
 
-	private static final long PAUSE_DELAY_MS = 150;
+	private static final long PAUSE_DELAY_MS = 250;
 	private static volatile long lastCoreUpdateTime = System.currentTimeMillis(); // Tracks last core update for pause checks
 
 	private byte[] frameBuffer = new byte[800*800*3];
@@ -439,6 +439,18 @@ public class Libretro
 										if(!Mobile.dumpGraphicsObjects)  { Mobile.config.sysSettings.put("dumpGraphicsObjects", "off"); }
 										else                             { Mobile.config.sysSettings.put("dumpGraphicsObjects", "on");  }
 
+							
+										if(Mobile.libretroRestartRequested == 1) 
+										{
+											frameHeader[14] = Mobile.libretroRestartRequested;
+											frameHeader[15] = Mobile.libretroEncodingRequested;
+
+											System.out.write(frameHeader, 0, 16);
+
+											System.out.write(frameBuffer, 0, lcdData.length*3);
+											System.out.flush();
+											Thread.sleep(Integer.MAX_VALUE); // Wait for as long as possible until the libretro core kills this
+										}
 
 										Mobile.config.saveConfig();
 										settingsChanged();
@@ -451,8 +463,6 @@ public class Libretro
 										Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "Couldn't load jar...");
 										System.exit(0);
 									}
-
-									Mobile.libretroStarted = true;
 								break;
 
 								case 11: // set save path //

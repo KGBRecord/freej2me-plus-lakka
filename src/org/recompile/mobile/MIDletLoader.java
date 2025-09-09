@@ -577,6 +577,10 @@ public class MIDletLoader extends URLClassLoader
 						if (jamFileFound.exists() && !jamFileFound.isDirectory()) 
 						{
 							Mobile.log(Mobile.LOG_INFO, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found!" + jamFileFound);
+							
+							Mobile.textEncoding = "Shift_JIS";
+							MobilePlatform.checkFileEncoding();
+							
 							URL jamURL = jamFileFound.toURI().toURL();
 							parseJamDescriptorInto(jamURL.openStream(), properties);
 						}

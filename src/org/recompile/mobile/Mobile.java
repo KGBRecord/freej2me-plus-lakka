@@ -193,7 +193,6 @@ public class Mobile
 	// Libretro flags
 	public static boolean isFastForwarding = false;
 	public static boolean isPaused = false;
-	public static boolean libretroStarted = false;
 	public static byte libretroRestartRequested = 0; // Set when FreeJ2ME has to be restarted in some way (often to change character encoding)
 	public static byte libretroEncodingRequested = 0; // Encoding FreeJ2ME requested to be re-opened with (check the restartApp() method below)
 
@@ -1121,25 +1120,11 @@ public class Mobile
 			}
 			else // Libretro governs loading the process up again and not the jar, so post a request for it to do so
 			{
-				new Thread(new Runnable() 
-				{
-					@Override
-					public void run() 
-					{
-						while(!libretroStarted) // Wait until the core starts actually talking to the jar
-						{ 
-							try { Thread.sleep(1);  }
-							catch (Exception e) { }
-						}
-						
-						if(textEncoding.equals("ISO_8859_1"))         { libretroEncodingRequested = 0; }
-						else if(textEncoding.equals("Shift_JIS"))     { libretroEncodingRequested = 1; }
-						else if(textEncoding.equals("EUC_KR"))        { libretroEncodingRequested = 2; }
-						// TODO: Support other encodings
-
-						libretroRestartRequested = 1;
-					}
-				}, "RestartThread").start();
+				libretroRestartRequested = 1;
+				if(textEncoding.equals("ISO_8859_1"))         { libretroEncodingRequested = 0; }
+				else if(textEncoding.equals("Shift_JIS"))     { libretroEncodingRequested = 1; }
+				else if(textEncoding.equals("EUC_KR"))        { libretroEncodingRequested = 2; }
+				// TODO: Support other encodings
 			}
 		}
 		catch(Exception e) { log(Mobile.LOG_INFO, Mobile.class.getPackage().getName() + "." + Mobile.class.getSimpleName() + ": " + "Failed to restart FreeJ2ME: " + e.getMessage()); e.printStackTrace(); }
