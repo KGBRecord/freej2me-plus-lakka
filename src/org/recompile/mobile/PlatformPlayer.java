@@ -1126,7 +1126,6 @@ public class PlatformPlayer implements Player
 	{
 		/* PCM WAV variables */
 		private byte[] tmpStream;
-		private AudioInputStream wavStream;
 		private Clip wavClip;
 		private int[] wavHeaderData = new int[6];
 		private int numLoops = 0;
@@ -1157,34 +1156,32 @@ public class PlatformPlayer implements Player
 		{ 
 			try
 			{
-				if(wavStream == null) // Process the stream if it's not already cached
+				if(wavClip == null) { wavClip = AudioSystem.getClip(); }
+
+				/* Process the wave data */
+				if(wavHeaderData[0] == 1) // standard PCM WAV, just upsample it
 				{
-					if(wavHeaderData[0] == 1) // standard PCM WAV, just upsample it
+					wavClip.open(AudioSystem.getAudioInputStream(new ByteArrayInputStream(WAVTools.upsample(tmpStream, wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4], wavHeaderData[5]))));
+				}
+				else if(wavHeaderData[0] == 7) // Microsoft GSM
+				{
+					Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MS GSM! (unsupported)");
+				}
+				else if(wavHeaderData[0] == 17) // IMA ADPCM
+				{
+					wavClip.open(AudioSystem.getAudioInputStream(new ByteArrayInputStream(WAVImaADPCMDecoder.decodeImaAdpcm(new ByteArrayInputStream(tmpStream), wavHeaderData))));
+					if(Mobile.minLogLevel == Mobile.LOG_DEBUG) /* Print the decoded stream's header for analysis */
 					{
-						wavStream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(WAVTools.upsample(tmpStream, wavHeaderData[1], WAVTools.hostSampleRate, (short) wavHeaderData[2], (short) wavHeaderData[4], wavHeaderData[5])));
-					}
-					else if(wavHeaderData[0] == 7) // Microsoft GSM
-					{
-						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MS GSM! (unsupported)");
-					}
-					else if(wavHeaderData[0] == 17) // IMA ADPCM
-					{
-						wavStream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(WAVImaADPCMDecoder.decodeImaAdpcm(new ByteArrayInputStream(tmpStream), wavHeaderData)));
-						if(Mobile.minLogLevel == Mobile.LOG_DEBUG) /* Print the decoded stream's header for analysis */
-						{
-							InputStream headerRead = new ByteArrayInputStream(tmpStream);
-							WAVTools.readHeader(headerRead);
-							headerRead = null;
-						}
-					}
-					else /* Unknown format. */
-					{
-						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "WAV Format is " + wavHeaderData[0] + " (Unsupported).");
+						InputStream headerRead = new ByteArrayInputStream(tmpStream);
+						WAVTools.readHeader(headerRead);
+						headerRead = null;
 					}
 				}
-				
-				wavClip = AudioSystem.getClip();
-				wavClip.open(wavStream);
+				else /* Unknown format. */
+				{
+					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "WAV Format is " + wavHeaderData[0] + " (Unsupported).");
+				}
+
 				/* Like for midi, we need to listen for END_OF_MEDIA events here too. */
 				wavClip.addLineListener(new LineListener() 
 				{
@@ -1239,20 +1236,13 @@ public class PlatformPlayer implements Player
 				@Override
 				public void run() 
 				{
-					if(wavClip != null) { wavClip.close(); }
-					wavClip = null;
+					if(wavClip != null && wavClip.isOpen()) { wavClip.close(); }
 				}
 			}).start();
 		}
 
 		public void close() 
 		{
-			try 
-			{ 
-				if(wavStream != null) { wavStream.close(); } 
-				wavStream = null;
-			}
-			catch (IOException e) { }
 			tmpStream = null;
 			wavHeaderData = null;
 		}
@@ -1712,7 +1702,7 @@ public class PlatformPlayer implements Player
 			if(level > 100) { level = 100; }
 			else if(level < 0) { level = 0; }
 
-			if(level == getLevel()) { return level; }
+			if(level == getLevel() || Mobile.compatIgnoreVolumeChanges) { return level; }
 
 			try 
 			{

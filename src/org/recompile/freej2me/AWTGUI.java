@@ -198,9 +198,13 @@ public final class AWTGUI
 		new CheckboxMenuItem("DoJa-5.0", false),
 		new CheckboxMenuItem("DoJa-5.1", false),
 		new CheckboxMenuItem("Star-1.0", false),
+		new CheckboxMenuItem("Star-1.1", false),
+		new CheckboxMenuItem("Star-1.2", false),
+		new CheckboxMenuItem("Star-1.3", false),
+		new CheckboxMenuItem("Star-1.5", false),
 		new CheckboxMenuItem("Star-2.0", true)
 	};
-	final String[] dojaVersionValues = {"10", "20", "30", "35", "40", "41", "50", "51", "100", "200"};
+	final String[] dojaVersionValues = {"10", "20", "30", "35", "40", "41", "50", "51", "100", "110", "120", "130", "150", "200"};
 
 	final CheckboxMenuItem[] rotations = 
 	{
@@ -308,6 +312,7 @@ public final class AWTGUI
 	final CheckboxMenuItem immediateRepaints = new CheckboxMenuItem("Process canvas repaints immediately");
 	final CheckboxMenuItem overridePlatChecks = new CheckboxMenuItem("Override Mobile Platform checks");
 	final CheckboxMenuItem siemensFriendlyDrawing = new CheckboxMenuItem("Siemens-friendly drawing methods");
+	final CheckboxMenuItem ignoreVolumeChanges = new CheckboxMenuItem("Ignore volume changes");
 
 	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("Delete KJX files' temporary JAR/JAD");
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
@@ -766,6 +771,15 @@ public final class AWTGUI
 			}
 		});
 
+		ignoreVolumeChanges.addItemListener(new ItemListener()
+		{
+			public void itemStateChanged(ItemEvent e)
+			{
+				if(ignoreVolumeChanges.getState()){ config.updateCompatIgnoreVolumeChanges("on"); hasPendingChange = true; }
+				else{ config.updateCompatIgnoreVolumeChanges("off"); hasPendingChange = true; }
+			}
+		});
+
 		// Screen rotations
 		for(byte i = 0; i < rotations.length; i++) 
 		{
@@ -1071,6 +1085,7 @@ public final class AWTGUI
 		compatSettingsMenu.add(immediateRepaints);
 		compatSettingsMenu.add(overridePlatChecks);
 		compatSettingsMenu.add(siemensFriendlyDrawing);
+		compatSettingsMenu.add(ignoreVolumeChanges);
 
 		// add menus to menubar
 		menuBar.add(fileMenu);
@@ -1118,6 +1133,8 @@ public final class AWTGUI
 			overridePlatChecks.setState(config.settings.get("compatoverrideplatchecks").equals("on"));
 
 			siemensFriendlyDrawing.setState(config.settings.get("compatsiemensfriendlydrawing").equals("on"));
+
+			ignoreVolumeChanges.setState(config.settings.get("compatignorevolumechanges").equals("on"));
 
 			resChoice.select(""+ Integer.parseInt(config.settings.get("scrwidth")) + "x" + ""+ Integer.parseInt(config.settings.get("scrheight")));
 

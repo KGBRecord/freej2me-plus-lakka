@@ -75,6 +75,7 @@ public class MobilePlatform
 	public static long timeToUnfocus = 3000000000L; // Command bar is visible for 3 seconds
 
 	public static boolean isLibretro = false;
+	public static boolean appTerminated = false;
 
 	public MIDletLoader loader;
 	public static Displayable displayable;
@@ -211,6 +212,8 @@ public class MobilePlatform
 
 	public static void keyPressed(final int keycode)
 	{
+		if(appTerminated) { return; }
+
 		if(!MIDletLoader.MIDletSelected) { MIDletLoader.keyPress(Mobile.getGameAction(keycode)); }
 		else if (!Mobile.isPaused)
 		{
@@ -236,6 +239,8 @@ public class MobilePlatform
 
 	public static void keyReleased(final int keycode)
 	{
+		if(appTerminated) { return; }
+
 		if(!Mobile.isPaused && MIDletLoader.MIDletSelected)
 		{
 			updateKeyState(Mobile.getGameAction(keycode), false);
@@ -257,6 +262,8 @@ public class MobilePlatform
 
 	public static void keyRepeated(final int keycode)
 	{
+		if(appTerminated) { return; }
+
 		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)
 		{
 			Mobile.getDisplay().postInputEvent(new Runnable()
@@ -276,6 +283,8 @@ public class MobilePlatform
 
 	public static void pointerDragged(final int x, final int y)
 	{
+		if(appTerminated) { return; }
+
 		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)
 		{
 			Mobile.getDisplay().postInputEvent(new Runnable()
@@ -289,6 +298,8 @@ public class MobilePlatform
 
 	public static void pointerPressed(final int x, final int y)
 	{
+		if(appTerminated) { return; }
+
 		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)
 		{
 			Mobile.getDisplay().postInputEvent(new Runnable()
@@ -308,6 +319,8 @@ public class MobilePlatform
 
 	public static void pointerReleased(final int x, final int y)
 	{
+		if(appTerminated) { return; }
+		
 		if (!Mobile.isPaused && MIDletLoader.MIDletSelected && !Mobile.isDoJa && Mobile.getDisplay() != null && (displayable = Mobile.getDisplay().getCurrent()) != null)
 		{
 			Mobile.getDisplay().postInputEvent(new Runnable()
@@ -859,7 +872,7 @@ public class MobilePlatform
 
 	public final void flushGraphics(PlatformImage img, int x, int y, int width, int height)
 	{
-		if(!Mobile.isPaused)
+		if(!Mobile.isPaused && !appTerminated)
 		{
 			gcFrontbuffer.flushGraphics(img, x, y, width, height);
 			if(postDraw != null) { postDraw.run(); postDraw = null; }
@@ -892,6 +905,8 @@ public class MobilePlatform
 			gcFrontbuffer.setColor(0,0,0);
 			gcFrontbuffer.fillRect(0, 0, lcdWidth, lcdHeight);
 		}
+
+		appTerminated = true;
 	
 		painter.run();
 	}

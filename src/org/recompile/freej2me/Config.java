@@ -139,6 +139,7 @@ public class Config
 				settings.put("compatimmediaterepaints", "off");
 				settings.put("compatoverrideplatchecks", "on");
 				settings.put("compatsiemensfriendlydrawing", "off");
+				settings.put("compatignorevolumechanges", "off");
 				settings.put("fpshack", "Disabled");
 				settings.put("spdhackm3ghalfres", "off");
 				settings.put("dojaversion", "200");
@@ -212,6 +213,7 @@ public class Config
 			if(!settings.containsKey("compatimmediaterepaints")) { settings.put("compatimmediaterepaints", "off"); }
 			if(!settings.containsKey("compatoverrideplatchecks")) { settings.put("compatoverrideplatchecks", "on"); }
 			if(!settings.containsKey("compatsiemensfriendlydrawing")) { settings.put("compatsiemensfriendlydrawing", "off"); }
+			if(!settings.containsKey("compatignorevolumechanges")) { settings.put("compatignorevolumechanges", "off"); }
 			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
 			if(!settings.containsKey("spdhackm3ghalfres")) { settings.put("spdhackm3ghalfres", "off"); }
 			if(!settings.containsKey("dojaversion")) { settings.put("dojaversion", "200"); }
@@ -463,6 +465,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatsiemensfriendlydrawing "+value);
 		settings.put("compatsiemensfriendlydrawing", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateCompatIgnoreVolumeChanges(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatignorevolumechanges "+value);
+		settings.put("compatignorevolumechanges", value);
 		saveConfig();
 		onChange.run();
 	}

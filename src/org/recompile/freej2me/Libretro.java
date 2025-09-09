@@ -179,12 +179,16 @@ public class Libretro
 		if(Integer.parseInt(args[22]) == 0) { Mobile.compatSiemensFriendlyDrawing = false; }
 		else { Mobile.compatSiemensFriendlyDrawing = true; }
 
-		/* No Alpha on Blank Images SpeedHack is a per-game config */
+		/* Half-Res M3G Rendering SpeedHack is a per-game config */
 		if(Integer.parseInt(args[23]) == 0) { Mobile.halfResM3GRaster = false; }
 		else { Mobile.halfResM3GRaster = true; }
 
 		/* DoJa API Version */
 		Mobile.DoJaVersion = Integer.parseInt(args[24]);
+
+		/* Compat setting to ignore volume changes */
+		if(Integer.parseInt(args[25]) == 0) { Mobile.compatIgnoreVolumeChanges = false; }
+		else { Mobile.compatIgnoreVolumeChanges = true; }
 
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
@@ -399,6 +403,9 @@ public class Libretro
 										if(!Mobile.compatSiemensFriendlyDrawing) { Mobile.config.settings.put("compatsiemensfriendlydrawing", "off"); }
 										else                                     { Mobile.config.settings.put("compatsiemensfriendlydrawing", "on"); }
 
+										if(!Mobile.compatIgnoreVolumeChanges) { Mobile.config.settings.put("compatignorevolumechanges", "off"); }
+										else                                     { Mobile.config.settings.put("compatignorevolumechanges", "on"); }
+
 										if(!Mobile.useCustomTextFont)  { Mobile.config.settings.put("textfont", "Default"); }
 										else                           { Mobile.config.settings.put("textfont", "Custom");  }
 
@@ -549,6 +556,9 @@ public class Libretro
 									else { Mobile.config.settings.put("spdhackm3ghalfres", "on"); }
 
 									Mobile.config.settings.put("dojaversion", "" + Integer.parseInt(cfgtokens[25]));
+
+									if(Integer.parseInt(cfgtokens[26])==0) { Mobile.config.settings.put("compatignorevolumechanges", "off");  }
+									else { Mobile.config.settings.put("compatignorevolumechanges", "on"); }
 
 
 									Mobile.config.saveConfig();

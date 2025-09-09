@@ -30,7 +30,7 @@
 #include <file/file_path.h>
 #include <retro_miscellaneous.h>
 
-#define NUM_ARGUMENTS 30
+#define NUM_ARGUMENTS 31
 
 const char *slash = path_default_slash();
 
@@ -193,6 +193,7 @@ unsigned int compatTransToOriginOnGFXReset = 0; // Boolean
 unsigned int compatImmediateRepaintCalls   = 0; // Boolean
 unsigned int compatOverridePlatCheck       = 1; // Boolean
 unsigned int compatSiemensFriendlyDraw     = 0; // Boolean
+unsigned int compatIgnoreVolumeChanges     = 0; // Boolean
 
 /* Libretro exposed config variables END */
 
@@ -618,6 +619,13 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "on"))   { compatSiemensFriendlyDraw = 1; }
 	}
 
+	var.key = "freej2me_compatignorevolumechanges";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		if (!strcmp(var.value, "off"))       { compatIgnoreVolumeChanges = 0; }
+		else if (!strcmp(var.value, "on"))   { compatIgnoreVolumeChanges = 1; }
+	}
+
 	var.key = "freej2me_m3grenderuntextured";
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
 	{
@@ -642,10 +650,10 @@ static void check_variables(bool first_time_startup)
 	/* Prepare a string to pass those core options to the Java app */
 	options_update = malloc(sizeof(char) * PIPE_MAX_LEN);
 
-	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, 
+	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, 
 		phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatFantasyZoneFix, 
 		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatImmediateRepaintCalls,
-		compatOverridePlatCheck, compatSiemensFriendlyDraw, spdHackM3GHalfRes, dojaVersion);
+		compatOverridePlatCheck, compatSiemensFriendlyDraw, spdHackM3GHalfRes, dojaVersion, compatIgnoreVolumeChanges);
 	optstrlen = strlen(options_update);
 
 	/* 0xD = 13, which is the special case where the java app will receive the updated configs */
@@ -680,6 +688,7 @@ void retro_init(void)
 	char resArg[2][4], rotateArg[2], phoneArg[3], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2];
 	char compatFantasyZoneFixArg[2], compatTransToOriginOnGFXResetArg[2], fontArg[2], offsetArg[3], dumpGFXArg[2], tempKJXArg[2], m3gUntexArg[2], m3gWireArg[2];
 	char fpsunlockHack[2], compatImmediateRepaintArg[2], compatOverridePlatCheckArg[2], compatSiemensFriendlyDrawArg[2], spdHackM3GHalfResArg[2], dojaVersionArg[4];
+	char compatIgnoreVolumeChangesArg[2];
 
 	sprintf(resArg[0], "%lu", screenRes[0]);
 	sprintf(resArg[1], "%lu", screenRes[1]);
@@ -706,6 +715,7 @@ void retro_init(void)
 	sprintf(compatSiemensFriendlyDrawArg, "%d", compatSiemensFriendlyDraw);
 	sprintf(spdHackM3GHalfResArg, "%d", spdHackM3GHalfRes);
 	sprintf(dojaVersionArg, "%d", dojaVersion);
+	sprintf(compatIgnoreVolumeChangesArg, "%d", compatIgnoreVolumeChanges);
 
 	/* We need to clean up any argument memory from the previous launch arguments in order to load up updated ones */
 	if (restarting) { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME-Plus.\n"); }
@@ -763,8 +773,9 @@ void retro_init(void)
 	params[25] = strdup(compatOverridePlatCheckArg);
 	params[26] = strdup(compatSiemensFriendlyDrawArg);
 	params[27] = strdup(spdHackM3GHalfResArg);
-	params[27] = strdup(dojaVersionArg);
-	params[28] = NULL; // Null-terminate the array
+	params[28] = strdup(dojaVersionArg);
+	params[29] = strdup(compatIgnoreVolumeChangesArg);
+	params[30] = NULL; // Null-terminate the array
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
 

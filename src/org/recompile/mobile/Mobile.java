@@ -149,6 +149,7 @@ public class Mobile
 	public static boolean compatImmediateRepaints        = false;
 	public static boolean compatOverridePlatformChecks   = true;
 	public static boolean compatSiemensFriendlyDrawing   = false;
+	public static boolean compatIgnoreVolumeChanges      = false;
 
 	// M3G Debug Rendering settings
 	public static boolean M3GRenderUntexturedPolygons = false;
@@ -876,7 +877,7 @@ public class Mobile
 
 	public static final void log(final byte logLevel, final String text) 
 	{
-		if(logLevel == 0 || logLevel < minLogLevel) { return; }
+		if(logLevel == 0 || logLevel < minLogLevel || MobilePlatform.appTerminated) { return; }
 
 		synchronized (pendingLogs) 
 		{ 
@@ -1050,6 +1051,10 @@ public class Mobile
 		String siemensFriendlyDrawing = config.settings.get("compatsiemensfriendlydrawing");
 		if(siemensFriendlyDrawing.equals("on"))        { compatSiemensFriendlyDrawing = true; }
 		else if (siemensFriendlyDrawing.equals("off")) { compatSiemensFriendlyDrawing = false; };
+
+		String ignoreVolumeChanges = config.settings.get("compatignorevolumechanges");
+		if(ignoreVolumeChanges.equals("on"))        { compatIgnoreVolumeChanges = true; }
+		else if (ignoreVolumeChanges.equals("off")) { compatIgnoreVolumeChanges = false; };
 
 		// Other settings
 		String textFont = config.settings.get("textfont");

@@ -32,7 +32,7 @@
 static const char *supported_encodings[] = 
 {
     "-Dfile.encoding=ISO_8859_1",
-    "-Dfile.encoding=Shift-JIS",
+    "-Dfile.encoding=Shift_JIS",
     "-Dfile.encoding=EUC_KR"
 };
 
@@ -204,6 +204,10 @@ struct retro_core_option_v2_definition core_options[] =
             { "50",  "DoJa-5.0" },
             { "51",  "DoJa-5.1" },
             { "100", "Star-1.0" },
+            { "110", "Star-1.1" },
+            { "120", "Star-1.2" },
+            { "130", "Star-1.3" },
+            { "150", "Star-1.5" },
             { "200", "Star-2.0" },
             { NULL, NULL },
         },
@@ -648,6 +652,20 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_compatignorevolumechanges",
+        "Compatibility Settings > Ignore volume changes",
+        "Ignore volume changes",
+        "Media playback is probably the J2ME subsystem whose implementation and utilization varies the most by vendor. Some applications go as far as setting volume changes to streams they already stopped beforehand, which can cause playback issues on other media that's currently playing. Sonic 2's MIDP versions are some such cases... enabling this option helps them.",
+        "Media playback is probably the J2ME subsystem whose implementation and utilization varies the most by vendor. Some applications go as far as setting volume changes to streams they already stopped beforehand, which can cause playback issues on other media that's currently playing. Sonic 2's MIDP versions are some such cases... enabling this option helps them.",
+        "compat_settings",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "M3G Debug Settings > Draw only vertex colors",
         "Draw only vertex colors",
@@ -743,6 +761,10 @@ struct retro_core_option_definition core_options_v1 [] =
             { "50",  "DoJa-5.0" },
             { "51",  "DoJa-5.1" },
             { "100", "Star-1.0" },
+            { "110", "Star-1.1" },
+            { "120", "Star-1.2" },
+            { "130", "Star-1.3" },
+            { "150", "Star-1.5" },
             { "200", "Star-2.0" },
             { NULL, NULL },
         },
@@ -1106,6 +1128,17 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
+        "freej2me_compatignorevolumechanges",
+        "Ignore volume changes",
+        "Media playback is probably the J2ME subsystem whose implementation and utilization varies the most by vendor. Some applications go as far as setting volume changes to streams they already stopped beforehand, which can cause playback issues on other media that's currently playing. Sonic 2's MIDP versions are some such cases... enabling this option helps them.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "Draw only vertex colors",
         "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
@@ -1142,7 +1175,7 @@ static const struct retro_variable vars[] =
     },
     { /* DoJa API Version */
         "freej2me_dojaversion",
-        "DoJa API Version; 200|10|20|30|35|40|41|50|51|100",
+        "DoJa API Version; 200|10|20|30|35|40|41|50|51|100|110|120|130|150",
     },
     { /* Screen Rotation */
         "freej2me_rotate",
@@ -1251,6 +1284,10 @@ static const struct retro_variable vars[] =
     { /* Siemens-friendly drawing methods */
         "freej2me_compatsiemensfriendlydraw",
         "Siemens-friendly drawing methods; off|on",
+    },
+    { /* Ignore volume changes */
+        "freej2me_compatignorevolumechanges",
+        "Ignore volume changes; off|on",
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",
