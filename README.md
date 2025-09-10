@@ -19,7 +19,7 @@
 <div align="center">
 
 [![Nightly Releases](https://img.shields.io/github/v/release/TASEmulators/freej2me-plus?label=Bleeding%20Edge%20Builds:&style=for-the-badge)](https://github.com/TASEmulators/freej2me-plus/releases/tag/nightlies)
-[![Latest Stable Release](https://img.shields.io/badge/version-v1.50-blue?label=Latest%20Stable%20Release:&style=for-the-badge)](https://github.com/TASEmulators/freej2me-plus/releases/tag/1.50)
+[![Latest Stable Release](https://img.shields.io/badge/version-v1.51-blue?label=Latest%20Stable%20Release:&style=for-the-badge)](https://github.com/TASEmulators/freej2me-plus/releases/tag/1.51)
 
 </div>
 
@@ -132,10 +132,25 @@ Alternatively it can be launched from the command line with the following argume
   - `10 -> KDDI`
 - `framerate` :arrow_right: `sets the maximum FPS applications are allowed to run at.` 
   - Can be any value, although '10' to '60' is the expected ballpark
+- `dojaversion` :arrow_right: `sets the DoJa/Star profile for the I-Appli to use.` These can be:
+  - `10 -> Default`
+  - `20 -> DoJa 2.0 & International 1.5`
+  - `30 -> DoJa 3.0 & International 2.5`
+  - `35 -> DoJa 3.5`
+  - `40 -> DoJa 4.0`
+  - `41 -> DoJa 4.1`
+  - `50 -> DoJa 5.0`
+  - `51 -> DoJa 5.1`
+  - `100 -> Star 1.0`
+  - `110 -> Star 1.1`
+  - `120 -> Star 1.2`
+  - `130 -> Star 1.3`
+  - `150 -> Star 1.5`
+  - `200 -> Star 2.0`
 
 <h1> </h1>
 
-Those are organized and read internally in this manner: `java -jar freej2me.jar 'file:///path/to/midlet.jar' fullscreen width height scale keyLayout framerate`
+Those are organized and read internally in this manner: `java -jar freej2me.jar 'file:///path/to/midlet.jar' fullscreen width height scale keyLayout framerate dojaversion`
 
 Although all arguments aside from the path are optional to launch FreeJ2ME-Plus with any given app.
 
