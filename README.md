@@ -1,25 +1,49 @@
 
 ![BannerFinal](https://github.com/user-attachments/assets/ca82914c-e30e-406d-8d2e-487bda6263af)
 
+# :warning: **Lakka OS Modified Version** :warning:
+
+**This is a modified version of FreeJ2ME-Plus specifically adapted for Lakka OS with Docker build system.**
+
+### Key features:
+- **Docker build environment**: Uses OpenJDK 8 official image for consistent builds
+- **Simplified build system**: Makefile-based build automation  
+- **Lakka OS optimized**: Ready-to-use libretro core and system files
+- **Cross-platform builds**: Build on Linux, macOS, Windows with Docker
+
+### Latest Release: v0.0.1
+📦 **[Download Latest Release](https://github.com/KGBRecord/freej2me-plus-lakka/releases/tag/0.0.1)**
+
+### Quick Installation for Lakka:
+1. Copy `freej2me_libretro.so` → `/cores/` directory on Lakka microSD
+2. Copy `freej2me-lr.jar` → `/system/` directory on Lakka microSD  
+3. Restart Lakka
+
+📋 **[Full Installation Guide](LAKKA_INSTALL.md)**
+
+> **Note**: For general use, please refer to the original [FreeJ2ME-Plus repository](https://github.com/TASEmulators/freej2me-plus).
+
+---
+
 <h1 align="center"> Current status </h1>
 
 <div align="center">
 
-[![Java CI](https://img.shields.io/github/actions/workflow/status/TASEmulators/freej2me-plus/ant.yml?style=for-the-badge&label=FreeJ2ME-Plus%20Core)](https://github.com/jpcsp/jpcsp/blob/master/.github/workflows/main.yml)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fjpcsp.org%2F&style=for-the-badge&label=FreeJ2ME-Plus%20Webpage)](https://tasemulators.github.io/freej2me-plus/)
-![Java version](https://img.shields.io/badge/Java-6-44cc11?style=for-the-badge&label=Minimum%20Java%20VM)
+[![Docker Build](https://img.shields.io/badge/Docker-Build%20Ready-blue?style=for-the-badge&logo=docker)](https://github.com/KGBRecord/freej2me-plus-lakka)
+[![Lakka Compatible](https://img.shields.io/badge/Lakka-Compatible-green?style=for-the-badge&logo=linux)](https://lakka.tv/)
+![Java version](https://img.shields.io/badge/Java-8-orange?style=for-the-badge&label=Required%20Java)
 ![License](https://img.shields.io/badge/license-GPLv3-red?style=for-the-badge&label=Project%20License)
-![Open Issues](https://img.shields.io/github/issues/TASEmulators/freej2me-plus?style=for-the-badge)
-![Last Commit](https://img.shields.io/github/last-commit/TASEmulators/freej2me-plus?style=for-the-badge)
+![Last Commit](https://img.shields.io/github/last-commit/KGBRecord/freej2me-plus-lakka?style=for-the-badge)
+![Release](https://img.shields.io/github/v/release/KGBRecord/freej2me-plus-lakka?style=for-the-badge&label=Latest%20Release)
 
 </div>
 
-<h1 align="center"> Links to FreeJ2ME-Plus Builds </h1>
+<h1 align="center"> Downloads for Lakka </h1>
 
 <div align="center">
 
-[![Nightly Releases](https://img.shields.io/github/v/release/TASEmulators/freej2me-plus?label=Bleeding%20Edge%20Builds:&style=for-the-badge)](https://github.com/TASEmulators/freej2me-plus/releases/tag/nightlies)
-[![Latest Stable Release](https://img.shields.io/badge/version-v1.51-blue?label=Latest%20Stable%20Release:&style=for-the-badge)](https://github.com/TASEmulators/freej2me-plus/releases/tag/1.51)
+[![Latest Release](https://img.shields.io/github/v/release/KGBRecord/freej2me-plus-lakka?label=Latest%20Lakka%20Release:&style=for-the-badge&color=blue)](https://github.com/KGBRecord/freej2me-plus-lakka/releases/latest)
+[![Docker Build](https://img.shields.io/badge/Docker%20Build-Available-green?style=for-the-badge&logo=docker)](https://github.com/KGBRecord/freej2me-plus-lakka#gear-coffee-building-freej2me-plus-for-lakka)
 
 </div>
 
@@ -27,14 +51,17 @@
 
 # :question: What is it?
 
-### FreeJ2ME-Plus is a J2ME emulator with libretro and AWT frontends, it aims to run on basically anything that can run a Java VM.
+### This is a **Lakka OS-optimized version** of FreeJ2ME-Plus, a J2ME emulator with libretro and AWT frontends. It has been specifically modified to work seamlessly with Lakka's environment and file system structure.
 
-### Original authors :
+### Original FreeJ2ME-Plus authors:
 #### - David Richardson [Recompile@retropie]
 #### - Saket Dandawate  [Hex@retropie]
 
-### Current maintainer:
+### Current maintainer of original project:
 #### - Paulo Sousa [AShiningRay]
+
+### Lakka OS modifications by:
+#### - KGBRecord [KGBRecord]
 
 ---
 
@@ -43,7 +70,27 @@
 ### For a general idea of what can or cannot run, look [HERE](https://tasemulators.github.io/freej2me-plus/)
 
 ----
-# :gear: :coffee: Building FreeJ2ME-Plus
+# :penguin: Lakka OS Requirements
+
+>**This version requires specific setup for Lakka OS:**
+>
+>### Prerequisites:
+>- **Java 8**
+>- **Apache Ant** for building
+>- **Make tools** for libretro core compilation
+>
+>### Java Installation on Lakka:
+>1. Download Java 8 JDK (jdk1.8.0_451)
+>2. Extract to `/storage/java/jdk1.8.0_451/`
+>3. Ensure the directory structure is: `/storage/java/jdk1.8.0_451/bin/java`
+>
+>### Important Notes:
+>- This version **does not** rely on system PATH for Java executables
+>- All Java calls are hardcoded to the specific path above
+>- This ensures compatibility with Lakka's restricted environment
+
+----
+# :gear: :coffee: Building FreeJ2ME-Plus for Lakka
 
 >**Make sure you have Apache Ant installed and can run it. Then, from the freej2me directory, run the following command (yes, it's that simple):**
 >```
@@ -188,3 +235,25 @@ Although all arguments aside from the path are optional to launch FreeJ2ME-Plus 
   1) Open an Issue
   2) Explain it in as much detail as you can (FreeJ2ME-Plus version, jar used, md5 hash, as well as the issue with logs and images if possible)
   3) Post a save file close to where the issue manifests, or note the steps required to reproduce it
+
+---
+
+# :gear: Lakka OS Specific Changes
+
+### Files Modified for Lakka Compatibility:
+
+#### **src/libretro/freej2me_libretro.c**:
+- Line 745: Changed `"java"` to `"/storage/java/jdk1.8.0_451/bin/java"` (Linux)
+- Line 747: Changed `"javaw"` to `"/storage/java/jdk1.8.0_451/bin/javaw"` (Windows)
+
+#### **build.xml**:
+- Added `executable="/storage/java/jdk1.8.0_451/bin/javac"` and `fork="true"` to javac tasks
+- Changed `bootclasspath` from `${java.home}/lib/rt.jar` to `/storage/java/jdk1.8.0_451/jre/lib/rt.jar`
+
+### Why These Changes?
+- **Lakka OS restrictions**: Limited PATH environment and restricted file system access
+- **Consistency**: Ensures Java is always found at the expected location
+- **Reliability**: Eliminates dependency on system-wide Java installation
+
+### Upstream Compatibility:
+These changes are **specific to Lakka OS** and may not be suitable for general use. For the original version, please visit: [TASEmulators/freej2me-plus](https://github.com/TASEmulators/freej2me-plus)

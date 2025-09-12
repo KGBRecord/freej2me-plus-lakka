@@ -742,9 +742,9 @@ void retro_init(void)
 	/* Allocate memory for launch arguments */
 	params = (char**)malloc(sizeof(char*) * NUM_ARGUMENTS);
 #ifdef __linux__
-	params[0] = strdup("java");
+	params[0] = strdup("/storage/java/jdk1.8.0_451/bin/java");
 #elif _WIN32
-	params[0] = strdup("javaw");
+	params[0] = strdup("/storage/java/jdk1.8.0_451/bin/javaw");
 #endif
 	params[1] = strdup("-jar");
 	params[2] = strdup(supported_encodings[characterEncoding]);

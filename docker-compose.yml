@@ -1,0 +1,32 @@
+services:
+  # Main service using OpenJDK 8
+  freej2me-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freej2me-builder
+    volumes:
+      # Mount source code
+      - .:/workspace
+      # Mount build output directory to host
+      - ./build:/workspace/build
+      # Mount libretro build output
+      - ./src/libretro:/workspace/src/libretro
+    working_dir: /workspace
+    # Keep container running for interactive builds
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  # Service for one-time builds
+  freej2me-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freej2me-build
+    volumes:
+      - .:/workspace
+      - ./build:/workspace/build
+      - ./src/libretro:/workspace/src/libretro
+    working_dir: /workspace
+    profiles: ["build"]  # Only start when explicitly requested
