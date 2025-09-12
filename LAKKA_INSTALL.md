@@ -14,17 +14,19 @@
 1. **Visit Oracle Java Downloads:**
    - Go to: https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html
    - Find **"Linux ARM64 Compressed Archive"** section
-   - Download: `jdk-8u451-linux-aarch64.tar.gz`
-   - **⚠️ IMPORTANT**: Must use exactly version **8u451** as this build is hardcoded for this version
-   - If you use a different version, you must modify the source code and rebuild
+   - Download: `jdk-8u*-linux-aarch64.tar.gz` (any Java 8 version)
+   - **✅ COMPATIBLE**: Works with any Java 8 version since paths are now simplified
+   - Recommended: Use latest available Java 8 version for better security
 
 2. **Extract Java Archive:**
    ```bash
-   # Extract the downloaded file
-   tar -xzf jdk-8u451-linux-aarch64.tar.gz
+   # Extract the downloaded file (replace filename with your downloaded version)
+   tar -xzf jdk-8u*-linux-aarch64.tar.gz
    
-   # This creates a folder named jdk1.8.0_451
-   ls -la jdk1.8.0_451/
+   # This creates a JDK folder - move all contents to java directory
+   mkdir -p java
+   mv jdk*/* java/
+   ls -la java/
    ```
 
 ### Enable Lakka Services
@@ -40,9 +42,8 @@
 
 4. **Copy Java to Lakka via SCP:**
    ```bash
-   # Create java directory on Lakka and copy JDK
-   ssh root@<lakka-ip> "mkdir -p /storage/java"
-   scp -r jdk1.8.0_451 root@<lakka-ip>:/storage/java/
+   # Copy entire Java installation to Lakka
+   scp -r java/* root@<lakka-ip>:/storage/java/
    ```
    
    **Replace `<lakka-ip>` with your actual Lakka IP address (e.g., 192.168.1.100)**
@@ -51,7 +52,7 @@
    ```bash
    # SSH into Lakka and test Java
    ssh root@<lakka-ip>
-   /storage/java/jdk1.8.0_451/bin/java -version
+   /storage/java/bin/java -version
    ```
    
    You should see output like:
@@ -96,11 +97,13 @@ Your Lakka should have this structure:
 ```
 📁 /storage/
 ├── 📂 java/
-│   └── 📂 jdk1.8.0_451/
-│       └── 📂 bin/
-│           ├── java ✓
-│           ├── javac ✓
-│           └── javaw ✓
+│   ├── 📂 bin/
+│   │   ├── java ✓
+│   │   ├── javac ✓
+│   │   └── javaw ✓
+│   ├── 📂 lib/ ✓
+│   ├── 📂 jre/ ✓
+│   └── 📄 [other JDK files] ✓
 ├── 📂 cores/
 │   └── 📄 freej2me_libretro.so ✓
 ├── 📂 system/
@@ -146,14 +149,14 @@ Your Lakka should have this structure:
 
 ### Games not loading?
 - ✅ Ensure `freej2me-lr.jar` is in `/storage/system/`
-- ✅ Verify Java is working: `/storage/java/jdk1.8.0_451/bin/java -version`
+- ✅ Verify Java is working: `/storage/java/bin/java -version`
 - ✅ Check that game files are valid J2ME (.jar/.jad)
 
 ### Java not found errors?
-- ✅ Confirm Java directory: `ls -la /storage/java/jdk1.8.0_451/bin/`
-- ✅ Test Java manually: `/storage/java/jdk1.8.0_451/bin/java -version`
-- ✅ **Version mismatch**: If using different Java version, path must be updated in source code
-- ✅ Reinstall Java following Step 1 with exact version 8u451
+- ✅ Confirm Java directory: `ls -la /storage/java/bin/`
+- ✅ Test Java manually: `/storage/java/bin/java -version`
+- ✅ **Java compatibility**: Any Java 8 version should work with simplified paths
+- ✅ Reinstall Java following Step 1 with any Java 8 version
 
 ### SSH Connection Issues?
 - ✅ Ensure SSH is enabled in Lakka Services
@@ -163,10 +166,10 @@ Your Lakka should have this structure:
 
 ## 💡 Tips
 
-- **Tested Configuration:** Nintendo Switch Lite (modchip) + Lakka + Java 8u451
+- **Tested Configuration:** Nintendo Switch Lite (modchip) + Lakka + Java 8
 - **Network Access:** Keep SSH enabled for troubleshooting
 - **Backup:** Save your working Java installation
-- **Performance:** Java 8u451 provides good performance on ARM64
+- **Performance:** Any Java 8 version provides good performance on ARM64
 
 ---
 **Enjoy your retro J2ME gaming experience on Lakka! 📱🎮**

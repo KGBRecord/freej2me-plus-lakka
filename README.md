@@ -80,9 +80,9 @@
 >- **Make tools** for libretro core compilation
 >
 >### Java Installation on Lakka:
->1. Download Java 8 JDK (jdk1.8.0_451)
->2. Extract to `/storage/java/jdk1.8.0_451/`
->3. Ensure the directory structure is: `/storage/java/jdk1.8.0_451/bin/java`
+>1. Download Java 8 JDK
+>2. Extract entire JDK to `/storage/java/`
+>3. Ensure the directory structure is: `/storage/java/bin/java`
 >
 >### Important Notes:
 >- This version **does not** rely on system PATH for Java executables
@@ -243,12 +243,12 @@ Although all arguments aside from the path are optional to launch FreeJ2ME-Plus 
 ### Files Modified for Lakka Compatibility:
 
 #### **src/libretro/freej2me_libretro.c**:
-- Line 745: Changed `"java"` to `"/storage/java/jdk1.8.0_451/bin/java"` (Linux)
-- Line 747: Changed `"javaw"` to `"/storage/java/jdk1.8.0_451/bin/javaw"` (Windows)
+- Line 745: Changed `"java"` to `"/storage/java/bin/java"` (Linux)
+- Line 747: Changed `"javaw"` to `"/storage/java/bin/javaw"` (Windows)
 
 #### **build.xml**:
-- Added `executable="/storage/java/jdk1.8.0_451/bin/javac"` and `fork="true"` to javac tasks
-- Changed `bootclasspath` from `${java.home}/lib/rt.jar` to `/storage/java/jdk1.8.0_451/jre/lib/rt.jar`
+- Added `executable="/storage/java/bin/javac"` and `fork="true"` to javac tasks
+- Changed `bootclasspath` from `${java.home}/lib/rt.jar` to `/storage/java/jre/lib/rt.jar`
 
 ### Why These Changes?
 - **Lakka OS restrictions**: Limited PATH environment and restricted file system access
