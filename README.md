@@ -92,57 +92,130 @@
 ----
 # :gear: :coffee: Building FreeJ2ME-Plus for Lakka
 
->**Make sure you have Apache Ant installed and can run it. Then, from the freej2me directory, run the following command (yes, it's that simple):**
->```
-> > ant
->```
->**That command will create two different jar files inside `build/`:**
->
->**`freej2me.jar` -> Standalone AWT jar executable, can be double-clicked right away to start**
->
->**`freej2me-lr.jar` -> Libretro executable (has to be placed on the frontend's `system/` folder, since it acts as a BIOS for the libretro core and is what runs J2ME jars)**
->
->### **NOTE: The Libretro jar file needs additional binaries to be compiled before use. Look at the additional steps below if you're going to use it.**
+## Docker Build System
 
-# :gear: :video_game: Building the Libretro core
+This project uses a Docker-based build system for consistent, cross-platform builds with Java 8, Apache Ant, and Make.
 
-### Building for Linux:
->**To build the libretro core, be sure you can run the `make` command, then open a terminal in freej2me's folder run the following commands from there:**
->```
-># libretro core compilation
-> > cd src/libretro
-> > make
->```
->**This will build `freej2me_libretro.so` on `src/libretro/`, which is the core libretro will use to interface with `freej2me-lr.jar`.**
->
->**Move it to your libretro frontend's `cores/` folder, with freej2me-lr.jar on `system/` and the frontend should be able to load j2me files afterwards.**
->
-> ### **NOTE: The core DOES NOT WORK on containerized/sandboxed environments unless it can call a java runtime that also resides in the same sandbox or container, keep that in mind if you're running a libretro frontend through something like flatpak or snap for example.**
->
+### System Requirements
 
-<h1> </h1>
+- Docker
+- Docker Compose  
+- Make
 
-### Building for Windows:
->**To build the libretro core for windows, first you'll need mingw, or MSYS2 64. **`This guide uses MSYS2`** as it's easier to set up and works closer to linux syntax.**
->
->**Download MSYS2-x86_64 and install it on your computer. By default it will create a linux-like 'home' folder on C:\msys64\home\ and will put a folder with your username in there. This is where you have to move the freej2me folder to, so: `C:\msys64\home\USERNAME\freej2mefolder` for example.**
->
->**With the folder placed in there you can build the core, open the MSYS2 UCRT64 terminal from your pc's start menu, and run the following commands:**
->```
-># Installing 'mingw-w64' and 'make' on msys2
-> > pacman -S mingw-w64-ucrt-x86_64-gcc
-> > pacman -S make
->
-> # libretro core compilation
-> > cd freej2mefolder/src/libretro
-> > make
->```
->**This will build `freej2me_libretro.dll` on `freej2mefolder/src/libretro/`, which is the core libretro will use to interface with `freej2me-lr.jar`.**
->
->**Move it to your libretro frontend's `cores/` folder, with freej2me-lr.jar on `system/` and the frontend should be able to load j2me files afterwards.**
->
-> ### **NOTE: The windows core has been tested on Windows 7, 10 & 11 x64.**
->
+### Quick Start
+
+```bash
+# Setup environment
+make setup
+
+# Build everything
+make build-all
+
+# Check build status
+make status
+
+# Show all available commands
+make help
+```
+
+### Available Commands
+
+| Target | Description |
+|--------|-------------|
+| `make setup` | Build Docker image with OpenJDK 8 |
+| `make build-jar` | Build JAR files |
+| `make build-so` | Build libretro core |
+| `make build-all` | Build everything |
+| `make clean` | Clean build artifacts |
+| `make clean-docker` | Remove Docker containers and images |
+| `make shell` | Start interactive shell |
+| `make status` | Show build status |
+
+### Output Files
+
+After successful build, you will have:
+
+```
+build/
+├── freej2me.jar          # Standalone AWT executable
+└── freej2me-lr.jar       # Libretro executable (BIOS)
+
+src/libretro/
+└── freej2me_libretro.so  # Libretro core
+```
+
+### Using Docker Compose Directly
+
+```bash
+# Build image
+docker-compose build
+
+# Build JAR files
+docker-compose run --rm freej2me-build ant
+
+# Build libretro core
+docker-compose run --rm freej2me-build sh -c "cd src/libretro && make"
+
+# Start interactive shell
+docker-compose run --rm freej2me-builder
+```
+
+### Java Environment
+
+The Docker container includes:
+
+- **Java 8 JDK**: Official OpenJDK 8 Docker image
+- **Apache Ant**: Latest version from Debian repository
+- **Build tools**: make, gcc, g++
+
+### Troubleshooting
+
+#### Docker Permission Issues
+```bash
+# If you encounter Docker permission issues
+sudo usermod -aG docker $USER
+# Then logout and login again
+```
+
+#### Clean Everything
+```bash
+# If you encounter issues, clean everything and start over
+make clean-docker
+make setup
+make build-all
+```
+
+#### Interactive Debugging
+```bash
+# Start shell for debugging
+make shell
+
+# Inside container:
+java -version                    # Check Java
+ant -version                     # Check Ant
+cd /workspace && ant             # Manual build
+cd src/libretro && make          # Manual libretro build
+```
+
+### Cross-Platform Support
+
+This Docker build system works on:
+- **Linux** (x86_64, ARM64)
+- **macOS** (Intel, Apple Silicon)  
+- **Windows** (with Docker Desktop)
+
+### CI/CD Integration
+
+Can be used in CI/CD pipelines:
+
+```yaml
+# GitHub Actions example
+- name: Build FreeJ2ME-Plus
+  run: |
+    make setup
+    make build-all
+```
+
 ----
 # :memo: How to use the AWT frontend:
 
