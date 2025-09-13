@@ -188,6 +188,35 @@ struct retro_core_option_v2_definition core_options[] =
         "240x320"
     },
     {
+        "freej2me_auto_resolution",
+        "System > Auto-Detect Resolution",
+        "Auto-Detect Resolution",
+        "When enabled, FreeJ2ME will try to automatically detect the correct resolution from the JAR file's manifest or JAD descriptor. This eliminates the need to manually select resolution for each game.",
+        "When enabled, FreeJ2ME will try to automatically detect the correct resolution from the JAR file's manifest or JAD descriptor. This eliminates the need to manually select resolution for each game.",
+        "system_settings",
+        {
+            { "Off", "Manual selection (use Phone Resolution setting)" },
+            { "On",  "Auto-detect from JAR/JAD files" },
+            { NULL, NULL },
+        },
+        "On"
+    },
+    {
+        "freej2me_scaling_mode",
+        "Video > Scaling Mode",
+        "Scaling Mode", 
+        "Determines how the game screen is scaled to fit the display. 'Aspect Fit' maintains the original aspect ratio and centers the game with black bars if needed. 'Stretch' fills the entire screen but may distort the image.",
+        "Determines how the game screen is scaled to fit the display. 'Aspect Fit' maintains the original aspect ratio and centers the game with black bars if needed. 'Stretch' fills the entire screen but may distort the image.",
+        "video_settings",
+        {
+            { "aspect_fit", "Aspect Fit (with black bars)" },
+            { "stretch",    "Stretch to fill screen" },
+            { "integer",    "Integer scaling (pixel perfect)" },
+            { NULL, NULL },
+        },
+        "aspect_fit"
+    },
+    {
         "freej2me_dojaversion",
         "System > DoJa API Version",
         "DoJa API Version",
@@ -195,7 +224,7 @@ struct retro_core_option_v2_definition core_options[] =
         "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
         "system_settings",
         {
-            { "10"   "DoJa-1.0" },
+            { "10",  "DoJa-1.0" },
             { "20",  "DoJa-2.0 & 1.5 OE" },
             { "30",  "DoJa-3.0 & 2.5 OE" },
             { "35",  "DoJa-3.5" },
@@ -748,11 +777,34 @@ struct retro_core_option_definition core_options_v1 [] =
         "240x320"
     },
     {
+        "freej2me_auto_resolution",
+        "Auto-Detect Resolution",
+        "When enabled, FreeJ2ME will try to automatically detect the correct resolution from the JAR file's manifest or JAD descriptor. This eliminates the need to manually select resolution for each game.",
+        {
+            { "Off", "Manual selection (use Phone Resolution setting)" },
+            { "On",  "Auto-detect from JAR/JAD files" },
+            { NULL, NULL },
+        },
+        "On"
+    },
+    {
+        "freej2me_scaling_mode",
+        "Scaling Mode", 
+        "Determines how the game screen is scaled to fit the display. 'Aspect Fit' maintains the original aspect ratio and centers the game with black bars if needed. 'Stretch' fills the entire screen but may distort the image.",
+        {
+            { "aspect_fit", "Aspect Fit (with black bars)" },
+            { "stretch",    "Stretch to fill screen" },
+            { "integer",    "Integer scaling (pixel perfect)" },
+            { NULL, NULL },
+        },
+        "aspect_fit"
+    },
+    {
         "freej2me_dojaversion",
         "DoJa API Version",
         "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
         {
-            { "10"   "DoJa-1.0" },
+            { "10",  "DoJa-1.0" },
             { "20",  "DoJa-2.0 & 1.5 OE" },
             { "30",  "DoJa-3.0 & 2.5 OE" },
             { "35",  "DoJa-3.5" },
@@ -1172,6 +1224,14 @@ static const struct retro_variable vars[] =
     { /* Screen Resolution */
         "freej2me_resolution",
         "Phone Resolution (Core Restart may be required); 240x320|96x65|101x64|101x80|128x128|130x130|120x160|128x160|132x176|176x208|176x220|220x176|208x208|180x320|320x180|240x240|208x320|320x240|240x400|400x240|240x432|240x480|360x360|352x416|360x640|640x360|640x480|480x800|800x480" 
+    },
+    { /* Auto-Detect Resolution */
+        "freej2me_auto_resolution",
+        "Auto-Detect Resolution; On|Off"
+    },
+    { /* Scaling Mode */
+        "freej2me_scaling_mode",
+        "Scaling Mode; aspect_fit|stretch|integer"
     },
     { /* DoJa API Version */
         "freej2me_dojaversion",

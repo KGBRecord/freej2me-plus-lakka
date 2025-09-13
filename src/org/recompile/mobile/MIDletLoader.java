@@ -323,6 +323,92 @@ public class MIDletLoader extends URLClassLoader
         return buffer.toByteArray();
     }
 
+	/**
+	 * Auto-detect screen resolution from JAR manifest and JAD properties
+	 * Returns {width, height} or null if no resolution hints found
+	 */
+	public int[] autoDetectResolution() 
+	{
+		// Check various resolution hint properties
+		String[] resolutionKeys = {
+			"Nokia-MIDlet-Target-Display-Size",  // Nokia format: "240,320"
+			"MIDlet-Canvas-Size",                // Standard format: "240x320" 
+			"ScreenSize",                        // Some variants
+			"Display-Size",                      // Another variant
+			"Resolution"                         // Generic
+		};
+
+		for (String key : resolutionKeys) 
+		{
+			String value = properties.get(key);
+			if (value != null && !value.trim().isEmpty()) 
+			{
+				int[] resolution = parseResolutionString(value);
+				if (resolution != null) 
+				{
+					Mobile.log(Mobile.LOG_INFO, MIDletLoader.class.getSimpleName() + ": Auto-detected resolution from " + key + ": " + resolution[0] + "x" + resolution[1]);
+					return resolution;
+				}
+			}
+		}
+
+		// Check if it's a Nokia app with standard sizes
+		String vendor = properties.get("MIDlet-Vendor");
+		String name = properties.get("MIDlet-Name");
+		if (vendor != null && vendor.toLowerCase().contains("nokia")) 
+		{
+			// Common Nokia resolutions based on phone models
+			if (name != null) 
+			{
+				String nameLower = name.toLowerCase();
+				if (nameLower.contains("240x320") || nameLower.contains("240x400")) { return new int[]{240, 320}; }
+				if (nameLower.contains("176x208")) { return new int[]{176, 208}; }
+				if (nameLower.contains("128x160")) { return new int[]{128, 160}; }
+			}
+		}
+
+		Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getSimpleName() + ": No resolution hints found in manifest/JAD");
+		return null; // No resolution hints found
+	}
+
+	/**
+	 * Parse resolution string in various formats: "240,320", "240x320", "240*320"
+	 */
+	private int[] parseResolutionString(String resolutionStr) 
+	{
+		if (resolutionStr == null || resolutionStr.trim().isEmpty()) { return null; }
+
+		resolutionStr = resolutionStr.trim();
+		String[] parts = null;
+
+		// Try different separators
+		if (resolutionStr.contains("x")) { parts = resolutionStr.split("x"); }
+		else if (resolutionStr.contains(",")) { parts = resolutionStr.split(","); }
+		else if (resolutionStr.contains("*")) { parts = resolutionStr.split("\\*"); }
+		else if (resolutionStr.contains(" ")) { parts = resolutionStr.split(" "); }
+
+		if (parts != null && parts.length == 2) 
+		{
+			try 
+			{
+				int width = Integer.parseInt(parts[0].trim());
+				int height = Integer.parseInt(parts[1].trim());
+				
+				// Sanity check for reasonable resolution values
+				if (width > 0 && height > 0 && width <= 800 && height <= 800) 
+				{
+					return new int[]{width, height};
+				}
+			} 
+			catch (NumberFormatException e) 
+			{
+				Mobile.log(Mobile.LOG_DEBUG, MIDletLoader.class.getSimpleName() + ": Invalid resolution format: " + resolutionStr);
+			}
+		}
+
+		return null;
+	}
+
 	public void start() throws MIDletStateChangeException
 	{
 		Method start = null;

@@ -10,9 +10,19 @@
 - **Simplified build system**: Makefile-based build automation  
 - **Lakka OS optimized**: Ready-to-use libretro core and system files
 - **Cross-platform builds**: Build on Linux, macOS, Windows with Docker
+- **Auto-resolution detection**: Automatically detects game resolution from JAR manifest
+- **Intelligent scaling**: Multiple scaling modes (aspect fit, stretch, integer scaling)
+- **Centered display**: Games are automatically centered with black bars when needed
 
-### Latest Release: v0.0.1
-📦 **[Download Latest Release](https://github.com/KGBRecord/freej2me-plus-lakka/releases/tag/0.0.1)**
+### Latest Release: v0.1.0-dev
+📦 **[Download Latest Release](https://github.com/KGBRecord/freej2me-plus-lakka/releases/tag/0.1.0-dev)**
+
+#### New in v0.1.0-dev:
+- ✨ **Auto-resolution detection** from JAR manifest files
+- 🎮 **Intelligent scaling modes**: aspect_fit, stretch, integer scaling  
+- 🖥️ **Centered display** with automatic black bars
+- ⚙️ **New RetroArch core options** for easy configuration
+- 🚀 **Optimized for full-screen gaming** on modern displays
 
 ### Quick Installation for Lakka:
 1. Copy `freej2me_libretro.so` → `/cores/` directory on Lakka microSD
@@ -20,6 +30,25 @@
 3. Restart Lakka
 
 📋 **[Full Installation Guide](LAKKA_INSTALL.md)**
+
+## :gear: Configuration Options
+
+### Auto-Resolution Detection
+Enable this option to automatically detect game resolution from JAR files:
+- **freej2me_auto_resolution** = `on` (recommended) / `off`
+
+### Scaling Modes
+Choose how games are displayed on your screen:
+- **freej2me_scaling_mode** = `aspect_fit` / `stretch` / `integer`
+  - **aspect_fit**: Maintains aspect ratio, adds black bars if needed (recommended)
+  - **stretch**: Fills entire screen, may distort the image
+  - **integer**: Pixel-perfect scaling, preserves original pixel clarity
+
+### Recommended Settings for Lakka:
+```
+freej2me_auto_resolution = "on"
+freej2me_scaling_mode = "aspect_fit" 
+```
 
 > **Note**: For general use, please refer to the original [FreeJ2ME-Plus repository](https://github.com/TASEmulators/freej2me-plus).
 
@@ -323,10 +352,35 @@ Although all arguments aside from the path are optional to launch FreeJ2ME-Plus 
 - Added `executable="/storage/java/bin/javac"` and `fork="true"` to javac tasks
 - Changed `bootclasspath` from `${java.home}/lib/rt.jar` to `/storage/java/jre/lib/rt.jar`
 
+### New Display Optimization Features:
+
+#### **Auto-Resolution Detection**:
+- Automatically reads game resolution from JAR manifest files
+- Supports multiple manifest formats: Nokia-MIDlet-Canvas-Size, Canvas-Size, Screen-Size
+- Eliminates need for manual resolution selection
+
+#### **Intelligent Scaling Modes**:
+- **Aspect Fit**: Maintains original aspect ratio with black bars (default)
+- **Stretch**: Fills entire screen, may distort aspect ratio  
+- **Integer**: Pixel-perfect integer scaling with black bars
+
+#### **Core Options Added**:
+- `freej2me_auto_resolution`: Enable/disable automatic resolution detection
+- `freej2me_scaling_mode`: Choose scaling behavior (aspect_fit/stretch/integer)
+
+#### **Files Modified for Display Optimization**:
+- **src/libretro/freej2me_libretro.h**: Added new core options
+- **src/libretro/freej2me_libretro.c**: Added scaling logic and argument passing
+- **src/org/recompile/freej2me/MIDletLoader.java**: Added auto-detection methods
+- **src/org/recompile/freej2me/MobilePlatform.java**: Integrated auto-detection calls
+- **src/org/recompile/freej2me/Libretro.java**: Added argument processing
+
 ### Why These Changes?
 - **Lakka OS restrictions**: Limited PATH environment and restricted file system access
 - **Consistency**: Ensures Java is always found at the expected location
 - **Reliability**: Eliminates dependency on system-wide Java installation
+- **User Experience**: Auto-detection and intelligent scaling provide optimal display without manual configuration
+- **Full-screen Gaming**: Games are properly centered and scaled for modern displays
 
 ### Upstream Compatibility:
 These changes are **specific to Lakka OS** and may not be suitable for general use. For the original version, please visit: [TASEmulators/freej2me-plus](https://github.com/TASEmulators/freej2me-plus)
