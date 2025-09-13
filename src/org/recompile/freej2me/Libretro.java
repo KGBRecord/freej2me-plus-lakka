@@ -190,6 +190,16 @@ public class Libretro
 		if(Integer.parseInt(args[25]) == 0) { Mobile.compatIgnoreVolumeChanges = false; }
 		else { Mobile.compatIgnoreVolumeChanges = true; }
 
+		/* Auto resolution detection from JAR manifest */
+		boolean autoResolution = (args.length > 26 && Integer.parseInt(args[26]) == 1);
+		
+		/* Scaling mode for libretro display */
+		int scalingMode = (args.length > 27) ? Integer.parseInt(args[27]) : 0;
+		
+		/* Store settings for later use */
+		System.setProperty("freej2me.autoResolution", String.valueOf(autoResolution));
+		System.setProperty("freej2me.scalingMode", String.valueOf(scalingMode));
+
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 

@@ -709,6 +709,18 @@ public class MobilePlatform
 				// Send dumped jar path to loader
 				URL jar = tmpfile.toURI().toURL();
 				loader = new MIDletLoader(jar, descriptorProperties);
+				
+				// Auto-detect resolution if enabled (for libretro)
+				if (isLibretro && shouldAutoDetectResolution()) 
+				{
+					int[] detectedRes = loader.autoDetectResolution();
+					if (detectedRes != null) 
+					{
+						Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getSimpleName() + ": Using auto-detected resolution: " + detectedRes[0] + "x" + detectedRes[1]);
+						resizeLCD(detectedRes[0], detectedRes[1]);
+					}
+				}
+				
 				if (Mobile.isDoJa)
 				{
 					Mobile.textEncoding = "Shift_JIS";
@@ -822,6 +834,18 @@ public class MobilePlatform
 			{
 				URL jar = new URL(fileName);
 				loader = new MIDletLoader(jar, descriptorProperties);
+				
+				// Auto-detect resolution if enabled (for libretro)
+				if (isLibretro && shouldAutoDetectResolution()) 
+				{
+					int[] detectedRes = loader.autoDetectResolution();
+					if (detectedRes != null) 
+					{
+						Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getSimpleName() + ": Using auto-detected resolution: " + detectedRes[0] + "x" + detectedRes[1]);
+						resizeLCD(detectedRes[0], detectedRes[1]);
+					}
+				}
+				
 				if (Mobile.isDoJa)
 				{
 					Mobile.textEncoding = Mobile.supportedEncodings[Mobile.SHIFT_JIS];
@@ -945,4 +969,14 @@ public class MobilePlatform
 	// LCDUI command bar and other "overlay" renders:
 
 	public void setPostFlushDraw(Runnable r) { postDraw = r; }
+
+	/**
+	 * Check if auto-resolution detection should be used.
+	 * This checks a system property that will be set by the libretro core.
+	 */
+	private boolean shouldAutoDetectResolution() 
+	{
+		String autoResolution = System.getProperty("freej2me.auto_resolution", "true");
+		return "true".equals(autoResolution) || "1".equals(autoResolution);
+	}
 }

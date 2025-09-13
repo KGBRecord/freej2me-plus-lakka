@@ -17,8 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#ifdef __linux__
 #include <stdarg.h>
+#ifdef __linux__
 #include <unistd.h>
 #include <sys/wait.h>
 #elif _WIN32
@@ -30,7 +30,7 @@
 #include <file/file_path.h>
 #include <retro_miscellaneous.h>
 
-#define NUM_ARGUMENTS 31
+#define NUM_ARGUMENTS 33
 
 const char *slash = path_default_slash();
 
@@ -100,6 +100,13 @@ struct retro_game_geometry Geometry;
 
 bool isRunning();
 bool javaOpen(char *cmd, char **params);
+#ifdef __linux__
+void write_to_pipe(int pipe, void *data, int datasize);
+int read_from_pipe(int pipe, void *data, int datasize);
+#elif _WIN32
+void write_to_pipe(void* pipe, void *data, int datasize);
+int read_from_pipe(void* pipe, void *data, int datasize);
+#endif
 
 #ifdef __linux__
 int javaProcess;
@@ -146,6 +153,11 @@ unsigned int frameBufferSize = MAX_WIDTH * MAX_HEIGHT * 3;
 unsigned int frame[MAX_WIDTH * MAX_HEIGHT];
 unsigned char frameBuffer[MAX_WIDTH * MAX_HEIGHT * 3];
 unsigned char frameHeader[15]; // This is always frameHeader's length in Libretro.java -1 (we read the status byte separately)
+
+/* Scaled frame for intelligent display */
+unsigned int scaledFrame[MAX_WIDTH * MAX_HEIGHT];
+int scaledWidth = MAX_WIDTH;
+int scaledHeight = MAX_HEIGHT;
 struct retro_game_info gameinfo;
 
 bool frameRequested = false;
@@ -159,6 +171,8 @@ char *systemPath; /* Path of FreeJ2ME's app */
 char** params; /* Char matrix containing launch arguments */
 unsigned int optstrlen; /* length of the string above */
 unsigned long int screenRes[2]; /* {width, height} */
+int autoResolution = 1; /* 0=Off (manual), 1=On (auto-detect) */
+int scalingMode = 0; /* 0=aspect_fit, 1=stretch, 2=integer */
 int rotateScreen = 0; /* Allows rotations between 0, 90, 180 and 270 degrees */
 int phoneType = 0; /* 0=Standard (Nokia/Sony/Samsung), 1=LG, 2=Motorola/SoftBank, 3=Motorola Triplets... */
 int backlightColor = 1; /* 0=Disabled, 1=Green, etc. */
@@ -334,6 +348,102 @@ void check_fast_forwarding(void)
     }
 }
 
+/* Intelligent scaling function */
+void scale_frame_to_display(void)
+{
+	int i, j;
+	float scaleX, scaleY, scale;
+	int offsetX = 0, offsetY = 0;
+	int srcX, srcY;
+	
+	// Clear scaled frame with black
+	memset(scaledFrame, 0, sizeof(scaledFrame));
+	
+	switch(scalingMode) 
+	{
+		case 0: // aspect_fit (default) - maintain aspect ratio with black bars
+			scaleX = (float)scaledWidth / (float)frameWidth;
+			scaleY = (float)scaledHeight / (float)frameHeight;
+			scale = (scaleX < scaleY) ? scaleX : scaleY; // Use smaller scale to fit
+			
+			// Calculate centered position
+			int newWidth = (int)(frameWidth * scale);
+			int newHeight = (int)(frameHeight * scale);
+			offsetX = (scaledWidth - newWidth) / 2;
+			offsetY = (scaledHeight - newHeight) / 2;
+			
+			// Scale and center the image
+			for(i = 0; i < newHeight; i++) {
+				for(j = 0; j < newWidth; j++) {
+					srcX = (int)(j / scale);
+					srcY = (int)(i / scale);
+					if(srcX < frameWidth && srcY < frameHeight) {
+						scaledFrame[(offsetY + i) * scaledWidth + (offsetX + j)] = 
+							frame[srcY * frameWidth + srcX];
+					}
+				}
+			}
+			break;
+			
+		case 1: // stretch - fill entire screen, may distort aspect ratio
+			scaleX = (float)scaledWidth / (float)frameWidth;
+			scaleY = (float)scaledHeight / (float)frameHeight;
+			
+			for(i = 0; i < scaledHeight; i++) {
+				for(j = 0; j < scaledWidth; j++) {
+					srcX = (int)(j / scaleX);
+					srcY = (int)(i / scaleY);
+					if(srcX < frameWidth && srcY < frameHeight) {
+						scaledFrame[i * scaledWidth + j] = frame[srcY * frameWidth + srcX];
+					}
+				}
+			}
+			break;
+			
+		case 2: // integer - integer scaling with black bars
+			{
+				int intScale = 1;
+				// Find largest integer scale that fits
+				while((frameWidth * (intScale + 1)) <= scaledWidth && 
+					  (frameHeight * (intScale + 1)) <= scaledHeight) {
+					intScale++;
+				}
+				
+				int newWidth = frameWidth * intScale;
+				int newHeight = frameHeight * intScale;
+				offsetX = (scaledWidth - newWidth) / 2;
+				offsetY = (scaledHeight - newHeight) / 2;
+				
+				// Integer scale the image
+				for(i = 0; i < frameHeight; i++) {
+					for(j = 0; j < frameWidth; j++) {
+						unsigned int pixel = frame[i * frameWidth + j];
+						// Fill intScale x intScale block with same pixel
+						for(int dy = 0; dy < intScale; dy++) {
+							for(int dx = 0; dx < intScale; dx++) {
+								int targetX = offsetX + j * intScale + dx;
+								int targetY = offsetY + i * intScale + dy;
+								if(targetX < scaledWidth && targetY < scaledHeight) {
+									scaledFrame[targetY * scaledWidth + targetX] = pixel;
+								}
+							}
+						}
+					}
+				}
+			}
+			break;
+			
+		default: // fallback to aspect_fit
+			{
+				int oldMode = scalingMode;
+				scalingMode = 0; // temporarily set to aspect_fit
+				scale_frame_to_display();
+				scalingMode = oldMode; // restore original mode
+				return;
+			}
+	}
+}
+
 /* Function to check the core's config states in the libretro frontend */
 static void check_variables(bool first_time_startup)
 {
@@ -351,6 +461,21 @@ static void check_variables(bool first_time_startup)
 		if (resChar) { screenRes[0] = strtoul(resChar, NULL, 0); }
 		resChar = strtok(NULL, "x");
 		if (resChar) { screenRes[1] = strtoul(resChar, NULL, 0); }
+	}
+
+	var.key = "freej2me_auto_resolution";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		if (!strcmp(var.value, "Off"))      { autoResolution = 0; }
+		else if (!strcmp(var.value, "On"))  { autoResolution = 1; }
+	}
+
+	var.key = "freej2me_scaling_mode";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		if (!strcmp(var.value, "aspect_fit"))      { scalingMode = 0; }
+		else if (!strcmp(var.value, "stretch"))    { scalingMode = 1; }
+		else if (!strcmp(var.value, "integer"))    { scalingMode = 2; }
 	}
 
 
@@ -682,13 +807,18 @@ void retro_init(void)
 	/* init buffers, structs */
 	memset(frame, 0, frameSize);
 	memset(frameBuffer, 0, frameBufferSize);
+	memset(scaledFrame, 0, sizeof(scaledFrame));
+
+	/* Initialize scaled frame dimensions to max */
+	scaledWidth = MAX_WIDTH;
+	scaledHeight = MAX_HEIGHT;
 
 	/* Check variables and set parameters */
 	check_variables(true);
 	char resArg[2][4], rotateArg[2], phoneArg[3], fpsArg[3], soundArg[2], midiArg[2], dumpAudioArg[2], logLevelArg[2], spdHackNoAlphaArg[2], backlightArg[2];
 	char compatFantasyZoneFixArg[2], compatTransToOriginOnGFXResetArg[2], fontArg[2], offsetArg[3], dumpGFXArg[2], tempKJXArg[2], m3gUntexArg[2], m3gWireArg[2];
 	char fpsunlockHack[2], compatImmediateRepaintArg[2], compatOverridePlatCheckArg[2], compatSiemensFriendlyDrawArg[2], spdHackM3GHalfResArg[2], dojaVersionArg[4];
-	char compatIgnoreVolumeChangesArg[2];
+	char compatIgnoreVolumeChangesArg[2], autoResolutionArg[2], scalingModeArg[2];
 
 	sprintf(resArg[0], "%lu", screenRes[0]);
 	sprintf(resArg[1], "%lu", screenRes[1]);
@@ -716,6 +846,8 @@ void retro_init(void)
 	sprintf(spdHackM3GHalfResArg, "%d", spdHackM3GHalfRes);
 	sprintf(dojaVersionArg, "%d", dojaVersion);
 	sprintf(compatIgnoreVolumeChangesArg, "%d", compatIgnoreVolumeChanges);
+	sprintf(autoResolutionArg, "%d", autoResolution);
+	sprintf(scalingModeArg, "%d", scalingMode);
 
 	/* We need to clean up any argument memory from the previous launch arguments in order to load up updated ones */
 	if (restarting) { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME-Plus.\n"); }
@@ -775,7 +907,9 @@ void retro_init(void)
 	params[27] = strdup(spdHackM3GHalfResArg);
 	params[28] = strdup(dojaVersionArg);
 	params[29] = strdup(compatIgnoreVolumeChangesArg);
-	params[30] = NULL; // Null-terminate the array
+	params[30] = strdup(autoResolutionArg);
+	params[31] = strdup(scalingModeArg);
+	params[32] = NULL; // Null-terminate the array
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
 
@@ -1107,14 +1241,14 @@ void retro_run(void)
 				{
 					Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[FRAMES_DROPPED_MSG]);
 				}
-				Video(frame, frameWidth, frameHeight, sizeof(unsigned int) * frameWidth);
+				Video(scaledFrame, scaledWidth, scaledHeight, sizeof(unsigned int) * scaledWidth);
 				return;
 			}
 			if(status<0 && errno != EAGAIN)
 			{
 				Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[INVALID_STATUS_MSG]);
 				fflush(stdout);
-				Video(frame, frameWidth, frameHeight, sizeof(unsigned int) * frameWidth);
+				Video(scaledFrame, scaledWidth, scaledHeight, sizeof(unsigned int) * scaledWidth);
 				return;
 			}
 			/*
@@ -1168,12 +1302,12 @@ void retro_run(void)
 				frameSize = w * h;
 				frameBufferSize = frameSize * 3;
 
-				/* update geometry */
-				Geometry.base_width = w;
-				Geometry.base_height = h;
+				/* update geometry - always use scaled display dimensions */
+				Geometry.base_width = scaledWidth;
+				Geometry.base_height = scaledHeight;
 				Geometry.max_width = MAX_WIDTH;
 				Geometry.max_height = MAX_HEIGHT;
-				Geometry.aspect_ratio = ((float)w / (float)h);
+				Geometry.aspect_ratio = ((float)scaledWidth / (float)scaledHeight);
 				Environ(RETRO_ENVIRONMENT_SET_GEOMETRY, &Geometry);
 			}
 		}
@@ -1290,8 +1424,11 @@ void retro_run(void)
 		}
 	}
 
-	/* send frame to libretro irrespective of FreeJ2ME running (for error messages) */
-	Video(frame, frameWidth, frameHeight, sizeof(unsigned int) * frameWidth);
+	/* Apply intelligent scaling */
+	scale_frame_to_display();
+
+	/* send scaled frame to libretro */
+	Video(scaledFrame, scaledWidth, scaledHeight, sizeof(unsigned int) * scaledWidth);
 
 	/* 
  	 * I couldn't find a way for the frontend to notify FreeJ2ME's process that it has paused,
