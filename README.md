@@ -14,10 +14,10 @@
 - **Intelligent scaling**: Multiple scaling modes (aspect fit, stretch, integer scaling)
 - **Centered display**: Games are automatically centered with black bars when needed
 
-### Latest Release: v0.1.0-dev
-📦 **[Download Latest Release](https://github.com/KGBRecord/freej2me-plus-lakka/releases/tag/0.1.0-dev)**
+### Latest Release: v0.1.1-dev
+📦 **[Download Latest Release](https://github.com/KGBRecord/freej2me-plus-lakka/releases/tag/0.1.1-dev)**
 
-#### New in v0.1.0-dev:
+#### New in v0.1.1-dev:
 - ✨ **Auto-resolution detection** from JAR manifest files
 - 🎮 **Intelligent scaling modes**: aspect_fit, stretch, integer scaling  
 - 🖥️ **Centered display** with automatic black bars

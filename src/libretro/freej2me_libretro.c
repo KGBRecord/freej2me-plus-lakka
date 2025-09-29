@@ -99,6 +99,7 @@ struct retro_game_geometry Geometry;
 
 
 bool isRunning();
+char* read_java_path_from_config(void);
 bool javaOpen(char *cmd, char **params);
 #ifdef __linux__
 void write_to_pipe(int pipe, void *data, int datasize);
@@ -168,6 +169,7 @@ int framesDropped = 0;
 
 char *options_update; /* String containing the options updated in check_variables() */
 char *systemPath; /* Path of FreeJ2ME's app */
+char *javaPath; /* Path to Java executable from config.ini */
 char** params; /* Char matrix containing launch arguments */
 unsigned int optstrlen; /* length of the string above */
 unsigned long int screenRes[2]; /* {width, height} */
@@ -871,13 +873,22 @@ void retro_init(void)
 
 	free(freej2mePath);
 
+	/* Read Java path from config or use default */
+	javaPath = read_java_path_from_config();
+	if (javaPath == NULL) 
+	{
+		/* Fallback to default hardcoded path */
+#ifdef __linux__
+		javaPath = strdup("/storage/java/bin/java");
+#elif _WIN32
+		javaPath = strdup("/storage/java/bin/javaw");
+#endif
+		log_fn(RETRO_LOG_INFO, "Using default Java path: %s\n", javaPath);
+	}
+
 	/* Allocate memory for launch arguments */
 	params = (char**)malloc(sizeof(char*) * NUM_ARGUMENTS);
-#ifdef __linux__
-	params[0] = strdup("/storage/java/bin/java");
-#elif _WIN32
-	params[0] = strdup("/storage/java/bin/javaw");
-#endif
+	params[0] = strdup(javaPath);
 	params[1] = strdup("-jar");
 	params[2] = strdup(supported_encodings[characterEncoding]);
 	params[3] = strdup(freej2meapp);
@@ -920,6 +931,13 @@ void retro_init(void)
 	{
 		for (int i = 0; params[i] != NULL; i++) { free(params[i]); }
 		free(params);
+	}
+	
+	// Free javaPath as it's no longer needed
+	if (javaPath) 
+	{
+		free(javaPath);
+		javaPath = NULL;
 	}
 
 	if(!booted) 
@@ -1555,6 +1573,59 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {  }
 bool retro_load_game_special(unsigned game_type, const struct retro_game_info *info, size_t num_info) { return false; }
 void retro_set_controller_port_device(unsigned port, unsigned device) {  }
 
+
+/* Read Java path from config.ini */
+char* read_java_path_from_config(void)
+{
+	char configPath[512];
+	FILE *configFile;
+	char line[512];
+	char *javaDir = NULL;
+	char *result = NULL;
+	
+	/* Build path to config.ini in system directory */
+	snprintf(configPath, sizeof(configPath), "%s/config.ini", systemPath);
+	
+	configFile = fopen(configPath, "r");
+	if (configFile == NULL) 
+	{
+		log_fn(RETRO_LOG_WARN, "Config file not found at %s, using default Java path\n", configPath);
+		return NULL;
+	}
+	
+	/* Read line by line looking for java_path */
+	while (fgets(line, sizeof(line), configFile)) 
+	{
+		/* Remove newline */
+		line[strcspn(line, "\r\n")] = 0;
+		
+		/* Skip empty lines and comments */
+		if (line[0] == '\0' || line[0] == '#' || line[0] == ';') 
+			continue;
+			
+		/* Look for java_path= */
+		if (strncmp(line, "java_path=", 10) == 0) 
+		{
+			javaDir = line + 10; /* Skip "java_path=" */
+			
+			/* Allocate memory for full Java executable path */
+			result = malloc(strlen(javaDir) + 20); /* Extra space for /bin/java or /bin/javaw */
+			if (result != NULL) 
+			{
+#ifdef __linux__
+				snprintf(result, strlen(javaDir) + 20, "%s/bin/java", javaDir);
+#elif _WIN32
+				snprintf(result, strlen(javaDir) + 20, "%s/bin/javaw", javaDir);
+#endif
+				log_fn(RETRO_LOG_INFO, "Java path from config: %s\n", result);
+			}
+			break;
+		}
+	}
+	
+	fclose(configFile);
+	return result;
+}
 
 /* Java Process */
 bool javaOpen(char *cmd, char **params)
