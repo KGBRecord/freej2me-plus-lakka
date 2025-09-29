@@ -253,5 +253,50 @@
 - **🆕 Easy Migration:** Copy your Java installation between devices using config.ini
 - **🆕 Multiple Java Versions:** Switch between Java installations by updating config.ini
 
+## ⌨️ Virtual Keyboard
+
+### Overview
+FreeJ2ME Plus includes a built-in virtual keyboard overlay for text input in J2ME games. This feature provides a modern solution for games that require text entry (names, messages, etc.).
+
+### Hotkey Controls
+- **Toggle Virtual Keyboard:** `SELECT + START` (press both buttons simultaneously)
+  - *Nintendo Switch Lite:* `- (Minus) + + (Plus)` buttons
+- **Navigation:** Use D-pad (`↑↓←→`) to move cursor on keyboard
+- **Select Character:** `A` button to type the selected character
+  - *Nintendo Switch Lite:* `B` button (bottom face button)
+- **Close Keyboard:** `SELECT + START` again
+
+### Keyboard Layout
+The virtual keyboard features a QWERTY-style layout with 4 rows:
+```
+Q W E R T Y U I O P
+A S D F G H J K L  
+Z X C V B N M , .  
+  SPACE    0-9
+```
+
+### Usage in Games
+1. **Open text input field in game** (name entry, password, etc.)
+2. **Press `SELECT + START`** to open virtual keyboard overlay
+   - *Nintendo Switch Lite:* Press `- (Minus) + + (Plus)` simultaneously
+3. **Navigate with D-pad** to desired character
+4. **Press `A`** to type the character into the game
+   - *Nintendo Switch Lite:* Press `B` button
+5. **Repeat for each character** you want to type
+6. **Press `SELECT + START`** to close keyboard when done
+
+### Features
+- **Overlay Design:** Keyboard appears over game screen without interrupting gameplay
+- **Responsive Navigation:** Single button press movement (no auto-repeat)
+- **Game Compatibility:** Works with all J2ME games that support text input
+- **Visual Feedback:** Current cursor position highlighted on keyboard
+- **Input Isolation:** When keyboard is open, D-pad and A button are dedicated to keyboard control
+
+### Notes
+- Virtual keyboard bypasses the traditional J2ME phone-style T9 text input
+- Provides faster, more intuitive text entry compared to classic phone keypads
+- Keyboard state is preserved during gameplay sessions
+- Works with both touch-based and traditional button-controlled games
+
 ---
 **Enjoy your retro J2ME gaming experience on Lakka! 📱🎮**

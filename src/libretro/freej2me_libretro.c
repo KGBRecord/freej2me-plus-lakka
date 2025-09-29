@@ -141,6 +141,20 @@ bool restarting = false;
 bool useAnalogAsEntireKeypad = false; // Enhancement for games like Time Crisis Elite which use the keypad's diagonals exclusively, and not 2+4, 6+8, etc.
 float analogDeadzone = 0.10f; // Additional Deadzone over libretro for input reads
 
+/* Virtual Keyboard System */
+bool virtual_keyboard_active = false;
+bool virtualKeyboardVisible = false;
+int virtualKbCursorX = 0;
+int virtualKbCursorY = 0;
+int virtualKeyboardHotkey1 = 0; // First hotkey state (SELECT)
+int virtualKeyboardHotkey2 = 0; // Second hotkey state (START)
+bool virtualKeyboardToggled = false; // Prevent multiple toggles
+
+/* Virtual Keyboard Function Prototypes */
+void draw_virtual_keyboard(void);
+void handle_virtual_keyboard_input(void);
+void send_virtual_key(char key);
+
 bool stoppedRunning = false;
 bool resetRequested = false;
 unsigned int characterEncoding = 0; // Character encoding used by FreeJ2ME's app. Normally starts with UTF-8
@@ -272,6 +286,27 @@ unsigned int joymouseClickedImage[408] =
 	0,0,0,0,0,1,2,2,2,2,2,2,2,2,1,0,0,
 	0,0,0,0,0,1,2,2,2,2,2,2,2,2,1,0,0,
 	0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0
+};
+
+/* Virtual Keyboard Layout */
+#define VKB_ROWS 4
+#define VKB_COLS 10
+#define VKB_KEY_WIDTH 24
+#define VKB_KEY_HEIGHT 20
+#define VKB_MARGIN 2
+
+const char virtualKeyboardLayout[VKB_ROWS][VKB_COLS] = {
+	{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'},
+	{'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'},
+	{'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ' '},
+	{'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '\b'}
+};
+
+const char* virtualKeyboardLabels[VKB_ROWS][VKB_COLS] = {
+	{"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"},
+	{"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"},
+	{"A", "S", "D", "F", "G", "H", "J", "K", "L", "SP"},
+	{"Z", "X", "C", "V", "B", "N", "M", ",", ".", "BS"}
 };
 
 /*
@@ -1119,6 +1154,38 @@ void retro_run(void)
 		int touchY = InputState(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
 		int touchP = InputState(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
 
+		/* Handle Virtual Keyboard Hotkey (SELECT + START) */
+		int currentSelect = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT);
+		int currentStart = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
+		
+		// Check for hotkey combination
+		if (currentSelect && currentStart && !virtualKeyboardToggled) {
+			virtual_keyboard_active = !virtual_keyboard_active;
+			virtualKeyboardToggled = true;
+			if (virtual_keyboard_active) {
+				log_fn(RETRO_LOG_INFO, "Virtual keyboard opened\n");
+			} else {
+				log_fn(RETRO_LOG_INFO, "Virtual keyboard closed\n");
+			}
+		}
+		
+		// Reset toggle flag when buttons are released
+		if (!currentSelect || !currentStart) {
+			virtualKeyboardToggled = false;
+		}
+		
+		/* Handle Virtual Keyboard Input */
+		if (virtual_keyboard_active) {
+			handle_virtual_keyboard_input();
+			// When keyboard is visible, don't process normal game input for D-pad and A
+			// to prevent interference
+			joypad[0] = 0; // Up
+			joypad[1] = 0; // Down  
+			joypad[2] = 0; // Left
+			joypad[3] = 0; // Right
+			joypad[4] = 0; // A (num 9)
+		}
+
 		/* Process rumble events */
 		if (rumbleTime > 0 && rumble.set_rumble_state)
 		{
@@ -1445,6 +1512,11 @@ void retro_run(void)
 	/* Apply intelligent scaling */
 	scale_frame_to_display();
 
+	/* Draw virtual keyboard overlay if enabled */
+	if (virtual_keyboard_active) {
+		draw_virtual_keyboard();
+	}
+
 	/* send scaled frame to libretro */
 	Video(scaledFrame, scaledWidth, scaledHeight, sizeof(unsigned int) * scaledWidth);
 
@@ -1573,6 +1645,123 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {  }
 bool retro_load_game_special(unsigned game_type, const struct retro_game_info *info, size_t num_info) { return false; }
 void retro_set_controller_port_device(unsigned port, unsigned device) {  }
 
+/* Virtual Keyboard Functions */
+void draw_virtual_keyboard(void)
+{
+	if (!virtualKeyboardVisible) return;
+	
+	int startX = (frameWidth - (VKB_COLS * VKB_KEY_WIDTH)) / 2;
+	int startY = frameHeight - (VKB_ROWS * VKB_KEY_HEIGHT) - 10;
+	
+	// Draw keyboard background
+	for (int y = startY - 5; y < startY + (VKB_ROWS * VKB_KEY_HEIGHT) + 5; y++) {
+		for (int x = startX - 5; x < startX + (VKB_COLS * VKB_KEY_WIDTH) + 5; x++) {
+			if (x >= 0 && x < frameWidth && y >= 0 && y < frameHeight) {
+				frame[y * frameWidth + x] = 0x444444; // Dark gray background
+			}
+		}
+	}
+	
+	// Draw keys
+	for (int row = 0; row < VKB_ROWS; row++) {
+		for (int col = 0; col < VKB_COLS; col++) {
+			int keyX = startX + col * VKB_KEY_WIDTH;
+			int keyY = startY + row * VKB_KEY_HEIGHT;
+			
+			unsigned int keyColor = 0x888888; // Normal key color
+			if (virtualKbCursorX == col && virtualKbCursorY == row) {
+				keyColor = 0xFFFF00; // Highlighted key (yellow)
+			}
+			
+			// Draw key background
+			for (int y = keyY + VKB_MARGIN; y < keyY + VKB_KEY_HEIGHT - VKB_MARGIN; y++) {
+				for (int x = keyX + VKB_MARGIN; x < keyX + VKB_KEY_WIDTH - VKB_MARGIN; x++) {
+					if (x >= 0 && x < frameWidth && y >= 0 && y < frameHeight) {
+						frame[y * frameWidth + x] = keyColor;
+					}
+				}
+			}
+			
+			// Draw key border
+			unsigned int borderColor = 0xAAAAAA;
+			// Top and bottom borders
+			for (int x = keyX + VKB_MARGIN; x < keyX + VKB_KEY_WIDTH - VKB_MARGIN; x++) {
+				if (x >= 0 && x < frameWidth) {
+					if (keyY + VKB_MARGIN >= 0 && keyY + VKB_MARGIN < frameHeight)
+						frame[(keyY + VKB_MARGIN) * frameWidth + x] = borderColor;
+					if (keyY + VKB_KEY_HEIGHT - VKB_MARGIN - 1 >= 0 && keyY + VKB_KEY_HEIGHT - VKB_MARGIN - 1 < frameHeight)
+						frame[(keyY + VKB_KEY_HEIGHT - VKB_MARGIN - 1) * frameWidth + x] = borderColor;
+				}
+			}
+			// Left and right borders
+			for (int y = keyY + VKB_MARGIN; y < keyY + VKB_KEY_HEIGHT - VKB_MARGIN; y++) {
+				if (y >= 0 && y < frameHeight) {
+					if (keyX + VKB_MARGIN >= 0 && keyX + VKB_MARGIN < frameWidth)
+						frame[y * frameWidth + keyX + VKB_MARGIN] = borderColor;
+					if (keyX + VKB_KEY_WIDTH - VKB_MARGIN - 1 >= 0 && keyX + VKB_KEY_WIDTH - VKB_MARGIN - 1 < frameWidth)
+						frame[y * frameWidth + keyX + VKB_KEY_WIDTH - VKB_MARGIN - 1] = borderColor;
+				}
+			}
+		}
+	}
+}
+
+void send_virtual_key(char key)
+{
+	if (key == '\b') {
+		// Send backspace as KEY_STAR
+		unsigned char keyEvent[5] = {1, 0, 0, 0, 42}; // 42 = '*' key code
+		write_to_pipe(pWrite[1], keyEvent, 5);
+	} else if (key == ' ') {
+		// Send space as KEY_POUND
+		unsigned char keyEvent[5] = {1, 0, 0, 0, 35}; // 35 = '#' key code
+		write_to_pipe(pWrite[1], keyEvent, 5);
+	} else {
+		// Send character directly to Java via pipe
+		unsigned char keyEvent[5] = {1, 0, 0, 0, (unsigned char)key};
+		write_to_pipe(pWrite[1], keyEvent, 5);
+	}
+}
+
+void handle_virtual_keyboard_input(void)
+{
+	if (!virtual_keyboard_active) return;
+	
+	static int prevUp = 0, prevDown = 0, prevLeft = 0, prevRight = 0, prevA = 0;
+	
+	int currentUp = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
+	int currentDown = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
+	int currentLeft = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
+	int currentRight = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
+	int currentA = InputState(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A);
+	
+	// Navigation (only on button press, not hold)
+	if (currentUp && !prevUp) {
+		virtualKbCursorY = (virtualKbCursorY - 1 + VKB_ROWS) % VKB_ROWS;
+	}
+	if (currentDown && !prevDown) {
+		virtualKbCursorY = (virtualKbCursorY + 1) % VKB_ROWS;
+	}
+	if (currentLeft && !prevLeft) {
+		virtualKbCursorX = (virtualKbCursorX - 1 + VKB_COLS) % VKB_COLS;
+	}
+	if (currentRight && !prevRight) {
+		virtualKbCursorX = (virtualKbCursorX + 1) % VKB_COLS;
+	}
+	
+	// Key selection
+	if (currentA && !prevA) {
+		char selectedKey = virtualKeyboardLayout[virtualKbCursorY][virtualKbCursorX];
+		send_virtual_key(selectedKey);
+	}
+	
+	// Save previous states
+	prevUp = currentUp;
+	prevDown = currentDown;
+	prevLeft = currentLeft; 
+	prevRight = currentRight;
+	prevA = currentA;
+}
 
 /* Read Java path from config.ini */
 char* read_java_path_from_config(void)
