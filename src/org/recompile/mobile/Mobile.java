@@ -537,8 +537,8 @@ public class Mobile
 				case KDDI_LEFT:  return Canvas.LEFT; // Left
 				case KDDI_RIGHT: return Canvas.RIGHT; // Right
 				case KDDI_FIRE:  return Canvas.FIRE; // Y
-				case KDDI_SOFT1: return Canvas.KEY_SOFT_LEFT; // Start   (should be GAME_A, but let's go with the special keys)
-				case KDDI_SOFT2: return Canvas.KEY_SOFT_RIGHT; // Select (should be GAME_B, but let's go with the special keys)
+				case KDDI_SOFT1: return Canvas.GAME_A;
+				case KDDI_SOFT2: return Canvas.GAME_B;
 			}
 		}
 		if (lg) 
@@ -550,8 +550,6 @@ public class Mobile
 				case LG_LEFT:  return Canvas.LEFT; // Left
 				case LG_RIGHT: return Canvas.RIGHT; // Right
 				case LG_FIRE:  return Canvas.FIRE; // Y
-				case LG_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case LG_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 		if (motorola) 
@@ -563,8 +561,6 @@ public class Mobile
 				case MOTOROLA_LEFT:  return Canvas.LEFT; // Left
 				case MOTOROLA_RIGHT: return Canvas.RIGHT; // Right
 				case MOTOROLA_FIRE:  return Canvas.FIRE; // Y
-				case MOTOROLA_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case MOTOROLA_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 		if (motoTriplets) 
@@ -576,8 +572,6 @@ public class Mobile
 				case TRIPLETS_LEFT:  return Canvas.LEFT; // Left
 				case TRIPLETS_RIGHT: return Canvas.RIGHT; // Right
 				case TRIPLETS_FIRE:  return Canvas.FIRE; // Y
-				case TRIPLETS_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case TRIPLETS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 		if (motoV8) 
@@ -589,8 +583,7 @@ public class Mobile
 				case MOTOV8_LEFT:  return Canvas.LEFT; // Left
 				case MOTOV8_RIGHT: return Canvas.RIGHT; // Right
 				case MOTOV8_FIRE:  return Canvas.FIRE; // Y
-				case MOTOV8_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case MOTOV8_SOFT2: return Canvas.KEY_SOFT_RIGHT;
+
 			}
 		}
 		if (nokiaKeyboard) 
@@ -614,8 +607,6 @@ public class Mobile
 				case NOKIAKB_NUM0:  return Canvas.KEY_NUM0;
 				case NOKIAKB_STAR:  return Canvas.KEY_STAR;
 				case NOKIAKB_POUND: return Canvas.KEY_POUND;
-				case NOKIAKB_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case NOKIAKB_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 		if (sagem) 
@@ -627,8 +618,6 @@ public class Mobile
 				case SAGEM_LEFT:  return Canvas.LEFT; // Left
 				case SAGEM_RIGHT: return Canvas.RIGHT; // Right
 				case SAGEM_SOFT3: return Canvas.FIRE; // Y
-				case SAGEM_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SAGEM_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 		if (siemens) 
@@ -640,8 +629,6 @@ public class Mobile
 				case SIEMENS_LEFT:  return Canvas.LEFT; // Left
 				case SIEMENS_RIGHT: return Canvas.RIGHT; // Right
 				case SIEMENS_FIRE:  return Canvas.FIRE; // Y
-				case SIEMENS_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SIEMENS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 		if (sharp) 
@@ -653,8 +640,6 @@ public class Mobile
 				case SHARP_LEFT:  return Canvas.LEFT; // Left
 				case SHARP_RIGHT: return Canvas.RIGHT; // Right
 				case SHARP_FIRE:  return Canvas.FIRE; // Y
-				case SHARP_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SHARP_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 		if (skt)
@@ -666,13 +651,11 @@ public class Mobile
 				case Canvas.KEY_LEFT:  return Canvas.LEFT; // Left
 				case Canvas.KEY_RIGHT: return Canvas.RIGHT; // Right
 				case Canvas.KEY_FIRE:  return Canvas.FIRE; // Y
-				case Canvas.KEY_COML:  return Canvas.KEY_SOFT_LEFT;
-				case Canvas.KEY_COMR:  return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 
 		// J2ME Canvas standard keycodes, to match against any keys not covered above (Canvas does not handle left/right soft keys).
-		switch (keycode) // TODO: This can probably be turned into a single 'return Canvas.getKeyCode(keycode)''
+		switch (keycode)
 		{
 			case NOKIA_UP:         return Canvas.UP;
 			case NOKIA_DOWN:       return Canvas.DOWN;
@@ -691,8 +674,6 @@ public class Mobile
 			case Canvas.KEY_STAR:  return Canvas.KEY_STAR;
 			case Canvas.KEY_POUND: return Canvas.KEY_POUND;
 			case NOKIA_SOFT3:      return Canvas.FIRE;
-			case NOKIA_SOFT1:      return Canvas.KEY_SOFT_LEFT;
-			case NOKIA_SOFT2:      return Canvas.KEY_SOFT_RIGHT;
 		}
 
 		// If a matching key wasn't found, return 0;
@@ -712,8 +693,8 @@ public class Mobile
 				case KDDI_LEFT:  return Canvas.LEFT; // Left
 				case KDDI_RIGHT: return Canvas.RIGHT; // Right
 				case KDDI_FIRE:  return Canvas.FIRE; // Y
-				case KDDI_SOFT1: return Canvas.KEY_SOFT_LEFT; // Start   (should be GAME_A, but let's go with the special keys)
-				case KDDI_SOFT2: return Canvas.KEY_SOFT_RIGHT; // Select (should be GAME_B, but let's go with the special keys)
+				case KDDI_SOFT1: return Canvas.KEY_SOFT_LEFT; // Start   (gameAction is GAME_A, but we go with the special keys for CanvasAction)
+				case KDDI_SOFT2: return Canvas.KEY_SOFT_RIGHT; // Select (gameAction is GAME_B, but we go with the special keys for CanvasAction)
 			}
 		}
 		if (lg) 
@@ -847,7 +828,7 @@ public class Mobile
 		}
 		
 		// J2ME Canvas standard keycodes, to match against any keys not covered above (Canvas does not handle left/right soft keys).
-		switch (keycode) // TODO: This can probably be turned into a single 'return Canvas.getKeyCode(keycode)''
+		switch (keycode)
 		{
 			case NOKIA_UP:         return Canvas.UP;
 			case NOKIA_DOWN:       return Canvas.DOWN;

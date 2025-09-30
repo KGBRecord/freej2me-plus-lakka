@@ -21,8 +21,6 @@ public class M3GMath
 	static final float EPSILON = Float.MIN_VALUE * 16f;
 
 	// Faster alternatives to Java's Math library, we don't need the more robust checks.
-	private static final float DEGREES_TO_RADIANS = (float) Math.PI / 180.0f;
-    private static final float RADIANS_TO_DEGREES = 180.0f / (float) Math.PI;
 
 	private static final float[] preCalcSin = new float[65536];
 
@@ -51,16 +49,19 @@ public class M3GMath
 		return cosine != 0 ? sine / cosine : Float.POSITIVE_INFINITY;
 	}
 	
-	// Acos is a TODO for now, it's just casting standard Math to float
+	// Approximation: acos(a) ~= pi/2 + (ba + ca^3) / (1 + da^2 + ea^4)
 	public static float acos(float a) 
 	{
-		return (float) Math.acos(a);
+		return (float) (Math.PI / 2 + 
+                        ((-0.939115566365855 * a) +(0.9217841528914573f * Math.pow(a, 3))) / 
+                        (1 + (-1.2845906244690837f * Math.pow(a, 2)) + 
+                         (0.295624144969963174f * Math.pow(a, 4))));
 	}
 
 	// Those 'to*' methods are just backported from Java 9
-	public static float toRadians(float angdeg) { return angdeg * DEGREES_TO_RADIANS; }
+	public static float toRadians(float angdeg) { return angdeg * 0.017453292f; } // angdeg * (Math.PI/180.0f)
 
-	public static float toDegrees(float angrad) { return angrad * RADIANS_TO_DEGREES; }
+	public static float toDegrees(float angrad) { return angrad * 57.29577951f; } // angdeg * (180.0f / Math.PI)
 
 	public static float sqrt(float x) 
 	{
@@ -101,6 +102,17 @@ public class M3GMath
 	public static int roundPositive(float value) { return (int) (value + 0.5f); }
 
 	public static int roundNegative(float value) { return (int) (value - 0.5f); }
+
+	// Much faster atan2 approximation heavily based on https://gist.github.com/volkansalma/2972237
+	public static final float atan2(float y, float x) 
+	{
+		final float abs_y = abs(y) + 1e-10f;
+		final float r = (x - Math.copySign(abs_y, x)) / (abs_y + abs(x));
+		float angle = (float) (Math.PI / 2) - Math.copySign((float) (Math.PI / 4), x);
+
+		angle += (0.1963f * r * r - 0.9817f) * r;
+		return Math.copySign(angle, y); // Negate if y is negative
+	}
 
 	// Now we get to stuff specific to M3G
 
@@ -281,7 +293,7 @@ public class M3GMath
 
 		if (sinTheta > EPSILON) 
 		{
-			s = (float) (Math.atan2(sinTheta, quat[3]) / sinTheta);
+			s = atan2(sinTheta, quat[3]) / sinTheta;
 			x = s * quat[0];
 			y = s * quat[1];
 			z = s * quat[2];
