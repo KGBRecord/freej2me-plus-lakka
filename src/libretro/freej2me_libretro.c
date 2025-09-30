@@ -1161,7 +1161,10 @@ void retro_run(void)
 		// Check for hotkey combination
 		if (currentSelect && currentStart && !virtualKeyboardToggled) {
 			virtual_keyboard_active = !virtual_keyboard_active;
+			virtualKeyboardVisible = virtual_keyboard_active;
 			virtualKeyboardToggled = true;
+			log_fn(RETRO_LOG_INFO, "Virtual keyboard toggle - active: %d, cursor: %d,%d\n", 
+				virtual_keyboard_active, virtualKbCursorX, virtualKbCursorY);
 			if (virtual_keyboard_active) {
 				log_fn(RETRO_LOG_INFO, "Virtual keyboard opened\n");
 			} else {
@@ -1648,59 +1651,102 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {  }
 /* Virtual Keyboard Functions */
 void draw_virtual_keyboard(void)
 {
-	if (!virtualKeyboardVisible) return;
+	if (!virtual_keyboard_active) return;
 	
-	int startX = (frameWidth - (VKB_COLS * VKB_KEY_WIDTH)) / 2;
-	int startY = frameHeight - (VKB_ROWS * VKB_KEY_HEIGHT) - 10;
+	log_fn(RETRO_LOG_DEBUG, "Drawing virtual keyboard: frame %dx%d, cursor %d,%d\n", 
+		frameWidth, frameHeight, virtualKbCursorX, virtualKbCursorY);
 	
-	// Draw keyboard background
-	for (int y = startY - 5; y < startY + (VKB_ROWS * VKB_KEY_HEIGHT) + 5; y++) {
-		for (int x = startX - 5; x < startX + (VKB_COLS * VKB_KEY_WIDTH) + 5; x++) {
+	// Calculate keyboard dimensions and position
+	int keyboardWidth = VKB_COLS * VKB_KEY_WIDTH;
+	int keyboardHeight = VKB_ROWS * VKB_KEY_HEIGHT;
+	
+	// Make sure keyboard fits on screen
+	if (keyboardWidth > frameWidth || keyboardHeight > frameHeight) {
+		log_fn(RETRO_LOG_WARN, "Virtual keyboard too large for frame: kbd=%dx%d, frame=%dx%d\n",
+			keyboardWidth, keyboardHeight, frameWidth, frameHeight);
+		return;
+	}
+	
+	int startX = (frameWidth - keyboardWidth) / 2;
+	int startY = frameHeight - keyboardHeight - 10;
+	
+	// Ensure keyboard doesn't go off-screen
+	if (startX < 0) startX = 0;
+	if (startY < 0) startY = frameHeight - keyboardHeight;
+	if (startY < 0) startY = 0; // If still negative, put at top
+	
+	// Draw semi-transparent keyboard background (smaller area)
+	int bgStartX = startX - 2;
+	int bgEndX = startX + keyboardWidth + 2;
+	int bgStartY = startY - 2;
+	int bgEndY = startY + keyboardHeight + 2;
+	
+	for (int y = bgStartY; y < bgEndY; y++) {
+		for (int x = bgStartX; x < bgEndX; x++) {
 			if (x >= 0 && x < frameWidth && y >= 0 && y < frameHeight) {
-				frame[y * frameWidth + x] = 0x444444; // Dark gray background
+				// Mix background color with existing frame for transparency effect
+				unsigned int existing = frame[y * frameWidth + x];
+				unsigned int bg = 0x444444;
+				// Simple alpha blend (50% opacity)
+				unsigned int r = ((existing >> 16) & 0xFF) / 2 + ((bg >> 16) & 0xFF) / 2;
+				unsigned int g = ((existing >> 8) & 0xFF) / 2 + ((bg >> 8) & 0xFF) / 2;
+				unsigned int b = (existing & 0xFF) / 2 + (bg & 0xFF) / 2;
+				frame[y * frameWidth + x] = (r << 16) | (g << 8) | b;
 			}
 		}
 	}
 	
-	// Draw keys
+	// Draw keys with simplified rendering
 	for (int row = 0; row < VKB_ROWS; row++) {
 		for (int col = 0; col < VKB_COLS; col++) {
 			int keyX = startX + col * VKB_KEY_WIDTH;
 			int keyY = startY + row * VKB_KEY_HEIGHT;
 			
-			unsigned int keyColor = 0x888888; // Normal key color
+			// Skip if key would be completely off-screen
+			if (keyX >= frameWidth || keyY >= frameHeight || 
+				keyX + VKB_KEY_WIDTH <= 0 || keyY + VKB_KEY_HEIGHT <= 0) {
+				continue;
+			}
+			
+			unsigned int keyColor = 0x888888; // Normal key color (light gray)
+			unsigned int borderColor = 0x000000; // Black border
+			
 			if (virtualKbCursorX == col && virtualKbCursorY == row) {
 				keyColor = 0xFFFF00; // Highlighted key (yellow)
+				borderColor = 0xFF0000; // Red border for selected
 			}
 			
-			// Draw key background
-			for (int y = keyY + VKB_MARGIN; y < keyY + VKB_KEY_HEIGHT - VKB_MARGIN; y++) {
-				for (int x = keyX + VKB_MARGIN; x < keyX + VKB_KEY_WIDTH - VKB_MARGIN; x++) {
-					if (x >= 0 && x < frameWidth && y >= 0 && y < frameHeight) {
-						frame[y * frameWidth + x] = keyColor;
-					}
+			// Draw key with bounds checking - simplified approach
+			int drawStartX = keyX + VKB_MARGIN;
+			int drawEndX = keyX + VKB_KEY_WIDTH - VKB_MARGIN;
+			int drawStartY = keyY + VKB_MARGIN;
+			int drawEndY = keyY + VKB_KEY_HEIGHT - VKB_MARGIN;
+			
+			// Clamp to frame bounds
+			if (drawStartX < 0) drawStartX = 0;
+			if (drawStartY < 0) drawStartY = 0;
+			if (drawEndX > frameWidth) drawEndX = frameWidth;
+			if (drawEndY > frameHeight) drawEndY = frameHeight;
+			
+			// Fill key interior
+			for (int y = drawStartY; y < drawEndY; y++) {
+				for (int x = drawStartX; x < drawEndX; x++) {
+					frame[y * frameWidth + x] = keyColor;
 				}
 			}
 			
-			// Draw key border
-			unsigned int borderColor = 0xAAAAAA;
-			// Top and bottom borders
-			for (int x = keyX + VKB_MARGIN; x < keyX + VKB_KEY_WIDTH - VKB_MARGIN; x++) {
-				if (x >= 0 && x < frameWidth) {
-					if (keyY + VKB_MARGIN >= 0 && keyY + VKB_MARGIN < frameHeight)
-						frame[(keyY + VKB_MARGIN) * frameWidth + x] = borderColor;
-					if (keyY + VKB_KEY_HEIGHT - VKB_MARGIN - 1 >= 0 && keyY + VKB_KEY_HEIGHT - VKB_MARGIN - 1 < frameHeight)
-						frame[(keyY + VKB_KEY_HEIGHT - VKB_MARGIN - 1) * frameWidth + x] = borderColor;
-				}
+			// Draw simple border (just outline)
+			for (int x = drawStartX; x < drawEndX; x++) {
+				if (drawStartY >= 0 && drawStartY < frameHeight)
+					frame[drawStartY * frameWidth + x] = borderColor;
+				if (drawEndY - 1 >= 0 && drawEndY - 1 < frameHeight)
+					frame[(drawEndY - 1) * frameWidth + x] = borderColor;
 			}
-			// Left and right borders
-			for (int y = keyY + VKB_MARGIN; y < keyY + VKB_KEY_HEIGHT - VKB_MARGIN; y++) {
-				if (y >= 0 && y < frameHeight) {
-					if (keyX + VKB_MARGIN >= 0 && keyX + VKB_MARGIN < frameWidth)
-						frame[y * frameWidth + keyX + VKB_MARGIN] = borderColor;
-					if (keyX + VKB_KEY_WIDTH - VKB_MARGIN - 1 >= 0 && keyX + VKB_KEY_WIDTH - VKB_MARGIN - 1 < frameWidth)
-						frame[y * frameWidth + keyX + VKB_KEY_WIDTH - VKB_MARGIN - 1] = borderColor;
-				}
+			for (int y = drawStartY; y < drawEndY; y++) {
+				if (drawStartX >= 0 && drawStartX < frameWidth)
+					frame[y * frameWidth + drawStartX] = borderColor;
+				if (drawEndX - 1 >= 0 && drawEndX - 1 < frameWidth)
+					frame[y * frameWidth + (drawEndX - 1)] = borderColor;
 			}
 		}
 	}
@@ -1708,18 +1754,20 @@ void draw_virtual_keyboard(void)
 
 void send_virtual_key(char key)
 {
+	log_fn(RETRO_LOG_INFO, "Sending virtual key: '%c' (0x%02X)\n", key, (unsigned char)key);
+	
 	if (key == '\b') {
-		// Send backspace as KEY_STAR
-		unsigned char keyEvent[5] = {1, 0, 0, 0, 42}; // 42 = '*' key code
-		write_to_pipe(pWrite[1], keyEvent, 5);
-	} else if (key == ' ') {
-		// Send space as KEY_POUND
-		unsigned char keyEvent[5] = {1, 0, 0, 0, 35}; // 35 = '#' key code
-		write_to_pipe(pWrite[1], keyEvent, 5);
+		// Send backspace - use key down then key up
+		unsigned char keyDownEvent[5] = {1, 0, 0, 0, 8}; // ASCII backspace
+		unsigned char keyUpEvent[5] = {0, 0, 0, 0, 8};
+		write_to_pipe(pWrite[1], keyDownEvent, 5);
+		write_to_pipe(pWrite[1], keyUpEvent, 5);
 	} else {
-		// Send character directly to Java via pipe
-		unsigned char keyEvent[5] = {1, 0, 0, 0, (unsigned char)key};
-		write_to_pipe(pWrite[1], keyEvent, 5);
+		// Send character - use key down then key up
+		unsigned char keyDownEvent[5] = {1, 0, 0, 0, (unsigned char)key};
+		unsigned char keyUpEvent[5] = {0, 0, 0, 0, (unsigned char)key};
+		write_to_pipe(pWrite[1], keyDownEvent, 5);
+		write_to_pipe(pWrite[1], keyUpEvent, 5);
 	}
 }
 
