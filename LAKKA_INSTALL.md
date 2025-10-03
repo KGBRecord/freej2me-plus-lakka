@@ -32,18 +32,19 @@
 
 **NEW**: FreeJ2ME now supports flexible Java installation with automatic fallback!
 
-#### Option A: System Java ⚠️ **VERY DIFFICULT ON LAKKA**
-- **NOT RECOMMENDED**: Installing Java via package manager is nearly impossible on Lakka
-- Lakka has no package manager and missing system dependencies
-- Only viable if you've modified Lakka extensively (advanced users only)
+#### Option A: System Java ⚠️ **VERY DIFFICULT ON LAKKA** 
+- **Automatic fallback**: FreeJ2ME tries `java` command when no config.ini exists
+- **Reality**: Will likely fail on stock Lakka (no Java installed)
+- Only works if you've somehow installed Java system-wide (advanced users)
 
-#### Option B: Default Installation (RECOMMENDED)
-- Copy pre-compiled Java to `/storage/java/` (works without config)
-- **This is the standard approach for Lakka**
-
-#### Option C: Custom Installation (Flexible)
+#### Option B: Custom Installation with config.ini (RECOMMENDED)
 - Copy pre-compiled Java anywhere and use `config.ini` to specify the path
-- Useful for devices with limited `/storage/` space
+- **Most reliable approach for Lakka**
+- Example: Copy to `/storage/jdk8/` and set `java_path=/storage/jdk8`
+
+#### Option C: Legacy `/storage/java/` Installation 
+- **NO LONGER AUTOMATIC**: Requires config.ini with `java_path=/storage/java`
+- Still works but needs explicit configuration
 
 ### Download Java 8 for ARM64
 
@@ -92,16 +93,18 @@
    
    **💡 If you see Java already available, you have a heavily modified Lakka setup.**
    
-   **Option B: Default Location (no config needed)**
-   ```bash
-   # Copy entire Java installation to default location
-   scp -r java/* root@<lakka-ip>:/storage/java/
-   ```
-   
-   **Option C: Custom Location (requires config.ini)**
+   **Option B: Custom Location with config.ini (RECOMMENDED)**
    ```bash
    # Copy to custom location (example: /storage/jdk8)
    scp -r java/* root@<lakka-ip>:/storage/jdk8/
+   # Then create config.ini with java_path=/storage/jdk8
+   ```
+   
+   **Option C: Legacy /storage/java/ (requires config.ini)**
+   ```bash
+   # Copy to traditional location
+   scp -r java/* root@<lakka-ip>:/storage/java/
+   # Still needs config.ini with java_path=/storage/java
    ```
    
    **Replace `<lakka-ip>` with your actual Lakka IP address (e.g., 192.168.1.100)**
@@ -111,14 +114,14 @@
    # SSH into Lakka and test Java
    ssh root@<lakka-ip>
    
-   # For system Java:
+   # For system Java (will likely fail on Lakka):
    java -version
-   
-   # For default installation:
-   /storage/java/bin/java -version
    
    # For custom installation (adjust path as needed):
    /storage/jdk8/bin/java -version
+   
+   # For legacy /storage/java/ installation:
+   /storage/java/bin/java -version
    ```
    
    You should see output like:
@@ -152,8 +155,8 @@
    
    **Priority Order**: 
    1. **Custom path** from config.ini (if specified)
-   2. **Default path** `/storage/java/bin/java` (if exists)
-   3. **System Java** from PATH (automatic fallback)
+   2. **System Java** from PATH (automatic fallback if no config)
+   3. **NOTE**: No longer uses hardcoded `/storage/java/` as fallback
    
    **Important**: 
    - Don't include `/bin/java` in the path
@@ -198,7 +201,7 @@
 
 ## 📁 Final Directory Structure
 
-### Option A: System Java Installation (Simplest)
+### Option A: System Java (Theoretical - Difficult on Lakka)
 ```
 📁 /storage/
 ├── 📂 cores/
@@ -208,33 +211,15 @@
 └── 📂 roms/
     └── 📂 [your J2ME games here]
 
-# Java installed in system PATH (e.g., via package manager)
-# No additional files needed!
+# Java somehow available in system PATH
+# No config.ini needed - automatic fallback
+# Unlikely to work on stock Lakka
 ```
 
-### Option B: Default Java Installation
+### Option B: Custom Java Installation (RECOMMENDED)
 ```
 📁 /storage/
-├── 📂 java/                    (default Java location)
-│   ├── 📂 bin/
-│   │   ├── java ✓
-│   │   ├── javac ✓
-│   │   └── javaw ✓
-│   ├── 📂 lib/ ✓
-│   ├── 📂 jre/ ✓
-│   └── 📄 [other JDK files] ✓
-├── 📂 cores/
-│   └── 📄 freej2me_libretro.so ✓
-├── 📂 system/
-│   └── 📄 freej2me-lr.jar ✓
-└── 📂 roms/
-    └── 📂 [your J2ME games here]
-```
-
-### Option C: Custom Java Installation
-```
-📁 /storage/
-├── 📂 jdk8/                    (custom Java location)
+├── 📂 jdk8/                     (custom Java location)
 │   ├── 📂 bin/
 │   │   ├── java ✓
 │   │   ├── javac ✓
@@ -247,6 +232,26 @@
 ├── 📂 system/
 │   ├── 📄 freej2me-lr.jar ✓
 │   └── 📄 config.ini ✓         (contains java_path=/storage/jdk8)
+└── 📂 roms/
+    └── 📂 [your J2ME games here]
+```
+
+### Option C: Legacy /storage/java/ Installation
+```
+📁 /storage/
+├── 📂 java/                     (legacy location)
+│   ├── 📂 bin/
+│   │   ├── java ✓
+│   │   ├── javac ✓
+│   │   └── javaw ✓
+│   ├── 📂 lib/ ✓
+│   ├── 📂 jre/ ✓
+│   └── 📄 [other JDK files] ✓
+├── 📂 cores/
+│   └── 📄 freej2me_libretro.so ✓
+├── 📂 system/
+│   ├── 📄 freej2me-lr.jar ✓
+│   └── 📄 config.ini ✓         (contains java_path=/storage/java)
 └── 📂 roms/
     └── 📂 [your J2ME games here]
 ```

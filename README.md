@@ -119,14 +119,14 @@ freej2me_scaling_mode = "aspect_fit"
 >- **Make tools** for libretro core compilation
 >
 >### Java Installation Reality on Lakka:
->1. ⚠️ **System Java**: Nearly impossible on stock Lakka (missing dependencies)
->2. ✅ **Default location**: Copy pre-compiled JDK to `/storage/java/` (RECOMMENDED)
->3. ✅ **Custom location**: Copy anywhere and use `config.ini`
+>1. ✅ **Custom location with config.ini**: Copy pre-compiled JDK anywhere (RECOMMENDED)
+>2. ⚠️ **System Java fallback**: Tries `java` command when no config exists (will fail on stock Lakka)  
+>3. ✅ **Legacy `/storage/java/`**: Still works but requires config.ini
 >
->### Smart Java Detection (with Lakka limitations):
->- **NEW**: Automatically tries system Java (will likely fail on stock Lakka)
->- **Realistic**: Works with manual installations and custom configurations
->- **Fallback**: Multiple detection methods, but manual setup usually required
+>### Smart Java Detection (Priority Order):
+>- **1st**: Custom path from config.ini (if exists)
+>- **2nd**: System `java` command (automatic fallback, likely fails on Lakka)
+>- **Reality**: Manual installation with config.ini is the practical solution
 
 ----
 # :gear: :coffee: Building FreeJ2ME-Plus for Lakka

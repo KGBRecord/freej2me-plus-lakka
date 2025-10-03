@@ -67,7 +67,10 @@ create-config:
 	@echo "# Specify the path to your Java installation (without /bin/java)" >> $(BUILD_DIR)/config.ini
 	@echo "# The core will automatically append /bin/java (Linux) or /bin/javaw (Windows)" >> $(BUILD_DIR)/config.ini
 	@echo "" >> $(BUILD_DIR)/config.ini
-	@echo "# Default installation (no config needed if using this path):" >> $(BUILD_DIR)/config.ini
+	@echo "# Without config.ini, FreeJ2ME falls back to system 'java' command" >> $(BUILD_DIR)/config.ini
+	@echo "# (which will likely fail on stock Lakka)" >> $(BUILD_DIR)/config.ini
+	@echo "" >> $(BUILD_DIR)/config.ini
+	@echo "# Recommended: Use config.ini with custom path:" >> $(BUILD_DIR)/config.ini
 	@echo "# java_path=/storage/java" >> $(BUILD_DIR)/config.ini
 	@echo "" >> $(BUILD_DIR)/config.ini
 	@echo "# Custom installation examples:" >> $(BUILD_DIR)/config.ini
