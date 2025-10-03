@@ -877,13 +877,13 @@ void retro_init(void)
 	javaPath = read_java_path_from_config();
 	if (javaPath == NULL) 
 	{
-		/* Fallback to default hardcoded path */
+		/* Fallback to system java command */
 #ifdef __linux__
-		javaPath = strdup("/storage/java/bin/java");
+		javaPath = strdup("java");
 #elif _WIN32
-		javaPath = strdup("/storage/java/bin/javaw");
+		javaPath = strdup("javaw");
 #endif
-		log_fn(RETRO_LOG_INFO, "Using default Java path: %s\n", javaPath);
+		log_fn(RETRO_LOG_INFO, "Config not found or java_path not specified, using system Java command: %s\n", javaPath);
 	}
 
 	/* Allocate memory for launch arguments */
@@ -1589,7 +1589,7 @@ char* read_java_path_from_config(void)
 	configFile = fopen(configPath, "r");
 	if (configFile == NULL) 
 	{
-		log_fn(RETRO_LOG_WARN, "Config file not found at %s, using default Java path\n", configPath);
+		log_fn(RETRO_LOG_INFO, "Config file not found at %s, will use system Java command\n", configPath);
 		return NULL;
 	}
 	
@@ -1624,6 +1624,12 @@ char* read_java_path_from_config(void)
 	}
 	
 	fclose(configFile);
+	
+	if (result == NULL) 
+	{
+		log_fn(RETRO_LOG_INFO, "java_path not found in config file, will use system Java command\n");
+	}
+	
 	return result;
 }
 
