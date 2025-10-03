@@ -5,6 +5,16 @@
 
 **This is a modified version of FreeJ2ME-Plus specifically adapted for Lakka OS with Docker build system.**
 
+## ⚠️ **CRITICAL LAKKA LIMITATION** ⚠️
+
+**Lakka is an extremely minimalized Linux distribution (based on OpenELEC) that makes installing Java VERY DIFFICULT:**
+- ❌ No package managers (apt, yum, pacman)
+- ❌ Read-only filesystem
+- ❌ Missing system libraries
+- ❌ No development tools
+
+**🎯 SOLUTION: Pre-compile Java on a full Linux system and copy to Lakka manually.**
+
 ### Key features:
 - **Docker build environment**: Uses OpenJDK 8 official image for consistent builds
 - **Simplified build system**: Makefile-based build automation  
@@ -101,22 +111,22 @@ freej2me_scaling_mode = "aspect_fit"
 ----
 # :penguin: Lakka OS Requirements
 
->**This version requires specific setup for Lakka OS:**
+>**This version supports flexible Java installation for Lakka OS:**
 >
 >### Prerequisites:
->- **Java 8**
->- **Apache Ant** for building
+>- **Java 8** (⚠️ manual installation required - see warning above)
+>- **Apache Ant** for building (on development machine)
 >- **Make tools** for libretro core compilation
 >
->### Java Installation on Lakka:
->1. Download Java 8 JDK
->2. Extract entire JDK to `/storage/java/`
->3. Ensure the directory structure is: `/storage/java/bin/java`
+>### Java Installation Reality on Lakka:
+>1. ⚠️ **System Java**: Nearly impossible on stock Lakka (missing dependencies)
+>2. ✅ **Default location**: Copy pre-compiled JDK to `/storage/java/` (RECOMMENDED)
+>3. ✅ **Custom location**: Copy anywhere and use `config.ini`
 >
->### Important Notes:
->- This version **does not** rely on system PATH for Java executables
->- All Java calls are hardcoded to the specific path above
->- This ensures compatibility with Lakka's restricted environment
+>### Smart Java Detection (with Lakka limitations):
+>- **NEW**: Automatically tries system Java (will likely fail on stock Lakka)
+>- **Realistic**: Works with manual installations and custom configurations
+>- **Fallback**: Multiple detection methods, but manual setup usually required
 
 ----
 # :gear: :coffee: Building FreeJ2ME-Plus for Lakka
@@ -345,8 +355,9 @@ Although all arguments aside from the path are optional to launch FreeJ2ME-Plus 
 ### Files Modified for Lakka Compatibility:
 
 #### **src/libretro/freej2me_libretro.c**:
-- Line 745: Changed `"java"` to `"/storage/java/bin/java"` (Linux)
-- Line 747: Changed `"javaw"` to `"/storage/java/bin/javaw"` (Windows)
+- **Smart Java Detection**: Uses config.ini → default path → system Java (automatic fallback)
+- **Flexible Installation**: Supports system Java, default `/storage/java/`, or custom paths
+- **NEW**: `read_java_path_from_config()` function for config.ini parsing
 
 #### **build.xml**:
 - Added `executable="/storage/java/bin/javac"` and `fork="true"` to javac tasks
@@ -376,11 +387,13 @@ Although all arguments aside from the path are optional to launch FreeJ2ME-Plus 
 - **src/org/recompile/freej2me/Libretro.java**: Added argument processing
 
 ### Why These Changes?
-- **Lakka OS restrictions**: Limited PATH environment and restricted file system access
-- **Consistency**: Ensures Java is always found at the expected location
-- **Reliability**: Eliminates dependency on system-wide Java installation
-- **User Experience**: Auto-detection and intelligent scaling provide optimal display without manual configuration
+- **Lakka Reality**: Accommodates Lakka's extreme limitations (no package manager, minimal system)
+- **Flexibility**: Supports multiple Java installation methods when manually set up
+- **Graceful Fallback**: Tries system Java but expects manual installation
+- **Backward Compatible**: Still supports traditional `/storage/java/` setup
+- **User Experience**: Auto-detection and intelligent scaling provide optimal display
 - **Full-screen Gaming**: Games are properly centered and scaled for modern displays
+- **Practical Approach**: Designed for reality of embedded/minimalized systems
 
 ### Upstream Compatibility:
 These changes are **specific to Lakka OS** and may not be suitable for general use. For the original version, please visit: [TASEmulators/freej2me-plus](https://github.com/TASEmulators/freej2me-plus)

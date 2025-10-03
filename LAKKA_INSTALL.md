@@ -1,9 +1,28 @@
 # FreeJ2ME-Plus for Lakka OS - Complete Installation Guide
 
+## ⚠️ **IMPORTANT WARNING** ⚠️
+
+**Lakka OS is a minimalized Linux distribution based on OpenELEC/LibreELEC that has been stripped down to only essential components for RetroArch. Installing Java directly on Lakka is EXTREMELY DIFFICULT due to:**
+
+- ❌ **No package manager** (no apt, yum, pacman, etc.)
+- ❌ **Read-only filesystem** in most areas
+- ❌ **Missing system libraries** required by Java
+- ❌ **Limited storage space** on embedded devices
+- ❌ **No development tools** for compilation
+- ❌ **Restricted user permissions**
+
+### 🎯 **RECOMMENDED APPROACH**:
+**Pre-compile Java on a full Linux system, then copy the entire JDK to Lakka.**
+
+*This guide assumes you will prepare Java externally and transfer it to Lakka.*
+
+---
+
 ## 📋 Prerequisites
 
 - Lakka OS device (tested on Nintendo Switch Lite with modchip)
-- MicroSD card with FAT32 partition
+- MicroSD card with FAT32 partition  
+- **Full Linux system for Java preparation** (Ubuntu, Debian, etc.)
 - Computer with SSH and SCP access
 - Internet connection to download Java
 
@@ -11,22 +30,33 @@
 
 ### Java Installation Options
 
-**NEW**: FreeJ2ME now supports custom Java paths via `config.ini`! You can install Java anywhere and configure the path.
+**NEW**: FreeJ2ME now supports flexible Java installation with automatic fallback!
 
-#### Option A: Default Installation (Recommended for beginners)
-- Install Java to `/storage/java/` (works without config)
+#### Option A: System Java ⚠️ **VERY DIFFICULT ON LAKKA**
+- **NOT RECOMMENDED**: Installing Java via package manager is nearly impossible on Lakka
+- Lakka has no package manager and missing system dependencies
+- Only viable if you've modified Lakka extensively (advanced users only)
 
-#### Option B: Custom Installation (Flexible)
-- Install Java anywhere and use `config.ini` to specify the path
+#### Option B: Default Installation (RECOMMENDED)
+- Copy pre-compiled Java to `/storage/java/` (works without config)
+- **This is the standard approach for Lakka**
+
+#### Option C: Custom Installation (Flexible)
+- Copy pre-compiled Java anywhere and use `config.ini` to specify the path
+- Useful for devices with limited `/storage/` space
 
 ### Download Java 8 for ARM64
 
-1. **Visit Oracle Java Downloads:**
+**⚠️ CRITICAL**: Download and prepare Java on a **FULL LINUX SYSTEM**, not on Lakka!
+
+1. **Visit Oracle Java Downloads (on your main computer):**
    - Go to: https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html
    - Find **"Linux ARM64 Compressed Archive"** section
    - Download: `jdk-8u*-linux-aarch64.tar.gz` (any Java 8 version)
    - **✅ COMPATIBLE**: Works with any Java 8 version and custom paths
    - Recommended: Use latest available Java 8 version for better security
+   
+   **🚫 DO NOT**: Try to download or install Java directly on Lakka - it won't work!
 
 2. **Extract Java Archive:**
    ```bash
@@ -50,15 +80,25 @@
 
 ### Install Java on Lakka
 
-4. **Copy Java to Lakka via SCP:**
+4. **Install Java (Choose one option):**
    
-   **Option A: Default Location (no config needed)**
+   **Option A: System Java ⚠️ EXTREMELY DIFFICULT**
+   ```bash
+   # WARNING: This will likely FAIL on stock Lakka!
+   # Lakka is too minimalized to support Java installation
+   ssh root@<lakka-ip> "java -version"
+   # Expected result: "java: not found" or "command not found"
+   ```
+   
+   **💡 If you see Java already available, you have a heavily modified Lakka setup.**
+   
+   **Option B: Default Location (no config needed)**
    ```bash
    # Copy entire Java installation to default location
    scp -r java/* root@<lakka-ip>:/storage/java/
    ```
    
-   **Option B: Custom Location (requires config.ini)**
+   **Option C: Custom Location (requires config.ini)**
    ```bash
    # Copy to custom location (example: /storage/jdk8)
    scp -r java/* root@<lakka-ip>:/storage/jdk8/
@@ -70,6 +110,9 @@
    ```bash
    # SSH into Lakka and test Java
    ssh root@<lakka-ip>
+   
+   # For system Java:
+   java -version
    
    # For default installation:
    /storage/java/bin/java -version
@@ -87,13 +130,14 @@
 
 ## ⚙️ Step 2: Configure Custom Java Path (Optional)
 
-**NEW FEATURE**: If you installed Java to a custom location, create a config file:
+**NEW FEATURE**: Configure Java path or let FreeJ2ME auto-detect system Java:
 
 ### Create config.ini (Only needed for custom Java paths)
 
-6. **Create Configuration File:**
+6. **Create Configuration File (Optional):**
    ```bash
-   # Create config.ini with your custom Java path
+   # Create config.ini only if you need custom Java path
+   # (Skip this step to use system Java or default /storage/java/)
    cat > config.ini << EOF
    # FreeJ2ME Configuration
    # Java installation path (without /bin/java)
@@ -106,10 +150,15 @@
    EOF
    ```
    
+   **Priority Order**: 
+   1. **Custom path** from config.ini (if specified)
+   2. **Default path** `/storage/java/bin/java` (if exists)
+   3. **System Java** from PATH (automatic fallback)
+   
    **Important**: 
    - Don't include `/bin/java` in the path
    - Use the directory that contains the `bin/` folder
-   - If using default `/storage/java/`, no config.ini is needed
+   - **No config needed** for system Java or default location
 
 ## 🎯 Step 3: Install FreeJ2ME Core
 
@@ -149,7 +198,21 @@
 
 ## 📁 Final Directory Structure
 
-### Option A: Default Java Installation
+### Option A: System Java Installation (Simplest)
+```
+📁 /storage/
+├── 📂 cores/
+│   └── 📄 freej2me_libretro.so ✓
+├── 📂 system/
+│   └── 📄 freej2me-lr.jar ✓
+└── 📂 roms/
+    └── 📂 [your J2ME games here]
+
+# Java installed in system PATH (e.g., via package manager)
+# No additional files needed!
+```
+
+### Option B: Default Java Installation
 ```
 📁 /storage/
 ├── 📂 java/                    (default Java location)
@@ -168,7 +231,7 @@
     └── 📂 [your J2ME games here]
 ```
 
-### Option B: Custom Java Installation
+### Option C: Custom Java Installation
 ```
 📁 /storage/
 ├── 📂 jdk8/                    (custom Java location)
@@ -229,13 +292,16 @@
 - ✅ Check that game files are valid J2ME (.jar/.jad)
 
 ### Java not found errors?
+- ⚠️ **Lakka Limitation**: System Java (`java -version`) will likely fail - this is NORMAL
+- ✅ **Check manual installation**: `/storage/java/bin/java -version`
 - ✅ **Check config.ini**: If using custom Java path, verify `/storage/system/config.ini` exists
 - ✅ **Verify config content**: `cat /storage/system/config.ini` should show `java_path=your_path`
 - ✅ **Test custom Java**: `[your_custom_path]/bin/java -version`
-- ✅ **Default fallback**: Remove config.ini to use default `/storage/java/`
-- ✅ **Check RetroArch logs**: Look for "Java path from config:" or "Using default Java path:" messages
-- ✅ Confirm Java directory exists: `ls -la /storage/java/bin/` (or your custom path)
-- ✅ **Java compatibility**: Any Java 8 version should work with custom paths
+- ✅ **Manual installation required**: Lakka cannot install Java via package manager
+- ✅ **Check RetroArch logs**: Look for "Java path from config:", "Using default Java path:", or "using system Java command:" messages
+- ✅ **Confirm Java directory exists**: `ls -la /storage/java/bin/` (or your custom path)
+- ✅ **Java compatibility**: Any Java 8 version should work
+- 🚫 **Don't expect system Java**: Lakka is too minimalized for native Java support
 
 ### SSH Connection Issues?
 - ✅ Ensure SSH is enabled in Lakka Services
@@ -249,9 +315,13 @@
 - **Network Access:** Keep SSH enabled for troubleshooting
 - **Backup:** Save your working Java installation
 - **Performance:** Any Java 8 version provides good performance on ARM64
+- **⚠️ Lakka Reality:** Don't expect system Java to work - manual installation required
 - **🆕 Flexible Java Paths:** Use config.ini to install Java anywhere you prefer
 - **🆕 Easy Migration:** Copy your Java installation between devices using config.ini
 - **🆕 Multiple Java Versions:** Switch between Java installations by updating config.ini
+- **🆕 Automatic Fallback:** Tries system Java if available (rare on stock Lakka)
+- **💡 Lakka Tip:** Prepare everything on a full Linux system first
+- **🔧 Advanced Users:** Only attempt system Java if you've heavily modified Lakka
 
 ---
 **Enjoy your retro J2ME gaming experience on Lakka! 📱🎮**
