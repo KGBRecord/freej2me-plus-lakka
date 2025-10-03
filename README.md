@@ -120,8 +120,7 @@ freej2me_scaling_mode = "aspect_fit"
 >
 >### Java Installation Reality on Lakka:
 >1. ✅ **Custom location with config.ini**: Copy pre-compiled JDK anywhere (RECOMMENDED)
->2. ⚠️ **System Java fallback**: Tries `java` command when no config exists (will fail on stock Lakka)  
->3. ✅ **Legacy `/storage/java/`**: Still works but requires config.ini
+>2. ⚠️ **System Java fallback**: Tries `java` command when no config exists (will fail on stock Lakka)
 >
 >### Smart Java Detection (Priority Order):
 >- **1st**: Custom path from config.ini (if exists)
