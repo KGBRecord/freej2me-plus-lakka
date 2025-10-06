@@ -4,9 +4,33 @@
 
 **Lakka cannot install Java directly** - it's too minimalized (no package manager, read-only filesystem, missing libraries). 
 
-**🎯 SOLUTION:** Prepare Java on a full Linux system, then copy to Lakka.
+**🎯 SOLUTIONS:**
+1. **Manual Setup** (this guide): Prepare Java on a full Linux system, then copy to Lakka
+2. **Easy Alternative** (coming soon): Use KGBRecord's Lakka fork with built-in Java + FreeJ2ME
+
+## 🚀 **EASIER ALTERNATIVE - KGBRecord's Lakka Fork** 🚀
+
+**🎯 For users who want a simpler experience:**
+
+**Repository:** [KGBRecord/Lakka-LibreELEC](https://github.com/KGBRecord/Lakka-LibreELEC)
+
+### What's Different:
+- ✅ **Java 8 built-in** - no manual Java installation needed
+- ✅ **FreeJ2ME-Plus pre-installed** - ready to use out of the box
+- ✅ **Zero configuration** - just flash and play J2ME games
+- ✅ **Regular Lakka features** - all standard cores and functionality
+
+### Current Status:
+⚠️ **Work in Progress** - KGBRecord is actively working on this fork but facing build challenges:
+- DNS restrictions in the region blocking many build dependencies
+- Working on solutions to complete the integration
+- Check the repository for updates and progress
+
+**💡 Recommendation:** Star/watch the repository to get notified when builds are ready!
 
 ---
+
+## 📋 Manual Installation (Current Method)
 
 ## 📋 What You Need
 
@@ -97,7 +121,11 @@ If SSH is difficult, remove Lakka microSD and copy directly:
 - **Config.ini is required** - no automatic detection on Lakka
 - **Prepare externally** - don't try to install Java on Lakka directly
 
-**Download:** [Latest Release](https://github.com/KGBRecord/freej2me-plus-lakka/releases)
+## 🔗 Resources
+
+- **FreeJ2ME-Plus Releases:** [Latest Release](https://github.com/KGBRecord/freej2me-plus-lakka/releases)
+- **KGBRecord's Lakka Fork:** [Lakka-LibreELEC](https://github.com/KGBRecord/Lakka-LibreELEC) *(built-in Java + FreeJ2ME - in development)*
+- **Too complex?** Consider waiting for the simplified Lakka fork instead of manual setup
 
 ---
 **Happy gaming! 🎮**

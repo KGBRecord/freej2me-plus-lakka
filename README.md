@@ -34,10 +34,19 @@
 - ⚙️ **New RetroArch core options** for easy configuration
 - 🚀 **Optimized for full-screen gaming** on modern displays
 
-### Quick Installation for Lakka:
+### Installation Options for Lakka:
+
+**🎯 Option 1: Manual Setup** (Current)
 1. Copy `freej2me_libretro.so` → `/cores/` directory on Lakka microSD
 2. Copy `freej2me-lr.jar` → `/system/` directory on Lakka microSD  
-3. Restart Lakka
+3. Setup Java manually
+4. Restart Lakka
+
+**🚀 Option 2: KGBRecord's Lakka Fork** (Coming Soon)
+- Built-in Java 8 + FreeJ2ME-Plus
+- Zero configuration needed
+- Repository: [KGBRecord/Lakka-LibreELEC](https://github.com/KGBRecord/Lakka-LibreELEC)
+- Status: In development (DNS/build issues being resolved)
 
 📋 **[Full Installation Guide](LAKKA_INSTALL.md)**
 
