@@ -161,6 +161,7 @@ package: build-all
 		$(BUILD_DIR)/*.jar \
 		$(BUILD_DIR)/config.ini \
 		$(LIBRETRO_DIR)/*.so \
+		$(LIBRETRO_DIR)/*.info \
 		README.md \
 		LICENSE \
 		KEYMAP.md \
