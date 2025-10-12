@@ -1,5 +1,9 @@
 # FreeJ2ME-Plus for Lakka OS - Installation Guide
 
+## 🚨 **BACKUP YOUR GAMES FIRST!** 🚨
+
+**⚠️ CRITICAL WARNING**: Installing any custom OS will **COMPLETELY WIPE YOUR DEVICE**. Read our **[Backup Guide](BACKUP_GUIDE.md)** BEFORE doing anything!
+
 ## ⚠️ **CRITICAL LIMITATION** ⚠️
 
 **Lakka cannot install Java directly** - it's too minimalized (no package manager, read-only filesystem, missing libraries). 
@@ -20,13 +24,25 @@
 - ✅ **Zero configuration** - just flash and play J2ME games
 - ✅ **Regular Lakka features** - all standard cores and functionality
 
-### Current Status:
-⚠️ **Work in Progress** - KGBRecord is actively working on this fork but facing build challenges:
-- DNS restrictions in the region blocking many build dependencies
-- Working on solutions to complete the integration
-- Check the repository for updates and progress
+### Build Requirements:
+- 💾 **30-60GB** free disk space
+- ⏱️ **Several hours** build time
+- 🐳 **Docker** (Windows/macOS/Linux compatible)
+- 🔧 **Git** for source download
 
-**💡 Recommendation:** Star/watch the repository to get notified when builds are ready!
+### Current Status:
+✅ **Available for Self-Build** - The Lakka fork is ready but requires you to build it yourself:
+- 📖 **Build Guide**: See [BUILD.md](https://github.com/KGBRecord/Lakka-LibreELEC/blob/Lakka-v5.x/BUILD.md) in the Lakka-LibreELEC repo
+- ⏱️ **Time Required**: Several hours build time (depends on hardware)
+- 💾 **Storage Required**: 30-60GB disk space for building
+- 🖥️ **Build Platform**: Any OS with Docker (Windows, macOS, Linux)
+- ⚠️ **Important**: This takes much longer than manual setup method below
+
+**💡 Choose Your Method:**
+- ⚡ **Quick Setup**: Use manual installation below (30 minutes)
+- 🔧 **Custom Build**: Build your own Lakka image with integrated J2ME (several hours)
+
+**🚨 CRITICAL WARNING**: Always backup your game saves before installing any new operating system!
 
 ---
 
@@ -125,7 +141,7 @@ If SSH is difficult, remove Lakka microSD and copy directly:
 
 - **FreeJ2ME-Plus Releases:** [Latest Release](https://github.com/KGBRecord/freej2me-plus-lakka/releases)
 - **KGBRecord's Lakka Fork:** [Lakka-LibreELEC](https://github.com/KGBRecord/Lakka-LibreELEC) *(built-in Java + FreeJ2ME - in development)*
-- **Too complex?** Consider waiting for the simplified Lakka fork instead of manual setup
+- **Too complex?** Consider building the custom Lakka image instead, but note it requires significant time and storage
 
 ---
 **Happy gaming! 🎮**
