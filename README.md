@@ -44,23 +44,23 @@
 - ⚙️ **New RetroArch core options** for easy configuration
 - 🚀 **Optimized for full-screen gaming** on modern displays
 
-### Installation Options for Lakka:
+### KGBRecord's Two Solutions for Lakka:
 
-**🎯 Option 1: Manual Setup** (Current)
+**🚀 Method 1: Manual Setup** (This Repository)
 1. Copy `freej2me_libretro.so` → `/cores/` directory on Lakka microSD
 2. Copy `freej2me-lr.jar` → `/system/` directory on Lakka microSD  
-3. Setup Java manually
+3. Setup Java manually with smart detection
 4. Restart Lakka
 
-**🚀 Option 2: Build Custom Lakka with Integrated J2ME** (Available Now!)
-- Built-in Java 8 + FreeJ2ME-Plus pre-installed
-- Zero configuration needed after build
+**🏗️ Method 2: Custom Lakka Build** (Separate Repository)
+- Complete Lakka OS with built-in Java 8 + FreeJ2ME-Plus
+- Zero configuration needed after installation  
 - Build Repository: [KGBRecord/Lakka-LibreELEC](https://github.com/KGBRecord/Lakka-LibreELEC)
-- Status: ✅ **Available** - Self-build required (see BUILD.md)
+- Status: ✅ **Available** - Build from source (see BUILD.md)
 - ⚠️ **Warning**: Requires significant time and storage to build
 - 💾 **Backup your games** before installing any new OS!
 
-🎯 **[Choose Your Installation Method](INSTALLATION_CHOICES.md)** ← **START HERE**
+🎯 **[KGBRecord's Two Methods Explained](INSTALLATION_CHOICES.md)** ← **START HERE**
 📋 **[Full Installation Guide](LAKKA_INSTALL.md)**
 🚨 **[CRITICAL: Backup Guide - Read FIRST](BACKUP_GUIDE.md)** 🚨
 
@@ -122,8 +122,8 @@ freej2me_scaling_mode = "aspect_fit"
 ### Current maintainer of original project:
 #### - Paulo Sousa [AShiningRay]
 
-### Lakka OS modifications by:
-#### - KGBRecord [KGBRecord]
+### Lakka OS adaptations & Custom Lakka Build by:
+#### - KGBRecord [KGBRecord] - Creator of both installation methods
 
 ---
 
